@@ -1,0 +1,245 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-12.schema.json",
+ "title": "IF-12 \u2014 Run-log stage entry",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "run_id",
+  "stage",
+  "status",
+  "at",
+  "output_dir"
+ ],
+ "properties": {
+  "run_id": {
+   "type": "string"
+  },
+  "stage": {
+   "enum": [
+    "S0",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9"
+   ]
+  },
+  "status": {
+   "enum": [
+    "started",
+    "passed",
+    "failed",
+    "timed_out",
+    "skipped_with_limitation",
+    "fallback"
+   ]
+  },
+  "at": {
+   "$ref": "#/$defs/timestamp"
+  },
+  "output_dir": {
+   "type": "string"
+  },
+  "gate": {
+   "type": "string",
+   "pattern": "^QG-\\d{2}$"
+  },
+  "manual_minutes": {
+   "type": "number",
+   "minimum": 0
+  },
+  "note": {
+   "type": "string"
+  },
+  "input_dirs": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "1.1.0"
+  },
+  "gate_result": {
+   "enum": [
+    "pass",
+    "fail",
+    "not_evaluated"
+   ],
+   "description": "1.1.0"
+  },
+  "manual_intervention": {
+   "type": "boolean",
+   "description": "1.1.0"
+  },
+  "errors": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "1.1.0"
+  },
+  "contract": {
+   "const": "IF-12"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

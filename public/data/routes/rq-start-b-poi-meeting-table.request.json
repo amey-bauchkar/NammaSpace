@@ -1,0 +1,14 @@
+{
+ "contract": "IF-06",
+ "contract_version": "1.1.0",
+ "request_id": "rq-start-b-poi-meeting-table",
+ "navlayer_id": "nav-F0-80d667b2e07e-r0.05-a0.25-m0",
+ "start_xz_m": [
+  6.6,
+  5.5
+ ],
+ "goal": {
+  "poi_id": "poi-meeting-table"
+ },
+ "max_goal_snap_m": 1.0
+}

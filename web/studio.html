@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Namma Space Studio</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#/"><span class="logo" aria-hidden="true"></span>Namma Space Studio</a>
+  <span class="title" id="crumb"></span>
+  <span class="spacer"></span>
+  <span class="badge" id="health" title="Local processing status">checking…</span>
+</header>
+<main class="page" id="app" aria-live="polite">
+  <p class="muted">Loading…</p>
+</main>
+
+<template id="tpl-home">
+  <section>
+    <h1>Turn photos of a room into a 3D walkthrough</h1>
+    <p class="muted">Everything runs on this computer. Capture a room with your phone, upload the photos or one video,
+      and Namma Space reconstructs a photo-textured 3D model you can walk through in the browser.</p>
+    <ol class="steps"><li>1 Capture</li><li>2 Check</li><li>3 Reconstruct</li><li>4 Explore &amp; label</li><li>5 Publish</li></ol>
+  </section>
+  <section class="cardbox">
+    <h2>New space</h2>
+    <form class="row" id="new-form">
+      <label class="small muted" for="new-title" style="position:absolute;left:-9999px">Name of the space</label>
+      <input id="new-title" type="text" maxlength="80" placeholder="Name of the space, e.g. Our living room" required>
+      <button type="submit">Create project</button>
+      <label class="small muted" for="new-source" style="flex-basis:100%">Only if the photos are not your own: their source
+        and licence (shown with the published model)
+        <input id="new-source" type="text" maxlength="300" placeholder="e.g. TUM RGB-D benchmark, CC BY 4.0" style="width:100%"></label>
+    </form>
+  </section>
+  <section class="cardbox">
+    <h2>Your spaces</h2>
+    <ul class="projects" id="project-list"></ul>
+  </section>
+</template>
+
+<template id="tpl-project">
+  <section>
+    <p class="small"><a href="#/">← All spaces</a></p>
+    <h1 data-f="title"></h1>
+    <ol class="steps" data-f="steps"></ol>
+  </section>
+  <section class="cardbox">
+    <h2>1 · Capture and upload</h2>
+    <details>
+      <summary>How to capture a room (2-minute guide)</summary>
+      <ol class="sop">
+        <li><strong>Light:</strong> switch on all lights; avoid filming straight into bright windows.</li>
+        <li><strong>Phone settings:</strong> use the normal 1× lens; on iPhone set <em>Camera › Formats › Most Compatible</em> (JPEG); turn off HDR video.</li>
+        <li><strong>Walk the edges:</strong> stand near a wall and face into the room; take a photo every step (about 0.5 m) while walking all the way around.</li>
+        <li><strong>Overlap:</strong> every part of the room should appear in at least three photos; consecutive photos should share about two thirds of their view.</li>
+        <li><strong>Floor and furniture:</strong> tilt the phone slightly down so the floor and the bottom of furniture are visible; add a second lap at a lower height around large furniture.</li>
+        <li><strong>Doorways:</strong> take 3–4 photos while walking through each doorway so rooms connect.</li>
+        <li><strong>Hold still:</strong> sharp photos matter more than many photos. 60–150 photos suit a typical room.</li>
+        <li><strong>Video instead:</strong> one continuous, slow walk (about 30 cm per second) of 1–3 minutes also works.</li>
+      </ol>
+      <p class="small muted">Measuring tape and printed markers are optional. They only help to set the real-world scale.</p>
+    </details>
+    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Add photos or a video">
+      <p style="margin:0 0 8px"><strong>Drop photos or one video here</strong></p>
+      <p class="small muted" style="margin:0 0 12px">JPEG / PNG photos (up to 60 MB each) or one MP4 / MOV video (up to 4 GB)</p>
+      <button type="button" class="secondary" id="pick">Choose files</button>
+      <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.mp4,.mov,.m4v,.heic,.heif" hidden>
+    </div>
+    <p class="small" id="upload-msg" aria-live="polite"></p>
+    <div class="progress" id="upload-progress" hidden><div></div></div>
+    <details id="files-box"><summary data-f="files-summary">Uploaded files</summary><ul class="list small" id="file-list"></ul></details>
+  </section>
+  <section class="cardbox">
+    <h2>2 · Check the capture</h2>
+    <p class="small muted">Checks sharpness, lighting, duplicates and whether the photos overlap enough before any long processing starts.</p>
+    <button type="button" id="check-btn">Check my capture</button>
+    <div class="progress" id="check-progress" hidden><div></div></div>
+    <p class="small muted" id="check-step"></p>
+    <div id="check-result"></div>
+  </section>
+  <section class="cardbox">
+    <h2>3 · Reconstruct</h2>
+    <div class="grid2">
+      <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="preview" checked>
+        <strong>Preview</strong> – faster, lighter model (1600 px images)<br><span class="small muted" data-f="est-preview"></span></label>
+      <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="standard">
+        <strong>Standard</strong> – best detail (full-resolution photos, two detail levels)<br><span class="small muted" data-f="est-standard"></span></label>
+    </div>
+    <p style="margin-top:12px"><button type="button" id="run-btn" disabled>Start reconstruction</button>
+      <span class="small muted" id="run-msg"></span></p>
+    <ul class="list" id="run-list"></ul>
+  </section>
+  <section class="cardbox">
+    <h2>Space settings</h2>
+    <button type="button" class="danger" id="trash-btn">Move this space to the bin</button>
+    <span class="small muted">Files are moved to projects/_trash, never deleted.</span>
+  </section>
+</template>
+
+<template id="tpl-run">
+  <section>
+    <p class="small"><a data-f="back">← Back to the space</a></p>
+    <h1 data-f="title">Reconstruction</h1>
+    <p class="muted small" data-f="sub"></p>
+  </section>
+  <section class="cardbox">
+    <div class="row"><strong data-f="state">Starting…</strong><span class="spacer" style="flex:1"></span><span class="mono small" data-f="elapsed"></span></div>
+    <div class="progress"><div data-f="bar"></div></div>
+    <p class="small muted" data-f="detail"></p>
+    <div data-f="error"></div>
+    <div class="row" style="gap:8px">
+      <button type="button" class="danger" data-f="cancel">Cancel</button>
+      <button type="button" data-f="resume" hidden>Resume</button>
+    </div>
+    <ul class="stage-list" data-f="stages"></ul>
+    <details><summary>Technical log</summary><pre class="logbox" data-f="log"></pre></details>
+  </section>
+  <section class="cardbox" data-f="result" hidden>
+    <h2>Result</h2>
+    <div data-f="verdict"></div>
+    <dl class="kv" data-f="facts" style="margin:12px 0"></dl>
+    <ul class="warn-list" data-f="warnings"></ul>
+    <p class="row" style="margin-top:14px;flex-wrap:wrap">
+      <a class="btn" data-f="open">Open the 3D walkthrough</a>
+      <button type="button" class="secondary" data-f="publish">Publish / export</button>
+      <a class="btn secondary" data-f="report" target="_blank" rel="noopener">Processing report (JSON)</a>
+    </p>
+    <div data-f="publish-result"></div>
+  </section>
+</template>
+
+<script type="module" src="js/studio.js"></script>
+</body>
+</html>

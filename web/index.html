@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Namma Space Viewer</title>
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<div id="banner" role="note"></div>
+<main id="layout">
+  <div id="stage">
+    <canvas id="view" aria-label="3D view. Drag to look around; W A S D to walk."></canvas>
+    <div id="loading">Loading release...</div>
+    <div id="fatal" hidden role="alert">
+      <h2>Cannot show this release</h2>
+      <p><strong id="fatal-kind"></strong></p>
+      <p id="fatal-message"></p>
+      <p class="hint">Nothing is displayed from a release that fails its integrity or contract checks.</p>
+    </div>
+    <div id="cam" class="dev-only"></div>
+  </div>
+  <aside id="panel">
+    <section>
+      <h1>Namma Space <span class="tag">foundation viewer</span></h1>
+      <p class="small">Release <code id="release-id">-</code></p>
+      <p class="small">Drag on the view to look; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to walk.</p>
+    </section>
+    <section>
+      <form id="search-form" role="search">
+        <label for="search">Find a place or object</label>
+        <div class="row"><input id="search" type="search" autocomplete="off" placeholder="e.g. Meeting Table" disabled><button id="search-btn" type="submit" disabled>Search</button></div>
+      </form>
+      <p id="search-msg" class="small" aria-live="polite"></p>
+      <ul id="results"></ul>
+    </section>
+    <section id="poi-card" hidden>
+      <h2 id="poi-title"></h2>
+      <p id="poi-meta" class="small"></p>
+      <p id="poi-coords" class="small mono dev-only"></p>
+      <div class="row"><button id="jump" type="button">Jump to view</button></div>
+      <label for="from">Route from</label>
+      <div class="row"><select id="from"></select><button id="route" type="button">Request route</button></div>
+      <div id="route-status" data-state="idle" aria-live="polite">
+        <strong id="route-status-title">No route requested</strong>
+        <p id="route-status-detail" class="small"></p>
+      </div>
+    </section>
+    <section class="dev-only">
+      <h2>Development</h2>
+      <label><input id="toggle-axes" type="checkbox"> Site-frame axes and 1 m grid (red +X, green +Y up, blue +Z)</label>
+      <label><input id="toggle-geometry" type="checkbox"> IF-04 footprints (orange = blocking)</label>
+      <label><input id="toggle-collision" type="checkbox" checked> Walking collision</label>
+      <button id="demo-rejected" type="button">Show rejected demo route</button>
+    </section>
+    <section>
+      <h2>Notices</h2>
+      <ul id="notices" class="small"></ul>
+    </section>
+    <section id="selftest" hidden>
+      <h2>Self-test <span id="selftest-summary"></span></h2>
+      <ul id="selftest-results" class="small mono"></ul>
+    </section>
+  </aside>
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

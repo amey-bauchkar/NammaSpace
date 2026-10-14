@@ -1,0 +1,63 @@
+{
+ "contract": "IF-07",
+ "contract_version": "1.1.0",
+ "request_id": "rq-start-a-poi-chair",
+ "planner": {
+  "name": "namma-grid-astar",
+  "version": "1.0.0"
+ },
+ "navlayer_id": "nav-F0-80d667b2e07e-r0.05-a0.25-m0",
+ "geometry_id": "geom-exp010-truth-v1",
+ "plan_ms": 3.025,
+ "status": "route",
+ "polyline_xz_m": [
+  [
+   1.0,
+   1.0
+  ],
+  [
+   1.025,
+   1.025
+  ],
+  [
+   2.575,
+   1.025
+  ],
+  [
+   2.925,
+   1.375
+  ],
+  [
+   3.775,
+   1.375
+  ],
+  [
+   3.825,
+   1.425
+  ],
+  [
+   4.425,
+   1.425
+  ],
+  [
+   4.525,
+   1.525
+  ],
+  [
+   4.5,
+   1.5
+  ]
+ ],
+ "length_m": 3.777817,
+ "goal_used_xz_m": [
+  4.5,
+  1.5
+ ],
+ "goal_snap_m": 0.0,
+ "validation": {
+  "report_id": "vr-rq-start-a-poi-chair",
+  "verdict": "pass"
+ },
+ "display_as_valid": true,
+ "note": "412 expansions; 71 cells; snapped: False"
+}

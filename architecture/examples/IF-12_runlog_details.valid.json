@@ -1,0 +1,18 @@
+{
+ "contract": "IF-12",
+ "contract_version": "1.1.0",
+ "run_id": "run-practice-01",
+ "stage": "S6",
+ "status": "passed",
+ "at": "2026-10-10T12:00:00+05:30",
+ "output_dir": "run/06_routes_v1",
+ "gate": "QG-08",
+ "manual_minutes": 4,
+ "note": "minimum route set validated",
+ "input_dirs": [
+  "run/05_geometry"
+ ],
+ "gate_result": "pass",
+ "manual_intervention": true,
+ "errors": []
+}

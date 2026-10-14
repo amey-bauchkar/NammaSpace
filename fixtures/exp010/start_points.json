@@ -1,0 +1,20 @@
+[
+ {
+  "start_id": "start-a",
+  "label": "Start A - Room A, south-west",
+  "xz_m": [
+   1.0,
+   1.0
+  ],
+  "poi_id": null
+ },
+ {
+  "start_id": "start-b",
+  "label": "Start B - Room B, north-west",
+  "xz_m": [
+   6.6,
+   5.5
+  ],
+  "poi_id": null
+ }
+]

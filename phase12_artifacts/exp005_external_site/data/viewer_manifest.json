@@ -1,0 +1,230 @@
+{
+ "contract": "IF-10",
+ "contract_version": "1.1.0",
+ "release_id": "bld-eth3d-kicker-external",
+ "site_frame": {
+  "frame_id": "site-eth3d-kicker",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "EXTERNAL DATASET: origin = centroid of laser-scan floor points; +Y = laser floor-plane normal (towards cameras); +X = first principal axis of floor points (protocol §4)"
+ },
+ "scene": "scene/scene.if03.json",
+ "geometry": "geometry/geometry.if04.json",
+ "navlayers": [
+  "nav/navlayer.if05.json"
+ ],
+ "pois": "poi/pois.json",
+ "routes_precomputed": [
+  "routes/rq-ext-00.result.json",
+  "routes/rq-ext-01.result.json",
+  "routes/rq-ext-02.result.json",
+  "routes/rq-ext-03.result.json",
+  "routes/rq-ext-04.result.json",
+  "routes/rq-ext-05.result.json",
+  "routes/rq-ext-06.result.json",
+  "routes/rq-ext-07.result.json",
+  "routes/rq-ext-08.result.json",
+  "routes/rq-ext-09.result.json",
+  "routes/rq-ext-10.result.json",
+  "routes/rq-ext-11.result.json"
+ ],
+ "route_requests": [
+  "routes/rq-ext-00.request.json",
+  "routes/rq-ext-01.request.json",
+  "routes/rq-ext-02.request.json",
+  "routes/rq-ext-03.request.json",
+  "routes/rq-ext-04.request.json",
+  "routes/rq-ext-05.request.json",
+  "routes/rq-ext-06.request.json",
+  "routes/rq-ext-07.request.json",
+  "routes/rq-ext-08.request.json",
+  "routes/rq-ext-09.request.json",
+  "routes/rq-ext-10.request.json",
+  "routes/rq-ext-11.request.json"
+ ],
+ "route_reports": [
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null
+ ],
+ "renderer_hint": "three.js 0.186.1 (provisional, ARCH-009); appearance = textured_mesh test asset",
+ "files": [
+  {
+   "path": "geometry/geometry.if04.json",
+   "sha256": "46d64ca7c1c8922334d674027aa1bcc59abb56076b8d5a30838b38b9f9a5ae5b",
+   "bytes": 218606
+  },
+  {
+   "path": "geometry/geometry_check.json",
+   "sha256": "87f1a0193968c3e72c148373faec20a86b308057edc4ffd1d2bfc4e358a35036",
+   "bytes": 11443
+  },
+  {
+   "path": "nav/navlayer.if05.json",
+   "sha256": "a0a4eb57e66fe8634fa668f9ff5328965ed23fccfcda1c526d104d0cf94224ff",
+   "bytes": 8107
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+   "bytes": 3
+  },
+  {
+   "path": "routes/rq-ext-00.request.json",
+   "sha256": "3e681d3a68cb033451e84dc91ecb24301bb45d47d26b0d152804afac2ceb45f0",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-00.result.json",
+   "sha256": "3beff728c8b7f3bd5960e3422fade8d71748258df1af8b9e7c94ee393b5e0183",
+   "bytes": 413
+  },
+  {
+   "path": "routes/rq-ext-01.request.json",
+   "sha256": "c702c5e87b42b0792007e41b927153865ccc4ccafab04e755ffa9b2b4c6aa4c1",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-01.result.json",
+   "sha256": "6fa9fe6f2495cf24d52ebe413e8037d6fe86cccc36411a8c3a097446d7cb31fd",
+   "bytes": 411
+  },
+  {
+   "path": "routes/rq-ext-02.request.json",
+   "sha256": "6af93679f6338703071cf339232e67cd38c695a2c24b48ed5e60a65a4c357839",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-02.result.json",
+   "sha256": "b5bcee0db1aabd9fbc5119d0913b15fdc4406b9e1fa93b06a55b0bfb9724d4fd",
+   "bytes": 411
+  },
+  {
+   "path": "routes/rq-ext-03.request.json",
+   "sha256": "ff024e1dc63bb0ddbadd25bb4bbf75f874453ec58239aa6b2e636c9ee35f635b",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-03.result.json",
+   "sha256": "c7138df605f1aa6a86312e707f0c33d24ecd3537543f6edbbf6a81d803d015f8",
+   "bytes": 413
+  },
+  {
+   "path": "routes/rq-ext-04.request.json",
+   "sha256": "008f6f58d8332616f7e4252e750993deedd624d3c7d56ed78f4ee1c7c024b94a",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-04.result.json",
+   "sha256": "b8152d9cdfbdc6e97233035ccffcbd90fdb5e7e25fd83ab21c832c71bc914b48",
+   "bytes": 413
+  },
+  {
+   "path": "routes/rq-ext-05.request.json",
+   "sha256": "2a50b257c4722d77401b489591d99402092aa8449f46387e74ba95fc8c185822",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-05.result.json",
+   "sha256": "fdfa93b4e3623bd51f5251afec6ca97974c188498ed6f43ab0cf3b7b2546838b",
+   "bytes": 413
+  },
+  {
+   "path": "routes/rq-ext-06.request.json",
+   "sha256": "733540e3f57f2cfd764b1d02bf5c9afbe8ce39b7845f3859f606db8582c6df88",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-06.result.json",
+   "sha256": "b500b1b0e5db0d33d0b16a9990b57d5cc1bdd2bd40f6df1177f7ddb71b9b8f14",
+   "bytes": 411
+  },
+  {
+   "path": "routes/rq-ext-07.request.json",
+   "sha256": "831cb9b23afeac348c5fe55b70e97699f8888e331f0bed86c4b0d933ef2a50a0",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-07.result.json",
+   "sha256": "c3658850ae13c0466ff1d62e1fcb52e2dc6e02e61ce9a0291412e1a62d76ed16",
+   "bytes": 411
+  },
+  {
+   "path": "routes/rq-ext-08.request.json",
+   "sha256": "128b5d986d83a9aef79527833e847f68c959424f53e807b12271cf571eedd9cc",
+   "bytes": 251
+  },
+  {
+   "path": "routes/rq-ext-08.result.json",
+   "sha256": "f3a9928c05acd4a1b914c51a2b115deb08cea7e4d9b8289bf2932e175bc97989",
+   "bytes": 412
+  },
+  {
+   "path": "routes/rq-ext-09.request.json",
+   "sha256": "1e826b0a523a106ac647ec8d22fc586d04cd586a067b764e0d40c0cdc5b50d59",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-09.result.json",
+   "sha256": "d12173a3e9613d28ffd23b7b4727a8cf19356ee886e612a183fc1f56091733f0",
+   "bytes": 411
+  },
+  {
+   "path": "routes/rq-ext-10.request.json",
+   "sha256": "038e2d33ec33e8f35192b4e65b32cdeab1d3f3e8a4d4ccd3e4876f3c7015af1d",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-10.result.json",
+   "sha256": "ca992926d12b90b304bcce75ec913ffc6a8bacdf1c5b1f6f32b683c53a84d798",
+   "bytes": 413
+  },
+  {
+   "path": "routes/rq-ext-11.request.json",
+   "sha256": "cbbb6cf90281d7b55d01c6b20afc2f5bc22edb2cb95ee205be632e9f2dbd1745",
+   "bytes": 252
+  },
+  {
+   "path": "routes/rq-ext-11.result.json",
+   "sha256": "92fcbbbe163db47e3e26983f4fc1ba7aa0d6d94f08bf36f2e604860709ba01af",
+   "bytes": 413
+  },
+  {
+   "path": "scene/scene.glb",
+   "sha256": "fa6d3d16508a84c08c3db4f39f0ba41869c67a513f61f0464d2234f6e933f594",
+   "bytes": 86603688
+  },
+  {
+   "path": "scene/scene.if03.json",
+   "sha256": "6c8945662e2dad9825296815a87b790150838f650a1ebd048401b2136be6bf35",
+   "bytes": 1704
+  }
+ ],
+ "start_points": [
+  {
+   "start_id": "start-ext",
+   "label": "Start (external dataset)",
+   "xz_m": [
+    -2.025,
+    -0.075
+   ],
+   "poi_id": null
+  }
+ ],
+ "notices": [
+  "EXTERNAL DATASET: ETH3D 'kicker' (Schops et al., CVPR 2017), CC BY-NC-SA 4.0 - non-commercial, local use. NOT captured with the team's iPhone; NOT the Round 3 venue.",
+  "Appearance = OpenMVS textured mesh reconstructed on CPU from 30 of 31 DSLR photos (EXP-014/015).",
+  "Navigation geometry = automatic extraction from the reconstruction (EXP-016); routes are shown as valid only if the geometry is accepted and the independent validator passes.",
+  "No Gaussian splat; frame times measured only with ?bench=1 in a visible window."
+ ]
+}

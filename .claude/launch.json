@@ -1,0 +1,135 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "namma-public",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "public",
+        "--port",
+        "8765"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "namma-dist",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "dist",
+        "--port",
+        "8766",
+        "--record",
+        "phase12_artifacts/exp005_browser"
+      ],
+      "port": 8766
+    },
+    {
+      "name": "namma-external",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "phase12_artifacts/exp005_external_site",
+        "--port",
+        "8767",
+        "--record",
+        "phase12_artifacts/exp005_browser"
+      ],
+      "port": 8767
+    },
+    {
+      "name": "namma-studio",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/start_studio.py",
+        "--port",
+        "8780",
+        "--projects",
+        "projects",
+        "--record",
+        "test_output/phase13/bench"
+      ],
+      "port": 8780
+    },
+    {
+      "name": "namma-studio-eval",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/start_studio.py",
+        "--port",
+        "8781",
+        "--projects",
+        "phase13_artifacts/projects",
+        "--record",
+        "phase13_artifacts/browser/bench"
+      ],
+      "port": 8781
+    },
+    {
+      "name": "namma-tum-published",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "phase13_artifacts/projects/tum-office-sample-final-20261012-dcf3c6/published/run-20261012-000312-03f1",
+        "--port",
+        "8790"
+      ],
+      "port": 8790
+    },
+    {
+      "name": "namma-tum-corrupt",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "test_output/phase13/published_tum_final_corrupt",
+        "--port",
+        "8791"
+      ],
+      "port": 8791
+    },
+    {
+      "name": "namma-studio-qa",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/start_studio.py",
+        "--port",
+        "8782",
+        "--projects",
+        "precapture_qa/projects",
+        "--record",
+        "precapture_qa/browser/bench"
+      ],
+      "port": 8782
+    },
+    {
+      "name": "namma-qa-published",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "precapture_qa/projects/qa-04-eth3d-office-ui-20261014-4f1551/published/run-20261014-022618-3245",
+        "--port",
+        "8793"
+      ],
+      "port": 8793
+    },
+    {
+      "name": "namma-qa-corrupt",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/serve.py",
+        "--dir",
+        "precapture_qa/projects/qa_corrupt_copy",
+        "--port",
+        "8794"
+      ],
+      "port": 8794
+    }
+  ]
+}

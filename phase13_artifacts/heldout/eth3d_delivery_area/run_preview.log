@@ -1,0 +1,18 @@
+run run-20261011-200044-2d2d profile preview config 5a27a14ec0a1
+  prepare    done      58.8
+  sfm        done      280.8
+  undistort  done      2.1
+  dense      done      1129.7
+  mesh       done      149.9
+  texture    done      79.2
+  frame      done      4.7
+  quality    done      0.5
+  navgeom    done      8.7
+  package    done      0.4
+{
+ "run_id": "run-20261011-200044-2d2d",
+ "status": "succeeded",
+ "error": null
+}
+
+--- stderr ---

@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\eval\mesh_memory_ab.py", line 86, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\eval\mesh_memory_ab.py", line 58, in main
+    rec = run_step(f"ab_reconstruct_mesh_d{d:g}_f{faces}", argv, work, timeout_s=5400, cwd=work)
+  File "C:\Users\SEBIN\Desktop\NammaSpace\src\namma\recon\runner.py", line 141, in run_step
+    raise StepFailed(rec, msg)
+namma.recon.runner.StepFailed: ab_reconstruct_mesh_d1.5_f0 failed with exit code 3221226505

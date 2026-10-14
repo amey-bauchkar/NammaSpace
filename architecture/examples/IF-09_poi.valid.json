@@ -1,0 +1,47 @@
+{
+ "contract": "IF-09",
+ "contract_version": "1.0.0",
+ "poi_id": "poi-meeting-table",
+ "display_name": "Meeting Table",
+ "aliases": [
+  "conference table"
+ ],
+ "kind": "item",
+ "category": "furniture",
+ "room_poi_id": "poi-room-a",
+ "marker_site_m": [
+  2.8,
+  0.75,
+  2.4
+ ],
+ "frame_id": "site-practice-01",
+ "route_endpoint_xz_m": [
+  2.8,
+  1.75
+ ],
+ "endpoint_reachable": true,
+ "view": {
+  "position_site_m": [
+   2.8,
+   1.6,
+   0.8
+  ],
+  "target_site_m": [
+   2.8,
+   0.75,
+   2.4
+  ]
+ },
+ "label_source": "human",
+ "verification": {
+  "status": "verified",
+  "by_role": "NAV",
+  "at": "2026-10-10T12:00:00+05:30"
+ },
+ "provenance": {
+  "origin": "human_authored",
+  "method": "placed in viewer",
+  "author_role": "NAV",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

@@ -1,0 +1,65 @@
+{
+ "description": "Python reference values for web/tests/hash.test.js (namma.contracts.binding). Inputs are quantised to 1e-6 m, as the contract requires.",
+ "vectors": [
+  {
+   "polyline": [
+    [
+     1.0,
+     1.0
+    ],
+    [
+     1.025,
+     1.025
+    ],
+    [
+     2.775,
+     1.675
+    ]
+   ],
+   "canonical": "1.000000,1.000000;1.025000,1.025000;2.775000,1.675000",
+   "sha256": "762d1a54800b5bc0face7b98c440d14cb298c7d3a58b5a977349769c146f005f"
+  },
+  {
+   "polyline": [
+    [
+     0.0,
+     -0.0
+    ],
+    [
+     -1.5,
+     2.25
+    ]
+   ],
+   "canonical": "0.000000,0.000000;-1.500000,2.250000",
+   "sha256": "7beb5ed10a23210fc30cd5dd566c79ba96325aa87408f6712cf6cedcf6568415"
+  },
+  {
+   "polyline": [
+    [
+     0.007812,
+     3.000001
+    ],
+    [
+     12.0,
+     5.999999
+    ]
+   ],
+   "canonical": "0.007812,3.000001;12.000000,5.999999",
+   "sha256": "930d87463123911f3d9d96c65fd26abd960bf7c1f45ecf02ea6f25d1f9147964"
+  },
+  {
+   "polyline": [
+    [
+     123.456789,
+     -1e-06
+    ],
+    [
+     0.1,
+     0.2
+    ]
+   ],
+   "canonical": "123.456789,-0.000001;0.100000,0.200000",
+   "sha256": "c4e12b189e2c42b49af4289b133078bf3c4420ecd5d902207f2da26b373906b9"
+  }
+ ]
+}

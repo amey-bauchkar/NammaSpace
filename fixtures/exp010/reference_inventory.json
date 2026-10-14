@@ -1,0 +1,494 @@
+{
+ "reference_type": "obstacle_inventory_v1",
+ "reference_id": "ref-exp010-truth-v1",
+ "frame_id": "site-synthetic-exp010",
+ "source": "synthetic_truth",
+ "obstacles": [
+  {
+   "ref_id": "outer_S",
+   "kind": "wall",
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     12.0,
+     0
+    ],
+    [
+     12.0,
+     0.1
+    ],
+    [
+     0,
+     0.1
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "outer_N",
+   "kind": "wall",
+   "footprint": [
+    [
+     0,
+     5.9
+    ],
+    [
+     12.0,
+     5.9
+    ],
+    [
+     12.0,
+     6.0
+    ],
+    [
+     0,
+     6.0
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "outer_W",
+   "kind": "wall",
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     0.1,
+     0
+    ],
+    [
+     0.1,
+     6.0
+    ],
+    [
+     0,
+     6.0
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "outer_E",
+   "kind": "wall",
+   "footprint": [
+    [
+     11.9,
+     0
+    ],
+    [
+     12.0,
+     0
+    ],
+    [
+     12.0,
+     6.0
+    ],
+    [
+     11.9,
+     6.0
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "divider_0",
+   "kind": "wall",
+   "footprint": [
+    [
+     5.95,
+     0.0
+    ],
+    [
+     6.05,
+     0.0
+    ],
+    [
+     6.05,
+     2.5
+    ],
+    [
+     5.95,
+     2.5
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "divider_1",
+   "kind": "wall",
+   "footprint": [
+    [
+     5.95,
+     3.4000000000000004
+    ],
+    [
+     6.05,
+     3.4000000000000004
+    ],
+    [
+     6.05,
+     6.0
+    ],
+    [
+     5.95,
+     6.0
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "table",
+   "kind": "furniture",
+   "footprint": [
+    [
+     2.0,
+     2.0
+    ],
+    [
+     3.6,
+     2.0
+    ],
+    [
+     3.6,
+     2.8
+    ],
+    [
+     2.0,
+     2.8
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "sofa",
+   "kind": "furniture",
+   "footprint": [
+    [
+     0.5,
+     4.5
+    ],
+    [
+     2.5,
+     4.5
+    ],
+    [
+     2.5,
+     5.4
+    ],
+    [
+     0.5,
+     5.4
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "cabinet_1",
+   "kind": "furniture",
+   "footprint": [
+    [
+     7.2,
+     3.6
+    ],
+    [
+     8.0,
+     3.6
+    ],
+    [
+     8.0,
+     5.9
+    ],
+    [
+     7.2,
+     5.9
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "cabinet_2",
+   "kind": "furniture",
+   "footprint": [
+    [
+     8.7,
+     3.6
+    ],
+    [
+     9.5,
+     3.6
+    ],
+    [
+     9.5,
+     5.9
+    ],
+    [
+     8.7,
+     5.9
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "cabinet_back",
+   "kind": "furniture",
+   "footprint": [
+    [
+     7.2,
+     5.4
+    ],
+    [
+     9.5,
+     5.4
+    ],
+    [
+     9.5,
+     5.9
+    ],
+    [
+     7.2,
+     5.9
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "closed_room_S",
+   "kind": "wall",
+   "footprint": [
+    [
+     9.5,
+     0.5
+    ],
+    [
+     11.5,
+     0.5
+    ],
+    [
+     11.5,
+     0.6
+    ],
+    [
+     9.5,
+     0.6
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "closed_room_N",
+   "kind": "wall",
+   "footprint": [
+    [
+     9.5,
+     1.9
+    ],
+    [
+     11.5,
+     1.9
+    ],
+    [
+     11.5,
+     2.0
+    ],
+    [
+     9.5,
+     2.0
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "closed_room_W",
+   "kind": "wall",
+   "footprint": [
+    [
+     9.5,
+     0.6
+    ],
+    [
+     9.6,
+     0.6
+    ],
+    [
+     9.6,
+     1.9
+    ],
+    [
+     9.5,
+     1.9
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "closed_room_E",
+   "kind": "wall",
+   "footprint": [
+    [
+     11.4,
+     0.6
+    ],
+    [
+     11.5,
+     0.6
+    ],
+    [
+     11.5,
+     1.9
+    ],
+    [
+     11.4,
+     1.9
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": true
+  },
+  {
+   "ref_id": "overhead_duct",
+   "kind": "other",
+   "footprint": [
+    [
+     4.0,
+     3.0
+    ],
+    [
+     5.0,
+     3.0
+    ],
+    [
+     5.0,
+     3.3
+    ],
+    [
+     4.0,
+     3.3
+    ]
+   ],
+   "tolerance_m": 0.1,
+   "major": false
+  }
+ ],
+ "doorways": [
+  {
+   "ref_id": "D1",
+   "tape_width_m": 0.9,
+   "required": true
+  }
+ ],
+ "required_points": [
+  {
+   "id": "room-a-sw",
+   "xz_m": [
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "room-a-n",
+   "xz_m": [
+    1.0,
+    4.0
+   ]
+  },
+  {
+   "id": "room-b",
+   "xz_m": [
+    9.0,
+    3.0
+   ]
+  },
+  {
+   "id": "alcove",
+   "xz_m": [
+    8.35,
+    5.0
+   ]
+  }
+ ],
+ "walk_pairs": [
+  {
+   "id": "S1",
+   "start": [
+    1.0,
+    1.0
+   ],
+   "goal": [
+    4.5,
+    1.2
+   ]
+  },
+  {
+   "id": "S2",
+   "start": [
+    2.0,
+    3.6
+   ],
+   "goal": [
+    9.0,
+    3.0
+   ]
+  },
+  {
+   "id": "S3",
+   "start": [
+    1.5,
+    2.4
+   ],
+   "goal": [
+    4.2,
+    2.4
+   ]
+  },
+  {
+   "id": "S4",
+   "start": [
+    5.5,
+    1.0
+   ],
+   "goal": [
+    6.6,
+    5.5
+   ]
+  },
+  {
+   "id": "S5",
+   "start": [
+    8.35,
+    3.0
+   ],
+   "goal": [
+    8.35,
+    5.2
+   ]
+  }
+ ],
+ "provenance": {
+  "origin": "synthetic_fixture",
+  "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+  "tool": "namma.fixtures.exp010",
+  "tool_version": "1.0.0",
+  "author_role": "SCRIPT",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "base": "http://127.0.0.1:8782",
+ "inputs": "external_data\\eth3d_office\\extracted\\office\\images\\dslr_images",
+ "files": 26,
+ "steps": [
+  {
+   "step": "1 create project via the form",
+   "pass": true,
+   "detail": "qa-04-eth3d-office-ui-20261014-9d0a47; notices ['Photos: ETH3D office, Schops et al. CVPR 2017, CC BY-NC-SA 4.0 - local evaluation only, not for publication']",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\01_project_created.png",
+   "at": "01:49:10"
+  },
+  {
+   "step": "2 upload through the file input",
+   "pass": true,
+   "detail": "26 files uploaded. Next: check the capture.",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\02_uploaded.png",
+   "at": "01:49:11"
+  },
+  {
+   "step": "3 capture check",
+   "pass": false,
+   "detail": "The check could not run: PermissionError: [WinError 5] Access is denied: 'C:\\\\Users\\\\SEBIN\\\\Desktop\\\\NammaSpace\\\\precapture_qa\\\\projects\\\\qa-04-eth3d-office-ui-20261014-9d0a47\\\\capture\\\\.ingest_status",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\03_checked.png",
+   "at": "01:49:13"
+  }
+ ],
+ "profile": "preview",
+ "project_id": "qa-04-eth3d-office-ui-20261014-9d0a47",
+ "passed": false
+}

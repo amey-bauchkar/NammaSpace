@@ -1,0 +1,17 @@
+  PASS 1 create project via the form: qa-04-eth3d-office-ui-20261014-7140d6; notices ['Photos: ETH3D office, Schops et al. CVPR 2017, CC BY-NC-SA 4.0 - local evaluation only, not for publication']
+  PASS 2 upload through the file input: 26 files uploaded. Next: check the capture.
+  PASS 3 capture check: Ready to reconstruct: 26 photos accepted, 4 things to be aware of.
+  PASS 4 start reconstruction: run-20261014-015035-ccbd
+    progress: Starting
+    progress: Preparing photos
+    progress: Placing cameras (structure from motion)
+Traceback (most recent call last):
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\browser\studio_e2e.py", line 157, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\browser\studio_e2e.py", line 115, in main
+    c.wait_for(f"{q('[data-f=resume]')}.hidden", timeout=120)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\browser\cdp.py", line 157, in wait_for
+    raise CDPError(f"timeout waiting for: {expr}")
+cdp.CDPError: timeout waiting for: document.querySelector("[data-f=resume]").hidden

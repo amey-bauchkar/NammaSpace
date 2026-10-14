@@ -1,0 +1,43 @@
+# Namma Space - keep datasets, tools, generated runs and personal captures OUT of version control.
+
+# downloaded public datasets (licences restrict redistribution; see datasets/registry.json)
+external_data/
+
+# third-party binaries (installed by scripts/setup_tools.py; OpenMVS is AGPL-3.0)
+tools/
+
+# Studio projects: personal photos / videos and their reconstructions
+projects/
+
+# evaluation runs and large generated artifacts (summaries are kept under docs/ and phase13_artifacts/results/)
+phase13_artifacts/projects/
+phase13_artifacts/browser/**/*.png
+phase12_artifacts/exp015_openmvs_kicker_run1/
+phase12_artifacts/exp014_colmap_kicker_run*/database.db*
+runs/
+dist/
+releases/
+test_output/
+
+# Python / Node / editor
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.vscode/
+.idea/
+*.part
+*.log.tmp
+TextureMesh-*.log
+DensifyPointCloud-*.log
+ReconstructMesh-*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# pre-capture QA: derived dataset images and QA reconstructions (ETH3D licence: local only)
+precapture_qa/inputs/
+precapture_qa/projects/
+precapture_qa/**/*.png

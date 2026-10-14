@@ -1,0 +1,66 @@
+{
+ "contract": "IF-03",
+ "contract_version": "1.0.0",
+ "scene_id": "scene-1",
+ "run_id": "run-practice-01",
+ "representation": "gaussian_splat",
+ "assets": [
+  {
+   "path": "scene/lod0.spz",
+   "format": "spz",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 20000000,
+   "lod_level": 0,
+   "gaussian_count": 300000
+  }
+ ],
+ "to_site": {
+  "matrix_row_major": [
+   -1,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "source": "manual_alignment",
+  "method": "mirror (invalid)",
+  "residual_m": null
+ },
+ "site_frame": {
+  "frame_id": "site-practice-01",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "Tape mark on floor at SW inner corner of Room A; +X along south wall"
+ },
+ "bounds_site": {
+  "min": [
+   0,
+   0,
+   0
+  ],
+  "max": [
+   12,
+   3,
+   6
+  ]
+ },
+ "is_test_asset": true,
+ "provenance": {
+  "origin": "external",
+  "method": "public sample asset used only for viewer testing",
+  "author_role": "WEB",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

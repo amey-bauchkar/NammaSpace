@@ -1,0 +1,16 @@
+{
+ "contract": "IF-02",
+ "contract_version": "1.0.0",
+ "job_id": "job-2",
+ "run_id": "run-practice-01",
+ "adapter": {
+  "name": "fixture-adapter",
+  "version": "0.1",
+  "concept": "test-fixture"
+ },
+ "inputs": [
+  "raw/R01_1012.mp4"
+ ],
+ "timebox_s": 1800,
+ "status": "succeeded"
+}

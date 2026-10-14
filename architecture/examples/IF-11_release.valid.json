@@ -1,0 +1,25 @@
+{
+ "contract": "IF-11",
+ "contract_version": "1.0.0",
+ "release_id": "rel-1",
+ "git_tag": "r3-2026-12-16-1",
+ "git_commit": "abc1234",
+ "built_at": "2026-10-10T12:00:00+05:30",
+ "artifacts": [
+  {
+   "path": "dist/index.html",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 2048
+  }
+ ],
+ "regression": {
+  "passed": true,
+  "suite_version": "1.0",
+  "failures": []
+ },
+ "deploy_targets": [
+  "static-host-A",
+  "static-host-B"
+ ],
+ "previous_release_id": null
+}

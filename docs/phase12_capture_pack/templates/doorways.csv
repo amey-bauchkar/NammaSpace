@@ -1,0 +1,2 @@
+doorway_id,side_a_point_id,side_b_point_id,tape_width_m,required,leads_to,notes
+door_1,P20,P21,,yes,corridor,

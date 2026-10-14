@@ -1,0 +1,18 @@
+run run-20261011-191403-d6a7 profile preview config 5a27a14ec0a1
+  prepare    done      10.5
+  sfm        done      28.8
+  undistort  done      0.8
+  dense      done      367.3
+  mesh       done      18.0
+  texture    done      21.3
+  frame      done      0.9
+  quality    done      0.1
+  navgeom    done      0.0
+  package    done      0.3
+{
+ "run_id": "run-20261011-191403-d6a7",
+ "status": "succeeded",
+ "error": null
+}
+
+--- stderr ---

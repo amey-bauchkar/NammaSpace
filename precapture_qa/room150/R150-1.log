@@ -1,0 +1,44 @@
+  PASS 1 create project via the form: r150-mip-nerf-360-room-150-photos-20261014-d93fbf; notices ['Photos: Mip-NeRF 360 room (Barron et al., CVPR 2022); no licence stated - local evaluation only, do not publish']
+  PASS 2 upload through the file input: 150 files uploaded. Next: check the capture.
+  PASS 3 capture check: Ready to reconstruct: 150 photos accepted.
+  PASS 4 start reconstruction: run-20261014-214938-5abd
+    progress: Starting
+    progress: Preparing photos
+    progress: Placing cameras (structure from motion)
+    progress: Building dense 3D geometry
+    progress: Building the surface mesh
+    progress: Painting photo textures onto the mesh
+    progress: Finding the floor and orientation
+    progress: Extracting walkable floor (unverified)
+    progress: Finished
+  PASS 5 reconstruction finished in the UI: Result
+Quality: Good
+Photos placed
+150 of 150 (100%)
+3D surface
+1.50 million triangles
+Dense points
+3,611,882
+Floor reconstructed
+61% of the floor area
+Real-world scale
+unknown (set it in the viewer with a known length)
+Processing time
+84 min 6 s
+Peak memory
+3.4 GB
+Navigation
+automatic floor map (unverified)
+Real-world size is unknown: photos alone do not fix scale. The model is shown in its own u
+  PASS V-01 package verified and model displayed: phase ready, 1496252 triangles, LOD 0, timing {'package_ms': 103, 'first_lod_downloaded_ms': 315, 'first_view_ms': 1303}
+  PASS V-02 starts at eye height: y 3.345 eye 3.345
+  PASS V-03 mouse drag turns the view: yaw 1.787 -> 1.259
+  PASS V-04 W key walks forward: moved 2.703 units (0.81 eye heights)
+  PASS V-05 F switches to fly mode and E rises: mode fly, dy 2.595
+  PASS V-06 R resets to the start view in walk mode: mode walk, distance to start 0.0000
+  PASS V-07 ] jumps to a photo viewpoint: moved to [3.95, 3.312, 1.684]
+  PASS V-08 no uncaught exceptions: none
+  FAIL V-09 no console errors: [{'type': 'log.error', 'text': 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)', 'url': 'http://127.0.0.1:8782/api/projects/r150-mip-nerf-360-room-150-photos-20261014-d93fbf/runs/run-20261014-214938-5abd'}]
+  PASS V-10 in-page self-test: 10/10
+  bench: valid=True median=16.7 p95=16.8 LOD 0 gpu=ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  FAIL 6 open the walkthrough and drive it: 9/10 viewer checks; GPU ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)

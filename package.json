@@ -1,0 +1,12 @@
+{
+  "name": "namma-space-foundation",
+  "version": "0.11.0",
+  "private": true,
+  "description": "Namma Space Track A foundation viewer (Phase 11 synthetic vertical slice). No npm install is required: three.js 0.186.1 is vendored in web/vendor/three (see VENDOR.md).",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test:web": "node --test web/tests/*.test.js"
+  },
+  "vendored": { "three": "0.186.1" }
+}

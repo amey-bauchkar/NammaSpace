@@ -1,0 +1,32 @@
+{
+ "description": "Hand-written POI search expectations for the EXP-010 synthetic POIs (src/namma/fixtures/exp010.py). Shared by tests/test_m03_poi.py (Python) and web/tests/search.test.js (JavaScript) to keep both implementations in parity. Cases marked exp012 reproduce the Phase 8 EXP-012 queries.",
+ "cases": [
+  {"query": "reception", "status": "unique", "poi_ids": ["poi-reception-desk"], "exp012": true},
+  {"query": "meeting table", "status": "unique", "poi_ids": ["poi-meeting-table"], "exp012": true},
+  {"query": "sofa", "status": "unique", "poi_ids": ["poi-sofa"], "exp012": true},
+  {"query": "room b", "status": "unique", "poi_ids": ["poi-room-b"], "exp012": true},
+  {"query": "storage", "status": "unique", "poi_ids": ["poi-storage-alcove"], "exp012": true},
+  {"query": "server room", "status": "unique", "poi_ids": ["poi-server-room"], "exp012": true},
+  {"query": "chair", "status": "ambiguous", "poi_ids": ["poi-chair", "poi-chair-2"], "exp012": true},
+  {"query": "recepton", "status": "unique", "poi_ids": ["poi-reception-desk"], "exp012": true, "note": "typo missed by EXP-012 full-name matching"},
+  {"query": "whiteboard", "status": "not_found", "poi_ids": [], "exp012": true},
+  {"query": "MEETING TABLE", "status": "unique", "poi_ids": ["poi-meeting-table"]},
+  {"query": "  Meeting   Table! ", "status": "unique", "poi_ids": ["poi-meeting-table"]},
+  {"query": "conference table", "status": "unique", "poi_ids": ["poi-meeting-table"], "note": "alias"},
+  {"query": "couch", "status": "unique", "poi_ids": ["poi-sofa"], "note": "alias"},
+  {"query": "meetng table", "status": "unique", "poi_ids": ["poi-meeting-table"], "note": "typo (deletion)"},
+  {"query": "chiar", "status": "ambiguous", "poi_ids": ["poi-chair", "poi-chair-2"], "note": "typo (transposition)"},
+  {"query": "sofaa", "status": "unique", "poi_ids": ["poi-sofa"], "note": "typo (insertion)"},
+  {"query": "tab", "status": "unique", "poi_ids": ["poi-meeting-table"], "note": "prefix"},
+  {"query": "stor", "status": "unique", "poi_ids": ["poi-storage-alcove"], "note": "prefix"},
+  {"query": "room", "status": "ambiguous", "poi_ids": ["poi-room-a", "poi-room-b", "poi-server-room"]},
+  {"query": "ಮೇಜು", "status": "unique", "poi_ids": ["poi-meeting-table"], "note": "non-Latin alias token"},
+  {"query": "projector", "status": "not_found", "poi_ids": [], "note": "unverified POI is excluded by default"},
+  {"query": "projector", "include_unverified": true, "status": "unique", "poi_ids": ["poi-projector-screen"]},
+  {"query": "", "status": "empty_query", "poi_ids": []},
+  {"query": "   ", "status": "empty_query", "poi_ids": []},
+  {"query": "!!!", "status": "empty_query", "poi_ids": []},
+  {"query": "xyz", "status": "not_found", "poi_ids": []},
+  {"query": "ab", "status": "not_found", "poi_ids": [], "note": "2-character token: no prefix or fuzzy matching"}
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "experiment": "EXP-005 (attempt)",
+ "date": "2026-10-10",
+ "page": "https://sparkjs.dev/examples/hello-world/index.html (public Spark example)",
+ "browser": "Claude desktop app built-in browser pane (Chromium-based); pane HIDDEN during the test",
+ "webgl2_renderer": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "canvas": "1280x720",
+ "load_event_ms": 1149,
+ "large_resources_kb": {"spark.module.js": 925, "three.core.js": 278, "three.module.js": 118},
+ "requestAnimationFrame_frames_in_3s": 0,
+ "attempt_1": "10 s frame-time sampling script timed out after 45 s (no frames delivered)",
+ "interpretation": "Frame callbacks were not delivered while the pane was hidden, so no frame-time measurement exists. The splat asset itself did not appear in the resource list (rendering likely never started).",
+ "status": "BLOCKED - ENVIRONMENT"
+}

@@ -1,0 +1,2 @@
+run run-20261014-232547-b604 override ['sift.max_features=3000']
+{"run_id": "run-20261014-232547-b604", "status": "succeeded", "error": null, "stages": [["prepare", "done", 19.4], ["sfm", "done", 952.4], ["undistort", "pending", null], ["dense", "pending", null], ["mesh", "pending", null], ["texture", "pending", null], ["frame", "pending", null], ["quality", "pending", null], ["navgeom", "pending", null], ["package", "pending", null]]}

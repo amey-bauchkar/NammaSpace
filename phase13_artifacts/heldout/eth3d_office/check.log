@@ -1,0 +1,45 @@
+  Checking photos: 0%
+  Checking photos: 19%
+  Checking photos: 38%
+  Checking photos: 58%
+  Checking photos: 77%
+  Checking photos: 96%
+  Measuring sharpness, exposure and detail: 0%
+  Measuring sharpness, exposure and detail: 19%
+  Measuring sharpness, exposure and detail: 38%
+  Measuring sharpness, exposure and detail: 58%
+  Measuring sharpness, exposure and detail: 77%
+  Measuring sharpness, exposure and detail: 96%
+  Checking that photos overlap: 0%
+{
+ "status": "ready",
+ "mode": "photos",
+ "stats": {
+  "mode": "photos",
+  "files_uploaded": 26,
+  "inputs_accepted": 26,
+  "flags": {
+   "sharpness_median": 103.6,
+   "blur_threshold": 36.3
+  },
+  "blurry": 5,
+  "too_dark": 0,
+  "too_bright": 0,
+  "low_detail": 5,
+  "near_duplicate_pairs": 0,
+  "overlap": {
+   "pairs_tested": 194,
+   "verified_pairs": 17,
+   "isolated": 11,
+   "groups": 3,
+   "largest_group": 11
+  }
+ },
+ "seconds": 11.3
+}
+  [warning] CAP-FEW: 26 photos is few for a whole room; 40-150 work better.
+  [warning] CAP-BLUR: 5 of 26 images look blurry. Move slowly, hold the phone steady and use good light.
+  [warning] CAP-ISOLATED: 11 images do not visibly overlap any other image and will probably not be placed.
+  [warning] CAP-GROUPS: The images form 3 separate groups that do not overlap. Walk between areas while capturing so they connect.
+
+--- stderr ---

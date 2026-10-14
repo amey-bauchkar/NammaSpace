@@ -1,0 +1,18 @@
+run run-20261011-192236-5e71 profile standard config e109a60896c2
+  prepare    done      0.2
+  sfm        done      314.6
+  undistort  done      28.3
+  dense      done      1346.1
+  mesh       done      120.5
+  texture    done      238.6
+  frame      done      2.6
+  quality    done      0.4
+  navgeom    done      0.0
+  package    done      0.6
+{
+ "run_id": "run-20261011-192236-5e71",
+ "status": "succeeded",
+ "error": null
+}
+
+--- stderr ---

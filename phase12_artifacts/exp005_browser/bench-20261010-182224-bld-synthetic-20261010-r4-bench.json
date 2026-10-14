@@ -1,0 +1,39 @@
+{
+ "valid": false,
+ "invalid_reason": "page not visible during run",
+ "seconds": 20,
+ "frames": 985,
+ "frame_ms": {
+  "median": 16.699999999999818,
+  "p95": 16.900000000001455,
+  "max": 3600.300000000001,
+  "mean": 20.306497461928934
+ },
+ "over_33ms_share": 0.0010152284263959391,
+ "triangles_last_frame": 62,
+ "draw_calls_last_frame": 6,
+ "canvas_px": [
+  1470,
+  870
+ ],
+ "device_pixel_ratio": 1.25,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 7,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "manifest_and_assets_loaded_ms": 218,
+  "first_view_ms": 342,
+  "interactive_ms": 342,
+  "bytes_verified": 102552
+ },
+ "at": "2026-10-10T12:52:24.717Z",
+ "forward_check": [
+  0.529,
+  -0.058,
+  -0.847
+ ],
+ "release_id": "bld-synthetic-20261010-r4-bench",
+ "page_url": "http://127.0.0.1:8766/index.html?bench=1&seconds=20",
+ "recorded_by_server_at": "2026-10-10T18:22:24+0530",
+ "served_dir": "C:\\Users\\SEBIN\\Desktop\\NammaSpace\\dist"
+}

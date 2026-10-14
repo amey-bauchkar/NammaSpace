@@ -1,0 +1,41 @@
+{
+ "contract": "IF-01",
+ "contract_version": "1.0.0",
+ "run_id": "run-practice-01",
+ "venue_label": "Practice space (not the R3 venue)",
+ "created_at": "2026-10-10T12:00:00+05:30",
+ "files": [
+  {
+   "path": "raw/R01_1012.mp4",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 123456789,
+   "region_id": "R01",
+   "kind": "video",
+   "device": "phone-1",
+   "duration_s": 95.0,
+   "issues": []
+  }
+ ],
+ "regions": [
+  {
+   "region_id": "R01",
+   "status": "captured",
+   "connections": [
+    "R02"
+   ]
+  },
+  {
+   "region_id": "R02",
+   "status": "partial",
+   "note": "glass partition not captured obliquely"
+  }
+ ],
+ "reference_measurements": [
+  {
+   "id": "M1",
+   "description": "Room A south wall, inner length",
+   "distance_m": 6.0,
+   "uncertainty_m": 0.01
+  }
+ ]
+}

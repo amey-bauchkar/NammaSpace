@@ -1,0 +1,641 @@
+{
+ "contract": "IF-04",
+ "contract_version": "1.1.0",
+ "geometry_id": "geom-exp010-truth-v1",
+ "run_id": "run-synthetic-exp010",
+ "site_frame": {
+  "frame_id": "site-synthetic-exp010",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "SYNTHETIC: origin at the outer corner of the 12 m x 6 m test layout; +X along the 12 m wall; +Z along the 6 m wall (+Z = +X cross +Y); +Y up. Not a physical venue."
+ },
+ "to_site": {
+  "matrix_row_major": [
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ],
+  "source": "identity",
+  "method": "synthetic fixture authored directly in the site frame",
+  "residual_m": null
+ },
+ "floors": [
+  {
+   "floor_id": "F0",
+   "elevation_m": 0.0,
+   "walkable_regions": [
+    [
+     [
+      0,
+      0
+     ],
+     [
+      12.0,
+      0
+     ],
+     [
+      12.0,
+      6.0
+     ],
+     [
+      0,
+      6.0
+     ]
+    ]
+   ]
+  }
+ ],
+ "obstacles": [
+  {
+   "obstacle_id": "outer_S",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     12.0,
+     0
+    ],
+    [
+     12.0,
+     0.1
+    ],
+    [
+     0,
+     0.1
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "outer_N",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     0,
+     5.9
+    ],
+    [
+     12.0,
+     5.9
+    ],
+    [
+     12.0,
+     6.0
+    ],
+    [
+     0,
+     6.0
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "outer_W",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     0,
+     0
+    ],
+    [
+     0.1,
+     0
+    ],
+    [
+     0.1,
+     6.0
+    ],
+    [
+     0,
+     6.0
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "outer_E",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     11.9,
+     0
+    ],
+    [
+     12.0,
+     0
+    ],
+    [
+     12.0,
+     6.0
+    ],
+    [
+     11.9,
+     6.0
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "divider_0",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     5.95,
+     0.0
+    ],
+    [
+     6.05,
+     0.0
+    ],
+    [
+     6.05,
+     2.5
+    ],
+    [
+     5.95,
+     2.5
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "divider_1",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     5.95,
+     3.4000000000000004
+    ],
+    [
+     6.05,
+     3.4000000000000004
+    ],
+    [
+     6.05,
+     6.0
+    ],
+    [
+     5.95,
+     6.0
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "table",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     2.0,
+     2.0
+    ],
+    [
+     3.6,
+     2.0
+    ],
+    [
+     3.6,
+     2.8
+    ],
+    [
+     2.0,
+     2.8
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 0.75,
+   "kind": "furniture",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "sofa",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     0.5,
+     4.5
+    ],
+    [
+     2.5,
+     4.5
+    ],
+    [
+     2.5,
+     5.4
+    ],
+    [
+     0.5,
+     5.4
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 0.85,
+   "kind": "furniture",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "cabinet_1",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     7.2,
+     3.6
+    ],
+    [
+     8.0,
+     3.6
+    ],
+    [
+     8.0,
+     5.9
+    ],
+    [
+     7.2,
+     5.9
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 1.9,
+   "kind": "furniture",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "cabinet_2",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     8.7,
+     3.6
+    ],
+    [
+     9.5,
+     3.6
+    ],
+    [
+     9.5,
+     5.9
+    ],
+    [
+     8.7,
+     5.9
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 1.9,
+   "kind": "furniture",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "cabinet_back",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     7.2,
+     5.4
+    ],
+    [
+     9.5,
+     5.4
+    ],
+    [
+     9.5,
+     5.9
+    ],
+    [
+     7.2,
+     5.9
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 1.9,
+   "kind": "furniture",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "closed_room_S",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     9.5,
+     0.5
+    ],
+    [
+     11.5,
+     0.5
+    ],
+    [
+     11.5,
+     0.6
+    ],
+    [
+     9.5,
+     0.6
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "closed_room_N",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     9.5,
+     1.9
+    ],
+    [
+     11.5,
+     1.9
+    ],
+    [
+     11.5,
+     2.0
+    ],
+    [
+     9.5,
+     2.0
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "closed_room_W",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     9.5,
+     0.6
+    ],
+    [
+     9.6,
+     0.6
+    ],
+    [
+     9.6,
+     1.9
+    ],
+    [
+     9.5,
+     1.9
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "closed_room_E",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     11.4,
+     0.6
+    ],
+    [
+     11.5,
+     0.6
+    ],
+    [
+     11.5,
+     1.9
+    ],
+    [
+     11.4,
+     1.9
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 2.6,
+   "kind": "wall",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  },
+  {
+   "obstacle_id": "overhead_duct",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     4.0,
+     3.0
+    ],
+    [
+     5.0,
+     3.0
+    ],
+    [
+     5.0,
+     3.3
+    ],
+    [
+     4.0,
+     3.3
+    ]
+   ],
+   "min_y_m": 2.1,
+   "max_y_m": 2.4,
+   "kind": "other",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  }
+ ],
+ "doorways": [
+  {
+   "doorway_id": "D1",
+   "floor_id": "F0",
+   "segment": [
+    [
+     6.0,
+     2.5
+    ],
+    [
+     6.0,
+     3.4
+    ]
+   ],
+   "measured_width_m": 0.9,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+    "tool": "namma.fixtures.exp010",
+    "tool_version": "1.0.0",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  }
+ ],
+ "provenance": {
+  "origin": "synthetic_fixture",
+  "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+  "tool": "namma.fixtures.exp010",
+  "tool_version": "1.0.0",
+  "author_role": "SCRIPT",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

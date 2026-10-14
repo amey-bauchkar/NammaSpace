@@ -1,0 +1,53 @@
+{
+ "base": "http://127.0.0.1:8782",
+ "inputs": "external_data\\eth3d_office\\extracted\\office\\images\\dslr_images",
+ "files": 26,
+ "steps": [
+  {
+   "step": "1 create project via the form",
+   "pass": true,
+   "detail": "qa-04-eth3d-office-ui-20261014-30c7a4; notices ['Photos: ETH3D office, Schops et al. CVPR 2017, CC BY-NC-SA 4.0 - local evaluation only, not for publication']",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\01_project_created.png",
+   "at": "02:12:43"
+  },
+  {
+   "step": "2 upload through the file input",
+   "pass": true,
+   "detail": "26 files uploaded. Next: check the capture.",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\02_uploaded.png",
+   "at": "02:12:45"
+  },
+  {
+   "step": "3 capture check",
+   "pass": true,
+   "detail": "Ready to reconstruct: 26 photos accepted, 4 things to be aware of.",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\03_checked.png",
+   "at": "02:12:56"
+  },
+  {
+   "step": "4 start reconstruction",
+   "pass": true,
+   "detail": "run-20261014-021256-9bdb",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\04_started.png",
+   "at": "02:12:57"
+  },
+  {
+   "step": "4b cancel during camera placement, then resume (UI buttons)",
+   "pass": true,
+   "detail": "status after cancel cancelled; stages kept ['prepare', 'sfm', 'undistort']",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\04b_cancelled.png",
+   "at": "02:13:30"
+  },
+  {
+   "step": "5 reconstruction finished in the UI",
+   "pass": false,
+   "detail": "Processing was cancelled.Press Resume to continue from this step.",
+   "screenshot": "precapture_qa\\browser\\QA-04_office_ui\\05_result.png",
+   "at": "02:13:31"
+  }
+ ],
+ "profile": "preview",
+ "project_id": "qa-04-eth3d-office-ui-20261014-30c7a4",
+ "run_id": "run-20261014-021256-9bdb",
+ "passed": false
+}

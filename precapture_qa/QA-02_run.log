@@ -1,0 +1,16 @@
+run run-20261014-012000-reuse profile standard config 37ee9add82ca
+  prepare    done      0.2
+  sfm        done      417.6
+  undistort  done      8.5
+  dense      done      1959.1
+  mesh       done      595.3
+  texture    done      506.8
+  frame      done      12.9
+  quality    done      1.0
+  navgeom    done      5.9
+  package    done      0.7
+{
+ "run_id": "run-20261014-012000-reuse",
+ "status": "succeeded",
+ "error": null
+}

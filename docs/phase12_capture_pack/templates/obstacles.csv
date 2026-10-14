@@ -1,0 +1,2 @@
+obstacle_id,kind,corner_point_ids,min_height_m,max_height_m,major,notes
+table_1,furniture,P10;P11;P12;P13,0,0.75,yes,

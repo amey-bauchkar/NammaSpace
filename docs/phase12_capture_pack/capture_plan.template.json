@@ -1,0 +1,13 @@
+{
+ "run_id": "run-room01-YYYYMMDD",
+ "venue_label": "Practice room (NOT the Round 3 venue) - replace with a short description",
+ "regions": [
+  {"region_id": "R01_main", "status": "captured", "connections": [], "device": "iphone12-main-1x",
+   "note": "trajectory A (model); loops 1-2 + doorways + furniture"},
+  {"region_id": "R01_heldout", "status": "captured", "connections": [], "device": "iphone12-main-1x",
+   "note": "trajectory B (held-out); never used to build the model"}
+ ],
+ "reference_measurements": [
+  {"id": "D01", "description": "M0 centre to M1 centre (tape)", "distance_m": 0.0, "uncertainty_m": 0.005}
+ ]
+}

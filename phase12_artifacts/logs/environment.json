@@ -1,0 +1,20 @@
+{
+ "recorded_at": "2026-10-10T12:32:14+05:30",
+ "machine": "SAMSUNG ELECTRONICS CO., LTD. 750XGK",
+ "cpu": "Intel(R) Core(TM) 5 120U",
+ "cores_physical": 10,
+ "cores_logical": 12,
+ "ram_total_gb": 15.69,
+ "ram_available_gb": 3.8,
+ "gpu": "Intel(R) Graphics (integrated), driver 31.0.101.4953; no NVIDIA GPU; nvidia-smi absent",
+ "os": "Windows 11 Home Single Language 10.0.26200",
+ "disk_free_gb_C": 37.9,
+ "python": "3.14.0",
+ "node": "v25.6.1",
+ "ffmpeg": "8.1.1 (gyan.dev full build, winget)",
+ "opencv_python": "5.0.0",
+ "psutil": "7.2.2",
+ "colmap": "4.2.1 (bd1fcf6, 2026-09-29) without GPU support - tools/colmap-4.2.1-nocuda",
+ "openmvs": "2.4.0 (build 2026-01-20) - tools/openmvs-2.4.0",
+ "rtx4050_laptop": "UNAVAILABLE (not used)"
+}

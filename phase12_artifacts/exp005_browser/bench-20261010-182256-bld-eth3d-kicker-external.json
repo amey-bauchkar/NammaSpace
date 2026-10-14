@@ -1,0 +1,39 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 20,
+ "frames": 1200,
+ "frame_ms": {
+  "median": 16.69999999999891,
+  "p95": 16.90000000000009,
+  "max": 17.5,
+  "mean": 16.668166666666668
+ },
+ "over_33ms_share": 0,
+ "triangles_last_frame": 3370280,
+ "draw_calls_last_frame": 2,
+ "canvas_px": [
+  1470,
+  870
+ ],
+ "device_pixel_ratio": 1.25,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 183,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "manifest_and_assets_loaded_ms": 361,
+  "first_view_ms": 599,
+  "interactive_ms": 599,
+  "bytes_verified": 86851519
+ },
+ "at": "2026-10-10T12:52:56.084Z",
+ "forward_check": [
+  0.535,
+  -0.059,
+  -0.843
+ ],
+ "release_id": "bld-eth3d-kicker-external",
+ "page_url": "http://127.0.0.1:8767/index.html?bench=1&seconds=20",
+ "recorded_by_server_at": "2026-10-10T18:22:56+0530",
+ "served_dir": "C:\\Users\\SEBIN\\Desktop\\NammaSpace\\phase12_artifacts\\exp005_external_site"
+}

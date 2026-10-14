@@ -1,0 +1,359 @@
+{
+  "registry_version": "1.0.0",
+  "updated": "2026-10-11",
+  "policy": "External data lives under external_data/<scene_id>/ (never committed). Archives are untrusted data: extracted with safe extractors, never executed. Every downloaded file is size-checked against the server Content-Length recorded here and SHA-256 logged in external_data/downloads.jsonl. Roles: 'development' scenes may be used to tune the pipeline; 'heldout_test' scenes are run ONCE with the frozen configuration (datasets/FROZEN_CONFIG.json) and never used for tuning.",
+  "datasets": [
+    {
+      "dataset_id": "eth3d-highres",
+      "name": "ETH3D high-resolution multi-view stereo benchmark (training split)",
+      "official_url": "https://www.eth3d.net/datasets",
+      "license": "CC BY-NC-SA 4.0",
+      "license_source": "eth3d.net (recorded in Phase 12, SRC-231); non-commercial; derivatives must be shared alike",
+      "access": "Public direct HTTPS download, no registration",
+      "modality": "Real photographs: 24 MP DSLR JPEGs (6048 x 4032), indoor and outdoor scenes",
+      "ground_truth": "Laser scans (Faro, mm-level) in the dataset frame; ground-truth camera intrinsics and poses (COLMAP text format)",
+      "redistribution": "Allowed only non-commercially, with attribution, under the same licence. Not redistributed by this repository; derived meshes are kept local.",
+      "citation": "T. Schops et al., A Multi-View Stereo Benchmark with High-Resolution Images and Multi-Camera Videos, CVPR 2017",
+      "scenes": [
+        {
+          "scene_id": "eth3d_kicker",
+          "role": "development",
+          "description": "Indoor room with table-football table, 31 images. Phase 12 baseline (EXP-014/015/016).",
+          "files": [
+            {
+              "url": "https://www.eth3d.net/data/kicker_dslr_jpg.7z",
+              "path": "archives/kicker_dslr_jpg.7z",
+              "bytes": 408604363,
+              "sha256": "b0d0d73accc6fc8fa87db81fc8053d4c27ca5cbb776982533f30149d929fe493"
+            },
+            {
+              "url": "https://www.eth3d.net/data/kicker_dslr_scan_eval.7z",
+              "path": "archives/kicker_dslr_scan_eval.7z",
+              "bytes": 187677934,
+              "sha256": "76615161443b17d539dbab84bc69660ec9a40bc10b6b9a41958ee5e4962a3066"
+            }
+          ],
+          "intended_experiments": [
+            "baseline already run in Phase 12; re-run only through the new app pipeline for regression"
+          ],
+          "hardware_feasibility": "Measured Phase 12: SfM 206 s / 7.85 GB peak (4 threads); dense+mesh+texture 27 min / 4.83 GB peak",
+          "limitations": "Dark carpet floor reconstructs poorly (EXP-016)."
+        },
+        {
+          "scene_id": "eth3d_pipes",
+          "role": "development",
+          "description": "Small indoor scene (pipes and machinery), 14 images. Fast smoke test of the full pipeline.",
+          "files": [
+            {
+              "url": "https://www.eth3d.net/data/pipes_dslr_jpg.7z",
+              "path": "archives/pipes_dslr_jpg.7z",
+              "bytes": 109668393
+            },
+            {
+              "url": "https://www.eth3d.net/data/pipes_dslr_scan_eval.7z",
+              "path": "archives/pipes_dslr_scan_eval.7z",
+              "bytes": 53851871
+            }
+          ],
+          "intended_experiments": [
+            "pipeline smoke test",
+            "pose and geometry accuracy vs laser"
+          ],
+          "hardware_feasibility": "14 images: expected well under the kicker cost",
+          "limitations": "Close-range scene, not a walkable room; navigation metrics not meaningful."
+        },
+        {
+          "scene_id": "eth3d_office",
+          "role": "heldout_test",
+          "description": "Indoor office, 26 images, large textureless walls and floor (known hard case).",
+          "files": [
+            {
+              "url": "https://www.eth3d.net/data/office_dslr_jpg.7z",
+              "path": "archives/office_dslr_jpg.7z",
+              "bytes": 231734054
+            },
+            {
+              "url": "https://www.eth3d.net/data/office_dslr_scan_eval.7z",
+              "path": "archives/office_dslr_scan_eval.7z",
+              "bytes": 153021449
+            }
+          ],
+          "intended_experiments": [
+            "held-out registration / pose / geometry",
+            "floor and obstacle extraction vs laser reference",
+            "failure-case documentation"
+          ],
+          "hardware_feasibility": "26 x 24 MP: comparable to kicker",
+          "limitations": "Textureless surfaces; expected weak dense coverage."
+        },
+        {
+          "scene_id": "eth3d_delivery_area",
+          "role": "heldout_test",
+          "description": "Indoor delivery area / hall, 44 images, large open floor with pallets and objects.",
+          "files": [
+            {
+              "url": "https://www.eth3d.net/data/delivery_area_dslr_jpg.7z",
+              "path": "archives/delivery_area_dslr_jpg.7z",
+              "bytes": 372958192
+            },
+            {
+              "url": "https://www.eth3d.net/data/delivery_area_dslr_scan_eval.7z",
+              "path": "archives/delivery_area_dslr_scan_eval.7z",
+              "bytes": 122553428
+            }
+          ],
+          "intended_experiments": [
+            "held-out registration / pose / geometry",
+            "walkable floor IoU, obstacle omission, route success and collision vs laser reference"
+          ],
+          "hardware_feasibility": "44 x 24 MP: about 1.4x kicker",
+          "limitations": "Single area; not a home."
+        }
+      ]
+    },
+    {
+      "dataset_id": "arkitscenes-raw",
+      "name": "ARKitScenes (raw split): handheld iPad Pro captures of real homes",
+      "official_url": "https://github.com/apple/ARKitScenes",
+      "license": "Apple ARKitScenes licence (LICENSE file in the repository): non-commercial use, reproduction, modification and redistribution with the notice retained; separate commercial terms",
+      "license_source": "https://github.com/apple/ARKitScenes/blob/main/LICENSE (read 2026-10-11)",
+      "access": "Public direct HTTPS download from docs-assets.developer.apple.com, no registration. URL pattern taken from the official download_data.py; that script itself is not executed.",
+      "modality": "Real handheld mobile-device video (.mov, iPad Pro wide camera) plus ARKit camera trajectory, LiDAR-derived ARKit mesh and human-annotated 3D object boxes",
+      "ground_truth": "Independent of our RGB pipeline: ARKit trajectory (VIO, metric), ARKit LiDAR mesh (metric, cm-level), annotated oriented 3D boxes of furniture (bed, sofa, table, chair, cabinet, ...)",
+      "redistribution": "Non-commercial only with the Apple notice. Not redistributed by this repository.",
+      "citation": "G. Baruch et al., ARKitScenes: A Diverse Real-World Dataset for 3D Indoor Scene Understanding Using Mobile RGB-D Data, NeurIPS 2021 Datasets and Benchmarks",
+      "scenes": [
+        {
+          "scene_id": "arkit_41069048",
+          "role": "development",
+          "description": "Validation video 41069048 (visit 381644), sky direction Up; smallest upright validation video with annotations. Content: bathroom (bathtub, toilet, sink) - small, reflective, a known hard case.",
+          "files": [
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069048/41069048.mov",
+              "path": "raw/41069048.mov",
+              "bytes": 294298122
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069048/41069048_3dod_annotation.json",
+              "path": "raw/41069048_3dod_annotation.json",
+              "bytes": 4071
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069048/41069048_3dod_mesh.ply",
+              "path": "raw/41069048_3dod_mesh.ply",
+              "bytes": 10273157
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069048/lowres_wide.traj",
+              "path": "raw/lowres_wide.traj",
+              "bytes": 33020
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069048/lowres_wide_intrinsics.zip",
+              "path": "raw/lowres_wide_intrinsics.zip",
+              "bytes": 407891
+            }
+          ],
+          "intended_experiments": [
+            "video ingestion and deterministic frame extraction",
+            "SfM registration on mobile video",
+            "trajectory error vs ARKit",
+            "obstacle omission vs annotated boxes",
+            "floor coverage vs ARKit mesh"
+          ],
+          "hardware_feasibility": "Video decode with ffmpeg; frames subsampled to <= 150 at <= 1920 px",
+          "limitations": "iPad Pro, not iPhone 12; ARKit mesh is a sensor reconstruction, not a laser scan."
+        },
+        {
+          "scene_id": "arkit_41142280",
+          "role": "heldout_test",
+          "description": "Validation video 41142280 (visit 384651, a different home), sky direction Up. Content: bathroom (bathtub, toilet, sink) - small, reflective, a known hard case.",
+          "files": [
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41142280/41142280.mov",
+              "path": "raw/41142280.mov",
+              "bytes": 509739809
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41142280/41142280_3dod_annotation.json",
+              "path": "raw/41142280_3dod_annotation.json",
+              "bytes": 3616
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41142280/41142280_3dod_mesh.ply",
+              "path": "raw/41142280_3dod_mesh.ply",
+              "bytes": 9939944
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41142280/lowres_wide.traj",
+              "path": "raw/lowres_wide.traj",
+              "bytes": 57916
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41142280/lowres_wide_intrinsics.zip",
+              "path": "raw/lowres_wide_intrinsics.zip",
+              "bytes": 706042
+            }
+          ],
+          "intended_experiments": [
+            "held-out mobile-video run with the frozen configuration"
+          ],
+          "hardware_feasibility": "As arkit_41069048",
+          "limitations": "As arkit_41069048."
+        },
+        {
+          "scene_id": "arkit_41125700",
+          "role": "development",
+          "description": "Validation video 41125700 (visit 382321): open-plan living room / kitchen (2 sofas, 3 tables, 4 chairs, cabinets), sky direction Up.",
+          "files": [
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41125700/41125700.mov",
+              "path": "raw/41125700.mov",
+              "bytes": 935966401
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41125700/41125700_3dod_annotation.json",
+              "path": "raw/41125700_3dod_annotation.json",
+              "bytes": 22357
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41125700/41125700_3dod_mesh.ply",
+              "path": "raw/41125700_3dod_mesh.ply",
+              "bytes": 51308684
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41125700/lowres_wide.traj",
+              "path": "raw/lowres_wide.traj",
+              "bytes": 105086
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41125700/lowres_wide_intrinsics.zip",
+              "path": "raw/lowres_wide_intrinsics.zip",
+              "bytes": 1300373
+            }
+          ],
+          "intended_experiments": [
+            "video ingestion on a furnished home",
+            "trajectory error vs ARKit",
+            "major-obstacle omission vs annotated boxes",
+            "floor coverage vs ARKit mesh",
+            "navigation success / collision vs reference"
+          ],
+          "hardware_feasibility": "1920 x 1440 video; frames capped at 200",
+          "limitations": "iPad Pro, not iPhone 12; ARKit mesh is a sensor reconstruction, not a laser scan; annotation covers furniture classes only (no walls / small objects)."
+        },
+        {
+          "scene_id": "arkit_41069025",
+          "role": "heldout_test",
+          "description": "Validation video 41069025 (visit 381658, a different home): living room / kitchen (sofa, 4 tables, 2 chairs, cabinets), sky direction Up.",
+          "files": [
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069025/41069025.mov",
+              "path": "raw/41069025.mov",
+              "bytes": 1474835473
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069025/41069025_3dod_annotation.json",
+              "path": "raw/41069025_3dod_annotation.json",
+              "bytes": 21527
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069025/41069025_3dod_mesh.ply",
+              "path": "raw/41069025_3dod_mesh.ply",
+              "bytes": 43020021
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069025/lowres_wide.traj",
+              "path": "raw/lowres_wide.traj",
+              "bytes": 162497
+            },
+            {
+              "url": "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Validation/41069025/lowres_wide_intrinsics.zip",
+              "path": "raw/lowres_wide_intrinsics.zip",
+              "bytes": 2022338
+            }
+          ],
+          "intended_experiments": [
+            "video ingestion on a furnished home",
+            "trajectory error vs ARKit",
+            "major-obstacle omission vs annotated boxes",
+            "floor coverage vs ARKit mesh",
+            "navigation success / collision vs reference"
+          ],
+          "hardware_feasibility": "1920 x 1440 video; frames capped at 200",
+          "limitations": "iPad Pro, not iPhone 12; ARKit mesh is a sensor reconstruction, not a laser scan; annotation covers furniture classes only (no walls / small objects)."
+        }
+      ]
+    },
+    {
+      "dataset_id": "tum-rgbd",
+      "name": "TUM RGB-D SLAM benchmark",
+      "official_url": "https://cvg.cit.tum.de/data/datasets/rgbd-dataset",
+      "license": "CC BY 4.0 (data); BSD-2-Clause (code)",
+      "license_source": "https://cvg.cit.tum.de/data/datasets/rgbd-dataset (read 2026-10-11): 'Unless stated otherwise, all data in the TUM RGB-D benchmark is licensed under a Creative Commons 4.0 Attribution License (CC BY 4.0)'",
+      "access": "Public direct HTTPS download, no registration (redirects to webshare.cvg.cit.tum.de)",
+      "modality": "Real handheld Kinect-class RGB-D video as 640 x 480 PNG frames at 30 Hz, motion-capture ground-truth trajectory",
+      "ground_truth": "Motion-capture camera trajectory (metric); per-frame depth images (independent sensor)",
+      "redistribution": "Allowed with attribution (CC BY 4.0). A small frame subset is redistributed as the repository sample in samples/tum_fr3_office/ with attribution.",
+      "citation": "J. Sturm et al., A Benchmark for the Evaluation of RGB-D SLAM Systems, IROS 2012",
+      "scenes": [
+        {
+          "scene_id": "tum_fr3_long_office_household",
+          "role": "development",
+          "description": "fr3/long_office_household: 87 s handheld loop around two desks in an office.",
+          "files": [
+            {
+              "url": "https://cvg.cit.tum.de/rgbd/dataset/freiburg3/rgbd_dataset_freiburg3_long_office_household.tgz",
+              "path": "archives/rgbd_dataset_freiburg3_long_office_household.tgz",
+              "bytes": 1483556251
+            }
+          ],
+          "intended_experiments": [
+            "redistributable repository sample",
+            "low-resolution video-like input",
+            "trajectory error vs motion capture"
+          ],
+          "hardware_feasibility": "640 x 480 frames: fast on CPU",
+          "limitations": "Low resolution, rolling shutter, auto exposure; desk-scale rather than room-scale; no floor reference."
+        }
+      ]
+    }
+  ],
+  "candidates_not_selected": [
+    {
+      "name": "ScanNet",
+      "url": "https://github.com/ScanNet/ScanNet",
+      "reason": "Access requires a signed Terms of Use agreement emailed from an institutional address (verified 2026-10-11). Not pursued: needs the team to apply."
+    },
+    {
+      "name": "ScanNet++",
+      "url": "https://kaldir.vc.in.tum.de/scannetpp/",
+      "reason": "Site refused the connection on 2026-10-11; access is application-based according to its public documentation (not re-verified). Not pursued."
+    },
+    {
+      "name": "Matterport3D",
+      "url": "https://niessner.github.io/Matterport/",
+      "reason": "Access requires a signed Terms of Use form (verified 2026-10-11). Not pursued."
+    },
+    {
+      "name": "Replica",
+      "url": "https://github.com/facebookresearch/Replica-Dataset",
+      "reason": "Meshes and textures only (no photographs); custom licence in the repository LICENSE; large download. Not useful for a photo-input pipeline test."
+    },
+    {
+      "name": "ICL-NUIM",
+      "url": "https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html",
+      "reason": "CC BY 3.0 and has a surface ground truth, but images are synthetic renderings (3.3 GB per trajectory). Kept as a future option for a synthetic floor ground truth."
+    },
+    {
+      "name": "Mip-NeRF 360 (room / counter / kitchen)",
+      "url": "https://jonbarron.info/mipnerf360/",
+      "reason": "Single 12 GB archive for all scenes; no explicit licence found on the page; no geometric ground truth. Not selected."
+    },
+    {
+      "name": "TUM RGB-D fr1/room",
+      "url": "https://cvg.cit.tum.de/data/datasets/rgbd-dataset/download",
+      "reason": "Room-scale (782 MB) but strong motion blur; kept as a fallback if fr3/long_office_household is insufficient."
+    }
+  ]
+}

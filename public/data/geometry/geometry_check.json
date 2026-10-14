@@ -1,0 +1,132 @@
+{
+ "report_type": "geometry_check_v1",
+ "checked_at": "2026-10-10T11:40:40+05:30",
+ "validity": {
+  "status": "pass",
+  "issues": []
+ },
+ "report_id": "gc-geom-exp010-truth-v1-80d667b2",
+ "geometry_id": "geom-exp010-truth-v1",
+ "geometry_sha256": "80d667b2e07e9c80c0d6b02e8dc4c6c97a2a2b1ccf43bc8b694d6b0d0dc7315b",
+ "completeness": {
+  "status": "pass",
+  "reference_id": "ref-exp010-truth-v1",
+  "reference_source": "synthetic_truth",
+  "missing_obstacles": [],
+  "deviating_obstacles": [],
+  "missing_doorways": [],
+  "unreferenced_obstacles": []
+ },
+ "alignment": {
+  "status": "pass",
+  "reference_id": "align-exp010-v1",
+  "V-05": {
+   "status": "pass",
+   "distances": [
+    {
+     "id": "M1",
+     "tape_m": 12.0,
+     "model_m": 12.0,
+     "error_m": 0.0,
+     "tolerance_m": 0.12,
+     "ok": true
+    },
+    {
+     "id": "M2",
+     "tape_m": 6.0,
+     "model_m": 6.0,
+     "error_m": 0.0,
+     "tolerance_m": 0.06,
+     "ok": true
+    },
+    {
+     "id": "M3",
+     "tape_m": 6.0,
+     "model_m": 6.0,
+     "error_m": 0.0,
+     "tolerance_m": 0.06,
+     "ok": true
+    }
+   ]
+  },
+  "V-06": {
+   "status": "pass",
+   "datum_offset_m": 0.0,
+   "yaw_error_deg": 0.0,
+   "floor_tilt_deg": 0.0,
+   "tolerances": {
+    "datum_m": 0.05,
+    "yaw_deg": 1.0,
+    "tilt_deg": 1.0
+   }
+  }
+ },
+ "connectivity": {
+  "components": 2,
+  "component_cells": [
+   15074,
+   336
+  ],
+  "doorways": [
+   {
+    "doorway_id": "D1",
+    "width_m": 0.9,
+    "connected": true,
+    "must_connect": true,
+    "note": null
+   }
+  ],
+  "V-03": "pass",
+  "V-04": "pass",
+  "required_points": {
+   "room-a-sw": 1,
+   "room-a-n": 1,
+   "room-b": 1,
+   "alcove": 1
+  },
+  "walk_pairs": [
+   {
+    "id": "S1",
+    "connected": true
+   },
+   {
+    "id": "S2",
+    "connected": true
+   },
+   {
+    "id": "S3",
+    "connected": true
+   },
+   {
+    "id": "S4",
+    "connected": true
+   },
+   {
+    "id": "S5",
+    "connected": true
+   }
+  ],
+  "V-10": "pass",
+  "status": "pass"
+ },
+ "human_inspection": {
+  "required": []
+ },
+ "checks": {
+  "V-01": "pass",
+  "V-02": "pass",
+  "V-03": "pass",
+  "V-04": "pass",
+  "V-05": "pass",
+  "V-06": "pass",
+  "V-07": "per POI (poi/endpoints.py, QG-09)",
+  "V-08": "per route (IF-08)",
+  "V-09": "per route (IF-08)",
+  "V-10": "pass"
+ },
+ "acceptance": {
+  "status": "accepted",
+  "blocking": [],
+  "limitations": []
+ }
+}

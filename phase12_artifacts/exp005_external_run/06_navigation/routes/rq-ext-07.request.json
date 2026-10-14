@@ -1,0 +1,17 @@
+{
+ "contract": "IF-06",
+ "contract_version": "1.1.0",
+ "request_id": "rq-ext-07",
+ "navlayer_id": "nav-F0-46d64ca7c1c8-r0.05-a0.25-m0",
+ "start_xz_m": [
+  0.525,
+  0.475
+ ],
+ "goal": {
+  "xz_m": [
+   -2.075,
+   -0.475
+  ]
+ },
+ "max_goal_snap_m": 1.0
+}

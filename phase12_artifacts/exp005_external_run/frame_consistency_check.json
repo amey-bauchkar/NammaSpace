@@ -1,0 +1,14 @@
+{
+ "samples": 20000,
+ "appearance_to_dense_m_once": {
+  "median": 0.0014,
+  "p90": 0.0042
+ },
+ "applied_twice_median_m": 0.359,
+ "not_applied_median_m": 1.672,
+ "appearance_to_laser_m_once": {
+  "median": 0.0069,
+  "p90": 0.0278
+ },
+ "note": "same-source check (mesh and dense points come from one reconstruction); not a dual-layer EXP-004 test"
+}

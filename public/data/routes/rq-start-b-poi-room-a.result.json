@@ -1,0 +1,91 @@
+{
+ "contract": "IF-07",
+ "contract_version": "1.1.0",
+ "request_id": "rq-start-b-poi-room-a",
+ "planner": {
+  "name": "namma-grid-astar",
+  "version": "1.0.0"
+ },
+ "navlayer_id": "nav-F0-80d667b2e07e-r0.05-a0.25-m0",
+ "geometry_id": "geom-exp010-truth-v1",
+ "plan_ms": 7.933,
+ "status": "route",
+ "polyline_xz_m": [
+  [
+   6.6,
+   5.5
+  ],
+  [
+   6.575,
+   5.525
+  ],
+  [
+   6.525,
+   5.475
+  ],
+  [
+   6.525,
+   3.925
+  ],
+  [
+   6.375,
+   3.775
+  ],
+  [
+   6.375,
+   3.325
+  ],
+  [
+   6.325,
+   3.275
+  ],
+  [
+   6.325,
+   3.175
+  ],
+  [
+   6.275,
+   3.125
+  ],
+  [
+   6.175,
+   3.125
+  ],
+  [
+   6.125,
+   3.075
+  ],
+  [
+   3.725,
+   3.075
+  ],
+  [
+   3.675,
+   3.125
+  ],
+  [
+   3.425,
+   3.125
+  ],
+  [
+   3.025,
+   3.525
+  ],
+  [
+   3.0,
+   3.5
+  ]
+ ],
+ "length_m": 6.052082,
+ "goal_used_xz_m": [
+  3.0,
+  3.5
+ ],
+ "goal_snap_m": 0.0,
+ "validation": {
+  "report_id": "vr-rq-start-b-poi-room-a",
+  "verdict": "pass"
+ },
+ "display_as_valid": true,
+ "note": "876 expansions; 114 cells; snapped: False"
+}

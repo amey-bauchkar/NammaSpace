@@ -1,0 +1,48 @@
+  Checking photos: 0%
+  Checking photos: 11%
+  Checking photos: 23%
+  Checking photos: 34%
+  Checking photos: 45%
+  Checking photos: 57%
+  Checking photos: 68%
+  Checking photos: 80%
+  Checking photos: 91%
+  Measuring sharpness, exposure and detail: 0%
+  Measuring sharpness, exposure and detail: 11%
+  Measuring sharpness, exposure and detail: 23%
+  Measuring sharpness, exposure and detail: 34%
+  Measuring sharpness, exposure and detail: 45%
+  Measuring sharpness, exposure and detail: 57%
+  Measuring sharpness, exposure and detail: 68%
+  Measuring sharpness, exposure and detail: 80%
+  Measuring sharpness, exposure and detail: 91%
+  Checking that photos overlap: 0%
+{
+ "status": "ready",
+ "mode": "photos",
+ "stats": {
+  "mode": "photos",
+  "files_uploaded": 44,
+  "inputs_accepted": 44,
+  "flags": {
+   "sharpness_median": 196.7,
+   "blur_threshold": 68.8
+  },
+  "blurry": 0,
+  "too_dark": 0,
+  "too_bright": 0,
+  "low_detail": 0,
+  "near_duplicate_pairs": 0,
+  "overlap": {
+   "pairs_tested": 358,
+   "verified_pairs": 119,
+   "isolated": 0,
+   "groups": 2,
+   "largest_group": 40
+  }
+ },
+ "seconds": 61.5
+}
+  [warning] CAP-GROUPS: The images form 2 separate groups that do not overlap. Walk between areas while capturing so they connect.
+
+--- stderr ---

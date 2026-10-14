@@ -1,0 +1,1 @@
+Attempt 1 stopped: the project already held a label 'Teddy desk' from the earlier tools test, so searching 'desk' matched 2 labels and the viewer (correctly) did not auto-jump; re-run with a unique label in viewer_tools_tum_final/.

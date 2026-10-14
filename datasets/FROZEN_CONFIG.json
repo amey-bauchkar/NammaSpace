@@ -1,0 +1,196 @@
+{
+ "frozen_at": "2026-10-11T19:13:34+05:30",
+ "pipeline_version": "13.3.0",
+ "profiles": {
+  "preview": {
+   "config_sha256": "5a27a14ec0a13acfcaeb731e035c8c2bd7cc92410b9eadf9fb9e8522e57bd541",
+   "config": {
+    "work_max_px": 1600,
+    "sift": {
+     "max_image_px": 1600,
+     "max_features": 6000,
+     "peak_threshold": 0.004
+    },
+    "matching": {
+     "exhaustive_max_images": 250,
+     "sequential_overlap": 15,
+     "guided": false
+    },
+    "mapper": {
+     "abs_pose_min_inliers": 30,
+     "rescue": true,
+     "rescue_min_inliers": 15,
+     "rescue_min_ratio": 0.15
+    },
+    "undistort_max_px": 1600,
+    "dense_max_images": 90,
+    "dense": {
+     "resolution_level": 0,
+     "max_resolution": 1600,
+     "number_views": 5
+    },
+    "mesh": {
+     "target_faces": 1500000
+    },
+    "textures": [
+     {
+      "lod": 0,
+      "resolution_level": 0,
+      "decimate": 1.0,
+      "max_texture_size": 4096,
+      "embed_max_side": 4096,
+      "seam_leveling": false
+     }
+    ],
+    "timeouts_s": {
+     "features": 1800,
+     "matching": 3600,
+     "mapper": 3600,
+     "undistort": 900,
+     "interface": 900,
+     "densify": 5400,
+     "mesh": 3600,
+     "texture": 3600
+    },
+    "camera_model_single": "OPENCV",
+    "camera_model_mixed": "SIMPLE_RADIAL",
+    "roam": {
+     "cells_per_eye": 32,
+     "band": [
+      0.15,
+      1.2
+     ],
+     "min_pts": 3,
+     "min_obstacle_eye": 0.12
+    },
+    "nav": {
+     "res_m": 0.05,
+     "agent_radius_m": 0.25,
+     "floor_tol_m": 0.05,
+     "obstacle_min_pts": 3,
+     "assumed_capture_height_m": 1.4,
+     "assumed_capture_height_rel_uncertainty": 0.15
+    },
+    "profile": "preview",
+    "pipeline_version": "13.3.0"
+   }
+  },
+  "standard": {
+   "config_sha256": "e109a60896c2c9da17818cf8ff49c7cf09caac03aa9feb94baab6bb5b3ed5d94",
+   "config": {
+    "work_max_px": 0,
+    "sift": {
+     "max_image_px": 3200,
+     "max_features": 8192,
+     "peak_threshold": 0.004
+    },
+    "matching": {
+     "exhaustive_max_images": 250,
+     "sequential_overlap": 15,
+     "guided": false
+    },
+    "mapper": {
+     "abs_pose_min_inliers": 30,
+     "rescue": true,
+     "rescue_min_inliers": 15,
+     "rescue_min_ratio": 0.15
+    },
+    "undistort_max_px": 0,
+    "mvs_pixel_budget_mp": 750,
+    "dense_max_images": 140,
+    "dense": {
+     "resolution_level": 0,
+     "max_resolution": 2560,
+     "number_views": 5
+    },
+    "mesh": {
+     "target_faces": 0
+    },
+    "textures": [
+     {
+      "lod": 0,
+      "resolution_level": 0,
+      "decimate": 1.0,
+      "max_texture_size": 8192,
+      "embed_max_side": 8192,
+      "seam_leveling": false
+     },
+     {
+      "lod": 1,
+      "resolution_level": 1,
+      "decimate": 0.2,
+      "max_texture_size": 4096,
+      "embed_max_side": 4096,
+      "seam_leveling": false
+     }
+    ],
+    "timeouts_s": {
+     "features": 3600,
+     "matching": 7200,
+     "mapper": 7200,
+     "undistort": 1800,
+     "interface": 1800,
+     "densify": 10800,
+     "mesh": 5400,
+     "texture": 5400
+    },
+    "camera_model_single": "OPENCV",
+    "camera_model_mixed": "SIMPLE_RADIAL",
+    "roam": {
+     "cells_per_eye": 32,
+     "band": [
+      0.15,
+      1.2
+     ],
+     "min_pts": 3,
+     "min_obstacle_eye": 0.12
+    },
+    "nav": {
+     "res_m": 0.05,
+     "agent_radius_m": 0.25,
+     "floor_tol_m": 0.05,
+     "obstacle_min_pts": 3,
+     "assumed_capture_height_m": 1.4,
+     "assumed_capture_height_rel_uncertainty": 0.15
+    },
+    "profile": "standard",
+    "pipeline_version": "13.3.0"
+   }
+  }
+ },
+ "code_sha256": "03816b3c97dcb60bf6c0f215c7e1426f723aaacf7d75cdad5c32be608a8799aa",
+ "code_files": [
+  "scripts/eval/evaluate_run.py",
+  "src/namma/capture/__init__.py",
+  "src/namma/capture/checks.py",
+  "src/namma/capture/ingest.py",
+  "src/namma/capture/media.py",
+  "src/namma/evaluation/__init__.py",
+  "src/namma/evaluation/gt.py",
+  "src/namma/evaluation/metrics.py",
+  "src/namma/recon/__init__.py",
+  "src/namma/recon/align.py",
+  "src/namma/recon/colmap.py",
+  "src/namma/recon/floorplan.py",
+  "src/namma/recon/glb.py",
+  "src/namma/recon/io.py",
+  "src/namma/recon/markers.py",
+  "src/namma/recon/measurements.py",
+  "src/namma/recon/meshclean.py",
+  "src/namma/recon/modelframe.py",
+  "src/namma/recon/openmvs.py",
+  "src/namma/recon/quality.py",
+  "src/namma/recon/runner.py",
+  "src/namma/recon/tools.py",
+  "src/namma/studio/__init__.py",
+  "src/namma/studio/jobs.py",
+  "src/namma/studio/package.py",
+  "src/namma/studio/pipeline.py",
+  "src/namma/studio/profiles.py",
+  "src/namma/studio/projects.py",
+  "src/namma/studio/routing.py",
+  "src/namma/studio/server.py",
+  "src/namma/studio/worker.py"
+ ],
+ "protocol_sha256_sections_1_5": "0765b9a8382987d056c4f6798f0376649f290c39c8d30f70c0d59d602cbb4167"
+}

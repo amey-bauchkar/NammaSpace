@@ -1,0 +1,34 @@
+{
+ "contract": "IF-08",
+ "contract_version": "1.1.0",
+ "report_id": "vr-rq-start-a-poi-sofa",
+ "request_id": "rq-start-a-poi-sofa",
+ "geometry_id": "geom-exp010-truth-v1",
+ "validator": {
+  "name": "namma-vector-validator",
+  "version": "1.0.0"
+ },
+ "checks": {
+  "intersects_obstacle": false,
+  "min_clearance_m": 0.325,
+  "clearance_ok": true,
+  "inside_walkable_region": true,
+  "geometry_validated": true,
+  "crossed_human_corrected_features": [],
+  "route_finite": true,
+  "start_matches_request": true,
+  "goal_within_snap_limit": true,
+  "poi_endpoint_valid": true
+ },
+ "verdict": "pass",
+ "evidence": {
+  "route_sha256": "c597a3c3929b548f26b142966de7f891d99e2b9eecea25f1de8b58484e7a52fe",
+  "geometry_sha256": "80d667b2e07e9c80c0d6b02e8dc4c6c97a2a2b1ccf43bc8b694d6b0d0dc7315b",
+  "navlayer_id": "nav-F0-80d667b2e07e-r0.05-a0.25-m0",
+  "geometry_check_report_id": "gc-geom-exp010-truth-v1-80d667b2",
+  "agent_radius_m": 0.25,
+  "clearance_tolerance_m": 0.035355,
+  "completeness": "verified_against_reference",
+  "limitations": []
+ }
+}

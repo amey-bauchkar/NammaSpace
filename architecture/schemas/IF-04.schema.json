@@ -1,0 +1,318 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-04.schema.json",
+ "title": "IF-04 \u2014 Spatial geometry artifact (floors, walls, doorways, obstacles)",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "geometry_id",
+  "run_id",
+  "site_frame",
+  "to_site",
+  "floors",
+  "obstacles",
+  "provenance"
+ ],
+ "properties": {
+  "geometry_id": {
+   "type": "string"
+  },
+  "run_id": {
+   "type": "string"
+  },
+  "site_frame": {
+   "$ref": "#/$defs/site_frame"
+  },
+  "to_site": {
+   "$ref": "#/$defs/transform",
+   "description": "ARCH-020: every IF-04 coordinate is ALREADY in the site frame. to_site records the transform the producer applied; consumers must never apply it again."
+  },
+  "floors": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "floor_id",
+     "elevation_m",
+     "walkable_regions"
+    ],
+    "properties": {
+     "floor_id": {
+      "type": "string"
+     },
+     "elevation_m": {
+      "type": "number"
+     },
+     "walkable_regions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "$ref": "#/$defs/polygon2"
+      }
+     },
+     "holes": {
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/polygon2"
+      }
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "obstacles": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "obstacle_id",
+     "floor_id",
+     "footprint",
+     "min_y_m",
+     "max_y_m",
+     "kind",
+     "provenance"
+    ],
+    "properties": {
+     "obstacle_id": {
+      "type": "string"
+     },
+     "floor_id": {
+      "type": "string"
+     },
+     "footprint": {
+      "$ref": "#/$defs/polygon2"
+     },
+     "min_y_m": {
+      "type": "number",
+      "description": "Site-frame Y (absolute), metres."
+     },
+     "max_y_m": {
+      "type": "number",
+      "description": "Site-frame Y (absolute), metres."
+     },
+     "kind": {
+      "enum": [
+       "wall",
+       "furniture",
+       "glass",
+       "column",
+       "unknown_risk",
+       "other"
+      ]
+     },
+     "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+     },
+     "provenance": {
+      "$ref": "#/$defs/provenance"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "doorways": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "doorway_id",
+     "floor_id",
+     "segment",
+     "measured_width_m"
+    ],
+    "properties": {
+     "doorway_id": {
+      "type": "string"
+     },
+     "floor_id": {
+      "type": "string"
+     },
+     "segment": {
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/vec2"
+      },
+      "minItems": 2,
+      "maxItems": 2
+     },
+     "measured_width_m": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "provenance": {
+      "$ref": "#/$defs/provenance"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "provenance": {
+   "$ref": "#/$defs/provenance"
+  },
+  "contract": {
+   "const": "IF-04"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+ "contract": "IF-11",
+ "contract_version": "2.0.0",
+ "release_id": "rel-1",
+ "built_at": "2026-10-10T12:00:00+05:30",
+ "artifacts": [
+  {
+   "path": "dist/index.html",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 2048
+  }
+ ],
+ "regression": {
+  "passed": true,
+  "suite_version": "phase11-1",
+  "failures": [],
+  "command": "python scripts/run_regression.py"
+ },
+ "deploy_targets": [],
+ "previous_release_id": null,
+ "source": {
+  "vcs": "git",
+  "tree_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+ },
+ "notes": [
+  "local release; no version-control commit exists"
+ ]
+}

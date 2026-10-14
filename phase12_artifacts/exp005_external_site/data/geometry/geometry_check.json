@@ -1,0 +1,510 @@
+{
+ "report_type": "geometry_check_v1",
+ "checked_at": "2026-10-10T16:50:13+05:30",
+ "validity": {
+  "status": "pass",
+  "issues": []
+ },
+ "report_id": "gc-geom-kicker-candidate-mvs-v1-46d64ca7",
+ "geometry_id": "geom-kicker-candidate-mvs-v1",
+ "geometry_sha256": "46d64ca7c1c8922334d674027aa1bcc59abb56076b8d5a30838b38b9f9a5ae5b",
+ "completeness": {
+  "status": "fail",
+  "reference_id": "ref-kicker-laser-v1",
+  "reference_source": "external_laser_scan",
+  "missing_obstacles": [
+   {
+    "ref_id": "obs-002",
+    "kind": "other",
+    "coverage": 0.323
+   },
+   {
+    "ref_id": "obs-003",
+    "kind": "other",
+    "coverage": 0.438
+   },
+   {
+    "ref_id": "obs-020",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-027",
+    "kind": "other",
+    "coverage": 0.258
+   },
+   {
+    "ref_id": "obs-034",
+    "kind": "other",
+    "coverage": 0.271
+   },
+   {
+    "ref_id": "obs-036",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-037",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-038",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-040",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-041",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-042",
+    "kind": "other",
+    "coverage": 0.05
+   }
+  ],
+  "deviating_obstacles": [
+   {
+    "ref_id": "obs-000",
+    "obstacle_id": "obs-040",
+    "hausdorff_m": 2.587,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-001",
+    "obstacle_id": "obs-041",
+    "hausdorff_m": 4.604,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-004",
+    "obstacle_id": "obs-036",
+    "hausdorff_m": 4.385,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-007",
+    "obstacle_id": "obs-037",
+    "hausdorff_m": 0.206,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-008",
+    "obstacle_id": "obs-038",
+    "hausdorff_m": 0.283,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-009",
+    "obstacle_id": "obs-055",
+    "hausdorff_m": 0.55,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-010",
+    "obstacle_id": "obs-054",
+    "hausdorff_m": 0.25,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-012",
+    "obstacle_id": "obs-007",
+    "hausdorff_m": 0.424,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-013",
+    "obstacle_id": "obs-008",
+    "hausdorff_m": 1.442,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-014",
+    "obstacle_id": "obs-008",
+    "hausdorff_m": 1.39,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-015",
+    "obstacle_id": "obs-008",
+    "hausdorff_m": 0.781,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-016",
+    "obstacle_id": "obs-001",
+    "hausdorff_m": 2.571,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-017",
+    "obstacle_id": "obs-002",
+    "hausdorff_m": 0.806,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-018",
+    "obstacle_id": "obs-002",
+    "hausdorff_m": 0.552,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-023",
+    "obstacle_id": "obs-004",
+    "hausdorff_m": 0.43,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-025",
+    "obstacle_id": "obs-015",
+    "hausdorff_m": 0.112,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-030",
+    "obstacle_id": "obs-017",
+    "hausdorff_m": 0.919,
+    "tolerance_m": 0.1
+   },
+   {
+    "ref_id": "obs-035",
+    "obstacle_id": "obs-036",
+    "hausdorff_m": 2.298,
+    "tolerance_m": 0.1
+   }
+  ],
+  "missing_doorways": [],
+  "unreferenced_obstacles": [
+   "obs-003",
+   "obs-011",
+   "obs-012",
+   "obs-013",
+   "obs-014",
+   "obs-016",
+   "obs-018",
+   "obs-020",
+   "obs-033",
+   "obs-042",
+   "obs-045",
+   "obs-047",
+   "obs-048",
+   "obs-049",
+   "obs-050",
+   "obs-051",
+   "obs-052",
+   "obs-053",
+   "obs-056",
+   "obs-057",
+   "obs-060",
+   "obs-062",
+   "obs-063",
+   "obs-068",
+   "obs-072",
+   "obs-074",
+   "obs-075",
+   "obs-077",
+   "obs-078",
+   "obs-079",
+   "obs-080",
+   "obs-081",
+   "obs-082",
+   "obs-083"
+  ]
+ },
+ "alignment": {
+  "status": "not_established",
+  "note": "no tape / datum observations supplied"
+ },
+ "connectivity": {
+  "components": 12,
+  "component_cells": [
+   146,
+   92,
+   23,
+   21,
+   18,
+   6,
+   2,
+   2,
+   1,
+   1
+  ],
+  "doorways": [],
+  "V-03": "not_established",
+  "V-04": "fail",
+  "required_points": {},
+  "walk_pairs": [],
+  "V-10": "not_established",
+  "status": "fail"
+ },
+ "human_inspection": {
+  "required": [
+   {
+    "feature_id": "obs-003",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-011",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-012",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-013",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-014",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-016",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-018",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-020",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-033",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-042",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-045",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-047",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-048",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-049",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-050",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-051",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-052",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-053",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-056",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-057",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-060",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-062",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-063",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-068",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-072",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-074",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-075",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-077",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-078",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-079",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-080",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-081",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-082",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   },
+   {
+    "feature_id": "obs-083",
+    "reasons": [
+     "not in the reference inventory (possible phantom)"
+    ]
+   }
+  ]
+ },
+ "checks": {
+  "V-01": "fail",
+  "V-02": "pass",
+  "V-03": "not_established",
+  "V-04": "fail",
+  "V-05": "not_established",
+  "V-06": "not_established",
+  "V-07": "per POI (poi/endpoints.py, QG-09)",
+  "V-08": "per route (IF-08)",
+  "V-09": "per route (IF-08)",
+  "V-10": "not_established"
+ },
+ "acceptance": {
+  "status": "not_accepted",
+  "blocking": [
+   "V-01 completeness",
+   "connectivity"
+  ],
+  "limitations": [
+   "alignment: not established",
+   "inspect obs-003: not in the reference inventory (possible phantom)",
+   "inspect obs-011: not in the reference inventory (possible phantom)",
+   "inspect obs-012: not in the reference inventory (possible phantom)",
+   "inspect obs-013: not in the reference inventory (possible phantom)",
+   "inspect obs-014: not in the reference inventory (possible phantom)",
+   "inspect obs-016: not in the reference inventory (possible phantom)",
+   "inspect obs-018: not in the reference inventory (possible phantom)",
+   "inspect obs-020: not in the reference inventory (possible phantom)",
+   "inspect obs-033: not in the reference inventory (possible phantom)",
+   "inspect obs-042: not in the reference inventory (possible phantom)",
+   "inspect obs-045: not in the reference inventory (possible phantom)",
+   "inspect obs-047: not in the reference inventory (possible phantom)",
+   "inspect obs-048: not in the reference inventory (possible phantom)",
+   "inspect obs-049: not in the reference inventory (possible phantom)",
+   "inspect obs-050: not in the reference inventory (possible phantom)",
+   "inspect obs-051: not in the reference inventory (possible phantom)",
+   "inspect obs-052: not in the reference inventory (possible phantom)",
+   "inspect obs-053: not in the reference inventory (possible phantom)",
+   "inspect obs-056: not in the reference inventory (possible phantom)",
+   "inspect obs-057: not in the reference inventory (possible phantom)",
+   "inspect obs-060: not in the reference inventory (possible phantom)",
+   "inspect obs-062: not in the reference inventory (possible phantom)",
+   "inspect obs-063: not in the reference inventory (possible phantom)",
+   "inspect obs-068: not in the reference inventory (possible phantom)",
+   "inspect obs-072: not in the reference inventory (possible phantom)",
+   "inspect obs-074: not in the reference inventory (possible phantom)",
+   "inspect obs-075: not in the reference inventory (possible phantom)",
+   "inspect obs-077: not in the reference inventory (possible phantom)",
+   "inspect obs-078: not in the reference inventory (possible phantom)",
+   "inspect obs-079: not in the reference inventory (possible phantom)",
+   "inspect obs-080: not in the reference inventory (possible phantom)",
+   "inspect obs-081: not in the reference inventory (possible phantom)",
+   "inspect obs-082: not in the reference inventory (possible phantom)",
+   "inspect obs-083: not in the reference inventory (possible phantom)"
+  ]
+ }
+}

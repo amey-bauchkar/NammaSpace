@@ -1,0 +1,44 @@
+  PASS 1 create project via the form: tum-office-sample-final-20261012-dcf3c6
+  PASS 2 upload through the file input: 61 files uploaded. Next: check the capture.
+  PASS 3 capture check: Ready to reconstruct: 61 photos accepted, 3 things to be aware of.
+  PASS 4 start reconstruction: run-20261012-000312-03f1
+    progress: Starting
+    progress: Placing cameras (structure from motion)
+    progress: Building dense 3D geometry
+    progress: Building the surface mesh
+    progress: Painting photo textures onto the mesh
+    progress: Finished
+  PASS 5 reconstruction finished in the UI: Result
+Quality: Usable, with warnings
+Photos placed
+61 of 61 (100%)
+3D surface
+0.38 million triangles
+Dense points
+365,598
+Floor reconstructed
+49% of the floor area
+Real-world scale
+unknown (set it in the viewer with a known length)
+Processing time
+5 min 43 s
+Peak memory
+0.6 GB
+Navigation
+not available
+Few 3D points were found per photo; the geometry may be unreliable.
+The surface found as 'floor'
+  PASS V-01 package verified and model displayed: phase ready, 375409 triangles, LOD 0, timing {'package_ms': 54, 'first_lod_downloaded_ms': 99, 'first_view_ms': 449}
+  PASS V-02 starts at eye height: y 1.282 eye 1.282
+  PASS V-03 mouse drag turns the view: yaw 0.902 -> 0.374
+  PASS V-04 W key walks forward: moved 1.503 units (1.17 eye heights)
+  PASS V-05 F switches to fly mode and E rises: mode fly, dy 0.995
+  PASS V-06 R resets to the start view in walk mode: mode walk, distance to start 0.0000
+  PASS V-07 ] jumps to a photo viewpoint: moved to [0.725, 1.768, -3.906]
+  PASS V-08 no uncaught exceptions: none
+  PASS V-09 no console errors: none
+  PASS V-10 in-page self-test: 10/10
+  bench: valid=True median=16.7 p95=16.9 LOD 0 gpu=ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  PASS 6 open the walkthrough and drive it: 10/10 viewer checks; GPU ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  PASS 7 publish / export: Published: 35 files, 13 MB. Open the static site · Download ZIP (7.9 MB)
+Upload the folder (or ZIP contents) to any static web host, e.g. GitHub Pages or Netlify, to share a link. Respect the licence of the source photos.

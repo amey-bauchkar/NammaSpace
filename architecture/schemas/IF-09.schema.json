@@ -1,0 +1,294 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-09.schema.json",
+ "title": "IF-09 \u2014 POI record",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "poi_id",
+  "display_name",
+  "kind",
+  "marker_site_m",
+  "frame_id",
+  "label_source",
+  "verification",
+  "provenance"
+ ],
+ "properties": {
+  "poi_id": {
+   "type": "string",
+   "pattern": "^poi-[a-z0-9-]+$"
+  },
+  "display_name": {
+   "type": "string",
+   "minLength": 1
+  },
+  "aliases": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "kind": {
+   "enum": [
+    "room",
+    "zone",
+    "item",
+    "entrance",
+    "other"
+   ]
+  },
+  "category": {
+   "type": "string"
+  },
+  "room_poi_id": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "marker_site_m": {
+   "$ref": "#/$defs/vec3"
+  },
+  "frame_id": {
+   "type": "string"
+  },
+  "route_endpoint_xz_m": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/vec2"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "description": "Site-frame [x, z] where a person stands to reach the POI."
+  },
+  "endpoint_reachable": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "endpoint_geometry_id": {
+   "type": "string",
+   "description": "1.1.0: IF-04 the endpoint was computed against (stale if it differs)."
+  },
+  "endpoint_navlayer_id": {
+   "type": "string",
+   "description": "1.1.0: IF-05 used for the endpoint."
+  },
+  "endpoint_snap_m": {
+   "type": "number",
+   "minimum": 0,
+   "description": "1.1.0: plan distance from the marker to the endpoint."
+  },
+  "view": {
+   "type": "object",
+   "required": [
+    "position_site_m",
+    "target_site_m"
+   ],
+   "properties": {
+    "position_site_m": {
+     "$ref": "#/$defs/vec3"
+    },
+    "target_site_m": {
+     "$ref": "#/$defs/vec3"
+    }
+   },
+   "additionalProperties": false
+  },
+  "label_source": {
+   "enum": [
+    "human",
+    "signage",
+    "automatic_suggestion"
+   ]
+  },
+  "verification": {
+   "type": "object",
+   "required": [
+    "status"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "unverified",
+      "verified",
+      "rejected"
+     ]
+    },
+    "by_role": {
+     "type": "string"
+    },
+    "at": {
+     "$ref": "#/$defs/timestamp"
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "$ref": "#/$defs/provenance"
+  },
+  "contract": {
+   "const": "IF-09"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

@@ -1,0 +1,44 @@
+{
+ "checks": [
+  {
+   "case": "corrupt",
+   "pass": true,
+   "state": {
+    "phase": "error",
+    "errors": [
+     {
+      "kind": "hash_mismatch",
+      "message": "The 3D model file is damaged or was changed after publishing (integrity check failed). Re-publish or re-download it."
+     }
+    ],
+    "panel": true,
+    "msg": "The 3D model file is damaged or was changed after publishing (integrity check failed). Re-publish or re-download it.",
+    "detail": "hash_mismatch: scene/lod0.glb: SHA-256 does not match the package",
+    "retry": true,
+    "tris": 0
+   },
+   "screenshot": "precapture_qa\\browser\\QA-09_failure\\failure_corrupt.png"
+  },
+  {
+   "case": "missing",
+   "pass": true,
+   "state": {
+    "phase": "error",
+    "errors": [
+     {
+      "kind": "missing_file",
+      "message": "The scene package could not be loaded or failed its integrity check."
+     }
+    ],
+    "panel": true,
+    "msg": "The scene package could not be loaded or failed its integrity check.",
+    "detail": "missing_file: Missing file: http://127.0.0.1:8793/data/missing_package.json (HTTP 404)",
+    "retry": true,
+    "tris": 0
+   },
+   "screenshot": "precapture_qa\\browser\\QA-09_failure\\failure_missing.png"
+  }
+ ],
+ "exceptions": [],
+ "passed": true
+}

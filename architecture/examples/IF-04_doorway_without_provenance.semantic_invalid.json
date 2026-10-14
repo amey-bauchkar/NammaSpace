@@ -1,0 +1,119 @@
+{
+ "contract": "IF-04",
+ "contract_version": "1.0.0",
+ "geometry_id": "geom-fixture-1",
+ "run_id": "run-practice-01",
+ "site_frame": {
+  "frame_id": "site-practice-01",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "Tape mark on floor at SW inner corner of Room A; +X along south wall"
+ },
+ "to_site": {
+  "matrix_row_major": [
+   1,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "source": "identity",
+  "method": "synthetic fixture already in site frame",
+  "residual_m": null
+ },
+ "floors": [
+  {
+   "floor_id": "F0",
+   "elevation_m": 0.0,
+   "walkable_regions": [
+    [
+     [
+      0.1,
+      0.1
+     ],
+     [
+      11.9,
+      0.1
+     ],
+     [
+      11.9,
+      5.9
+     ],
+     [
+      0.1,
+      5.9
+     ]
+    ]
+   ]
+  }
+ ],
+ "obstacles": [
+  {
+   "obstacle_id": "table",
+   "floor_id": "F0",
+   "footprint": [
+    [
+     2.0,
+     2.0
+    ],
+    [
+     3.6,
+     2.0
+    ],
+    [
+     3.6,
+     2.8
+    ],
+    [
+     2.0,
+     2.8
+    ]
+   ],
+   "min_y_m": 0.0,
+   "max_y_m": 0.75,
+   "kind": "furniture",
+   "confidence": 1.0,
+   "provenance": {
+    "origin": "synthetic_fixture",
+    "method": "manually specified layout (EXP-010)",
+    "author_role": "SCRIPT",
+    "created_at": "2026-10-10T12:00:00+05:30"
+   }
+  }
+ ],
+ "doorways": [
+  {
+   "doorway_id": "D1",
+   "floor_id": "F0",
+   "segment": [
+    [
+     6.0,
+     2.5
+    ],
+    [
+     6.0,
+     3.4
+    ]
+   ],
+   "measured_width_m": 0.9
+  }
+ ],
+ "provenance": {
+  "origin": "synthetic_fixture",
+  "method": "manually specified layout (EXP-010)",
+  "author_role": "SCRIPT",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

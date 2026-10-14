@@ -1,0 +1,640 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-13.schema.json",
+ "title": "IF-13 \u2014 Studio scene package (scale-free model frame)",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  },
+  "studio_poi": {
+   "type": "object",
+   "required": [
+    "poi_id",
+    "name",
+    "position",
+    "created_at",
+    "origin"
+   ],
+   "properties": {
+    "poi_id": {
+     "type": "string",
+     "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "name": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 80
+    },
+    "category": {
+     "type": "string",
+     "maxLength": 40
+    },
+    "aliases": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "maxLength": 80
+     },
+     "maxItems": 10
+    },
+    "position": {
+     "$ref": "#/$defs/vec3",
+     "description": "Model-frame point the label is attached to."
+    },
+    "view": {
+     "type": "object",
+     "required": [
+      "position",
+      "target"
+     ],
+     "properties": {
+      "position": {
+       "$ref": "#/$defs/vec3"
+      },
+      "target": {
+       "$ref": "#/$defs/vec3"
+      }
+     },
+     "additionalProperties": false
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "origin": {
+     "enum": [
+      "human_authored",
+      "external"
+     ]
+    },
+    "note": {
+     "type": "string",
+     "maxLength": 300
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "package_id",
+  "run_id",
+  "created_at",
+  "model_frame",
+  "scale",
+  "appearance",
+  "eye_height_units",
+  "bounds",
+  "start_view",
+  "cameras",
+  "roam",
+  "navigation",
+  "pois",
+  "quality",
+  "notices",
+  "files"
+ ],
+ "properties": {
+  "package_id": {
+   "type": "string"
+  },
+  "project": {
+   "type": "object",
+   "required": [
+    "project_id",
+    "title"
+   ],
+   "properties": {
+    "project_id": {
+     "type": "string"
+    },
+    "title": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "run_id": {
+   "type": "string"
+  },
+  "created_at": {
+   "$ref": "#/$defs/timestamp"
+  },
+  "model_frame": {
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "floor_detected",
+    "up_source",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "model"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "floor_detected": {
+     "type": "boolean"
+    },
+    "up_source": {
+     "enum": [
+      "floor_plane",
+      "camera_orientation"
+     ]
+    },
+    "datum": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "scale": {
+   "type": "object",
+   "required": [
+    "status",
+    "metres_per_unit",
+    "method"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "unknown",
+      "user_distance",
+      "markers",
+      "reference_alignment"
+     ],
+     "description": "reference_alignment = scale taken from dataset ground truth; allowed only with evaluation_only = true"
+    },
+    "metres_per_unit": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "exclusiveMinimum": 0
+    },
+    "relative_uncertainty": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    },
+    "method": {
+     "type": "string"
+    },
+    "evaluation_only": {
+     "type": "boolean"
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "status": {
+        "const": "unknown"
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "metres_per_unit": {
+        "type": "null"
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "metres_per_unit": {
+        "type": "number"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "status": {
+        "const": "reference_alignment"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "evaluation_only"
+      ],
+      "properties": {
+       "evaluation_only": {
+        "const": true
+       }
+      }
+     }
+    }
+   ],
+   "additionalProperties": false
+  },
+  "appearance": {
+   "type": "object",
+   "required": [
+    "representation",
+    "to_model",
+    "lods"
+   ],
+   "properties": {
+    "representation": {
+     "enum": [
+      "textured_mesh"
+     ]
+    },
+    "to_model": {
+     "type": "object",
+     "required": [
+      "matrix_row_major",
+      "method"
+     ],
+     "properties": {
+      "matrix_row_major": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 16,
+       "maxItems": 16
+      },
+      "method": {
+       "type": "string"
+      }
+     },
+     "additionalProperties": false,
+     "description": "Applied to the asset payload exactly once (ARCH-020 rule)."
+    },
+    "lods": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "object",
+      "required": [
+       "lod",
+       "path",
+       "format",
+       "bytes",
+       "sha256"
+      ],
+      "properties": {
+       "lod": {
+        "type": "integer",
+        "minimum": 0
+       },
+       "path": {
+        "type": "string"
+       },
+       "format": {
+        "enum": [
+         "glb"
+        ]
+       },
+       "bytes": {
+        "type": "integer",
+        "minimum": 1
+       },
+       "sha256": {
+        "$ref": "#/$defs/sha256"
+       },
+       "faces": {
+        "type": [
+         "integer",
+         "null"
+        ],
+        "minimum": 0
+       }
+      },
+      "additionalProperties": false
+     }
+    }
+   },
+   "additionalProperties": false
+  },
+  "eye_height_units": {
+   "type": "number",
+   "exclusiveMinimum": 0,
+   "description": "Median capture-camera height above the floor, model units."
+  },
+  "bounds": {
+   "type": "object",
+   "required": [
+    "min",
+    "max"
+   ],
+   "properties": {
+    "min": {
+     "$ref": "#/$defs/vec3"
+    },
+    "max": {
+     "$ref": "#/$defs/vec3"
+    }
+   },
+   "additionalProperties": false
+  },
+  "start_view": {
+   "type": "object",
+   "required": [
+    "position",
+    "target",
+    "source"
+   ],
+   "properties": {
+    "position": {
+     "$ref": "#/$defs/vec3"
+    },
+    "target": {
+     "$ref": "#/$defs/vec3"
+    },
+    "source": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "cameras": {
+   "type": "string",
+   "description": "Path to registered capture viewpoints (model frame)."
+  },
+  "roam": {
+   "type": "string",
+   "description": "Path to the roaming grid (viewing only; never used for routes)."
+  },
+  "navigation": {
+   "type": "object",
+   "required": [
+    "status",
+    "note"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "unavailable",
+      "unverified",
+      "accepted"
+     ]
+    },
+    "geometry": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "scale_basis": {
+     "enum": [
+      "unknown",
+      "user_distance",
+      "markers",
+      "reference_alignment",
+      "assumed_capture_height"
+     ]
+    },
+    "metres_per_unit": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "pois": {
+   "type": "string",
+   "description": "Path to a JSON array of studio POI records ($defs.studio_poi)."
+  },
+  "quality": {
+   "type": "object",
+   "required": [
+    "verdict",
+    "report"
+   ],
+   "properties": {
+    "verdict": {
+     "enum": [
+      "good",
+      "usable_with_warnings",
+      "poor",
+      "failed"
+     ]
+    },
+    "report": {
+     "type": "string"
+    },
+    "capture_report": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "warnings": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "additionalProperties": false
+  },
+  "notices": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "files": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "path",
+     "sha256",
+     "bytes"
+    ],
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "bytes": {
+      "type": "integer",
+      "minimum": 0
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "contract": {
+   "const": "IF-13"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

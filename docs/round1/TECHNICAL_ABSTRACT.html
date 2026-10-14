@@ -1,0 +1,245 @@
+<!doctype html><html><head><meta charset='utf-8'><title>TECHNICAL_ABSTRACT</title><style>
+@page { size: A4; margin: 15mm 14mm 15mm 14mm; }
+body { font: 9.6pt/1.38 "Segoe UI", system-ui, sans-serif; color: #111; }
+h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 11.5pt; margin: 9pt 0 3pt; border-bottom: 1px solid #ccd; }
+h3 { font-size: 10pt; margin: 7pt 0 2pt; } p { margin: 3pt 0; } ul, ol { margin: 2pt 0 3pt 16pt; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; page-break-inside: avoid; }
+th, td { border: 1px solid #c8ccd6; padding: 2pt 4pt; vertical-align: top; text-align: left; } th { background: #eef1f6; }
+code { font: 8.4pt Consolas, monospace; background: #f3f4f7; padding: 0 2pt; }
+pre { font: 8pt Consolas, monospace; background: #f3f4f7; padding: 4pt; white-space: pre-wrap; }
+img { max-width: 100%; } .small { font-size: 8pt; color: #444; }
+</style></head><body><h1>Namma Space – Technical Abstract (Round 1: 3D Reconstruction &amp; Roaming)</h1>
+<p>Techfest IIT Bombay 2026–27 · Team Namma Space · Draft generated 2026-10-11 from the repository evidence.
+All performance and accuracy figures below come from recorded runs (files named in each table); none are estimates.</p>
+<h2>1. Problem and scope</h2>
+<p>Namma Space turns <strong>ordinary phone photos or one video of an indoor space</strong> into a <strong>photo-textured 3D
+model that anyone can walk through in a web browser</strong>, without installing software and without manual 3D
+modelling (OFF-14…16, OFF-23/24). Round 1 asks for an SOP, a reconstruction pipeline and a free-roaming web
+viewer. Our design constraint is the team's real hardware: a laptop with an <strong>Intel Core 5 120U, 16 GB RAM,
+integrated graphics and no CUDA</strong>, so every core step runs on the CPU, locally, with no paid API or cloud service.</p>
+<h2>2. System architecture</h2>
+<pre><code> phone photos / video ─► Studio (local web app, 127.0.0.1) ─► capture check ─► worker process
+   worker: prepare ─► COLMAP SfM (CPU) ─► undistort ─► OpenMVS dense ─► mesh ─► texture (GLB, embedded)
+          ─► model frame (floor, up, start view, collision grid) ─► quality report ─► IF-13 scene package
+ viewer.html (three.js) ◄── verified package (SHA-256 per file)      publish ─► static website / ZIP
+</code></pre>
+<ul>
+<li><strong>Studio</strong> (Python standard-library HTTP server + worker processes): project folders with JSON manifests,
+  no database; one memory-heavy job at a time; every stage is resumable (completed stages are kept after a
+  crash, a cancel or an out-of-memory failure).</li>
+<li><strong>Contracts</strong>: the scene package (IF-13) states the model frame (right-handed, +Y up, floor at y = 0) and
+  an explicit <strong>scale status</strong>. Photos alone cannot fix real-world scale, so the default is
+  <code>unknown</code>; a user can add one known length later (no markers or tape required).</li>
+<li><strong>Viewer</strong>: three.js, vendored (no CDN dependency); loads a light level of detail first, then full detail;
+  every file is hash-checked before use; failures show a clear message instead of a broken scene.</li>
+</ul>
+<h2>3. Reconstruction pipeline</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Tool / method</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capture check</td>
+<td>OpenCV / Pillow: sharpness (Laplacian variance), exposure, exact and near duplicates, ORB overlap graph; video: 3 frames/s, sharper of each pair (deterministic, FFmpeg)</td>
+<td>Catch bad captures before minutes of processing</td>
+</tr>
+<tr>
+<td>Camera poses</td>
+<td>COLMAP 4.2.1 (CPU SIFT, exhaustive matching for photos, sequential for video, incremental mapping + second registration pass)</td>
+<td>Robust, BSD-licensed; threads chosen from free RAM; guided matching disabled after it reached 9–10 GB</td>
+</tr>
+<tr>
+<td>Dense geometry</td>
+<td>OpenMVS 2.4.0 DensifyPointCloud (≤ 1600 px Preview, ≤ 2560 px Standard) on an evenly spread, sharpest-in-bin subset of ≤ 90 / ≤ 140 placed images</td>
+<td>Best CPU-only MVS available to us; tracking needs dense video frames, surfaces do not</td>
+</tr>
+<tr>
+<td>Surface</td>
+<td>OpenMVS ReconstructMesh (a tested edge-length cleaning step was <strong>not</strong> adopted: it removed real flat surfaces)</td>
+<td>Watertight-leaning surface from the dense points</td>
+</tr>
+<tr>
+<td>Texture</td>
+<td>OpenMVS TextureMesh → GLB; textures embedded as JPEG, local paths removed, seam levelling off (it blackened 17–34 % of texels in this build), neutral grey where no photo sees a face</td>
+<td>Self-contained, portable, honest output</td>
+</tr>
+<tr>
+<td>Model frame</td>
+<td>Floor plane (RANSAC, scale-free tests on camera heights) or camera-orientation fallback; start view = the capture photo that overlooks most of the scene</td>
+<td>The viewer opens at eye height, looking into the room</td>
+</tr>
+<tr>
+<td>Quality</td>
+<td>Registration rate, reprojection error, floor coverage, mesh fragmentation, textureless photos, unknown scale</td>
+<td>Every warning is shown to the user in plain language</td>
+</tr>
+</tbody>
+</table>
+<p>Two processing profiles: <strong>Preview</strong> (fast, 1600 px) and <strong>Standard</strong> (full-resolution photos with a memory cap, two levels of detail).</p>
+<h2>4. Capture SOP (summary of docs/CAPTURE_SOP.md)</h2>
+<p>Lights on; main 1× lens; JPEG ("Most Compatible") on iPhone; walk along the walls facing into the room, one
+step (~0.5 m) between photos, about two-thirds overlap; floor in the lower third of every photo; a second,
+lower lap around large furniture; 3–4 photos while passing each doorway; always include an edge or object
+when photographing plain walls, glass or mirrors; 60–150 photos per room, or one slow 1–3 minute video.
+The Studio's capture check enforces the limits (10–300 photos, one video, JPEG/PNG, ≥ 480 px) and explains
+every warning.</p>
+<h2>5. Web viewer</h2>
+<p>First-person controls: click to capture the mouse (pointer lock) or drag to look; W A S D / arrows to walk;
+Shift to run; F toggles fly mode; R resets to the start view; [ ] jump through the original photo
+viewpoints. Walking keeps the camera at the capture eye height inside the free space connected to where the
+photos were taken (reconstructed furniture and walls block; floater specks do not). Floor areas the photos did
+not reconstruct are shown by a faint, labelled guide grid instead of a void or invented geometry. Place labels can
+be added by clicking on the model and found by search (jump transition). Walking paths are shown only as
+<strong>unverified</strong> guidance (Round 2 scope).</p>
+<h2>6. Evaluation on public datasets</h2>
+<p>Ground truth: ETH3D laser scans and DSLR poses; ARKitScenes ARKit trajectory, LiDAR mesh and annotated furniture boxes; TUM motion capture. Development scenes were used for tuning; <strong>held-out scenes were processed once with the frozen configuration</strong> (protocol <code>phase13_artifacts/PROTOCOL_PHASE13.md</code>). Criteria are the Phase 12 pre-registered ones, unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Scene (role, profile, config)</th>
+<th>Photos placed</th>
+<th>Camera error median</th>
+<th>Dense accuracy median</th>
+<th>Completeness @5 cm (dense / mesh)</th>
+<th>Floor IoU</th>
+<th>Routes OK (false-unreachable)</th>
+<th>Time · peak RAM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>arkit_41069025 (held-out, preview, frozen)</td>
+<td>35/300</td>
+<td>12.8 mm</td>
+<td>8.9 mm</td>
+<td>0.14 / 0.16</td>
+<td>0.38</td>
+<td>1/12 (11)</td>
+<td>19.0 min · 2.2 GB</td>
+</tr>
+<tr>
+<td>arkit_41142280 (held-out, preview, frozen)</td>
+<td>80/175</td>
+<td>14.8 mm</td>
+<td>21.7 mm</td>
+<td>0.21 / 0.22</td>
+<td>0.10</td>
+<td>not measurable</td>
+<td>22.8 min · 3.0 GB</td>
+</tr>
+<tr>
+<td>eth3d_delivery_area (held-out, preview, frozen)</td>
+<td>44/44</td>
+<td>14.8 mm</td>
+<td>13.0 mm</td>
+<td>0.61 / 0.71</td>
+<td>0.61</td>
+<td>4/12 (8)</td>
+<td>28.6 min · 4.0 GB</td>
+</tr>
+<tr>
+<td>eth3d_office (held-out, preview, frozen)</td>
+<td>26/26</td>
+<td>4.8 mm</td>
+<td>6.8 mm</td>
+<td>0.30 / 0.40</td>
+<td>0.00</td>
+<td>0/12 (12)</td>
+<td>7.5 min · 1.9 GB</td>
+</tr>
+<tr>
+<td>eth3d_office (held-out, standard, frozen)</td>
+<td>26/26</td>
+<td>5.3 mm</td>
+<td>6.0 mm</td>
+<td>0.33 / 0.38</td>
+<td>0.00</td>
+<td>0/12 (12)</td>
+<td>34.2 min · 6.8 GB</td>
+</tr>
+<tr>
+<td>eth3d_kicker (dev, standard, earlier)</td>
+<td>30/31</td>
+<td>7.7 mm</td>
+<td>6.3 mm</td>
+<td>0.49 / 0.59</td>
+<td>0.34</td>
+<td>0/12 (12)</td>
+<td>51.1 min · 7.6 GB</td>
+</tr>
+<tr>
+<td>eth3d_kicker (dev, standard_fullres, earlier)</td>
+<td>30/31</td>
+<td>7.5 mm</td>
+<td>6.4 mm</td>
+<td>0.50 / 0.60</td>
+<td>0.35</td>
+<td>0/12 (12)</td>
+<td>51.3 min · 6.9 GB</td>
+</tr>
+<tr>
+<td>eth3d_pipes (dev, preview, earlier)</td>
+<td>14/14</td>
+<td>5.1 mm</td>
+<td>8.7 mm</td>
+<td>0.29 / 0.45</td>
+<td>0.00</td>
+<td>0/12 (12)</td>
+<td>3.8 min · 1.9 GB</td>
+</tr>
+<tr>
+<td>tum_fr3_office_sample (dev, preview, earlier)</td>
+<td>60/61</td>
+<td>7.4 mm</td>
+<td>–</td>
+<td>– / –</td>
+<td>–</td>
+<td>not measurable</td>
+<td>4.8 min · 0.6 GB</td>
+</tr>
+<tr>
+<td>tum_fr3_office_sample (dev, preview, final)</td>
+<td>61/61</td>
+<td>8.6 mm</td>
+<td>–</td>
+<td>– / –</td>
+<td>–</td>
+<td>not measurable</td>
+<td>5.7 min · 0.6 GB</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Failed runs (kept on record, not hidden):</strong> arkitscenes-41125700-dev (preview, stopped in mesh): Unexpected error in Building the surface mesh: [WinError 2] The system cannot …; arkitscenes-41125700-dev (preview, stopped in frame): Unexpected error in Finding the floor and orientation: roam grid too large …; eth3d-delivery-area-held-out (standard, stopped in texture): Painting photo textures onto the mesh took longer than allowed.; eth3d-kicker-dev (standard, stopped in sfm): Placing cameras (structure from motion) failed: colmap_exhaustive_matcher …; eth3d-pipes-dev (preview, stopped in undistort): Correcting lens distortion failed: colmap_image_undistorter failed with exit ….</p>
+<p>Config: <em>frozen</em> = configuration frozen before the held-out runs; <em>final</em> = the submitted code (frozen + post-freeze face cap D13-14); <em>earlier</em> = development configuration.</p>
+<p>Criteria (Phase 12, unchanged): all photos placed; camera error ≤ 50 mm; dense accuracy ≤ 50 mm; dense completeness @5 cm ≥ 0.50; ≥ 1 route with 0 collisions and 0 false-unreachable pairs; preview ≤ 30 min, standard ≤ 90 min; peak RAM ≤ 12 GB. Per-criterion verdicts: <code>docs/RESULTS_SCENES.md</code>; gates A–F: <code>docs/RESULTS_MATRIX.md</code>.</p>
+<p><strong>Viewer frame time on the laptop's Intel iGPU (real key / mouse events):</strong> <strong>visible Chrome window</strong> (visible_kicker_standard): median 16.7 ms / P95 16.9 ms at 3.27 M textured triangles; headless Chrome, 11 records on 9 packages: median 16.7–33.3 ms (not a visible-window benchmark).</p>
+<h2>7. Limitations and next steps</h2>
+<ul>
+<li><strong>No own-home capture yet.</strong> Round 1 asks for the team's own home (OFF-34); every figure above uses public datasets.
+  The SOP is built for the iPhone 12 but has not been validated with it.</li>
+<li><strong>Completeness depends on the room.</strong> Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);
+  plain white walls, desks and dark floors stay partly missing (held-out office 0.30–0.33). Missing floor is shown
+  by a labelled guide grid and reported, never filled with invented geometry.</li>
+<li><strong>Fast handheld video fails.</strong> On both held-out iPad videos CPU structure-from-motion placed only 12–46 % of the
+  frames; the result is labelled "poor". The SOP asks for photos or a slow video.</li>
+<li><strong>Scale.</strong> Photos do not fix real-world size: the model is labelled "scale unknown" until the user enters one
+  known length. The fallback assumption (1.4 m phone height) was off by −5 % to +90 %, so it is never shown as metric.</li>
+<li><strong>Navigation is not validated.</strong> No scene meets the route criteria (best: 4 routes, 0 collisions, 8 pairs missed);
+  walking paths are shown only as <em>unverified</em> (Round 2: floor completion with human verification, ARCH-030).</li>
+<li><strong>Compute.</strong> CPU only: Preview 4–40 s per image, Standard 80–100 s per 24 MP photo. A 44-photo hall at Standard
+  needed 11.2 GB and exceeded the time limit (failed, kept); Standard is now capped at 4 M faces and the Studio
+  advises Preview first above 40 photos.</li>
+<li><strong>Licences.</strong> OpenMVS is AGPL-3.0 (used unmodified as an external program, never bundled); ETH3D and ARKitScenes
+  are non-commercial: their derived models are not published.</li>
+</ul>
+<h2>8. Credits and licences</h2>
+<p>COLMAP 4.2.1 (BSD-3-Clause), OpenMVS 2.4.0 (AGPL-3.0; used as an unmodified external program, never
+bundled), three.js 0.186.1 (MIT), FFmpeg (external tool), NumPy / SciPy / Shapely (BSD), OpenCV (Apache-2.0),
+Pillow (MIT-CMU), jsonschema (MIT), psutil (BSD). Datasets: ETH3D (Schöps et al., CVPR 2017; CC BY-NC-SA 4.0),
+ARKitScenes (Baruch et al., NeurIPS 2021 D&B; Apple non-commercial licence), TUM RGB-D (Sturm et al.,
+IROS 2012; CC BY 4.0). Full notices: THIRD_PARTY_NOTICES.md.</p></body></html>

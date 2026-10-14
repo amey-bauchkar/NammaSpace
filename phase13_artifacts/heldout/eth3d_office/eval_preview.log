@@ -1,0 +1,68 @@
+{
+ "scene_id": "eth3d_office",
+ "role": "heldout_test",
+ "registration": {
+  "input": 26,
+  "registered": 26,
+  "rate": 1.0,
+  "unregistered": [],
+  "rescue": {
+   "attempted": false
+  }
+ },
+ "verdicts": {
+  "registration": true,
+  "pose": true,
+  "geometry_accuracy": true,
+  "geometry_completeness": false,
+  "routes_no_collision": "NOT EVALUABLE (0 candidate routes)",
+  "routes_no_false_unreachable": false,
+  "obstacles_none_omitted": true,
+  "processing_time": true,
+  "peak_ram": true
+ },
+ "pose_median_m": 0.0047932812265552285,
+ "scale": {
+  "true_metres_per_unit": 0.1427,
+  "assumed_metres_per_unit": 0.2679,
+  "assumed_scale_error": 0.8765,
+  "eye_height_m_true": 0.7461
+ },
+ "geometry": {
+  "accuracy_m": {
+   "median": 0.0067882655551708615,
+   "p90": 0.024504228136708814
+  },
+  "completeness_at_5cm": 0.30395819601394375,
+  "completeness_at_10cm": 0.4059960723823244
+ },
+ "geometry_mesh": {
+  "accuracy_m": {
+   "median": 0.021421879661697715,
+   "p90": 0.17812200818084523
+  },
+  "completeness_at_5cm": 0.39624362101887023
+ },
+ "floor": {
+  "free_floor_iou": 0.0,
+  "free_floor_precision": 0.0,
+  "free_floor_recall": 0.0
+ },
+ "routes": {
+  "pairs": 12,
+  "candidate_routes": 0,
+  "success": 0,
+  "collisions_with_reference_obstacles": 0,
+  "false_unreachable": 12
+ },
+ "obstacles": {
+  "reference_obstacles": 9,
+  "omitted": 0
+ },
+ "timing": {
+  "total_minutes": 7.47,
+  "peak_rss_gb": 1.94
+ }
+}
+
+--- stderr ---

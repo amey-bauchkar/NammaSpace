@@ -1,0 +1,35 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 10,
+ "frames": 599,
+ "frame_ms": {
+  "median": 16.699999999999818,
+  "p95": 16.90000000000009,
+  "max": 50.099999999999454,
+  "mean": 16.723539232053422
+ },
+ "over_33ms_share": 0.001669449081803005,
+ "lod": 0,
+ "triangles": 375409,
+ "draw_calls_last_frame": 1,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 101,
+ "gpu_memory_textures": 1,
+ "gpu_memory_geometries": 1,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 36,
+  "first_lod_downloaded_ms": 93,
+  "first_view_ms": 458
+ },
+ "package_id": "pkg-tum-office-sample-final-20261012-dcf3c6-run-20261012-000312-03f1",
+ "page_url": "http://127.0.0.1:8781/viewer.html?package=%2Ffiles%2Ftum-office-sample-final-20261012-dcf3c6%2Fruns%2Frun-20261012-000312-03f1%2F90_package%2Fscene_package.json&project=tum-office-sample-final-20261012-dcf3c6&run=run-20261012-000312-03f1&bench=1&seconds=10",
+ "at": "2026-10-11T18:39:25.363Z",
+ "recorded_by_server_at": "2026-10-12T00:09:25+05:30"
+}

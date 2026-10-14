@@ -1,0 +1,19 @@
+{
+ "contract": "IF-09",
+ "contract_version": "1.0.0",
+ "poi_id": "poi-sofa",
+ "display_name": "Sofa",
+ "kind": "item",
+ "marker_site_m": [
+  1.5,
+  0.4,
+  4.95
+ ],
+ "frame_id": "site-practice-01",
+ "label_source": "human",
+ "provenance": {
+  "origin": "human_authored",
+  "method": "placed in viewer",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

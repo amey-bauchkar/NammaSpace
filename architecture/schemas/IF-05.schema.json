@@ -1,0 +1,277 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-05.schema.json",
+ "title": "IF-05 \u2014 Navigation layer (occupancy grid)",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "navlayer_id",
+  "geometry_id",
+  "floor_id",
+  "origin_xz_m",
+  "resolution_m",
+  "width",
+  "height",
+  "rasterization",
+  "agent",
+  "body_band_m",
+  "occupancy_encoding",
+  "occupancy"
+ ],
+ "properties": {
+  "navlayer_id": {
+   "type": "string"
+  },
+  "geometry_id": {
+   "type": "string"
+  },
+  "floor_id": {
+   "type": "string"
+  },
+  "geometry_sha256": {
+   "$ref": "#/$defs/sha256",
+   "description": "1.1.0: SHA-256 of the IF-04 file the layer was built from."
+  },
+  "builder": {
+   "type": "object",
+   "required": [
+    "name",
+    "version"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "origin_xz_m": {
+   "$ref": "#/$defs/vec2",
+   "description": "Site-frame [x, z] of the minimum corner of cell (row 0, column 0)."
+  },
+  "resolution_m": {
+   "type": "number",
+   "exclusiveMinimum": 0,
+   "maximum": 0.1
+  },
+  "width": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "height": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "rasterization": {
+   "enum": [
+    "conservative"
+   ],
+   "description": "Centre-sampling is rejected (EXP-010 S9)."
+  },
+  "agent": {
+   "type": "object",
+   "required": [
+    "radius_m",
+    "extra_margin_m"
+   ],
+   "properties": {
+    "radius_m": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "extra_margin_m": {
+     "type": "number",
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "body_band_m": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2,
+   "description": "Height band above floor whose obstacles block walking."
+  },
+  "occupancy_encoding": {
+   "enum": [
+    "rle_rows_v1"
+   ]
+  },
+  "occupancy": {
+   "type": "array",
+   "items": {
+    "type": "array",
+    "items": {
+     "type": "integer",
+     "minimum": 0
+    }
+   },
+   "description": "Per row: run lengths alternating free, blocked, starting with free. Row r covers z in [origin_z + r*res, origin_z + (r+1)*res); cells within a row run in increasing x. Blocked = configuration space after inflation by agent.radius_m + agent.extra_margin_m. Each row must sum to width and there must be `height` rows (semantic check)."
+  },
+  "contract": {
+   "const": "IF-05"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

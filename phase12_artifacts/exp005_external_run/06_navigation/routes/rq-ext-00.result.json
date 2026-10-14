@@ -1,0 +1,13 @@
+{
+ "contract": "IF-07",
+ "contract_version": "1.1.0",
+ "request_id": "rq-ext-00",
+ "planner": {
+  "name": "namma-grid-astar",
+  "version": "1.0.0"
+ },
+ "navlayer_id": "nav-F0-46d64ca7c1c8-r0.05-a0.25-m0",
+ "geometry_id": "geom-kicker-candidate-mvs-v1",
+ "status": "start_blocked",
+ "note": "start [-2.025, -0.075] is in a blocked / inflated cell; nearest free cell centre 3.631 m away (start is never snapped)"
+}

@@ -1,0 +1,3 @@
+id,from_point,to_point,tape_m,uncertainty_m,notes
+D01,M0,M1,,0.005,measure twice
+D02,M2,M3,,0.01,check distance

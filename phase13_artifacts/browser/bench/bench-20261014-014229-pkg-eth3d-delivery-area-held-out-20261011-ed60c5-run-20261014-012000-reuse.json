@@ -1,0 +1,37 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 20,
+ "frames": 882,
+ "frame_ms": {
+  "median": 16.700000000000728,
+  "p95": 33.29999999999927,
+  "max": 3883.5999999999995,
+  "mean": 22.80952380952381
+ },
+ "over_33ms_share": 0.01473922902494331,
+ "lod": 0,
+ "triangles": 3995750,
+ "draw_calls_last_frame": 8,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1.0000000149011612,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 134,
+ "gpu_memory_textures": 7,
+ "gpu_memory_geometries": 7,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 112,
+  "first_lod_downloaded_ms": 305,
+  "first_view_ms": 1282,
+  "full_detail_ms": 3570,
+  "full_detail_load_ms": 2262
+ },
+ "package_id": "pkg-eth3d-delivery-area-held-out-20261011-ed60c5-run-20261014-012000-reuse",
+ "page_url": "http://127.0.0.1:8781/viewer.html?package=/files/eth3d-delivery-area-held-out-20261011-ed60c5/runs/run-20261014-012000-reuse/90_package/scene_package.json&project=eth3d-delivery-area-held-out-20261011-ed60c5&run=run-20261014-012000-reuse&bench=1&seconds=20",
+ "at": "2026-10-13T20:12:29.140Z",
+ "recorded_by_server_at": "2026-10-14T01:42:29+05:30"
+}

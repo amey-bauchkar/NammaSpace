@@ -1,0 +1,8 @@
+point_id,description,d_from_M0_m,d_from_M1_m,side,height_m,uncertainty_m,notes
+M0,marker 0 centre (origin),0,,,0,0.005,origin by definition
+M1,marker 1 centre (+X direction),,0,+z,0,0.005,"d_from_M0_m = tape M0->M1; side irrelevant (on axis)"
+M2,marker 2 centre,,,,0,0.01,
+M3,marker 3 centre,,,,0,0.01,
+M4,marker 4 centre (CHECK marker - never used for fitting),,,,0,0.01,
+M5,marker 5 centre (CHECK marker - never used for fitting),,,,0,0.01,
+P01,room corner,,,,0,0.01,

@@ -1,0 +1,190 @@
+{
+ "url": "http://127.0.0.1:8781/viewer.html?package=%2Ffiles%2Ftum-office-sample-final-20261012-dcf3c6%2Fruns%2Frun-20261012-000312-03f1%2F90_package%2Fscene_package.json&project=tum-office-sample-final-20261012-dcf3c6&run=run-20261012-000312-03f1",
+ "label": "e2e_viewer",
+ "checks": [
+  {
+   "id": "V-01",
+   "name": "package verified and model displayed",
+   "pass": true,
+   "detail": "phase ready, 375409 triangles, LOD 0, timing {'package_ms': 54, 'first_lod_downloaded_ms': 99, 'first_view_ms': 449}"
+  },
+  {
+   "id": "V-02",
+   "name": "starts at eye height",
+   "pass": true,
+   "detail": "y 1.282 eye 1.282"
+  },
+  {
+   "id": "V-03",
+   "name": "mouse drag turns the view",
+   "pass": true,
+   "detail": "yaw 0.902 -> 0.374"
+  },
+  {
+   "id": "V-04",
+   "name": "W key walks forward",
+   "pass": true,
+   "detail": "moved 1.503 units (1.17 eye heights)"
+  },
+  {
+   "id": "V-05",
+   "name": "F switches to fly mode and E rises",
+   "pass": true,
+   "detail": "mode fly, dy 0.995"
+  },
+  {
+   "id": "V-06",
+   "name": "R resets to the start view in walk mode",
+   "pass": true,
+   "detail": "mode walk, distance to start 0.0000"
+  },
+  {
+   "id": "V-07",
+   "name": "] jumps to a photo viewpoint",
+   "pass": true,
+   "detail": "moved to [0.725, 1.768, -3.906]"
+  },
+  {
+   "id": "V-08",
+   "name": "no uncaught exceptions",
+   "pass": true,
+   "detail": "none"
+  },
+  {
+   "id": "V-09",
+   "name": "no console errors",
+   "pass": true,
+   "detail": "none"
+  },
+  {
+   "id": "V-10",
+   "name": "in-page self-test",
+   "pass": true,
+   "detail": "10/10"
+  }
+ ],
+ "started": "2026-10-12T00:08:56+0530",
+ "window": "headless",
+ "load_wall_s": 0.57,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "screens": [
+  "phase13_artifacts\\browser\\e2e_tum_final\\e2e_viewer_01_start_view.png",
+  "phase13_artifacts\\browser\\e2e_tum_final\\e2e_viewer_02_after_walk.png",
+  "phase13_artifacts\\browser\\e2e_tum_final\\e2e_viewer_03_fly_up.png",
+  "phase13_artifacts\\browser\\e2e_tum_final\\e2e_viewer_04_photo_viewpoint.png",
+  "phase13_artifacts\\browser\\e2e_tum_final\\e2e_viewer_05_full_detail.png"
+ ],
+ "full_detail": {
+  "lod": 0,
+  "tris": 375409,
+  "timing": {
+   "package_ms": 54,
+   "first_lod_downloaded_ms": 99,
+   "first_view_ms": 449
+  }
+ },
+ "selftest": {
+  "passed": 10,
+  "total": 10,
+  "allPassed": true,
+  "results": [
+   {
+    "id": "ST-01",
+    "name": "package verified and model shown",
+    "pass": true,
+    "detail": "375409 triangles, LOD 0"
+   },
+   {
+    "id": "ST-02",
+    "name": "starts at the start view at eye height",
+    "pass": true,
+    "detail": "y=1.282 eye=1.282"
+   },
+   {
+    "id": "ST-03",
+    "name": "W moves the camera (or is stopped by an obstacle)",
+    "pass": true,
+    "detail": "moved 0.811 units, blocked moves 0"
+   },
+   {
+    "id": "ST-04",
+    "name": "mouse look turns the view",
+    "pass": true,
+    "detail": "yaw change -0.288 rad"
+   },
+   {
+    "id": "ST-05",
+    "name": "fly mode moves up",
+    "pass": true,
+    "detail": "dy 0.608"
+   },
+   {
+    "id": "ST-06",
+    "name": "reset returns to start in walk mode",
+    "pass": true,
+    "detail": "mode walk"
+   },
+   {
+    "id": "ST-07",
+    "name": "walking stops at reconstructed obstacles / edge",
+    "pass": true,
+    "detail": "stopped at x=-6.758, obstacle cell starts at x=-6.534"
+   },
+   {
+    "id": "ST-08",
+    "name": "search (no labelled places in this package)",
+    "pass": true,
+    "detail": "not measurable: no POIs"
+   },
+   {
+    "id": "ST-09",
+    "name": "pointer lock available",
+    "pass": true,
+    "detail": "requestPointerLock present"
+   },
+   {
+    "id": "ST-10",
+    "name": "frames are being rendered",
+    "pass": true,
+    "detail": "not measurable: page hidden or unfocused (2 frames)"
+   }
+  ]
+ },
+ "bench": {
+  "valid": true,
+  "invalid_reason": null,
+  "seconds": 10,
+  "frames": 599,
+  "frame_ms": {
+   "median": 16.699999999999818,
+   "p95": 16.90000000000009,
+   "max": 50.099999999999454,
+   "mean": 16.723539232053422
+  },
+  "over_33ms_share": 0.001669449081803005,
+  "lod": 0,
+  "triangles": 375409,
+  "draw_calls_last_frame": 1,
+  "canvas_px": [
+   1070,
+   848
+  ],
+  "device_pixel_ratio": 1,
+  "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "js_heap_mb": 101,
+  "gpu_memory_textures": 1,
+  "gpu_memory_geometries": 1,
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "timing": {
+   "package_ms": 36,
+   "first_lod_downloaded_ms": 93,
+   "first_view_ms": 458
+  },
+  "package_id": "pkg-tum-office-sample-final-20261012-dcf3c6-run-20261012-000312-03f1",
+  "page_url": "http://127.0.0.1:8781/viewer.html?package=%2Ffiles%2Ftum-office-sample-final-20261012-dcf3c6%2Fruns%2Frun-20261012-000312-03f1%2F90_package%2Fscene_package.json&project=tum-office-sample-final-20261012-dcf3c6&run=run-20261012-000312-03f1&bench=1&seconds=10",
+  "at": "2026-10-11T18:39:25.363Z"
+ },
+ "console": [],
+ "exceptions": [],
+ "passed": true
+}

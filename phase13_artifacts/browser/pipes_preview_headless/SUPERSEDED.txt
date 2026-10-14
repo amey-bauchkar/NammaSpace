@@ -1,0 +1,1 @@
+Superseded by pipes_preview_headless_v2: this run failed only V-09 (favicon.ico 404 in the console). The favicon was added and the same package was re-tested (v2: 10/10). Kept as a record of the defect.

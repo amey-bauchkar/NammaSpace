@@ -1,0 +1,370 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-08.schema.json",
+ "title": "IF-08 \u2014 Independent route-validation report",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "report_id",
+  "request_id",
+  "geometry_id",
+  "validator",
+  "checks",
+  "verdict"
+ ],
+ "properties": {
+  "report_id": {
+   "type": "string"
+  },
+  "request_id": {
+   "type": "string"
+  },
+  "geometry_id": {
+   "type": "string"
+  },
+  "validator": {
+   "type": "object",
+   "required": [
+    "name",
+    "version"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "checks": {
+   "type": "object",
+   "required": [
+    "intersects_obstacle",
+    "min_clearance_m",
+    "clearance_ok",
+    "inside_walkable_region",
+    "geometry_validated"
+   ],
+   "properties": {
+    "intersects_obstacle": {
+     "type": "boolean"
+    },
+    "min_clearance_m": {
+     "type": "number",
+     "minimum": 0
+    },
+    "clearance_ok": {
+     "type": "boolean"
+    },
+    "inside_walkable_region": {
+     "type": "boolean"
+    },
+    "geometry_validated": {
+     "type": "boolean",
+     "description": "True only if IF-04 passed the geometry contract (V-01..V-10)."
+    },
+    "crossed_human_corrected_features": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "route_finite": {
+     "type": "boolean",
+     "description": "1.1.0"
+    },
+    "start_matches_request": {
+     "type": "boolean",
+     "description": "1.1.0"
+    },
+    "goal_within_snap_limit": {
+     "type": "boolean",
+     "description": "1.1.0"
+    },
+    "poi_endpoint_valid": {
+     "type": [
+      "boolean",
+      "null"
+     ],
+     "description": "1.1.0; null when the goal is not a POI."
+    }
+   },
+   "additionalProperties": false
+  },
+  "verdict": {
+   "enum": [
+    "pass",
+    "fail"
+   ]
+  },
+  "evidence": {
+   "description": "1.1.0 (ARCH-021): binds the report to the exact route and geometry checked.",
+   "type": "object",
+   "required": [
+    "route_sha256",
+    "geometry_sha256",
+    "agent_radius_m",
+    "clearance_tolerance_m",
+    "completeness"
+   ],
+   "properties": {
+    "route_sha256": {
+     "$ref": "#/$defs/sha256",
+     "description": "SHA-256 of the canonical IF-07 polyline string (docs/CONTRACT_CHANGES.md)."
+    },
+    "geometry_sha256": {
+     "$ref": "#/$defs/sha256"
+    },
+    "navlayer_id": {
+     "type": "string"
+    },
+    "geometry_check_report_id": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "agent_radius_m": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "clearance_tolerance_m": {
+     "type": "number",
+     "minimum": 0
+    },
+    "completeness": {
+     "enum": [
+      "verified_against_reference",
+      "not_established",
+      "failed"
+     ],
+     "description": "Whether the checked geometry was compared with an independent reference. Validity against the geometry is not completeness."
+    },
+    "limitations": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "additionalProperties": false
+  },
+  "contract": {
+   "const": "IF-08"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "verdict": {
+      "const": "pass"
+     }
+    }
+   },
+   "then": {
+    "properties": {
+     "checks": {
+      "properties": {
+       "intersects_obstacle": {
+        "const": false
+       },
+       "clearance_ok": {
+        "const": true
+       },
+       "inside_walkable_region": {
+        "const": true
+       },
+       "geometry_validated": {
+        "const": true
+       },
+       "route_finite": {
+        "const": true
+       },
+       "start_matches_request": {
+        "const": true
+       },
+       "goal_within_snap_limit": {
+        "const": true
+       },
+       "poi_endpoint_valid": {
+        "enum": [
+         true,
+         null
+        ]
+       }
+      }
+     },
+     "evidence": {
+      "properties": {
+       "completeness": {
+        "enum": [
+         "verified_against_reference",
+         "not_established"
+        ]
+       }
+      }
+     }
+    }
+   }
+  }
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,9 @@
+EXP-013 environment audit (2026-10-10)
+OS: Windows 11 Home Single Language
+CPU: Intel(R) Core(TM) 5 120U, 12 logical processors
+RAM: 15.7 GB
+GPU: Intel(R) Graphics, driver 31.0.101.4953 (no NVIDIA GPU; nvidia-smi not found)
+Python 3.14.0; torch 2.11.0+cpu (torch.cuda.is_available() == False); torchvision 0.26.0
+numpy 2.4.4; scipy 1.17.1; shapely 2.1.2; opencv-python 4.13.0.92; Node v25.6.1; ffmpeg present on PATH
+Not installed: COLMAP binary (not on PATH), nerfstudio, gsplat
+Nothing was installed or downloaded in Phase 8.

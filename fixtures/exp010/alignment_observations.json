@@ -1,0 +1,136 @@
+{
+ "reference_type": "site_alignment_v1",
+ "reference_id": "align-exp010-v1",
+ "frame_id": "site-synthetic-exp010",
+ "marks": [
+  {
+   "mark_id": "datum",
+   "expected_site_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "observed_site_m": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "mark_id": "x_mark",
+   "expected_site_m": [
+    12.0,
+    0.0,
+    0.0
+   ],
+   "observed_site_m": [
+    12.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "mark_id": "z_mark",
+   "expected_site_m": [
+    0.0,
+    0.0,
+    6.0
+   ],
+   "observed_site_m": [
+    0.0,
+    0.0,
+    6.0
+   ]
+  },
+  {
+   "mark_id": "far_corner",
+   "expected_site_m": [
+    12.0,
+    0.0,
+    6.0
+   ],
+   "observed_site_m": [
+    12.0,
+    0.0,
+    6.0
+   ]
+  }
+ ],
+ "distances": [
+  {
+   "id": "M1",
+   "mark_a": "datum",
+   "mark_b": "x_mark",
+   "tape_m": 12.0
+  },
+  {
+   "id": "M2",
+   "mark_a": "datum",
+   "mark_b": "z_mark",
+   "tape_m": 6.0
+  },
+  {
+   "id": "M3",
+   "mark_a": "x_mark",
+   "mark_b": "far_corner",
+   "tape_m": 6.0
+  }
+ ],
+ "datum_mark": "datum",
+ "x_axis_mark": "x_mark",
+ "floor_samples_observed_site_m": [
+  [
+   0.5,
+   0.0,
+   0.5
+  ],
+  [
+   0.5,
+   0.0,
+   3.0
+  ],
+  [
+   0.5,
+   0.0,
+   5.5
+  ],
+  [
+   6.0,
+   0.0,
+   0.5
+  ],
+  [
+   6.0,
+   0.0,
+   3.0
+  ],
+  [
+   6.0,
+   0.0,
+   5.5
+  ],
+  [
+   11.5,
+   0.0,
+   0.5
+  ],
+  [
+   11.5,
+   0.0,
+   3.0
+  ],
+  [
+   11.5,
+   0.0,
+   5.5
+  ]
+ ],
+ "provenance": {
+  "origin": "synthetic_fixture",
+  "method": "EXP-010 layout, manually specified (phase8_artifacts/nav_experiments.py build_layout)",
+  "tool": "namma.fixtures.exp010",
+  "tool_version": "1.0.0",
+  "author_role": "SCRIPT",
+  "created_at": "2026-10-10T12:00:00+05:30"
+ }
+}

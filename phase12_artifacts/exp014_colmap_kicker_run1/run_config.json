@@ -1,0 +1,7 @@
+{
+ "colmap": "C:\\Users\\SEBIN\\Desktop\\NammaSpace\\tools\\colmap-4.2.1-nocuda\\bin\\colmap.exe",
+ "images": "../../external_data/eth3d_kicker/extracted/kicker/images/dslr_images",
+ "camera_model": "OPENCV",
+ "available_ram_gb_at_start": 3.8,
+ "cpu": "see phase12_artifacts/logs/environment.json"
+}

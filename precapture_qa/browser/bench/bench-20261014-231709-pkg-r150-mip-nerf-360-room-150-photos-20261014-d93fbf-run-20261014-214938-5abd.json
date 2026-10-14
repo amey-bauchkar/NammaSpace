@@ -1,0 +1,35 @@
+{
+ "valid": false,
+ "invalid_reason": "page not visible during run",
+ "seconds": 20,
+ "frames": 908,
+ "frame_ms": {
+  "median": 16.69999999999891,
+  "p95": 16.899999999999636,
+  "max": 7400.4,
+  "mean": 24.799669603524226
+ },
+ "over_33ms_share": 0.0011013215859030838,
+ "lod": 0,
+ "triangles": 1496252,
+ "draw_calls_last_frame": 4,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1.0000000149011612,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 95,
+ "gpu_memory_textures": 3,
+ "gpu_memory_geometries": 3,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 25,
+  "first_lod_downloaded_ms": 164,
+  "first_view_ms": 597
+ },
+ "package_id": "pkg-r150-mip-nerf-360-room-150-photos-20261014-d93fbf-run-20261014-214938-5abd",
+ "page_url": "http://127.0.0.1:8782/viewer.html?package=/files/r150-mip-nerf-360-room-150-photos-20261014-d93fbf/runs/run-20261014-214938-5abd/90_package/scene_package.json&project=r150-mip-nerf-360-room-150-photos-20261014-d93fbf&run=run-20261014-214938-5abd&bench=1&seconds=20",
+ "at": "2026-10-14T17:47:09.478Z",
+ "recorded_by_server_at": "2026-10-14T23:17:09+05:30"
+}

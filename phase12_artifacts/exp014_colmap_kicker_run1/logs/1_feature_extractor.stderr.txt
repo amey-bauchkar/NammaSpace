@@ -1,0 +1,13 @@
+I20261010 12:32:14.816053 25412 feature_extraction.cc:498] === Feature extraction ===
+I20261010 12:32:14.817749 21404 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.817907 28596 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818158 25260 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818270 12336 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818320 12456 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818386  5684 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818578 21304 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818635 25612 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818661 15904 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818709 12200 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818784 12848 sift.cc:764] Creating SIFT CPU feature extractor
+I20261010 12:32:14.818857 26140 sift.cc:764] Creating SIFT CPU feature extractor

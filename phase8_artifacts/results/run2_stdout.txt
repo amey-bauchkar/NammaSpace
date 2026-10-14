@@ -1,0 +1,431 @@
+{
+ "environment": {
+  "python": "3.14.0",
+  "numpy": "2.4.4",
+  "date": "2026-10-10 02:05:20",
+  "scipy": "1.17.1",
+  "shapely": "2.1.2"
+ },
+ "EXP-010": [
+  {
+   "scenario": "S1_open_area",
+   "start": [
+    1.0,
+    1.0
+   ],
+   "goal": [
+    4.5,
+    1.2
+   ],
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 3.562,
+   "plan_ms": 1.23,
+   "expanded": 116,
+   "goal_snap_m": 0.0,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.925,
+   "clearance_ok": true,
+   "inside_boundary": true,
+   "visgraph_length_m": 3.529,
+   "length_ratio_vs_visgraph": 1.009
+  },
+  {
+   "scenario": "S2_around_wall_via_door",
+   "start": [
+    2.0,
+    3.6
+   ],
+   "goal": [
+    9.0,
+    3.0
+   ],
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 7.249,
+   "plan_ms": 1.39,
+   "expanded": 152,
+   "goal_snap_m": 0.0,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.375,
+   "clearance_ok": true,
+   "inside_boundary": true,
+   "visgraph_length_m": 7.055,
+   "length_ratio_vs_visgraph": 1.027
+  },
+  {
+   "scenario": "S3_around_furniture",
+   "start": [
+    1.5,
+    2.4
+   ],
+   "goal": [
+    4.2,
+    2.4
+   ],
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 3.661,
+   "plan_ms": 4.63,
+   "expanded": 700,
+   "goal_snap_m": 0.0,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.3021,
+   "clearance_ok": true,
+   "inside_boundary": true,
+   "visgraph_length_m": 3.525,
+   "length_ratio_vs_visgraph": 1.038
+  },
+  {
+   "scenario": "S4_doorway_between_rooms",
+   "start": [
+    5.5,
+    1.0
+   ],
+   "goal": [
+    6.6,
+    5.5
+   ],
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 4.994,
+   "plan_ms": 4.37,
+   "expanded": 509,
+   "goal_snap_m": 0.0,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.2574,
+   "clearance_ok": true,
+   "inside_boundary": true,
+   "visgraph_length_m": 4.873,
+   "length_ratio_vs_visgraph": 1.025
+  },
+  {
+   "scenario": "S5_narrow_passage_0p70m",
+   "start": [
+    8.35,
+    3.0
+   ],
+   "goal": [
+    8.35,
+    5.2
+   ],
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 2.05,
+   "plan_ms": 0.37,
+   "expanded": 41,
+   "goal_snap_m": 0.15,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.325,
+   "clearance_ok": true,
+   "inside_boundary": true,
+   "visgraph_length_m": 2.075,
+   "length_ratio_vs_visgraph": 0.988
+  },
+  {
+   "scenario": "S6_unreachable_closed_room",
+   "start": [
+    1.0,
+    1.0
+   ],
+   "goal": [
+    10.5,
+    1.25
+   ],
+   "status": "UNREACHABLE",
+   "planned_on": "true layout",
+   "ms": 158.7803000002168,
+   "expanded": 20877,
+   "component_check_unreachable": true
+  },
+  {
+   "scenario": "S7_goal_near_obstacle",
+   "start": [
+    1.0,
+    1.0
+   ],
+   "goal": [
+    2.8,
+    1.95
+   ],
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 2.019,
+   "plan_ms": 3.24,
+   "expanded": 200,
+   "goal_snap_m": 0.3,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.325,
+   "clearance_ok": true,
+   "inside_boundary": true,
+   "visgraph_length_m": 1.899,
+   "length_ratio_vs_visgraph": 1.063
+  },
+  {
+   "scenario": "S8_missing_table_geometry",
+   "start": [
+    1.5,
+    2.4
+   ],
+   "goal": [
+    4.2,
+    2.4
+   ],
+   "status": "ROUTE",
+   "planned_on": "layout WITHOUT table (simulated missing geometry)",
+   "length_m": 2.7,
+   "plan_ms": 2.24,
+   "expanded": 54,
+   "goal_snap_m": 0.0,
+   "intersects_true_obstacle": true,
+   "min_clearance_m": 0.0,
+   "clearance_ok": false,
+   "inside_boundary": true,
+   "visgraph_length_m": null,
+   "length_ratio_vs_visgraph": null
+  },
+  {
+   "scenario": "S9_thin_wall_res0.05_centre",
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 7.45,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.2372,
+   "clearance_ok": true,
+   "inside_boundary": true
+  },
+  {
+   "scenario": "S9_thin_wall_res0.1_centre",
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 6.0,
+   "intersects_true_obstacle": true,
+   "min_clearance_m": 0.0,
+   "clearance_ok": false,
+   "inside_boundary": true
+  },
+  {
+   "scenario": "S9_thin_wall_res0.05_conservative",
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 7.45,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.2574,
+   "clearance_ok": true,
+   "inside_boundary": true
+  },
+  {
+   "scenario": "S9_thin_wall_res0.1_conservative",
+   "status": "ROUTE",
+   "planned_on": "true layout",
+   "length_m": 7.408,
+   "intersects_true_obstacle": false,
+   "min_clearance_m": 0.25,
+   "clearance_ok": true,
+   "inside_boundary": true
+  }
+ ],
+ "EXP-010_wall_s": 3.08,
+ "EXP-011_wall_s": 764.18,
+ "EXP-012": [
+  {
+   "query": "reception",
+   "expected": "Reception Desk",
+   "hits": [
+    "Reception Desk"
+   ],
+   "n_hits": 1,
+   "search_correct": true,
+   "ambiguous": false,
+   "targets": [
+    {
+     "poi": "Reception Desk",
+     "pos": [
+      1.2,
+      1.0
+     ],
+     "snap_m": 0.0,
+     "reachable": true
+    }
+   ]
+  },
+  {
+   "query": "meeting table",
+   "expected": "Meeting Table",
+   "hits": [
+    "Meeting Table"
+   ],
+   "n_hits": 1,
+   "search_correct": true,
+   "ambiguous": false,
+   "targets": [
+    {
+     "poi": "Meeting Table",
+     "pos": [
+      2.8,
+      2.4
+     ],
+     "snap_m": 0.7,
+     "reachable": true
+    }
+   ]
+  },
+  {
+   "query": "sofa",
+   "expected": "Sofa",
+   "hits": [
+    "Sofa"
+   ],
+   "n_hits": 1,
+   "search_correct": true,
+   "ambiguous": false,
+   "targets": [
+    {
+     "poi": "Sofa",
+     "pos": [
+      1.5,
+      4.95
+     ],
+     "snap_m": 0.8,
+     "reachable": true
+    }
+   ]
+  },
+  {
+   "query": "room b",
+   "expected": "Room B",
+   "hits": [
+    "Room B"
+   ],
+   "n_hits": 1,
+   "search_correct": true,
+   "ambiguous": false,
+   "targets": [
+    {
+     "poi": "Room B",
+     "pos": [
+      9.0,
+      3.0
+     ],
+     "snap_m": 0.0,
+     "reachable": true
+    }
+   ]
+  },
+  {
+   "query": "storage",
+   "expected": "Storage Alcove",
+   "hits": [
+    "Storage A
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.35, 'connected': False}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': False}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': False}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': False}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'centre', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.25, 'connected': False}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.3, 'connected': False}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.6, 'radius_m': 0.35, 'connected': False}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.7, 'radius_m': 0.35, 'connected': False}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.8, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 0.9, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.0, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.05, 'door_w_m': 1.2, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.6, 'radius_m': 0.35, 'connected': False}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.7, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.8, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 0.9, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.0, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.2, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.25, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.3, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+door {'mode': 'conservative', 'res_m': 0.1, 'door_w_m': 1.2, 'radius_m': 0.35, 'connected': True, 'crosses_true_wall': False, 'clearance_ok': True}
+EXP-011 noise:
+{'sigma_m': 0.0, 'extra_margin_m': 0.0, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 0, 'no_route_found': 0}
+{'sigma_m': 0.0, 'extra_margin_m': 0.05, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 0, 'no_route_found': 0}
+{'sigma_m': 0.0, 'extra_margin_m': 0.1, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 0, 'no_route_found': 0}
+{'sigma_m': 0.02, 'extra_margin_m': 0.0, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 12, 'no_route_found': 0}
+{'sigma_m': 0.02, 'extra_margin_m': 0.05, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 8, 'no_route_found': 0}
+{'sigma_m': 0.02, 'extra_margin_m': 0.1, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 5, 'no_route_found': 0}
+{'sigma_m': 0.05, 'extra_margin_m': 0.0, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 33, 'no_route_found': 12}
+{'sigma_m': 0.05, 'extra_margin_m': 0.05, 'trials': 100, 'routes_intersecting_true_obstacles': 0, 'routes_below_clearance': 18, 'no_route_found': 12}
+{'sigma_m': 0.05, 'extra_margin_m': 0.1, 'trials': 100, 'routes_intersecting_true_obstacles': 1, 'routes_below_clearance': 14, 'no_route_found': 16}
+{'sigma_m': 0.1, 'extra_margin_m': 0.0, 'trials': 100, 'routes_intersecting_true_obstacles': 4, 'routes_below_clearance': 49, 'no_route_found': 16}
+{'sigma_m': 0.1, 'extra_margin_m': 0.05, 'trials': 100, 'routes_intersecting_true_obstacles': 4, 'routes_below_clearance': 37, 'no_route_found': 16}
+{'sigma_m': 0.1, 'extra_margin_m': 0.1, 'trials': 100, 'routes_intersecting_true_obstacles': 4, 'routes_below_clearance': 26, 'no_route_found': 24}
+{'sigma_m': 0.2, 'extra_margin_m': 0.0, 'trials': 100, 'routes_intersecting_true_obstacles': 11, 'routes_below_clearance': 50, 'no_route_found': 28}
+{'sigma_m': 0.2, 'extra_margin_m': 0.05, 'trials': 100, 'routes_intersecting_true_obstacles': 10, 'routes_below_clearance': 49, 'no_route_found': 28}
+{'sigma_m': 0.2, 'extra_margin_m': 0.1, 'trials': 100, 'routes_intersecting_true_obstacles': 6, 'routes_below_clearance': 38, 'no_route_found': 34}

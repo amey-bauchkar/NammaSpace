@@ -1,0 +1,47 @@
+  PASS 1 create project via the form: r150-5-room-150-photos-13-4-0-20261014-42a709; notices ['Photos: Mip-NeRF 360 room (Barron et al., CVPR 2022); no licence stated - local evaluation only, do not publish']
+  PASS 2 upload through the file input: 150 files uploaded. Next: check the capture.
+  PASS 3 capture check: Ready to reconstruct: 150 photos accepted.
+  PASS 4 start reconstruction: run-20261014-234443-8e09
+    progress: Starting
+    progress: Preparing photos
+    progress: Placing cameras (structure from motion)
+    progress: Correcting lens distortion
+    progress: Building dense 3D geometry
+    progress: Building the surface mesh
+    progress: Painting photo textures onto the mesh
+    progress: Finding the floor and orientation
+    progress: Finished
+  PASS 5 reconstruction finished in the UI: Result
+Quality: Usable, with warnings
+Photos placed
+150 of 150 (100%)
+3D surface
+1.50 million triangles
+Dense points
+3,933,667
+Floor reconstructed
+62% of the floor area
+Real-world scale
+unknown (set it in the viewer with a known length)
+Processing time
+48 min 9 s
+Peak memory
+4.0 GB
+Navigation
+automatic floor map (unverified)
+Few 3D points were found per photo; the geometry may be unreliable.
+Real-
+  PASS V-01 package verified and model displayed: phase ready, 1496395 triangles, LOD 0, timing {'package_ms': 54, 'first_lod_downloaded_ms': 186, 'first_view_ms': 735}
+  PASS V-02 starts at eye height: y 3.286 eye 3.286
+  PASS V-03 mouse drag turns the view: yaw 1.798 -> 1.270
+  PASS V-04 W key walks forward: moved 2.505 units (0.76 eye heights)
+  PASS V-05 F switches to fly mode and E rises: mode fly, dy 2.651
+  PASS V-06 R resets to the start view in walk mode: mode walk, distance to start 0.0000
+  PASS V-07 ] jumps to a photo viewpoint: moved to [3.896, 3.255, 1.612]
+  PASS V-08 no uncaught exceptions: none
+  PASS V-09 no console errors: none
+  PASS V-10 in-page self-test: 10/10
+  bench: valid=True median=16.7 p95=16.9 LOD 0 gpu=ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  PASS 6 open the walkthrough and drive it: 10/10 viewer checks; GPU ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  PASS 7 publish / export: Published: 36 files, 52 MB. Open the static site · Download ZIP (36 MB)
+Upload the folder (or ZIP contents) to any static web host, e.g. GitHub Pages or Netlify, to share a link. Respect the licence of the source photos.

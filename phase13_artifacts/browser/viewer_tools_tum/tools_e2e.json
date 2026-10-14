@@ -1,0 +1,47 @@
+{
+ "url": "http://127.0.0.1:8781/viewer.html?package=/files/e2e-tum-office-sample-20261011-00b229/runs/run-20261011-134320-3be0/90_package/scene_package.json&project=e2e-tum-office-sample-20261011-00b229&run=run-20261011-134320-3be0",
+ "checks": [
+  {
+   "check": "click on the model opens the label form",
+   "pass": true,
+   "detail": "raycast hit the reconstructed surface"
+  },
+  {
+   "check": "label saved and shown",
+   "pass": true,
+   "detail": "0 -> 1 labels"
+  },
+  {
+   "check": "search finds the label and jumps to it",
+   "pass": true,
+   "detail": "{\"s\": \"unique\", \"j\": {\"poi_id\": \"teddy-desk\", \"position\": [1.7831699397673493, 1.248170098722908, 2.9226204502479023]}}"
+  },
+  {
+   "check": "walking-path request answered with an honest status",
+   "pass": true,
+   "detail": "status start_blocked: Your position is not on confirmed open floor\nPaths start only from floor that was reconstructed and is clear of obstacles. Walk to an open area (or jump to a ph"
+  },
+  {
+   "check": "two points measured on the model",
+   "pass": true,
+   "detail": "1.4074438657121164 model units"
+  },
+  {
+   "check": "scale set from a known length (package rebuilt, viewer reloaded)",
+   "pass": true,
+   "detail": "Scale saved. Reloading\u2026; scale user_distance 0.7105079103769696; 3.8 s"
+  }
+ ],
+ "route": {
+  "status": "start_blocked",
+  "title": "Your position is not on confirmed open floor",
+  "scale_basis": "assumed_capture_height",
+  "length_m": null,
+  "validator_verdict": null,
+  "checks": null
+ },
+ "exceptions": [],
+ "console_errors": [],
+ "passed": true,
+ "note": "The length typed (1.0 m) is a TEST value; the resulting scale of this run is not metric."
+}

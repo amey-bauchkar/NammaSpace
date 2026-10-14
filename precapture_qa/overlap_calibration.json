@@ -1,0 +1,152 @@
+[
+ {
+  "scene": "eth3d_kicker",
+  "setting": "current_orb640",
+  "images": 31,
+  "predicted_isolated": 2,
+  "actually_unplaced": 1,
+  "false_alarms": 1,
+  "missed": 0,
+  "seconds": 16.1
+ },
+ {
+  "scene": "eth3d_kicker",
+  "setting": "sift1024_min20",
+  "images": 31,
+  "predicted_isolated": 0,
+  "actually_unplaced": 1,
+  "false_alarms": 0,
+  "missed": 1,
+  "seconds": 20.2
+ },
+ {
+  "scene": "eth3d_kicker",
+  "setting": "sift1024_min15",
+  "images": 31,
+  "predicted_isolated": 0,
+  "actually_unplaced": 1,
+  "false_alarms": 0,
+  "missed": 1,
+  "seconds": 21.0
+ },
+ {
+  "scene": "eth3d_pipes",
+  "setting": "current_orb640",
+  "images": 14,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 6.8
+ },
+ {
+  "scene": "eth3d_pipes",
+  "setting": "sift1024_min20",
+  "images": 14,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 7.8
+ },
+ {
+  "scene": "eth3d_pipes",
+  "setting": "sift1024_min15",
+  "images": 14,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 7.5
+ },
+ {
+  "scene": "eth3d_office",
+  "setting": "current_orb640",
+  "images": 26,
+  "predicted_isolated": 11,
+  "actually_unplaced": 0,
+  "false_alarms": 11,
+  "missed": 0,
+  "seconds": 11.6
+ },
+ {
+  "scene": "eth3d_office",
+  "setting": "sift1024_min20",
+  "images": 26,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 13.4
+ },
+ {
+  "scene": "eth3d_office",
+  "setting": "sift1024_min15",
+  "images": 26,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 13.3
+ },
+ {
+  "scene": "eth3d_delivery_area",
+  "setting": "current_orb640",
+  "images": 44,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 21.2
+ },
+ {
+  "scene": "eth3d_delivery_area",
+  "setting": "sift1024_min20",
+  "images": 44,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 26.7
+ },
+ {
+  "scene": "eth3d_delivery_area",
+  "setting": "sift1024_min15",
+  "images": 44,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 26.9
+ },
+ {
+  "scene": "tum_sample",
+  "setting": "current_orb640",
+  "images": 61,
+  "predicted_isolated": 3,
+  "actually_unplaced": 0,
+  "false_alarms": 3,
+  "missed": 0,
+  "seconds": 3.2
+ },
+ {
+  "scene": "tum_sample",
+  "setting": "sift1024_min20",
+  "images": 61,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 7.9
+ },
+ {
+  "scene": "tum_sample",
+  "setting": "sift1024_min15",
+  "images": 61,
+  "predicted_isolated": 0,
+  "actually_unplaced": 0,
+  "false_alarms": 0,
+  "missed": 0,
+  "seconds": 7.9
+ }
+]

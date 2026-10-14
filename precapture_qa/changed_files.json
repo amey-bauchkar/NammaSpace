@@ -1,0 +1,25 @@
+{
+ "changed": [
+  "src/namma/capture/ingest.py",
+  "src/namma/core/jsonio.py",
+  "src/namma/studio/server.py",
+  "web/studio.html",
+  "web/js/studio.js",
+  "scripts/browser/studio_e2e.py",
+  "tests/test_p13_capture.py",
+  "tests/test_p13_studio.py",
+  "docs/CAPTURE_SOP.md",
+  "docs/RESULTS_MATRIX.md",
+  "docs/RESULTS_SCENES.md",
+  ".claude/launch.json",
+  ".gitignore"
+ ],
+ "added": [
+  "scripts/qa/overlap_calibration.py",
+  "scripts/qa/reuse_run_stages.py",
+  "scripts/qa/texture_ab.py",
+  "scripts/qa/texture_coverage.py",
+  "tests/test_qa_atomic_write.py",
+  "docs/CAPTURE_READINESS_CHECKLIST.md"
+ ]
+}

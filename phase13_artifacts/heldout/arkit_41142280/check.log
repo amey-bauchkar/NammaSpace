@@ -1,0 +1,103 @@
+  Extracting video frames: 0%
+  Selecting sharp video frames: 0%
+  Selecting sharp video frames: 3%
+  Selecting sharp video frames: 6%
+  Selecting sharp video frames: 9%
+  Selecting sharp video frames: 11%
+  Selecting sharp video frames: 14%
+  Selecting sharp video frames: 17%
+  Selecting sharp video frames: 20%
+  Selecting sharp video frames: 23%
+  Selecting sharp video frames: 26%
+  Selecting sharp video frames: 29%
+  Selecting sharp video frames: 31%
+  Selecting sharp video frames: 34%
+  Selecting sharp video frames: 37%
+  Selecting sharp video frames: 40%
+  Selecting sharp video frames: 43%
+  Selecting sharp video frames: 46%
+  Selecting sharp video frames: 49%
+  Selecting sharp video frames: 51%
+  Selecting sharp video frames: 54%
+  Selecting sharp video frames: 57%
+  Selecting sharp video frames: 60%
+  Selecting sharp video frames: 63%
+  Selecting sharp video frames: 66%
+  Selecting sharp video frames: 69%
+  Selecting sharp video frames: 71%
+  Selecting sharp video frames: 74%
+  Selecting sharp video frames: 77%
+  Selecting sharp video frames: 80%
+  Selecting sharp video frames: 83%
+  Selecting sharp video frames: 86%
+  Selecting sharp video frames: 89%
+  Selecting sharp video frames: 91%
+  Selecting sharp video frames: 94%
+  Selecting sharp video frames: 97%
+  Measuring sharpness, exposure and detail: 0%
+  Measuring sharpness, exposure and detail: 3%
+  Measuring sharpness, exposure and detail: 6%
+  Measuring sharpness, exposure and detail: 9%
+  Measuring sharpness, exposure and detail: 11%
+  Measuring sharpness, exposure and detail: 14%
+  Measuring sharpness, exposure and detail: 17%
+  Measuring sharpness, exposure and detail: 20%
+  Measuring sharpness, exposure and detail: 23%
+  Measuring sharpness, exposure and detail: 26%
+  Measuring sharpness, exposure and detail: 29%
+  Measuring sharpness, exposure and detail: 31%
+  Measuring sharpness, exposure and detail: 34%
+  Measuring sharpness, exposure and detail: 37%
+  Measuring sharpness, exposure and detail: 40%
+  Measuring sharpness, exposure and detail: 43%
+  Measuring sharpness, exposure and detail: 46%
+  Measuring sharpness, exposure and detail: 49%
+  Measuring sharpness, exposure and detail: 51%
+  Measuring sharpness, exposure and detail: 54%
+  Measuring sharpness, exposure and detail: 57%
+  Measuring sharpness, exposure and detail: 60%
+  Measuring sharpness, exposure and detail: 63%
+  Measuring sharpness, exposure and detail: 66%
+  Measuring sharpness, exposure and detail: 69%
+  Measuring sharpness, exposure and detail: 71%
+  Measuring sharpness, exposure and detail: 74%
+  Measuring sharpness, exposure and detail: 77%
+  Measuring sharpness, exposure and detail: 80%
+  Measuring sharpness, exposure and detail: 83%
+  Measuring sharpness, exposure and detail: 86%
+  Measuring sharpness, exposure and detail: 89%
+  Measuring sharpness, exposure and detail: 91%
+  Measuring sharpness, exposure and detail: 94%
+  Measuring sharpness, exposure and detail: 97%
+  Checking that photos overlap: 0%
+{
+ "status": "ready",
+ "mode": "video",
+ "stats": {
+  "mode": "video",
+  "files_uploaded": 1,
+  "inputs_accepted": 175,
+  "flags": {
+   "sharpness_median": 37.8,
+   "blur_threshold": 25.0
+  },
+  "blurry": 51,
+  "too_dark": 0,
+  "too_bright": 0,
+  "low_detail": 23,
+  "near_duplicate_pairs": 4,
+  "overlap": {
+   "pairs_tested": 690,
+   "verified_pairs": 396,
+   "isolated": 13,
+   "groups": 12,
+   "largest_group": 58
+  }
+ },
+ "seconds": 40.7
+}
+  [warning] CAP-BLUR: 51 of 175 images look blurry. Move slowly, hold the phone steady and use good light.
+  [warning] CAP-ISOLATED: 13 images do not visibly overlap any other image and will probably not be placed.
+  [warning] CAP-GROUPS: The images form 12 separate groups that do not overlap. Walk between areas while capturing so they connect.
+
+--- stderr ---

@@ -1,0 +1,19 @@
+{
+ "contract": "IF-08",
+ "contract_version": "1.0.0",
+ "report_id": "vr-2",
+ "request_id": "rq-2",
+ "geometry_id": "geom-fixture-1",
+ "validator": {
+  "name": "independent-shapely",
+  "version": "0.1"
+ },
+ "checks": {
+  "intersects_obstacle": true,
+  "min_clearance_m": 0.0,
+  "clearance_ok": false,
+  "inside_walkable_region": true,
+  "geometry_validated": true
+ },
+ "verdict": "pass"
+}

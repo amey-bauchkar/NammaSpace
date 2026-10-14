@@ -1,0 +1,35 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 10,
+ "frames": 600,
+ "frame_ms": {
+  "median": 16.699999999999818,
+  "p95": 17,
+  "max": 17.399999999999636,
+  "mean": 16.667666666666666
+ },
+ "over_33ms_share": 0,
+ "lod": 0,
+ "triangles": 392845,
+ "draw_calls_last_frame": 1,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 92,
+ "gpu_memory_textures": 1,
+ "gpu_memory_geometries": 1,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 35,
+  "first_lod_downloaded_ms": 77,
+  "first_view_ms": 368
+ },
+ "package_id": "pkg-eth3d-pipes-dev-20261011-1d30cd-run-20261011-014644-b2fc",
+ "page_url": "http://127.0.0.1:8781/viewer.html?package=/files/eth3d-pipes-dev-20261011-1d30cd/runs/run-20261011-014644-b2fc/90_package/scene_package.json&project=eth3d-pipes-dev-20261011-1d30cd&run=run-20261011-014644-b2fc&bench=1&seconds=10",
+ "at": "2026-10-10T20:21:46.472Z",
+ "recorded_by_server_at": "2026-10-11T01:51:46+05:30"
+}

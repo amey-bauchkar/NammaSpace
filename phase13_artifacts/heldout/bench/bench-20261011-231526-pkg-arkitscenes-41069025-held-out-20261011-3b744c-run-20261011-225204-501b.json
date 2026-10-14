@@ -1,0 +1,35 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 15,
+ "frames": 900,
+ "frame_ms": {
+  "median": 16.699999999999818,
+  "p95": 17,
+  "max": 17.600000000000364,
+  "mean": 16.66777777777778
+ },
+ "over_33ms_share": 0,
+ "lod": 0,
+ "triangles": 1096977,
+ "draw_calls_last_frame": 4,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 63,
+ "gpu_memory_textures": 3,
+ "gpu_memory_geometries": 3,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 36,
+  "first_lod_downloaded_ms": 133,
+  "first_view_ms": 718
+ },
+ "package_id": "pkg-arkitscenes-41069025-held-out-20261011-3b744c-run-20261011-225204-501b",
+ "page_url": "http://127.0.0.1:8782/viewer.html?package=/files/arkitscenes-41069025-held-out-20261011-3b744c/runs/run-20261011-225204-501b/90_package/scene_package.json&project=arkitscenes-41069025-held-out-20261011-3b744c&run=run-20261011-225204-501b&bench=1&seconds=15",
+ "at": "2026-10-11T17:45:26.339Z",
+ "recorded_by_server_at": "2026-10-11T23:15:26+05:30"
+}

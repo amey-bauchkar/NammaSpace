@@ -1,0 +1,17 @@
+{
+ "contract": "IF-06",
+ "contract_version": "1.1.0",
+ "request_id": "rq-demo-planned-on-missing-table",
+ "navlayer_id": "nav-F0-106c65c9fb22-r0.05-a0.25-m0",
+ "start_xz_m": [
+  1.5,
+  2.4
+ ],
+ "goal": {
+  "xz_m": [
+   4.2,
+   2.4
+  ]
+ },
+ "max_goal_snap_m": 1.0
+}

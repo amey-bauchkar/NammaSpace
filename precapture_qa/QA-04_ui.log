@@ -1,0 +1,46 @@
+  PASS 1 create project via the form: qa-04-eth3d-office-ui-20261014-4f1551; notices ['Photos: ETH3D office, Schops et al. CVPR 2017, CC BY-NC-SA 4.0 - local evaluation only, not for publication']
+  PASS 2 upload through the file input: 26 files uploaded. Next: check the capture.
+  PASS 3 capture check: Ready to reconstruct: 26 photos accepted, 4 things to be aware of.
+  PASS 4 start reconstruction: run-20261014-022618-3245
+    progress: Starting
+    progress: Preparing photos
+    progress: Placing cameras (structure from motion)
+  PASS 4b cancel during camera placement, then resume (UI buttons): status after cancel cancelled; stages kept ['prepare', 'sfm']
+    progress: Resuming…
+    progress: Building dense 3D geometry
+    progress: Building the surface mesh
+    progress: Painting photo textures onto the mesh
+    progress: Finished
+  PASS 5 reconstruction finished in the UI: Result
+Quality: Usable, with warnings
+Photos placed
+26 of 26 (100%)
+3D surface
+0.46 million triangles
+Dense points
+491,706
+Floor reconstructed
+36% of the floor area
+Real-world scale
+unknown (set it in the viewer with a known length)
+Processing time
+5 min 23 s
+Peak memory
+1.9 GB
+Navigation
+not available
+7 photos show few visual details (plain walls, glass, shiny or dark surfaces). These areas may b
+  PASS V-01 package verified and model displayed: phase ready, 456612 triangles, LOD 0, timing {'package_ms': 58, 'first_lod_downloaded_ms': 98, 'first_view_ms': 331}
+  PASS V-02 starts at eye height: y 5.385 eye 5.385
+  PASS V-03 mouse drag turns the view: yaw -2.997 -> -3.525
+  PASS V-04 W key walks forward: moved 6.395 units (1.19 eye heights)
+  PASS V-05 F switches to fly mode and E rises: mode fly, dy 4.178
+  PASS V-06 R resets to the start view in walk mode: mode walk, distance to start 0.0000
+  PASS V-07 ] jumps to a photo viewpoint: moved to [-3.202, 5.573, 0.301]
+  PASS V-08 no uncaught exceptions: none
+  PASS V-09 no console errors: none
+  PASS V-10 in-page self-test: 10/10
+  bench: valid=True median=16.7 p95=16.9 LOD 0 gpu=ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  PASS 6 open the walkthrough and drive it: 10/10 viewer checks; GPU ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+  PASS 7 publish / export: Published: 35 files, 15 MB. Open the static site · Download ZIP (9.4 MB)
+Upload the folder (or ZIP contents) to any static web host, e.g. GitHub Pages or Netlify, to share a link. Respect the licence of the source photos.

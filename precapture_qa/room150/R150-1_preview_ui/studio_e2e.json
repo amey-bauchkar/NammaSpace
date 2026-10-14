@@ -1,0 +1,55 @@
+{
+ "base": "http://127.0.0.1:8782",
+ "inputs": "precapture_qa\\inputs\\room150",
+ "files": 150,
+ "steps": [
+  {
+   "step": "1 create project via the form",
+   "pass": true,
+   "detail": "r150-mip-nerf-360-room-150-photos-20261014-d93fbf; notices ['Photos: Mip-NeRF 360 room (Barron et al., CVPR 2022); no licence stated - local evaluation only, do not publish']",
+   "screenshot": "precapture_qa\\room150\\R150-1_preview_ui\\01_project_created.png",
+   "at": "21:49:11"
+  },
+  {
+   "step": "2 upload through the file input",
+   "pass": true,
+   "detail": "150 files uploaded. Next: check the capture.",
+   "screenshot": "precapture_qa\\room150\\R150-1_preview_ui\\02_uploaded.png",
+   "at": "21:49:14"
+  },
+  {
+   "step": "3 capture check",
+   "pass": true,
+   "detail": "Ready to reconstruct: 150 photos accepted.",
+   "screenshot": "precapture_qa\\room150\\R150-1_preview_ui\\03_checked.png",
+   "at": "21:49:38"
+  },
+  {
+   "step": "4 start reconstruction",
+   "pass": true,
+   "detail": "run-20261014-214938-5abd",
+   "screenshot": "precapture_qa\\room150\\R150-1_preview_ui\\04_started.png",
+   "at": "21:49:39"
+  },
+  {
+   "step": "5 reconstruction finished in the UI",
+   "pass": true,
+   "detail": "Result\nQuality: Good\nPhotos placed\n150 of 150 (100%)\n3D surface\n1.50 million triangles\nDense points\n3,611,882\nFloor reconstructed\n61% of the floor area\nReal-world scale\nunknown (set it in the viewer with a known length)\nProcessing time\n84 min 6 s\nPeak memory\n3.4 GB\nNavigation\nautomatic floor map (unverified)\nReal-world size is unknown: photos alone do not fix scale. The model is shown in its own u",
+   "screenshot": "precapture_qa\\room150\\R150-1_preview_ui\\05_result.png",
+   "at": "23:13:52"
+  },
+  {
+   "step": "6 open the walkthrough and drive it",
+   "pass": false,
+   "detail": "9/10 viewer checks; GPU ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+   "screenshot": null,
+   "at": "23:14:35"
+  }
+ ],
+ "profile": "preview",
+ "project_id": "r150-mip-nerf-360-room-150-photos-20261014-d93fbf",
+ "run_id": "run-20261014-214938-5abd",
+ "result_text": "Result\nQuality: Good\nPhotos placed\n150 of 150 (100%)\n3D surface\n1.50 million triangles\nDense points\n3,611,882\nFloor reconstructed\n61% of the floor area\nReal-world scale\nunknown (set it in the viewer with a known length)\nProcessing time\n84 min 6 s\nPeak memory\n3.4 GB\nNavigation\nautomatic floor map (unverified)\nReal-world size is unknown: photos alone do not fix scale. The model is shown in its own units. Add a known measurement to enable metric distances.\nDoorways are not detected automatically; check them visually.\n\nOpen the 3D walkthrough\nPublish / export\nProcessing report (JSON)",
+ "journey_minutes": 84.7,
+ "passed": false
+}

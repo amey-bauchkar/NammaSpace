@@ -1,0 +1,39 @@
+{
+ "url": "http://127.0.0.1:8782/viewer.html?package=/files/qa-04-eth3d-office-ui-20261014-4f1551/runs/run-20261014-022618-3245/90_package/scene_package.json&project=qa-04-eth3d-office-ui-20261014-4f1551&run=run-20261014-022618-3245",
+ "checks": [
+  {
+   "check": "click on the model opens the label form",
+   "pass": true,
+   "detail": "raycast hit the reconstructed surface"
+  },
+  {
+   "check": "label saved and shown",
+   "pass": true,
+   "detail": "0 -> 1 labels"
+  },
+  {
+   "check": "search finds the label and jumps to it",
+   "pass": true,
+   "detail": "{\"s\": \"unique\", \"j\": {\"poi_id\": \"qa-reading-lamp\", \"position\": [-2.40646, 5.385071780824289, -2.07463]}}"
+  },
+  {
+   "check": "walking-path button hidden when navigation is unavailable",
+   "pass": true,
+   "detail": "navigation unavailable for this run"
+  },
+  {
+   "check": "two points measured on the model",
+   "pass": true,
+   "detail": "12.536133839362932 model units"
+  },
+  {
+   "check": "scale set from a known length (package rebuilt, viewer reloaded)",
+   "pass": true,
+   "detail": "Scale saved. Reloading\u2026; scale user_distance 0.07976940999624958; 2.8 s"
+  }
+ ],
+ "exceptions": [],
+ "console_errors": [],
+ "passed": true,
+ "note": "The length typed (1.0 m) is a TEST value; the resulting scale of this run is not metric."
+}

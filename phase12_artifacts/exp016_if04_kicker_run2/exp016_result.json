@@ -1,0 +1,306 @@
+{
+ "label": "EXTERNAL DATASET (ETH3D kicker, CC BY-NC-SA 4.0) - computational substitute for walk trials",
+ "candidate": {
+  "grid": {
+   "res_m": 0.05,
+   "x0": -4.8500000000000005,
+   "z0": -5.5,
+   "width": 243,
+   "height": 314
+  },
+  "points_used": 2513225,
+  "floor_cells": 10932,
+  "obstacle_cells": 3717,
+  "obstacles": 84,
+  "walkable_area_m2": 27.33
+ },
+ "reference": {
+  "grid": {
+   "res_m": 0.05,
+   "x0": -4.8500000000000005,
+   "z0": -5.5,
+   "width": 243,
+   "height": 314
+  },
+  "points_used": 1614044,
+  "floor_cells": 20512,
+  "obstacle_cells": 4152,
+  "obstacles": 48,
+  "walkable_area_m2": 51.28
+ },
+ "walkable_iou": 0.4541,
+ "free_floor_iou": 0.3879,
+ "free_floor_area_m2": {
+  "candidate": 20.968,
+  "reference": 41.087
+ },
+ "boundary_deviation_m": {
+  "candidate_to_reference": {
+   "median": 0.02,
+   "p90": 0.5161,
+   "max": 6.3601,
+   "n": 9955
+  },
+  "reference_to_candidate": {
+   "median": 0.02,
+   "p90": 0.2267,
+   "max": 0.8346,
+   "n": 9778
+  }
+ },
+ "v01_completeness": {
+  "status": "fail",
+  "missing_major": 11,
+  "deviating": 18,
+  "reference_major_obstacles": 29,
+  "missing_list": [
+   {
+    "ref_id": "obs-002",
+    "kind": "other",
+    "coverage": 0.323
+   },
+   {
+    "ref_id": "obs-003",
+    "kind": "other",
+    "coverage": 0.438
+   },
+   {
+    "ref_id": "obs-020",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-027",
+    "kind": "other",
+    "coverage": 0.258
+   },
+   {
+    "ref_id": "obs-034",
+    "kind": "other",
+    "coverage": 0.271
+   },
+   {
+    "ref_id": "obs-036",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-037",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-038",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-040",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-041",
+    "kind": "other",
+    "coverage": 0.0
+   },
+   {
+    "ref_id": "obs-042",
+    "kind": "other",
+    "coverage": 0.05
+   }
+  ]
+ },
+ "routes": {
+  "pairs": 12,
+  "candidate_routes": 0,
+  "intersections_with_reference_obstacles": 0,
+  "leaving_reference_walkable": 0,
+  "below_clearance": 0,
+  "false_unreachable": 12,
+  "rows": [
+   {
+    "pair": 0,
+    "start": [
+     -2.025,
+     -0.075
+    ],
+    "goal": [
+     0.525,
+     0.225
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 1,
+    "start": [
+     0.375,
+     0.375
+    ],
+    "goal": [
+     -2.725,
+     -0.675
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 2,
+    "start": [
+     0.225,
+     1.075
+    ],
+    "goal": [
+     -2.225,
+     -0.225
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 3,
+    "start": [
+     -1.975,
+     -0.775
+    ],
+    "goal": [
+     0.525,
+     0.525
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 4,
+    "start": [
+     -2.225,
+     -0.925
+    ],
+    "goal": [
+     0.375,
+     0.625
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 5,
+    "start": [
+     -2.475,
+     -0.325
+    ],
+    "goal": [
+     0.525,
+     0.425
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 6,
+    "start": [
+     0.225,
+     1.325
+    ],
+    "goal": [
+     -2.575,
+     -1.025
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 7,
+    "start": [
+     0.525,
+     0.475
+    ],
+    "goal": [
+     -2.075,
+     -0.475
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 8,
+    "start": [
+     -2.225,
+     0.125
+    ],
+    "goal": [
+     0.475,
+     0.425
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 9,
+    "start": [
+     0.675,
+     0.275
+    ],
+    "goal": [
+     -2.075,
+     -0.375
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 10,
+    "start": [
+     -2.625,
+     -1.275
+    ],
+    "goal": [
+     0.225,
+     1.375
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   },
+   {
+    "pair": 11,
+    "start": [
+     -2.925,
+     -0.275
+    ],
+    "goal": [
+     0.275,
+     0.875
+    ],
+    "reference_status": "route",
+    "candidate_status": "start_blocked"
+   }
+  ]
+ },
+ "doorways": "NOT MEASURABLE - no doorway is annotated in the ETH3D reference; none extracted",
+ "physical_walk_trials": "NOT MEASURABLE - external dataset",
+ "manual_correction_minutes": 0,
+ "thresholds_preregistered": {
+  "route_obstacle_intersections": 0,
+  "blocked_required_doorways": 0,
+  "boundary_deviation_median_m": 0.05
+ },
+ "seconds": 12.9,
+ "verdict": {
+  "zero_intersections": "NOT EVALUABLE (0 candidate routes)",
+  "v10_no_false_unreachable": false,
+  "boundary_median_le_0.05": true,
+  "doorways": "NOT MEASURABLE",
+  "overall": "FAIL"
+ },
+ "verdict_note": "V-10 (architecture §5, registered Phase 10): every physically walkable test pair must route. Zero intersections over zero routes is vacuous and never counts as a pass (deviation D-06).",
+ "floor_diagnostics": {
+  "reference_free_floor_m2": 41.087,
+  "candidate_points_over_free_floor": 655525,
+  "at_floor_height_abs_le_0.05": 243085,
+  "in_body_band_0.05_1.9": 37649,
+  "ceiling_ge_1.9": 372398
+ },
+ "free_floor_missing_in_candidate_m2": 22.228,
+ "false_obstacle_area_on_free_floor_m2": 2.005
+}

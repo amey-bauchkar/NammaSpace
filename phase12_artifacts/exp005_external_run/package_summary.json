@@ -1,0 +1,62 @@
+{
+ "route_states": {
+  "rq-ext-00": "no_route",
+  "rq-ext-01": "no_route",
+  "rq-ext-02": "no_route",
+  "rq-ext-03": "no_route",
+  "rq-ext-04": "no_route",
+  "rq-ext-05": "no_route",
+  "rq-ext-06": "no_route",
+  "rq-ext-07": "no_route",
+  "rq-ext-08": "no_route",
+  "rq-ext-09": "no_route",
+  "rq-ext-10": "no_route",
+  "rq-ext-11": "no_route"
+ },
+ "files": 30,
+ "glb_bytes": 86603688,
+ "geometry_acceptance": {
+  "status": "not_accepted",
+  "blocking": [
+   "V-01 completeness",
+   "connectivity"
+  ],
+  "limitations": [
+   "alignment: not established",
+   "inspect obs-003: not in the reference inventory (possible phantom)",
+   "inspect obs-011: not in the reference inventory (possible phantom)",
+   "inspect obs-012: not in the reference inventory (possible phantom)",
+   "inspect obs-013: not in the reference inventory (possible phantom)",
+   "inspect obs-014: not in the reference inventory (possible phantom)",
+   "inspect obs-016: not in the reference inventory (possible phantom)",
+   "inspect obs-018: not in the reference inventory (possible phantom)",
+   "inspect obs-020: not in the reference inventory (possible phantom)",
+   "inspect obs-033: not in the reference inventory (possible phantom)",
+   "inspect obs-042: not in the reference inventory (possible phantom)",
+   "inspect obs-045: not in the reference inventory (possible phantom)",
+   "inspect obs-047: not in the reference inventory (possible phantom)",
+   "inspect obs-048: not in the reference inventory (possible phantom)",
+   "inspect obs-049: not in the reference inventory (possible phantom)",
+   "inspect obs-050: not in the reference inventory (possible phantom)",
+   "inspect obs-051: not in the reference inventory (possible phantom)",
+   "inspect obs-052: not in the reference inventory (possible phantom)",
+   "inspect obs-053: not in the reference inventory (possible phantom)",
+   "inspect obs-056: not in the reference inventory (possible phantom)",
+   "inspect obs-057: not in the reference inventory (possible phantom)",
+   "inspect obs-060: not in the reference inventory (possible phantom)",
+   "inspect obs-062: not in the reference inventory (possible phantom)",
+   "inspect obs-063: not in the reference inventory (possible phantom)",
+   "inspect obs-068: not in the reference inventory (possible phantom)",
+   "inspect obs-072: not in the reference inventory (possible phantom)",
+   "inspect obs-074: not in the reference inventory (possible phantom)",
+   "inspect obs-075: not in the reference inventory (possible phantom)",
+   "inspect obs-077: not in the reference inventory (possible phantom)",
+   "inspect obs-078: not in the reference inventory (possible phantom)",
+   "inspect obs-079: not in the reference inventory (possible phantom)",
+   "inspect obs-080: not in the reference inventory (possible phantom)",
+   "inspect obs-081: not in the reference inventory (possible phantom)",
+   "inspect obs-082: not in the reference inventory (possible phantom)",
+   "inspect obs-083: not in the reference inventory (possible phantom)"
+  ]
+ }
+}

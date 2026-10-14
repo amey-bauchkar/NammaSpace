@@ -1,0 +1,13 @@
+# Namma Space (Phase 13). Versions are the ones used for the recorded Phase 11-13 runs
+# (Python 3.14.0, Windows 11). Install with:  python -m pip install -r requirements.txt
+numpy==2.4.4
+scipy==1.17.1
+shapely==2.1.2
+jsonschema==4.26.0
+psutil==7.2.2
+pillow==12.2.0
+opencv-python-headless==5.0.0.93
+# tests and browser automation only
+pytest==9.1.1
+websocket-client==1.9.0
+markdown==3.10.3   # docs build only (scripts/docs)

@@ -1,0 +1,415 @@
+{
+ "contract": "IF-10",
+ "contract_version": "1.1.0",
+ "release_id": "bld-synthetic-20261010-r3",
+ "site_frame": {
+  "frame_id": "site-synthetic-exp010",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "SYNTHETIC: origin at the outer corner of the 12 m x 6 m test layout; +X along the 12 m wall; +Z along the 6 m wall (+Z = +X cross +Y); +Y up. Not a physical venue."
+ },
+ "scene": "scene/scene.if03.json",
+ "geometry": "geometry/geometry.if04.json",
+ "navlayers": [
+  "nav/navlayer.if05.json"
+ ],
+ "pois": "poi/pois.json",
+ "routes_precomputed": [
+  "routes/rq-demo-planned-on-missing-table.result.json",
+  "routes/rq-start-a-poi-chair-2.result.json",
+  "routes/rq-start-a-poi-chair.result.json",
+  "routes/rq-start-a-poi-meeting-table.result.json",
+  "routes/rq-start-a-poi-reception-desk.result.json",
+  "routes/rq-start-a-poi-room-a.result.json",
+  "routes/rq-start-a-poi-room-b.result.json",
+  "routes/rq-start-a-poi-server-room.result.json",
+  "routes/rq-start-a-poi-sofa.result.json",
+  "routes/rq-start-a-poi-storage-alcove.result.json",
+  "routes/rq-start-b-poi-chair-2.result.json",
+  "routes/rq-start-b-poi-chair.result.json",
+  "routes/rq-start-b-poi-meeting-table.result.json",
+  "routes/rq-start-b-poi-reception-desk.result.json",
+  "routes/rq-start-b-poi-room-a.result.json",
+  "routes/rq-start-b-poi-room-b.result.json",
+  "routes/rq-start-b-poi-server-room.result.json",
+  "routes/rq-start-b-poi-sofa.result.json",
+  "routes/rq-start-b-poi-storage-alcove.result.json"
+ ],
+ "route_requests": [
+  "routes/rq-demo-planned-on-missing-table.request.json",
+  "routes/rq-start-a-poi-chair-2.request.json",
+  "routes/rq-start-a-poi-chair.request.json",
+  "routes/rq-start-a-poi-meeting-table.request.json",
+  "routes/rq-start-a-poi-reception-desk.request.json",
+  "routes/rq-start-a-poi-room-a.request.json",
+  "routes/rq-start-a-poi-room-b.request.json",
+  "routes/rq-start-a-poi-server-room.request.json",
+  "routes/rq-start-a-poi-sofa.request.json",
+  "routes/rq-start-a-poi-storage-alcove.request.json",
+  "routes/rq-start-b-poi-chair-2.request.json",
+  "routes/rq-start-b-poi-chair.request.json",
+  "routes/rq-start-b-poi-meeting-table.request.json",
+  "routes/rq-start-b-poi-reception-desk.request.json",
+  "routes/rq-start-b-poi-room-a.request.json",
+  "routes/rq-start-b-poi-room-b.request.json",
+  "routes/rq-start-b-poi-server-room.request.json",
+  "routes/rq-start-b-poi-sofa.request.json",
+  "routes/rq-start-b-poi-storage-alcove.request.json"
+ ],
+ "route_reports": [
+  "routes/rq-demo-planned-on-missing-table.report.json",
+  "routes/rq-start-a-poi-chair-2.report.json",
+  "routes/rq-start-a-poi-chair.report.json",
+  "routes/rq-start-a-poi-meeting-table.report.json",
+  "routes/rq-start-a-poi-reception-desk.report.json",
+  "routes/rq-start-a-poi-room-a.report.json",
+  "routes/rq-start-a-poi-room-b.report.json",
+  null,
+  "routes/rq-start-a-poi-sofa.report.json",
+  "routes/rq-start-a-poi-storage-alcove.report.json",
+  "routes/rq-start-b-poi-chair-2.report.json",
+  "routes/rq-start-b-poi-chair.report.json",
+  "routes/rq-start-b-poi-meeting-table.report.json",
+  "routes/rq-start-b-poi-reception-desk.report.json",
+  "routes/rq-start-b-poi-room-a.report.json",
+  "routes/rq-start-b-poi-room-b.report.json",
+  null,
+  "routes/rq-start-b-poi-sofa.report.json",
+  "routes/rq-start-b-poi-storage-alcove.report.json"
+ ],
+ "renderer_hint": "three.js 0.186.1 (provisional, ARCH-009); appearance = textured_mesh test asset",
+ "files": [
+  {
+   "path": "geometry/geometry.if04.json",
+   "sha256": "80d667b2e07e9c80c0d6b02e8dc4c6c97a2a2b1ccf43bc8b694d6b0d0dc7315b",
+   "bytes": 11330
+  },
+  {
+   "path": "geometry/geometry_check.json",
+   "sha256": "a325608d014e4bb4840439127986fecf00bc0538fe626d05ace9f1364930d91b",
+   "bytes": 2336
+  },
+  {
+   "path": "nav/navlayer.if05.json",
+   "sha256": "1fed64a6ece00d8a2d28af217bf2f38420fa73df5e38da55ba4d60b241c2c0f0",
+   "bytes": 7612
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "de4ba6b0158137dafe809e7db622146b44bafac7f1b91a062377bf6d20380b5d",
+   "bytes": 10679
+  },
+  {
+   "path": "routes/rq-demo-planned-on-missing-table.report.json",
+   "sha256": "b64100e2858ffcdd8b20d4dc8b162bacdc1783315ed2ccea2b88733a8a878635",
+   "bytes": 1210
+  },
+  {
+   "path": "routes/rq-demo-planned-on-missing-table.request.json",
+   "sha256": "b4af8ad34bb0c77b9052113cfff6d6e417d1becb103c2db7222c3cc08bd7d6d1",
+   "bytes": 265
+  },
+  {
+   "path": "routes/rq-demo-planned-on-missing-table.result.json",
+   "sha256": "133950a4fa4dda5728395e9081cecd6500cdd94b71da933639bba4d1f7b053dd",
+   "bytes": 700
+  },
+  {
+   "path": "routes/rq-start-a-poi-chair-2.report.json",
+   "sha256": "be1114367eb9f2fe02545cb1985c674d7c30ccbdbf374116a16c458941451948",
+   "bytes": 1050
+  },
+  {
+   "path": "routes/rq-start-a-poi-chair-2.request.json",
+   "sha256": "52168bc137bf672f63f702b29b603e539f8ce6e2cd671dd29283d705a3d31572",
+   "bytes": 250
+  },
+  {
+   "path": "routes/rq-start-a-poi-chair-2.result.json",
+   "sha256": "66907fdf5882e255d6694e1f149140519c080a6f52bbf7da2bb95355143b160b",
+   "bytes": 1267
+  },
+  {
+   "path": "routes/rq-start-a-poi-chair.report.json",
+   "sha256": "608467265dbb1191fea1b2ea2e4947467a29e4fadb7f44757527722c4e5e4d90",
+   "bytes": 1046
+  },
+  {
+   "path": "routes/rq-start-a-poi-chair.request.json",
+   "sha256": "44283b2f5c87447ca825eb2defe716472e11224c3090d209e91878a54df12287",
+   "bytes": 246
+  },
+  {
+   "path": "routes/rq-start-a-poi-chair.result.json",
+   "sha256": "727725ac1d4d801f334e7026b676dcba32662513beb23d5f3871cf961503f664",
+   "bytes": 808
+  },
+  {
+   "path": "routes/rq-start-a-poi-meeting-table.report.json",
+   "sha256": "fdcc909db7864dbf9558b22aeee49bead41401df1a6f7f443340eb0ea8f01749",
+   "bytes": 1061
+  },
+  {
+   "path": "routes/rq-start-a-poi-meeting-table.request.json",
+   "sha256": "efdacad38aca7f8ccbffcbf7f0061847a900e702a7094166cad4267efb43f6ac",
+   "bytes": 262
+  },
+  {
+   "path": "routes/rq-start-a-poi-meeting-table.result.json",
+   "sha256": "8aa97e1d7680c64204ea6516de5762cfef13b519a1e49be24876177ab617f50e",
+   "bytes": 860
+  },
+  {
+   "path": "routes/rq-start-a-poi-reception-desk.report.json",
+   "sha256": "2147e0b60e472408c2095707a14ed7068cbb065852f9e2f866ac85d2a9e89373",
+   "bytes": 1061
+  },
+  {
+   "path": "routes/rq-start-a-poi-reception-desk.request.json",
+   "sha256": "a97ad1f43eb1261c63ee6bb9a673e5933debb9fb6ef3e9bca2732ef21fd0a7ae",
+   "bytes": 264
+  },
+  {
+   "path": "routes/rq-start-a-poi-reception-desk.result.json",
+   "sha256": "5dd4af1aa1ebcba737de634de4f68692123c2a9a73345df7ac60370782d8ca2f",
+   "bytes": 683
+  },
+  {
+   "path": "routes/rq-start-a-poi-room-a.report.json",
+   "sha256": "c1af7c0d60e78f77e9f6491647ebab05f59f9a3341cca9a1eef6774e74df3688",
+   "bytes": 1048
+  },
+  {
+   "path": "routes/rq-start-a-poi-room-a.request.json",
+   "sha256": "f47e10a091b90c607e84562379e593ccd1a040120989c77dd448091467f64199",
+   "bytes": 248
+  },
+  {
+   "path": "routes/rq-start-a-poi-room-a.result.json",
+   "sha256": "d6fd265ce05a6ad4247bb592735f59c2436acb4af0a4d66319dfd582818539b2",
+   "bytes": 979
+  },
+  {
+   "path": "routes/rq-start-a-poi-room-b.report.json",
+   "sha256": "3c10aff72adc72afad5256be1e1df975938a690e798eee33162b8707df5f93d2",
+   "bytes": 1048
+  },
+  {
+   "path": "routes/rq-start-a-poi-room-b.request.json",
+   "sha256": "9075a76531e6c62921574753fcda2ef2e276e50115c80e712b6ba8ece33a4306",
+   "bytes": 248
+  },
+  {
+   "path": "routes/rq-start-a-poi-room-b.result.json",
+   "sha256": "c99d0ee73917c65169105b0df3d956451ff03f80a34f91d073b539c308ce16fc",
+   "bytes": 1148
+  },
+  {
+   "path": "routes/rq-start-a-poi-server-room.request.json",
+   "sha256": "39771e8e52e123e2d7682029fbf9ceb83d003ee4ef41efcd489a7e91ec11641b",
+   "bytes": 258
+  },
+  {
+   "path": "routes/rq-start-a-poi-server-room.result.json",
+   "sha256": "4101ce7da48f91c68081ab7f67baf7a693012c4115591537a2da31d4b0e79f75",
+   "bytes": 393
+  },
+  {
+   "path": "routes/rq-start-a-poi-sofa.report.json",
+   "sha256": "2de11699a6e5da33ca5f0b54ca87e56ef69b53ed0635f8601fda6e98b3de4b5f",
+   "bytes": 1043
+  },
+  {
+   "path": "routes/rq-start-a-poi-sofa.request.json",
+   "sha256": "125bca3f83f92bcfd62365c058e6f58bb3aec1bde1150a4bd1567673d7c23576",
+   "bytes": 244
+  },
+  {
+   "path": "routes/rq-start-a-poi-sofa.result.json",
+   "sha256": "4ad2ac5c3d67316c4c9a6066b25aab51f98474a6318678d2cd8ab5b51c7b47ad",
+   "bytes": 842
+  },
+  {
+   "path": "routes/rq-start-a-poi-storage-alcove.report.json",
+   "sha256": "a19d3ed38ce7815ef463e0e8c55fad08572d6dcd8b4729f1ed2d0fe36b046892",
+   "bytes": 1064
+  },
+  {
+   "path": "routes/rq-start-a-poi-storage-alcove.request.json",
+   "sha256": "10c4b38022337859639c5c25ba9bb0891a5f55f790801d88c77f1c03b22adef4",
+   "bytes": 264
+  },
+  {
+   "path": "routes/rq-start-a-poi-storage-alcove.result.json",
+   "sha256": "1e56111a5652723bc76ac6fee8b7eee74efdecfad535a4414323e3a1c36f360f",
+   "bytes": 1196
+  },
+  {
+   "path": "routes/rq-start-b-poi-chair-2.report.json",
+   "sha256": "d1b4890b99ec8ea738a7d23def0b81e0dd02f529910c4521155252476c34dbfb",
+   "bytes": 1050
+  },
+  {
+   "path": "routes/rq-start-b-poi-chair-2.request.json",
+   "sha256": "5643387462f078a2f05a89a1e30fc2731bb7ce4c7a9a29e8578757498fe05c09",
+   "bytes": 250
+  },
+  {
+   "path": "routes/rq-start-b-poi-chair-2.result.json",
+   "sha256": "79cdcdcddb6995f89121131ffbc24bde0a14e67347e8f083a0d53db5eeab9444",
+   "bytes": 1181
+  },
+  {
+   "path": "routes/rq-start-b-poi-chair.report.json",
+   "sha256": "b85c1a2cab7f7cc54b18a7b5855ba6dd2a342b7e317858c2c8e4fc8dc34bb509",
+   "bytes": 1046
+  },
+  {
+   "path": "routes/rq-start-b-poi-chair.request.json",
+   "sha256": "4a5d5cb31563ef137ed1438be359708442992712b882e7681c8f12010aa676fb",
+   "bytes": 246
+  },
+  {
+   "path": "routes/rq-start-b-poi-chair.result.json",
+   "sha256": "b955defc53a2a25d8c1987206d2b7cb6d97d29501584ca0984ab93e0c8aa5b44",
+   "bytes": 976
+  },
+  {
+   "path": "routes/rq-start-b-poi-meeting-table.report.json",
+   "sha256": "ec1df106d7bfaf9c112ac67aa12f049e978e68b323559b0a9327e03bd78d4202",
+   "bytes": 1062
+  },
+  {
+   "path": "routes/rq-start-b-poi-meeting-table.request.json",
+   "sha256": "75565642b3c0f48384388d9faf3fa2cce786755524541c2451af2a56ab754c68",
+   "bytes": 262
+  },
+  {
+   "path": "routes/rq-start-b-poi-meeting-table.result.json",
+   "sha256": "2c000fc34fa7726d67480b68f64f2315c67ae157ff57c893ea420b103f1ffb74",
+   "bytes": 973
+  },
+  {
+   "path": "routes/rq-start-b-poi-reception-desk.report.json",
+   "sha256": "e4ae7914fac0eb42cc1e792cb6f91d980ea131013175c58dbdb2874c9a21b701",
+   "bytes": 1064
+  },
+  {
+   "path": "routes/rq-start-b-poi-reception-desk.request.json",
+   "sha256": "32d6245dd41c2718007b53af2ba740bd1cb07ba5beb6100e311f53b3946f95db",
+   "bytes": 264
+  },
+  {
+   "path": "routes/rq-start-b-poi-reception-desk.result.json",
+   "sha256": "80ff5cfb06e33477d0944298c20e8a2701c79a88614ee47dcadcfcc9cc15b582",
+   "bytes": 995
+  },
+  {
+   "path": "routes/rq-start-b-poi-room-a.report.json",
+   "sha256": "925cbb0552cb01597f1b6dcc7d9b9f59310e2af03da481bc79329e96d9131e92",
+   "bytes": 1048
+  },
+  {
+   "path": "routes/rq-start-b-poi-room-a.request.json",
+   "sha256": "80928cf7df789a138a1e62cfc43572cda1baa1cd8595073f6ee97669938b8037",
+   "bytes": 248
+  },
+  {
+   "path": "routes/rq-start-b-poi-room-a.result.json",
+   "sha256": "22fd2e1e20d005735709e91c3d1f8bbcd23f573af328feef8905d6e2bfea966f",
+   "bytes": 1007
+  },
+  {
+   "path": "routes/rq-start-b-poi-room-b.report.json",
+   "sha256": "3dd36c8bbc84015f8f85d4ec54f7da834e1dedbe03c6a66da78a1de9bcc30d70",
+   "bytes": 1048
+  },
+  {
+   "path": "routes/rq-start-b-poi-room-b.request.json",
+   "sha256": "d418df60045f76bc7b919095f0241fbab8db43d91561538f81b36883d66823e1",
+   "bytes": 248
+  },
+  {
+   "path": "routes/rq-start-b-poi-room-b.result.json",
+   "sha256": "fb597b3ed411673eff8fd56482947e518c801700294eca0a14ec47f595207a5a",
+   "bytes": 893
+  },
+  {
+   "path": "routes/rq-start-b-poi-server-room.request.json",
+   "sha256": "ecfe258ff69711f3e59c130af7b24a5a25e87929013729843cdae0511fa7569b",
+   "bytes": 258
+  },
+  {
+   "path": "routes/rq-start-b-poi-server-room.result.json",
+   "sha256": "902f0aed5baa1da6b0934a61b6cee7abbe50c65d6a0c69e28170b4bcf439fad8",
+   "bytes": 393
+  },
+  {
+   "path": "routes/rq-start-b-poi-sofa.report.json",
+   "sha256": "7c5bc80210da11ea8940857a14fda1f256096c4ba62a145da3e4fbdb5f141374",
+   "bytes": 1044
+  },
+  {
+   "path": "routes/rq-start-b-poi-sofa.request.json",
+   "sha256": "0c3a2a591d2b3250cc30198e146841055636425e751da632d5ef3d3132843855",
+   "bytes": 244
+  },
+  {
+   "path": "routes/rq-start-b-poi-sofa.result.json",
+   "sha256": "dca9782ab222095986f6ec91f6802f8509ea94278ae66899a4995d99e609296f",
+   "bytes": 985
+  },
+  {
+   "path": "routes/rq-start-b-poi-storage-alcove.report.json",
+   "sha256": "e3477b1b5eec8441051c24f62e720bbb6273cfb2d3d9e81e87f4b4fd8b40d67c",
+   "bytes": 1064
+  },
+  {
+   "path": "routes/rq-start-b-poi-storage-alcove.request.json",
+   "sha256": "cc22ec928470dd2dada1b0701501cdbe65f891ceca64ab5abc654eebfb97e47d",
+   "bytes": 264
+  },
+  {
+   "path": "routes/rq-start-b-poi-storage-alcove.result.json",
+   "sha256": "573f93c7079a1f786c4588bcff73c6ca546f41538933303a3e8512083025c639",
+   "bytes": 1054
+  },
+  {
+   "path": "scene/scene.glb",
+   "sha256": "d07908a2c421b89305a58c9723d10f42c7c8caf2e8c72b08a99d0dcd52ffc3ba",
+   "bytes": 28832
+  },
+  {
+   "path": "scene/scene.if03.json",
+   "sha256": "ce1b8c3d82a98d2b0138ee095b3a920519464a9de449ff8cc9ceabdafe32122b",
+   "bytes": 1533
+  }
+ ],
+ "start_points": [
+  {
+   "start_id": "start-a",
+   "label": "Start A - Room A, south-west",
+   "xz_m": [
+    1.0,
+    1.0
+   ],
+   "poi_id": null
+  },
+  {
+   "start_id": "start-b",
+   "label": "Start B - Room B, north-west",
+   "xz_m": [
+    6.6,
+    5.5
+   ],
+   "poi_id": null
+  }
+ ],
+ "notices": [
+  "SYNTHETIC TEST DATA: layout, appearance mesh and POIs are synthetic fixtures (EXP-010). Nothing here was captured with a smartphone or reconstructed.",
+  "Geometry completeness was checked only against the synthetic design reference, not a real venue.",
+  "Routes are precomputed for named start points; the static viewer does not plan routes live (ARCH-025).",
+  "Gaussian-splat rendering is not selected (ARCH-010 open); no frame-rate claim is made."
+ ]
+}

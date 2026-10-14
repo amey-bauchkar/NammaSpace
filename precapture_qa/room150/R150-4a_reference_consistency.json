@@ -1,0 +1,11 @@
+{
+ "run": "precapture_qa\\projects\\r150-mip-nerf-360-room-150-photos-20261014-d93fbf\\runs\\run-20261014-231827-059d",
+ "reference_images": 311,
+ "run_registered": 147,
+ "matched": 147,
+ "reference_spread_units": 4.292690493332143,
+ "median_error_rel_spread": 0.0011863970732832333,
+ "p90_error_rel_spread": 0.00248300065081902,
+ "max_error_rel_spread": 0.0472421955127484,
+ "note": "reference = the dataset authors' COLMAP model, NOT ground truth"
+}

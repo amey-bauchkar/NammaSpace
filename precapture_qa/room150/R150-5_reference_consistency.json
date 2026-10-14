@@ -1,0 +1,11 @@
+{
+ "run": "precapture_qa\\projects\\r150-5-room-150-photos-13-4-0-20261014-42a709\\runs\\run-20261014-234443-8e09",
+ "reference_images": 311,
+ "run_registered": 150,
+ "matched": 150,
+ "reference_spread_units": 4.292690493332143,
+ "median_error_rel_spread": 0.0002453177852870139,
+ "p90_error_rel_spread": 0.0007122797689773833,
+ "max_error_rel_spread": 0.002440084719019434,
+ "note": "reference = the dataset authors' COLMAP model, NOT ground truth"
+}

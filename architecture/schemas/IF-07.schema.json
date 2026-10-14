@@ -1,0 +1,301 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-07.schema.json",
+ "title": "IF-07 \u2014 Route result",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "request_id",
+  "status",
+  "planner"
+ ],
+ "properties": {
+  "request_id": {
+   "type": "string"
+  },
+  "status": {
+   "enum": [
+    "route",
+    "unreachable",
+    "goal_not_snappable",
+    "start_blocked",
+    "error"
+   ]
+  },
+  "planner": {
+   "type": "object",
+   "required": [
+    "name",
+    "version"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "polyline_xz_m": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 2
+  },
+  "length_m": {
+   "type": "number",
+   "minimum": 0
+  },
+  "goal_used_xz_m": {
+   "$ref": "#/$defs/vec2"
+  },
+  "goal_snap_m": {
+   "type": "number",
+   "minimum": 0
+  },
+  "plan_ms": {
+   "type": "number",
+   "minimum": 0
+  },
+  "navlayer_id": {
+   "type": "string",
+   "description": "1.1.0: IF-05 layer the route was planned on."
+  },
+  "geometry_id": {
+   "type": "string",
+   "description": "1.1.0: IF-04 the navigation layer was built from."
+  },
+  "note": {
+   "type": "string"
+  },
+  "validation": {
+   "type": "object",
+   "required": [
+    "report_id",
+    "verdict"
+   ],
+   "properties": {
+    "report_id": {
+     "type": "string"
+    },
+    "verdict": {
+     "enum": [
+      "pass",
+      "fail",
+      "not_run"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "display_as_valid": {
+   "type": "boolean"
+  },
+  "contract": {
+   "const": "IF-07"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "status": {
+      "const": "route"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "polyline_xz_m",
+     "length_m",
+     "goal_used_xz_m",
+     "goal_snap_m",
+     "validation",
+     "display_as_valid"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "display_as_valid": {
+      "const": true
+     }
+    },
+    "required": [
+     "display_as_valid"
+    ]
+   },
+   "then": {
+    "properties": {
+     "validation": {
+      "properties": {
+       "verdict": {
+        "const": "pass"
+       }
+      }
+     }
+    }
+   }
+  }
+ ],
+ "additionalProperties": false
+}

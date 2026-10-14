@@ -1,0 +1,24 @@
+{
+ "run": "C:\\Users\\SEBIN\\Desktop\\NammaSpace\\phase13_artifacts\\projects\\tum-office-sample-final-20261012-dcf3c6\\runs\\run-20261012-000312-03f1",
+ "rows": [
+  {
+   "variant": "default",
+   "options": [],
+   "texture_wall_s": 18.93,
+   "peak_rss_mb": 572.0,
+   "grey_share": 0.6677,
+   "patch_pixels": 16606457
+  },
+  {
+   "variant": "nooutlier",
+   "options": [
+    "--outlier-threshold",
+    "0"
+   ],
+   "texture_wall_s": 25.35,
+   "peak_rss_mb": 595.8,
+   "grey_share": 0.6509,
+   "patch_pixels": 16626344
+  }
+ ]
+}

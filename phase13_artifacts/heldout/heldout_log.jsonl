@@ -1,0 +1,20 @@
+{"scene": "eth3d_office", "step": "check", "rc": 0, "seconds": 12.3, "at": "2026-10-11T19:14:02+05:30"}
+{"scene": "eth3d_office", "profile": "preview", "step": "run", "rc": 0, "seconds": 449.0, "run_id": "run-20261011-191403-d6a7", "status": "succeeded", "error": null, "config_sha256": "5a27a14ec0a13acfcaeb731e035c8c2bd7cc92410b9eadf9fb9e8522e57bd541", "at": "2026-10-11T19:21:31+05:30"}
+{"scene": "eth3d_office", "profile": "preview", "step": "evaluate", "rc": 0, "seconds": 26.0, "at": "2026-10-11T19:21:57+05:30"}
+{"scene": "eth3d_office", "profile": "preview", "step": "viewer", "rc": 0, "seconds": 37.3, "at": "2026-10-11T19:22:34+05:30"}
+{"scene": "eth3d_office", "profile": "standard", "step": "run", "rc": 0, "seconds": 2053.6, "run_id": "run-20261011-192236-5e71", "status": "succeeded", "error": null, "config_sha256": "e109a60896c2c9da17818cf8ff49c7cf09caac03aa9feb94baab6bb5b3ed5d94", "at": "2026-10-11T19:56:48+05:30"}
+{"scene": "eth3d_office", "profile": "standard", "step": "evaluate", "rc": 0, "seconds": 74.1, "at": "2026-10-11T19:58:02+05:30"}
+{"scene": "eth3d_office", "profile": "standard", "step": "viewer", "rc": 0, "seconds": 95.6, "at": "2026-10-11T19:59:38+05:30"}
+{"scene": "eth3d_delivery_area", "step": "check", "rc": 0, "seconds": 64.0, "at": "2026-10-11T20:00:42+05:30"}
+{"scene": "eth3d_delivery_area", "profile": "preview", "step": "run", "rc": 0, "seconds": 1716.9, "run_id": "run-20261011-200044-2d2d", "status": "succeeded", "error": null, "config_sha256": "5a27a14ec0a13acfcaeb731e035c8c2bd7cc92410b9eadf9fb9e8522e57bd541", "at": "2026-10-11T20:29:19+05:30"}
+{"scene": "eth3d_delivery_area", "profile": "preview", "step": "evaluate", "rc": 0, "seconds": 101.0, "at": "2026-10-11T20:31:00+05:30"}
+{"scene": "eth3d_delivery_area", "profile": "preview", "step": "viewer", "rc": 0, "seconds": 44.3, "at": "2026-10-11T20:31:44+05:30"}
+{"scene": "eth3d_delivery_area", "profile": "standard", "step": "run", "rc": 1, "seconds": 8343.8, "run_id": "run-20261011-203146-b5d8", "status": "failed", "error": {"stage": "texture", "message": "Painting photo textures onto the mesh took longer than allowed.", "hint": "Try the Preview profile or fewer photos.", "log": "openmvs_texture_lod0.log"}, "config_sha256": "e109a60896c2c9da17818cf8ff49c7cf09caac03aa9feb94baab6bb5b3ed5d94", "at": "2026-10-11T22:50:48+05:30"}
+{"scene": "arkit_41069025", "step": "check", "rc": 0, "seconds": 74.3, "at": "2026-10-11T22:52:03+05:30"}
+{"scene": "arkit_41069025", "profile": "preview", "step": "run", "rc": 0, "seconds": 1141.6, "run_id": "run-20261011-225204-501b", "status": "succeeded", "error": null, "config_sha256": "5a27a14ec0a13acfcaeb731e035c8c2bd7cc92410b9eadf9fb9e8522e57bd541", "at": "2026-10-11T23:11:05+05:30"}
+{"scene": "arkit_41069025", "profile": "preview", "step": "evaluate", "rc": 0, "seconds": 217.9, "at": "2026-10-11T23:14:42+05:30"}
+{"scene": "arkit_41069025", "profile": "preview", "step": "viewer", "rc": 0, "seconds": 44.3, "at": "2026-10-11T23:15:27+05:30"}
+{"scene": "arkit_41142280", "step": "check", "rc": 0, "seconds": 41.7, "at": "2026-10-11T23:16:08+05:30"}
+{"scene": "arkit_41142280", "profile": "preview", "step": "run", "rc": 0, "seconds": 1370.2, "run_id": "run-20261011-231609-760e", "status": "succeeded", "error": null, "config_sha256": "5a27a14ec0a13acfcaeb731e035c8c2bd7cc92410b9eadf9fb9e8522e57bd541", "at": "2026-10-11T23:38:59+05:30"}
+{"scene": "arkit_41142280", "profile": "preview", "step": "evaluate", "rc": 0, "seconds": 77.7, "at": "2026-10-11T23:40:16+05:30"}
+{"scene": "arkit_41142280", "profile": "preview", "step": "viewer", "rc": 0, "seconds": 43.8, "at": "2026-10-11T23:41:00+05:30"}

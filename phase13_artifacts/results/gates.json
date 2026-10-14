@@ -1,0 +1,133 @@
+{
+ "A": {
+  "title": "Repository integrity",
+  "status": "PASS",
+  "checks": [
+   {
+    "check": "contract examples + schema audit",
+    "result": "PASS",
+    "evidence": "`test_output/phase13/regression-20261014-023533/2_contracts.log`"
+   },
+   {
+    "check": "all Python tests",
+    "result": "PASS",
+    "evidence": "271 passed in 87.94s (0:01:27)"
+   },
+   {
+    "check": "all Node tests",
+    "result": "PASS",
+    "evidence": "`test_output/phase13/regression-20261014-023533/4_node.log`"
+   },
+   {
+    "check": "reproducible setup documented",
+    "result": "PASS",
+    "evidence": "`docs/INSTALL.md`, `scripts/setup_tools.py`, `requirements.txt`"
+   },
+   {
+    "check": "contract changes documented",
+    "result": "PASS",
+    "evidence": "`docs/CONTRACT_CHANGES.md`"
+   }
+  ]
+ },
+ "B": {
+  "title": "Real reconstruction",
+  "status": "PASS",
+  "checks": [
+   {
+    "check": "public indoor dataset reconstructed by the real pipeline (GLB produced and evaluated)",
+    "result": "PASS",
+    "evidence": "arkit_41069025 (preview), arkit_41142280 (preview), eth3d_delivery_area (preview), eth3d_delivery_area (standard), eth3d_kicker (standard), eth3d_kicker (standard_fullres), eth3d_office (preview), eth3d_office (standard), eth3d_pipes (preview)"
+   },
+   {
+    "check": "registered vs unregistered images recorded for every evaluated run",
+    "result": "PASS",
+    "evidence": "`registration` in each metrics.json"
+   },
+   {
+    "check": "outputs inspected (screenshots of the real model)",
+    "result": "PASS",
+    "evidence": "`phase13_artifacts/browser/**/*.png`"
+   }
+  ]
+ },
+ "C": {
+  "title": "Browser walkthrough",
+  "status": "PASS",
+  "checks": [
+   {
+    "check": "generated assets load and every viewer check passes (WASD, mouse, fly, reset, viewpoints, no errors)",
+    "result": "PASS",
+    "evidence": "15/15 viewer records passed"
+   },
+   {
+    "check": "frame time recorded on the target laptop (EXP-005: median <= 33 ms)",
+    "result": "PASS",
+    "evidence": "headless Chrome on the Intel iGPU via ANGLE / D3D11 (not a visible-window benchmark)"
+   },
+   {
+    "check": "visible-window benchmark on the target laptop (valid run, EXP-005: median <= 33 ms)",
+    "result": "PASS",
+    "evidence": "`phase13_artifacts/browser/visible_kicker_standard/kicker_standard_visible_e2e.json`: valid PASS, median 16.7 ms"
+   }
+  ]
+ },
+ "D": {
+  "title": "Full-data workflow",
+  "status": "PASS",
+  "checks": [
+   {
+    "check": "upload \u2192 check \u2192 reconstruct \u2192 viewer \u2192 publish through the real UI",
+    "result": "PASS",
+    "evidence": "phase13_artifacts/browser/e2e_tum_final/studio_e2e.json, phase13_artifacts/browser/e2e_tum_preview/studio_e2e.json"
+   },
+   {
+    "check": "failures produce diagnostics and runs resume after a real crash",
+    "result": "PASS",
+    "evidence": "kicker crash + resume (D13-01); `tests/test_p13_studio.py`"
+   }
+  ]
+ },
+ "E": {
+  "title": "Navigation correctness",
+  "status": "FAIL",
+  "checks": [
+   {
+    "check": "routes checked against independent reference geometry where measurable",
+    "result": "PASS",
+    "evidence": "arkit_41069025 (preview): 1/12 ok, 0 coll., 11 false-unreach.; eth3d_delivery_area (preview): 4/12 ok, 0 coll., 8 false-unreach.; eth3d_delivery_area (standard): 4/12 ok, 0 coll., 8 false-unreach.; eth3d_kicker (standard): 0/12 ok, 0 coll., 12 false-unreach.; eth3d_kicker (standard_fullres): 0/12 ok, 0 coll., 12 false-unreach.; eth3d_office (preview): 0/12 ok, 0 coll., 12 false-unreach.; eth3d_office (standard): 0/12 ok, 0 coll., 12 false-unreach.; eth3d_pipes (preview): 0/12 ok, 0 coll., 12 false-unreach."
+   },
+   {
+    "check": "navigation criteria met (>= 1 route, 0 collisions, 0 false-unreachable)",
+    "result": "FAIL",
+    "evidence": "verdicts in each metrics.json"
+   },
+   {
+    "check": "unmeasurable route results marked as unmeasurable",
+    "result": "PASS",
+    "evidence": "`routes` field of each metrics.json"
+   }
+  ]
+ },
+ "F": {
+  "title": "Submission materials",
+  "status": "INCOMPLETE",
+  "checks": [
+   {
+    "check": "technical abstract PDF within 5 pages",
+    "result": "PASS",
+    "evidence": "`docs/round1/TECHNICAL_ABSTRACT.pdf` (3 pages)"
+   },
+   {
+    "check": "README, install, SOP, demo plan, notices, registry, architecture, report present",
+    "result": "PASS",
+    "evidence": "`README.md`, `docs/INSTALL.md`, `docs/CAPTURE_SOP.md`, `docs/DEMO_SCRIPT.md`, `THIRD_PARTY_NOTICES.md`, `datasets/DATASET_REGISTRY.md`, `architecture/NAMMA_SPACE_ARCHITECTURE.md`, `docs/PHASE13_REPORT.md`"
+   },
+   {
+    "check": "public viewer URL (OFF-37)",
+    "result": "NOT RUN",
+    "evidence": "no hosting account / credentials in this environment; deployment-ready static build verified locally"
+   }
+  ]
+ }
+}

@@ -1,0 +1,14 @@
+  PASS V-01 package verified and model displayed: phase ready, 1498146 triangles, LOD 0, timing {'package_ms': 158, 'first_lod_downloaded_ms': 290, 'first_view_ms': 1135}
+  PASS V-02 starts at eye height: y 1.744 eye 1.744
+  PASS V-03 mouse drag turns the view: yaw 2.022 -> 1.494
+  PASS V-04 W key walks forward: moved 0.656 units (0.38 eye heights)
+  PASS V-05 F switches to fly mode and E rises: mode fly, dy 1.353
+  PASS V-06 R resets to the start view in walk mode: mode walk, distance to start 0.0000
+  PASS V-07 ] jumps to a photo viewpoint: moved to [2.568, 1.748, -2.339]
+  PASS V-08 no uncaught exceptions: none
+  PASS V-09 no console errors: none
+  PASS V-10 in-page self-test: 10/10
+  bench: valid=True median=16.7 p95=16.9 LOD 0 gpu=ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)
+{"passed": true, "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)", "load_wall_s": 5.85}
+
+--- stderr ---

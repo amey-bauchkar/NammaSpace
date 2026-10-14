@@ -1,0 +1,301 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-01.schema.json",
+ "title": "IF-01 \u2014 Capture manifest",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "run_id",
+  "venue_label",
+  "created_at",
+  "files",
+  "regions"
+ ],
+ "properties": {
+  "run_id": {
+   "type": "string"
+  },
+  "venue_label": {
+   "type": "string"
+  },
+  "created_at": {
+   "$ref": "#/$defs/timestamp"
+  },
+  "files": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "path",
+     "sha256",
+     "bytes",
+     "region_id",
+     "kind",
+     "device"
+    ],
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "bytes": {
+      "type": "integer",
+      "minimum": 1
+     },
+     "region_id": {
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "video",
+       "image_set",
+       "rgbd_session",
+       "pose_log",
+       "other"
+      ]
+     },
+     "device": {
+      "type": "string"
+     },
+     "duration_s": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "issues": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "regions": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "region_id",
+     "status"
+    ],
+    "properties": {
+     "region_id": {
+      "type": "string"
+     },
+     "status": {
+      "enum": [
+       "captured",
+       "partial",
+       "skipped",
+       "restricted"
+      ]
+     },
+     "connections": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "note": {
+      "type": "string"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "reference_measurements": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "description",
+     "distance_m"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "distance_m": {
+      "type": "number",
+      "exclusiveMinimum": 0
+     },
+     "uncertainty_m": {
+      "type": "number",
+      "minimum": 0
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "contract": {
+   "const": "IF-01"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

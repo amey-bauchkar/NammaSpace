@@ -1,0 +1,522 @@
+"""Namma Space Studio web server (local only).
+
+    python -m namma.studio.server [--port 8780] [--projects projects] [--record test_output/phase13/bench]
+
+Serves the web app (web/) and a JSON API for projects, uploads, capture checks, reconstruction
+runs, POIs, scale calibration, routes and publishing. Binds to 127.0.0.1 only.
+Protection for a local server: requests must carry Host 127.0.0.1/localhost (DNS-rebinding guard)
+and state-changing requests must carry the header X-Namma-Studio: 1 (browsers cannot add it
+cross-site without a CORS preflight, which this server never grants).
+"""
+import argparse
+import http.server
+import json
+import mimetypes
+import re
+import secrets
+import shutil
+import sys
+import time
+import traceback
+import urllib.parse
+import zipfile
+from pathlib import Path
+
+import psutil
+
+from namma import PROJECT_ROOT
+from namma.capture.media import (
+    HEIC_EXT,
+    IMAGE_EXT,
+    MAX_IMAGE_BYTES,
+    MAX_VIDEO_BYTES,
+    VIDEO_EXT,
+    ffmpeg_path,
+)
+from namma.core import timefmt
+from namma.core.jsonio import load_strict, write_json
+from namma.recon.tools import ToolMissing, find_tools
+from namma.studio import routing
+from namma.studio.jobs import JobError, JobManager
+from namma.studio.package import publish_static_site
+from namma.studio.profiles import PROFILES
+from namma.studio.projects import ProjectError, ProjectStore, safe_filename
+
+WEB = PROJECT_ROOT / "web"
+TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+         ".json": "application/json; charset=utf-8", ".glb": "model/gltf-binary", ".png": "image/png",
+         ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".log": "text/plain; charset=utf-8",
+         ".txt": "text/plain; charset=utf-8", ".md": "text/markdown; charset=utf-8", ".zip": "application/zip"}
+ALLOWED_PROJECT_FILES = [re.compile(r"^runs/run-[0-9-a-z]+/90_package/.+$"), re.compile(r"^capture/thumbs/[^/]+\.jpg$"),
+                         re.compile(r"^runs/run-[0-9-a-z]+/logs/[^/]+\.(log|txt)$"),
+                         re.compile(r"^published/run-[0-9-a-z]+/.+$")]
+POI_FIELDS = {"name", "category", "aliases", "position", "view"}
+VERSION = "13.0.0"
+
+
+class ApiError(Exception):
+    def __init__(self, status, code, message):
+        super().__init__(message)
+        self.status, self.code = status, code
+
+
+def _finite_vec(v, n):
+    return isinstance(v, list) and len(v) == n and all(isinstance(x, (int, float)) and not isinstance(x, bool)
+                                                       and x == x and abs(x) < 1e9 for x in v)
+
+
+class Studio:
+    def __init__(self, projects_root, record_dir=None):
+        self.store = ProjectStore(projects_root)
+        self.jobs = JobManager(self.store)
+        self.record_dir = Path(record_dir) if record_dir else None
+
+    # ------------------------------------------------------------------ helpers
+    def project_summary(self, doc):
+        d = self.store.root / doc["project_id"]
+        rep = d / "capture" / "capture_report.json"
+        out = dict(doc)
+        out["uploads"] = sum(1 for p in (d / "capture" / "originals").iterdir() if p.is_file()) \
+            if (d / "capture" / "originals").exists() else 0
+        out["capture_status"] = load_strict(rep)["status"] if rep.exists() else None
+        runs = []
+        for r in doc.get("runs", []):
+            try:
+                st = self.jobs.run_status(doc["project_id"], r["run_id"])
+            except ProjectError:
+                continue
+            pkg = d / "runs" / r["run_id"] / "90_package" / "scene_package.json"
+            runs.append({**r, "status": st.get("status"), "progress": st.get("progress"),
+                         "error": st.get("error"), "has_package": pkg.exists()})
+        out["runs"] = runs
+        return out
+
+    def health(self):
+        tools = {}
+        try:
+            t = find_tools()
+            tools = {"colmap": True, "openmvs": True, "paths": t.describe()}
+        except ToolMissing as e:
+            tools = {"colmap": False, "openmvs": False, "error": str(e)}
+        vm = psutil.virtual_memory()
+        return {"ok": True, "version": VERSION, "tools": tools, "ffmpeg": bool(ffmpeg_path()),
+                "ram_total_gb": round(vm.total / 2**30, 1), "ram_available_gb": round(vm.available / 2**30, 1),
+                "disk_free_gb": round(shutil.disk_usage(self.store.root).free / 2**30, 1),
+                "active_job": self.jobs.active(), "profiles": list(PROFILES)}
+
+    def pois_path(self, pid):
+        return self.store.path(pid) / "pois.json"
+
+    def list_pois(self, pid, rid):
+        p = self.pois_path(pid)
+        pois = load_strict(p) if p.exists() else []
+        return [x for x in pois if x.get("run_id") in (None, rid)]
+
+    def add_poi(self, pid, rid, body):
+        self.store.run_dir(pid, rid)
+        extra = set(body) - POI_FIELDS
+        if extra:
+            raise ApiError(400, "POI-FIELDS", f"unknown fields {sorted(extra)}")
+        name = str(body.get("name", "")).strip()
+        if not name or len(name) > 80:
+            raise ApiError(400, "POI-NAME", "a name of 1-80 characters is required")
+        if not _finite_vec(body.get("position"), 3):
+            raise ApiError(400, "POI-POSITION", "position must be 3 finite numbers")
+        view = body.get("view")
+        if view is not None and not (isinstance(view, dict) and _finite_vec(view.get("position"), 3)
+                                     and _finite_vec(view.get("target"), 3)):
+            raise ApiError(400, "POI-VIEW", "view needs position and target (3 numbers each)")
+        aliases = [str(a).strip()[:80] for a in (body.get("aliases") or []) if str(a).strip()][:10]
+        rec = {"poi_id": re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40] or "place",
+               "name": name, "category": str(body.get("category", "")).strip()[:40], "aliases": aliases,
+               "position": [float(v) for v in body["position"]], "created_at": timefmt.now_iso(),
+               "origin": "human_authored", "run_id": rid}
+        if view:
+            rec["view"] = {"position": [float(v) for v in view["position"]], "target": [float(v) for v in view["target"]]}
+        if not rec["category"]:
+            rec.pop("category")
+        p = self.pois_path(pid)
+        pois = load_strict(p) if p.exists() else []
+        ids = {x["poi_id"] for x in pois}
+        base, k = rec["poi_id"], 2
+        while rec["poi_id"] in ids:
+            rec["poi_id"] = f"{base}-{k}"
+            k += 1
+        pois.append(rec)
+        write_json(p, pois)
+        return self.list_pois(pid, rid)
+
+    def delete_poi(self, pid, rid, poi_id):
+        p = self.pois_path(pid)
+        pois = [x for x in (load_strict(p) if p.exists() else []) if not (x["poi_id"] == poi_id and x.get("run_id") in (None, rid))]
+        write_json(p, pois)
+        return self.list_pois(pid, rid)
+
+    def calibrate(self, pid, rid, body):
+        run_dir = self.store.run_dir(pid, rid)
+        if not (_finite_vec(body.get("p1"), 3) and _finite_vec(body.get("p2"), 3)):
+            raise ApiError(400, "CAL-POINTS", "p1 and p2 must be 3 numbers each")
+        metres = body.get("metres")
+        if not isinstance(metres, (int, float)) or not (0.05 <= metres <= 200):
+            raise ApiError(400, "CAL-LENGTH", "the real length must be between 0.05 m and 200 m")
+        d = sum((a - b) ** 2 for a, b in zip(body["p1"], body["p2"])) ** 0.5
+        if d <= 1e-6:
+            raise ApiError(400, "CAL-ZERO", "the two points are the same")
+        st = self.jobs.run_status(pid, rid)
+        if st.get("status") != "succeeded":
+            raise ApiError(409, "CAL-RUN", "calibrate a finished run")
+        cal = {"run_id": rid, "status": "user_distance", "metres_per_unit": metres / d, "relative_uncertainty": None,
+               "method": f"user-entered length {metres} m between two picked surface points ({d:.5f} model units)",
+               "p1": body["p1"], "p2": body["p2"], "created_at": timefmt.now_iso(), "evaluation_only": False}
+        write_json(self.store.path(pid) / "calibration.json", cal)
+        from namma.studio.pipeline import run_pipeline
+        cfg = load_strict(run_dir / "config.json")["config"]      # the run's own (possibly older) configuration
+        res = run_pipeline(self.store.path(pid), rid, cfg)
+        if res["status"] != "succeeded":
+            raise ApiError(500, "CAL-REPACKAGE", f"re-packaging failed: {res.get('error')}")
+        return {"calibration": cal}
+
+    def route(self, pid, rid, body):
+        run_dir = self.store.run_dir(pid, rid)
+        if not _finite_vec(body.get("start"), 2):
+            raise ApiError(400, "ROUTE-START", "start must be [x, z]")
+        poi = next((p for p in self.list_pois(pid, rid) if p["poi_id"] == body.get("poi_id")), None)
+        if poi is None:
+            raise ApiError(404, "ROUTE-POI", "unknown place label")
+        cfg = load_strict(run_dir / "config.json")["config"]
+        return routing.route(run_dir, body["start"], poi["position"], cfg["nav"], request_id=f"studio-{secrets.token_hex(3)}")
+
+    def publish(self, pid, rid, lods=None):
+        run_dir = self.store.run_dir(pid, rid)
+        pkg = run_dir / "90_package"
+        if not (pkg / "scene_package.json").exists():
+            raise ApiError(409, "PUBLISH-NO-PACKAGE", "this run has no scene package yet")
+        from namma.studio.pipeline import (
+            run_pipeline,  # refresh POIs into the package first
+        )
+        if self.jobs.run_status(pid, rid).get("status") != "succeeded":
+            raise ApiError(409, "PUBLISH-RUN", "publish a finished run")
+        cfg = load_strict(run_dir / "config.json")["config"]      # the run's own configuration
+        res = run_pipeline(self.store.path(pid), rid, cfg)
+        if res["status"] != "succeeded":
+            raise ApiError(500, "PUBLISH-REPACKAGE", f"re-packaging failed: {res.get('error')}")
+        out = self.store.path(pid) / "published" / rid
+        info = publish_static_site(pkg, out, include_lods=lods)
+        zpath = out.parent / f"{rid}.zip"
+        with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+            for p in sorted(out.rglob("*")):
+                if p.is_file():
+                    z.write(p, p.relative_to(out).as_posix())
+        info.update(zip=f"/files/{pid}/published/{rid}.zip", site=f"/files/{pid}/published/{rid}/index.html",
+                    zip_bytes=zpath.stat().st_size)
+        return info
+
+    def run_report(self, pid, rid):
+        run_dir = self.store.run_dir(pid, rid)
+        out = {"status": self.jobs.run_status(pid, rid)}
+        for key, rel in (("quality", "80_quality/quality_report.json"), ("sfm", "20_sfm/sfm_summary.json"),
+                         ("frame", "70_frame/frame.json"), ("navigation", "85_navgeom/navgeom.json"),
+                         ("config", "config.json")):
+            p = run_dir / rel
+            if p.exists():
+                doc = load_strict(p)
+                if key == "sfm":
+                    doc.pop("keypoints", None)
+                if key == "frame":
+                    doc = {k: doc[k] for k in ("eye_height_units", "floor_detected", "up_source", "floor_coverage",
+                                               "points_source", "points", "roam_stats", "start") if k in doc}
+                out[key] = doc
+        cmds = run_dir / "logs" / "commands.jsonl"
+        if cmds.exists():
+            out["commands"] = [{k: r[k] for k in ("step", "status", "wall_s", "peak_rss_mb")}
+                               for r in map(json.loads, cmds.read_text(encoding="utf-8").splitlines())]
+        return out
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    studio: Studio = None
+    server_version = "NammaStudio/" + VERSION
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, fmt, *args):
+        sys.stderr.write("%s %s\n" % (time.strftime("%H:%M:%S"), fmt % args))
+
+    # ------------------------------------------------------------------ plumbing
+    def _host_ok(self):
+        host = (self.headers.get("Host") or "").split(":")[0].lower()
+        return host in ("127.0.0.1", "localhost", "[::1]")
+
+    def _send(self, status, body=b"", ctype="application/json; charset=utf-8", extra=None):
+        # an unread request body would be read as the start of the next request on this keep-alive connection
+        # (QA-04: "{}GET"): drain it for EVERY response, not only for refusals
+        if not getattr(self, "_body_read", True):
+            n = int(self.headers.get("Content-Length") or 0)
+            if 0 < n <= 1_000_000:
+                self.rfile.read(n)                   # small unread body: drain it so the client sees the reply
+                self._body_read = True
+            else:
+                # large unread body (refused upload): close instead of misreading it as the next request
+                self.close_connection = True
+                extra = dict(extra or {}, Connection="close")
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+    def _json(self, status, obj):
+        self._send(status, json.dumps(obj, ensure_ascii=False).encode("utf-8"))
+
+    def _error(self, status, code, message):
+        self._json(status, {"error": code, "message": message})
+
+    def _body_json(self, limit=1_000_000):
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > limit:
+            raise ApiError(413, "BODY-TOO-LARGE", "request body too large")
+        raw = self.rfile.read(n) if n else b"{}"
+        self._body_read = True
+        try:
+            v = json.loads(raw or b"{}")
+        except ValueError:
+            raise ApiError(400, "BAD-JSON", "request body is not valid JSON")
+        if not isinstance(v, dict):
+            raise ApiError(400, "BAD-JSON", "request body must be a JSON object")
+        return v
+
+    def _file(self, path, ctype=None):
+        if not path.is_file():
+            return self._error(404, "NOT-FOUND", "file not found")
+        size = path.stat().st_size
+        ctype = ctype or TYPES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(size))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        if self.command == "HEAD":
+            return
+        with open(path, "rb") as f:
+            shutil.copyfileobj(f, self.wfile, 1 << 20)
+
+    def _dispatch(self, method):
+        if not self._host_ok():
+            return self._error(403, "HOST", "this server only answers on 127.0.0.1 / localhost")
+        url = urllib.parse.urlsplit(self.path)
+        self._body_read = int(self.headers.get("Content-Length") or 0) == 0
+        # split BEFORE decoding so an encoded "/" inside a file name cannot create path segments
+        self._segments = [urllib.parse.unquote(x) for x in url.path.split("/")]
+        path = urllib.parse.unquote(url.path)
+        query = urllib.parse.parse_qs(url.query)
+        if method in ("POST", "PUT", "DELETE") and self.headers.get("X-Namma-Studio") != "1" and path != "/__bench":
+            return self._error(403, "CSRF", "missing X-Namma-Studio header")
+        try:
+            if path.startswith("/api/"):
+                return self._api(method, path, query)
+            if path == "/__bench" and method == "POST":
+                return self._bench()
+            if method not in ("GET", "HEAD"):
+                return self._error(405, "METHOD", "method not allowed")
+            if path.startswith("/files/"):
+                return self._project_file(path)
+            return self._static(path)
+        except ApiError as e:
+            return self._error(e.status, e.code, str(e))
+        except ProjectError as e:
+            return self._error(e.status, e.code, str(e))
+        except JobError as e:
+            return self._error(e.status, e.code, str(e))
+        except Exception as e:      # never leak a traceback to the page; keep it in the server log
+            traceback.print_exc()
+            return self._error(500, "INTERNAL", f"internal error: {e.__class__.__name__}")
+
+    def do_GET(self):
+        self._dispatch("GET")
+
+    def do_HEAD(self):
+        self._dispatch("HEAD")
+
+    def do_POST(self):
+        self._dispatch("POST")
+
+    def do_PUT(self):
+        self._dispatch("PUT")
+
+    def do_DELETE(self):
+        self._dispatch("DELETE")
+
+    # ------------------------------------------------------------------ static
+    def _static(self, path):
+        if path in ("/", ""):
+            self.send_response(302)
+            self.send_header("Location", "/studio.html")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        rel = path.lstrip("/")
+        target = (WEB / rel).resolve()
+        if not str(target).startswith(str(WEB.resolve())) or "tests" in Path(rel).parts:
+            return self._error(404, "NOT-FOUND", "not found")
+        return self._file(target)
+
+    def _project_file(self, path):
+        parts = path.split("/", 3)          # '', 'files', pid, rest
+        if len(parts) < 4:
+            return self._error(404, "NOT-FOUND", "not found")
+        pid, rest = parts[2], parts[3]
+        if not any(p.match(rest) for p in ALLOWED_PROJECT_FILES) and not re.match(r"^published/run-[0-9a-z-]+\.zip$", rest):
+            return self._error(404, "NOT-FOUND", "not found")
+        base = self.studio.store.path(pid).resolve()
+        target = (base / rest).resolve()
+        if not str(target).startswith(str(base)):
+            return self._error(404, "NOT-FOUND", "not found")
+        return self._file(target)
+
+    def _bench(self):
+        data = self._body_json()
+        data["recorded_by_server_at"] = timefmt.now_iso()
+        rec = self.studio.record_dir
+        if rec is None:
+            return self._send(204)
+        rec.mkdir(parents=True, exist_ok=True)
+        name = re.sub(r"[^a-zA-Z0-9_.-]", "_", str(data.get("package_id", "x")))[:80]
+        (rec / f"bench-{time.strftime('%Y%m%d-%H%M%S')}-{name}.json").write_text(json.dumps(data, indent=1), encoding="utf-8")
+        return self._send(204)
+
+    # ------------------------------------------------------------------ API
+    def _upload(self, pid, name):
+        fname = safe_filename(name)
+        ext = Path(fname).suffix.lower()
+        if ext not in IMAGE_EXT | VIDEO_EXT | HEIC_EXT:
+            raise ApiError(415, "UPLOAD-TYPE", f"{fname}: only JPEG / PNG photos or MP4 / MOV video are accepted")
+        n = int(self.headers.get("Content-Length") or -1)
+        limit = MAX_VIDEO_BYTES if ext in VIDEO_EXT else MAX_IMAGE_BYTES
+        if n <= 0:
+            raise ApiError(411, "UPLOAD-LENGTH", "Content-Length is required")
+        if n > limit:
+            raise ApiError(413, "UPLOAD-TOO-LARGE", f"{fname}: {n / 2**20:.0f} MB exceeds the {limit / 2**20:.0f} MB limit")
+        need = n + 2 * 2**30
+        if shutil.disk_usage(self.studio.store.root).free < need:
+            raise ApiError(507, "UPLOAD-DISK", "not enough free disk space")
+        dst_dir = self.studio.store.originals(pid)
+        tmp = dst_dir / f".{fname}.{secrets.token_hex(4)}.part"
+        got = 0
+        with open(tmp, "wb") as f:
+            while got < n:
+                chunk = self.rfile.read(min(1 << 20, n - got))
+                if not chunk:
+                    break
+                f.write(chunk)
+                got += len(chunk)
+        self._body_read = got == n
+        if got != n:
+            tmp.unlink(missing_ok=True)
+            raise ApiError(400, "UPLOAD-INCOMPLETE", f"{fname}: upload interrupted ({got} of {n} bytes)")
+        final = dst_dir / fname
+        tmp.replace(final)
+        self.studio.store.clear_capture(pid)
+        return {"file": fname, "bytes": n}
+
+    def _api(self, method, path, query):
+        st = self.studio
+        seg = [s for s in self._segments[2:] if s != ""]
+        if seg == ["health"]:
+            return self._json(200, st.health())
+        if seg == ["projects"]:
+            if method == "GET":
+                return self._json(200, {"projects": [st.project_summary(p) for p in st.store.list()]})
+            if method == "POST":
+                body = self._body_json()
+                # optional source / licence of photos that are not the user's own: published with the model
+                src = " ".join(str(body.get("source") or "").split())[:300]
+                return self._json(201, st.store.create(str(body.get("title", "")), notices=[f"Photos: {src}"] if src else None))
+        if len(seg) >= 2 and seg[0] == "projects":
+            pid = seg[1]
+            rest = seg[2:]
+            if not rest:
+                if method == "GET":
+                    return self._json(200, st.project_summary(st.store.get(pid)))
+                if method == "DELETE":
+                    return self._json(200, {"moved_to": st.store.trash(pid)})
+            if rest == ["uploads"] and method == "GET":
+                files = sorted(p for p in st.store.originals(pid).iterdir() if p.is_file() and not p.name.startswith("."))
+                return self._json(200, {"files": [{"name": p.name, "bytes": p.stat().st_size} for p in files]})
+            if len(rest) == 2 and rest[0] == "uploads":
+                if method == "PUT":
+                    return self._json(201, self._upload(pid, rest[1]))
+                if method == "DELETE":
+                    st.store.remove_upload(pid, rest[1])
+                    return self._json(200, {"removed": rest[1]})
+            if rest == ["check"]:
+                if method == "POST":
+                    body = self._body_json()
+                    return self._json(202, st.jobs.start_ingest(pid, int(body.get("max_frames", 300))))
+                if method == "GET":
+                    s = st.jobs.ingest_status(pid)
+                    man = st.store.path(pid) / "capture" / "capture_manifest.json"
+                    if s.get("status") == "done" and man.exists():
+                        m = load_strict(man)
+                        s["inputs"] = [{"name": x["name"], "flags": x["flags"], "thumb": f"/files/{pid}/capture/thumbs/"
+                                        + Path(x["name"]).stem + ".jpg"} for x in m.get("per_input", [])]
+                    return self._json(200, s)
+            if rest == ["runs"] and method == "POST":
+                body = self._body_json()
+                profile = body.get("profile", "standard")
+                if profile not in PROFILES:
+                    raise ApiError(400, "PROFILE", f"profile must be one of {list(PROFILES)}")
+                return self._json(202, st.jobs.start_run(pid, profile))
+            if len(rest) >= 2 and rest[0] == "runs":
+                rid = rest[1]
+                sub = rest[2:]
+                if not sub and method == "GET":
+                    return self._json(200, st.jobs.run_status(pid, rid))
+                if sub == ["cancel"] and method == "POST":
+                    return self._json(200, st.jobs.cancel_run(pid, rid))
+                if sub == ["resume"] and method == "POST":
+                    return self._json(202, st.jobs.resume_run(pid, rid))
+                if sub == ["log"] and method == "GET":
+                    return self._json(200, st.jobs.tail_log(pid, rid))
+                if sub == ["report"] and method == "GET":
+                    return self._json(200, st.run_report(pid, rid))
+                if sub == ["pois"]:
+                    if method == "GET":
+                        return self._json(200, {"pois": st.list_pois(pid, rid)})
+                    if method == "POST":
+                        return self._json(201, {"pois": st.add_poi(pid, rid, self._body_json())})
+                if len(sub) == 2 and sub[0] == "pois" and method == "DELETE":
+                    return self._json(200, {"pois": st.delete_poi(pid, rid, sub[1])})
+                if sub == ["calibration"] and method == "POST":
+                    return self._json(200, st.calibrate(pid, rid, self._body_json()))
+                if sub == ["route"] and method == "POST":
+                    return self._json(200, st.route(pid, rid, self._body_json()))
+                if sub == ["publish"] and method == "POST":
+                    body = self._body_json()
+                    lods = body.get("lods")
+                    if lods is not None and not (isinstance(lods, list) and all(isinstance(x, int) for x in lods)):
+                        raise ApiError(400, "PUBLISH-LODS", "lods must be a list of integers")
+                    return self._json(200, st.publish(pid, rid, lods))
+        raise ApiError(404, "NOT-FOUND", f"no API route {method} {path}")
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--port", type=int, default=8780)
+    ap.add_argument("--projects", default=str(PROJECT_ROOT / "projects"))
+    ap.add_argument("--record", help="directory where POST /__bench results are saved")
+    a = ap.parse_args(argv)
+    Handler.studio = Studio(a.projects, (PROJECT_ROOT / a.record) if a.record else None)
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", a.port), Handler)
+    httpd.daemon_threads = True
+    print(f"Namma Space Studio at http://127.0.0.1:{a.port}/  (projects: {Handler.studio.store.root})", flush=True)
+    httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.exit(main())

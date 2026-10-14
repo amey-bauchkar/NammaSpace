@@ -1,0 +1,79 @@
+{
+ "contract": "IF-10",
+ "contract_version": "1.1.0",
+ "release_id": "rel-1",
+ "site_frame": {
+  "frame_id": "site-practice-01",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "Tape mark on floor at SW inner corner of Room A; +X along south wall"
+ },
+ "scene": "scene/scene.json",
+ "geometry": "geometry/geometry.json",
+ "navlayers": [
+  "nav/nav-1.json"
+ ],
+ "pois": "poi/pois.json",
+ "routes_precomputed": [
+  "routes/rq-1.json"
+ ],
+ "renderer_hint": "three.js + splat plugin (provisional)",
+ "route_requests": [
+  "routes/rq-1.request.json"
+ ],
+ "route_reports": [
+  "routes/rq-1.report.json"
+ ],
+ "files": [
+  {
+   "path": "scene/scene.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "geometry/geometry.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "nav/nav-1.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "routes/rq-1.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "routes/rq-1.request.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "routes/rq-1.report.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  }
+ ],
+ "start_points": [
+  {
+   "start_id": "entrance",
+   "label": "Main Entrance",
+   "xz_m": [
+    1.0,
+    1.0
+   ],
+   "poi_id": null
+  }
+ ],
+ "notices": [
+  "SYNTHETIC TEST DATA - not reconstructed from a smartphone capture"
+ ]
+}

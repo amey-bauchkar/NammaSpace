@@ -1,0 +1,95 @@
+<!doctype html><html><head><meta charset='utf-8'><title>CAPTURE_SOP</title><style>
+@page { size: A4; margin: 15mm 14mm 15mm 14mm; }
+body { font: 9.6pt/1.38 "Segoe UI", system-ui, sans-serif; color: #111; }
+h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 11.5pt; margin: 9pt 0 3pt; border-bottom: 1px solid #ccd; }
+h3 { font-size: 10pt; margin: 7pt 0 2pt; } p { margin: 3pt 0; } ul, ol { margin: 2pt 0 3pt 16pt; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; page-break-inside: avoid; }
+th, td { border: 1px solid #c8ccd6; padding: 2pt 4pt; vertical-align: top; text-align: left; } th { background: #eef1f6; }
+code { font: 8.4pt Consolas, monospace; background: #f3f4f7; padding: 0 2pt; }
+pre { font: 8pt Consolas, monospace; background: #f3f4f7; padding: 4pt; white-space: pre-wrap; }
+img { max-width: 100%; } .small { font-size: 8pt; color: #444; }
+</style></head><body><h1>Capture SOP – photographing a room for Namma Space</h1>
+<p><strong>Who this is for:</strong> anyone with a smartphone. No measuring tape, markers or 3D skills are needed.
+<strong>Time:</strong> about 10–15 minutes for one room. <strong>Output:</strong> 60–150 photos, or one 1–3 minute video.</p>
+<blockquote>
+<p>Status of this SOP: it is derived from the reconstruction method (structure from motion + multi-view
+stereo) and from Phase 12–13 measurements on public datasets. It has <strong>not yet been validated with the
+team's own iPhone 12 capture</strong> (pending validation item Q-T-11). The app's capture check enforces the
+limits written here.</p>
+</blockquote>
+<h2>1. Before you start (1 minute)</h2>
+<table>
+<thead>
+<tr>
+<th>Do</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Switch on all lights; open curtains only if the windows are not in the frame</td>
+<td>Dark photos are noisy and blurry; bright windows blind the camera</td>
+</tr>
+<tr>
+<td>Use the main (1×) camera; do not zoom; keep the same phone for the whole room</td>
+<td>Each lens / zoom needs its own calibration</td>
+</tr>
+<tr>
+<td><strong>iPhone:</strong> Settings › Camera › Formats › <strong>Most Compatible</strong></td>
+<td>The app accepts JPEG / PNG; HEIC photos are refused with a message</td>
+</tr>
+<tr>
+<td><strong>iPhone video:</strong> Settings › Camera › Record Video › turn <strong>HDR Video off</strong></td>
+<td>HDR video loses its colours when converted</td>
+</tr>
+<tr>
+<td>Clean the lens</td>
+<td>A smudge blurs every photo</td>
+</tr>
+<tr>
+<td>Move small things that will move (pets, people) out of the room</td>
+<td>Moving objects cannot be reconstructed</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Photos (recommended)</h2>
+<ol>
+<li><strong>Start at a corner.</strong> Stand about one step in from the wall and face <em>into</em> the room.</li>
+<li><strong>Walk along the walls.</strong> Take a photo, take <strong>one small step (about 0.5 m)</strong> sideways, take the next photo.
+   Consecutive photos should share about <strong>two thirds</strong> of what they show.</li>
+<li><strong>Tilt slightly down</strong> so that the <strong>floor is in the lower third</strong> of every photo. Floors are needed for
+   walking and navigation; Phase 12–13 measurements show floors are the most often missing part.</li>
+<li><strong>Hold still</strong> for each shot (sharp beats many). In low light, lean on something.</li>
+<li><strong>Go all the way around</strong>, then do a <strong>second, lower lap (waist height)</strong> around large furniture
+   (tables, sofas, beds) so their legs and the floor around them are seen.</li>
+<li><strong>Doorways and corridors:</strong> take 3–4 photos while walking <em>through</em> each doorway so the rooms connect.</li>
+<li><strong>Plain surfaces</strong> (white walls, glass, mirrors, shiny tiles) cannot be reconstructed on their own:
+   always include an edge, a picture, furniture or a corner in the frame.</li>
+<li>Typical counts: small room 40–80 photos, living room 80–150. The app accepts 10–300 per project.</li>
+</ol>
+<h2>3. Video (alternative)</h2>
+<ul>
+<li>One continuous take, <strong>1–3 minutes</strong>, walking <strong>slowly (about 30 cm per second)</strong> along the walls with the
+  same rules (face into the room, floor visible, no fast turns).</li>
+<li>Turn in place slowly; never whip the phone around.</li>
+<li>The app extracts up to 200 sharp frames automatically (2 per second, sharpest of each group).</li>
+<li>One video per project; do not mix photos and video in the same project.</li>
+</ul>
+<h2>4. Upload and check (in the Studio)</h2>
+<ol>
+<li>Create a space, drag the photos or the video into the upload area.</li>
+<li>Press <strong>Check my capture</strong>. It reports, before any long processing:</li>
+<li>blocking problems (too few photos, unreadable files, HEIC, mixed photos + video);</li>
+<li>warnings: blurry, too dark / too bright, few details, near-duplicates, photos that overlap nothing,
+     groups of photos that do not connect.</li>
+<li>Retake the flagged photos if the check suggests it, then press <strong>Start reconstruction</strong>.</li>
+</ol>
+<h2>5. Optional: real-world size</h2>
+<p>Photos alone do not tell the true size of a room. The model is always shown correctly <em>shaped</em>; to
+show distances in metres, open the 3D walkthrough, choose <strong>Measure / set scale</strong>, click both ends of
+something you know (a door width, a table edge) and type its real length. This step is optional and
+can be done at any time later. (Printed markers and tape measurements from the Phase 12 capture pack
+remain available for research experiments but are <strong>not</strong> required by the Studio.)</p>
+<h2>6. Privacy</h2>
+<p>Remove or cover personal documents, screens and family photos before capturing. Everything is processed
+on your own computer; nothing is uploaded to the internet unless you publish the walkthrough yourself.</p></body></html>

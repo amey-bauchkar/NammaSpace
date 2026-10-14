@@ -1,0 +1,2 @@
+run run-20261014-231827-059d override ['matching.exhaustive_max_images=100']
+{"run_id": "run-20261014-231827-059d", "status": "succeeded", "error": null, "stages": [["prepare", "done", 16.3], ["sfm", "done", 380.8], ["undistort", "pending", null], ["dense", "pending", null], ["mesh", "pending", null], ["texture", "pending", null], ["frame", "pending", null], ["quality", "pending", null], ["navgeom", "pending", null], ["package", "pending", null]]}

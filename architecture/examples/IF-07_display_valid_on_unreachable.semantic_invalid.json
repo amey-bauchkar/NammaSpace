@@ -1,0 +1,36 @@
+{
+ "contract": "IF-07",
+ "contract_version": "1.0.0",
+ "request_id": "rq-1",
+ "status": "unreachable",
+ "planner": {
+  "name": "grid-astar",
+  "version": "0.1"
+ },
+ "polyline_xz_m": [
+  [
+   1.0,
+   1.0
+  ],
+  [
+   2.0,
+   1.6
+  ],
+  [
+   2.8,
+   1.75
+  ]
+ ],
+ "length_m": 1.98,
+ "goal_used_xz_m": [
+  2.8,
+  1.75
+ ],
+ "goal_snap_m": 0.65,
+ "plan_ms": 3.2,
+ "validation": {
+  "report_id": "vr-1",
+  "verdict": "pass"
+ },
+ "display_as_valid": true
+}

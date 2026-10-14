@@ -1,0 +1,37 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 20,
+ "frames": 1129,
+ "frame_ms": {
+  "median": 16.69999999999891,
+  "p95": 16.899999999999636,
+  "max": 816.6999999999998,
+  "mean": 17.849069973427813
+ },
+ "over_33ms_share": 0.0044286979627989375,
+ "lod": 0,
+ "triangles": 3271074,
+ "draw_calls_last_frame": 6,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1.0000000149011612,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 471,
+ "gpu_memory_textures": 5,
+ "gpu_memory_geometries": 5,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 102,
+  "first_lod_downloaded_ms": 180,
+  "first_view_ms": 829,
+  "full_detail_ms": 2329,
+  "full_detail_load_ms": 1497
+ },
+ "package_id": "pkg-eth3d-kicker-dev-20261011-14250f-run-20261011-181544-5aef",
+ "page_url": "http://127.0.0.1:8781/viewer.html?package=/files/eth3d-kicker-dev-20261011-14250f/runs/run-20261011-181544-5aef/90_package/scene_package.json&project=eth3d-kicker-dev-20261011-14250f&run=run-20261011-181544-5aef&bench=1&seconds=20",
+ "at": "2026-10-11T18:41:14.233Z",
+ "recorded_by_server_at": "2026-10-12T00:11:14+05:30"
+}

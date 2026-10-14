@@ -1,0 +1,7 @@
+# Phase 12 downloads (approved by user 2026-10-10)
+2026-10-10T12:25:57+05:30
+https://www.eth3d.net/data/kicker_dslr_jpg.7z -> external_data/eth3d_kicker/archives/kicker_dslr_jpg.7z bytes=408604363 expected=408604363 match=yes seconds=188 sha256=b0d0d73accc6fc8fa87db81fc8053d4c27ca5cbb776982533f30149d929fe493
+https://www.eth3d.net/data/kicker_dslr_scan_eval.7z -> external_data/eth3d_kicker/archives/kicker_dslr_scan_eval.7z bytes=187677934 expected=187677934 match=yes seconds=61 sha256=76615161443b17d539dbab84bc69660ec9a40bc10b6b9a41958ee5e4962a3066
+https://github.com/colmap/colmap/releases/download/4.2.1/colmap-x64-windows-nocuda.zip -> tools/downloads/colmap-x64-windows-nocuda.zip bytes=127731595 expected=127731595 match=yes seconds=38 sha256=c493d88cb4a43f21afba42cb55bf786e5434a0420e73db0ba1454c5d8b3686ae
+https://github.com/cdcseacave/openMVS/releases/download/v2.4.0/OpenMVS_Windows_x64.zip -> tools/downloads/OpenMVS_Windows_x64.zip bytes=22363227 expected=22363227 match=yes seconds=3 sha256=0c31660c15c9ebc4c106873cf67564d9570d404aef7a6403451da1b6178b2167
+2026-10-10T12:30:50+05:30

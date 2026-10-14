@@ -1,0 +1,135 @@
+{
+ "contract": "IF-13",
+ "contract_version": "1.0.0",
+ "package_id": "pkg-example-run-20261011-120000",
+ "project": {
+  "project_id": "example",
+  "title": "Example room"
+ },
+ "run_id": "run-20261011-120000",
+ "created_at": "2026-10-10T12:00:00+05:30",
+ "model_frame": {
+  "frame_id": "model:run-20261011-120000",
+  "units": "model",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "floor_detected": true,
+  "up_source": "floor_plane",
+  "datum": "origin on the floor below the camera centroid; units = reconstruction units"
+ },
+ "scale": {
+  "status": "unknown",
+  "metres_per_unit": null,
+  "relative_uncertainty": null,
+  "method": "photos only: scale not observable",
+  "evaluation_only": false
+ },
+ "appearance": {
+  "representation": "textured_mesh",
+  "to_model": {
+   "matrix_row_major": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+   ],
+   "method": "illustration (identity)"
+  },
+  "lods": [
+   {
+    "lod": 0,
+    "path": "scene/lod0.glb",
+    "format": "glb",
+    "bytes": 1000,
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "faces": 2000
+   }
+  ]
+ },
+ "eye_height_units": 1.7,
+ "bounds": {
+  "min": [
+   -3,
+   0,
+   -2
+  ],
+  "max": [
+   3,
+   2.5,
+   2
+  ]
+ },
+ "start_view": {
+  "position": [
+   0,
+   1.7,
+   0
+  ],
+  "target": [
+   1,
+   1.7,
+   0
+  ],
+  "source": "capture camera IMG_0001.jpg"
+ },
+ "cameras": "views/cameras.json",
+ "roam": "nav/roam_grid.json",
+ "navigation": {
+  "status": "unavailable",
+  "geometry": null,
+  "scale_basis": "unknown",
+  "metres_per_unit": null,
+  "note": "no navigation geometry"
+ },
+ "pois": "poi/pois.json",
+ "quality": {
+  "verdict": "usable_with_warnings",
+  "report": "reports/quality_report.json",
+  "capture_report": null,
+  "warnings": [
+   "SCALE-UNKNOWN"
+  ]
+ },
+ "notices": [
+  "Scale unknown"
+ ],
+ "files": [
+  {
+   "path": "scene/lod0.glb",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 1000
+  },
+  {
+   "path": "views/cameras.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 10
+  },
+  {
+   "path": "nav/roam_grid.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 10
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 10
+  },
+  {
+   "path": "reports/quality_report.json",
+   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+   "bytes": 10
+  }
+ ]
+}

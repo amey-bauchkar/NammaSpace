@@ -1,0 +1,289 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "namma-space/IF-10.schema.json",
+ "title": "IF-10 \u2014 Viewer load manifest",
+ "type": "object",
+ "$defs": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "timestamp": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "vec3": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "vec2": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "polygon2": {
+   "description": "Closed ring in site-frame X\u2013Z metres (first point need not repeat).",
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/vec2"
+   },
+   "minItems": 3
+  },
+  "transform": {
+   "description": "Row-major 4x4 homogeneous transform mapping the artifact frame INTO the site frame (right-handed, metres, +Y up). Scale is carried inside the matrix.",
+   "type": "object",
+   "required": [
+    "matrix_row_major",
+    "source",
+    "method"
+   ],
+   "properties": {
+    "matrix_row_major": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 16,
+     "maxItems": 16
+    },
+    "source": {
+     "enum": [
+      "identity",
+      "capture_vio",
+      "sfm_alignment",
+      "tape_scale",
+      "manual_alignment",
+      "external"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "residual_m": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0
+    }
+   },
+   "additionalProperties": false
+  },
+  "provenance": {
+   "description": "Where a datum came from. Human-corrected or externally supplied data must say so.",
+   "type": "object",
+   "required": [
+    "origin",
+    "method",
+    "created_at"
+   ],
+   "properties": {
+    "origin": {
+     "enum": [
+      "automatic",
+      "human_corrected",
+      "human_authored",
+      "external",
+      "synthetic_fixture"
+     ]
+    },
+    "method": {
+     "type": "string"
+    },
+    "tool": {
+     "type": "string"
+    },
+    "tool_version": {
+     "type": "string"
+    },
+    "author_role": {
+     "enum": [
+      "CAP",
+      "REC",
+      "NAV",
+      "WEB",
+      "LEAD",
+      "SCRIPT"
+     ]
+    },
+    "created_at": {
+     "$ref": "#/$defs/timestamp"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "site_frame": {
+   "description": "Site frame declaration (ARCH-002).",
+   "type": "object",
+   "required": [
+    "frame_id",
+    "units",
+    "handedness",
+    "up_axis",
+    "datum"
+   ],
+   "properties": {
+    "frame_id": {
+     "type": "string"
+    },
+    "units": {
+     "const": "m"
+    },
+    "handedness": {
+     "const": "right"
+    },
+    "up_axis": {
+     "const": "+Y"
+    },
+    "datum": {
+     "type": "string",
+     "description": "Physical description of the origin mark and +X reference."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract",
+  "contract_version",
+  "release_id",
+  "site_frame",
+  "scene",
+  "navlayers",
+  "pois",
+  "routes_precomputed"
+ ],
+ "properties": {
+  "release_id": {
+   "type": "string"
+  },
+  "site_frame": {
+   "$ref": "#/$defs/site_frame"
+  },
+  "scene": {
+   "type": "string",
+   "description": "Path to the IF-03 metadata."
+  },
+  "geometry": {
+   "type": "string",
+   "description": "Path to the IF-04 artifact (collision for roaming)."
+  },
+  "navlayers": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "pois": {
+   "type": "string",
+   "description": "Path to a JSON array of IF-09 records."
+  },
+  "routes_precomputed": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "IF-07 results; only display_as_valid=true routes are drawn as valid."
+  },
+  "renderer_hint": {
+   "type": "string"
+  },
+  "route_requests": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "1.1.0: IF-06 requests matching routes_precomputed (same order)."
+  },
+  "route_reports": {
+   "type": "array",
+   "items": {
+    "type": [
+     "string",
+     "null"
+    ]
+   },
+   "description": "1.1.0: IF-08 reports matching routes_precomputed (same order); null for results that are not routes (nothing to validate)."
+  },
+  "files": {
+   "type": "array",
+   "description": "1.1.0: integrity list for every referenced file.",
+   "items": {
+    "type": "object",
+    "required": [
+     "path",
+     "sha256",
+     "bytes"
+    ],
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "bytes": {
+      "type": "integer",
+      "minimum": 1
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "start_points": {
+   "type": "array",
+   "description": "1.1.0: named route start points (site-frame x, z).",
+   "items": {
+    "type": "object",
+    "required": [
+     "start_id",
+     "label",
+     "xz_m"
+    ],
+    "properties": {
+     "start_id": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "xz_m": {
+      "$ref": "#/$defs/vec2"
+     },
+     "poi_id": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "notices": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "1.1.0: limitations the viewer must display (e.g. synthetic test data)."
+  },
+  "contract": {
+   "const": "IF-10"
+  },
+  "contract_version": {
+   "type": "string",
+   "pattern": "^1\\.\\d+\\.\\d+$"
+  }
+ },
+ "additionalProperties": false
+}

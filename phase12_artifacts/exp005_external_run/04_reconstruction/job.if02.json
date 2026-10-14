@@ -1,0 +1,21 @@
+{
+ "contract": "IF-02",
+ "contract_version": "1.1.0",
+ "job_id": "job-eth3d-kicker-cpu",
+ "run_id": "exp005_external_run",
+ "adapter": {
+  "name": "colmap-openmvs-cpu (experimental, not selected)",
+  "version": "colmap 4.2.1 / openmvs 2.4.0",
+  "concept": "CON-03"
+ },
+ "inputs": [
+  "external_data/eth3d_kicker (31 DSLR JPEGs)"
+ ],
+ "timebox_s": 9000,
+ "status": "succeeded",
+ "outputs": [
+  "scene/scene.if03.json",
+  "geometry/geometry.if04.json"
+ ],
+ "error": null
+}

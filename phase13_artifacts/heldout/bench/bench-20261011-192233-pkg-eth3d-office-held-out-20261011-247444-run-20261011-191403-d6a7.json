@@ -1,0 +1,35 @@
+{
+ "valid": true,
+ "invalid_reason": null,
+ "seconds": 15,
+ "frames": 895,
+ "frame_ms": {
+  "median": 16.699999999999818,
+  "p95": 16.899999999999636,
+  "max": 66.70000000000073,
+  "mean": 16.761117318435755
+ },
+ "over_33ms_share": 0.0022346368715083797,
+ "lod": 0,
+ "triangles": 451173,
+ "draw_calls_last_frame": 1,
+ "canvas_px": [
+  1070,
+  848
+ ],
+ "device_pixel_ratio": 1,
+ "gpu": "ANGLE (Intel, Intel(R) Graphics (0x0000A7AC) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "js_heap_mb": 29,
+ "gpu_memory_textures": 1,
+ "gpu_memory_geometries": 1,
+ "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+ "timing": {
+  "package_ms": 51,
+  "first_lod_downloaded_ms": 147,
+  "first_view_ms": 421
+ },
+ "package_id": "pkg-eth3d-office-held-out-20261011-247444-run-20261011-191403-d6a7",
+ "page_url": "http://127.0.0.1:8782/viewer.html?package=/files/eth3d-office-held-out-20261011-247444/runs/run-20261011-191403-d6a7/90_package/scene_package.json&project=eth3d-office-held-out-20261011-247444&run=run-20261011-191403-d6a7&bench=1&seconds=15",
+ "at": "2026-10-11T13:52:33.739Z",
+ "recorded_by_server_at": "2026-10-11T19:22:33+05:30"
+}

@@ -1,0 +1,23 @@
+run run-20261011-203146-b5d8 profile standard config e109a60896c2
+  prepare    done      0.2
+  sfm        done      417.6
+  undistort  done      8.5
+  dense      done      1959.1
+  mesh       done      519.5
+  texture    failed    
+  frame      pending   
+  quality    pending   
+  navgeom    pending   
+  package    pending   
+{
+ "run_id": "run-20261011-203146-b5d8",
+ "status": "failed",
+ "error": {
+  "stage": "texture",
+  "message": "Painting photo textures onto the mesh took longer than allowed.",
+  "hint": "Try the Preview profile or fewer photos.",
+  "log": "openmvs_texture_lod0.log"
+ }
+}
+
+--- stderr ---

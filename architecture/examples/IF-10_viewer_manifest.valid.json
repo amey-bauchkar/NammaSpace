@@ -1,0 +1,22 @@
+{
+ "contract": "IF-10",
+ "contract_version": "1.0.0",
+ "release_id": "rel-1",
+ "site_frame": {
+  "frame_id": "site-practice-01",
+  "units": "m",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "datum": "Tape mark on floor at SW inner corner of Room A; +X along south wall"
+ },
+ "scene": "scene/scene.json",
+ "geometry": "geometry/geometry.json",
+ "navlayers": [
+  "nav/nav-1.json"
+ ],
+ "pois": "poi/pois.json",
+ "routes_precomputed": [
+  "routes/rq-1.json"
+ ],
+ "renderer_hint": "three.js + splat plugin (provisional)"
+}

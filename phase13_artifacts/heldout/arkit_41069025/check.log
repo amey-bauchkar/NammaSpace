@@ -1,0 +1,154 @@
+  Extracting video frames: 0%
+  Selecting sharp video frames: 0%
+  Selecting sharp video frames: 2%
+  Selecting sharp video frames: 3%
+  Selecting sharp video frames: 5%
+  Selecting sharp video frames: 7%
+  Selecting sharp video frames: 8%
+  Selecting sharp video frames: 10%
+  Selecting sharp video frames: 12%
+  Selecting sharp video frames: 13%
+  Selecting sharp video frames: 15%
+  Selecting sharp video frames: 17%
+  Selecting sharp video frames: 18%
+  Selecting sharp video frames: 20%
+  Selecting sharp video frames: 22%
+  Selecting sharp video frames: 23%
+  Selecting sharp video frames: 25%
+  Selecting sharp video frames: 27%
+  Selecting sharp video frames: 28%
+  Selecting sharp video frames: 30%
+  Selecting sharp video frames: 32%
+  Selecting sharp video frames: 33%
+  Selecting sharp video frames: 35%
+  Selecting sharp video frames: 37%
+  Selecting sharp video frames: 38%
+  Selecting sharp video frames: 40%
+  Selecting sharp video frames: 42%
+  Selecting sharp video frames: 43%
+  Selecting sharp video frames: 45%
+  Selecting sharp video frames: 47%
+  Selecting sharp video frames: 48%
+  Selecting sharp video frames: 50%
+  Selecting sharp video frames: 52%
+  Selecting sharp video frames: 53%
+  Selecting sharp video frames: 55%
+  Selecting sharp video frames: 57%
+  Selecting sharp video frames: 58%
+  Selecting sharp video frames: 60%
+  Selecting sharp video frames: 62%
+  Selecting sharp video frames: 63%
+  Selecting sharp video frames: 65%
+  Selecting sharp video frames: 67%
+  Selecting sharp video frames: 68%
+  Selecting sharp video frames: 70%
+  Selecting sharp video frames: 72%
+  Selecting sharp video frames: 73%
+  Selecting sharp video frames: 75%
+  Selecting sharp video frames: 77%
+  Selecting sharp video frames: 78%
+  Selecting sharp video frames: 80%
+  Selecting sharp video frames: 82%
+  Selecting sharp video frames: 83%
+  Selecting sharp video frames: 85%
+  Selecting sharp video frames: 87%
+  Selecting sharp video frames: 88%
+  Selecting sharp video frames: 90%
+  Selecting sharp video frames: 92%
+  Selecting sharp video frames: 93%
+  Selecting sharp video frames: 95%
+  Selecting sharp video frames: 97%
+  Selecting sharp video frames: 98%
+  Measuring sharpness, exposure and detail: 0%
+  Measuring sharpness, exposure and detail: 2%
+  Measuring sharpness, exposure and detail: 3%
+  Measuring sharpness, exposure and detail: 5%
+  Measuring sharpness, exposure and detail: 7%
+  Measuring sharpness, exposure and detail: 8%
+  Measuring sharpness, exposure and detail: 10%
+  Measuring sharpness, exposure and detail: 12%
+  Measuring sharpness, exposure and detail: 13%
+  Measuring sharpness, exposure and detail: 15%
+  Measuring sharpness, exposure and detail: 17%
+  Measuring sharpness, exposure and detail: 18%
+  Measuring sharpness, exposure and detail: 20%
+  Measuring sharpness, exposure and detail: 22%
+  Measuring sharpness, exposure and detail: 23%
+  Measuring sharpness, exposure and detail: 25%
+  Measuring sharpness, exposure and detail: 27%
+  Measuring sharpness, exposure and detail: 28%
+  Measuring sharpness, exposure and detail: 30%
+  Measuring sharpness, exposure and detail: 32%
+  Measuring sharpness, exposure and detail: 33%
+  Measuring sharpness, exposure and detail: 35%
+  Measuring sharpness, exposure and detail: 37%
+  Measuring sharpness, exposure and detail: 38%
+  Measuring sharpness, exposure and detail: 40%
+  Measuring sharpness, exposure and detail: 42%
+  Measuring sharpness, exposure and detail: 43%
+  Measuring sharpness, exposure and detail: 45%
+  Measuring sharpness, exposure and detail: 47%
+  Measuring sharpness, exposure and detail: 48%
+  Measuring sharpness, exposure and detail: 50%
+  Measuring sharpness, exposure and detail: 52%
+  Measuring sharpness, exposure and detail: 53%
+  Measuring sharpness, exposure and detail: 55%
+  Measuring sharpness, exposure and detail: 57%
+  Measuring sharpness, exposure and detail: 58%
+  Measuring sharpness, exposure and detail: 60%
+  Measuring sharpness, exposure and detail: 62%
+  Measuring sharpness, exposure and detail: 63%
+  Measuring sharpness, exposure and detail: 65%
+  Measuring sharpness, exposure and detail: 67%
+  Measuring sharpness, exposure and detail: 68%
+  Measuring sharpness, exposure and detail: 70%
+  Measuring sharpness, exposure and detail: 72%
+  Measuring sharpness, exposure and detail: 73%
+  Measuring sharpness, exposure and detail: 75%
+  Measuring sharpness, exposure and detail: 77%
+  Measuring sharpness, exposure and detail: 78%
+  Measuring sharpness, exposure and detail: 80%
+  Measuring sharpness, exposure and detail: 82%
+  Measuring sharpness, exposure and detail: 83%
+  Measuring sharpness, exposure and detail: 85%
+  Measuring sharpness, exposure and detail: 87%
+  Measuring sharpness, exposure and detail: 88%
+  Measuring sharpness, exposure and detail: 90%
+  Measuring sharpness, exposure and detail: 92%
+  Measuring sharpness, exposure and detail: 93%
+  Measuring sharpness, exposure and detail: 95%
+  Measuring sharpness, exposure and detail: 97%
+  Measuring sharpness, exposure and detail: 98%
+  Checking that photos overlap: 0%
+{
+ "status": "ready",
+ "mode": "video",
+ "stats": {
+  "mode": "video",
+  "files_uploaded": 1,
+  "inputs_accepted": 300,
+  "flags": {
+   "sharpness_median": 36.3,
+   "blur_threshold": 25.0
+  },
+  "blurry": 95,
+  "too_dark": 0,
+  "too_bright": 1,
+  "low_detail": 82,
+  "near_duplicate_pairs": 5,
+  "overlap": {
+   "pairs_tested": 1190,
+   "verified_pairs": 382,
+   "isolated": 71,
+   "groups": 42,
+   "largest_group": 33
+  }
+ },
+ "seconds": 72.7
+}
+  [warning] CAP-BLUR: 95 of 300 images look blurry. Move slowly, hold the phone steady and use good light.
+  [warning] CAP-LOW-DETAIL: 82 images show few details (plain walls, floor or glass); include furniture and edges in every photo.
+  [warning] CAP-ISOLATED: 71 images do not visibly overlap any other image and will probably not be placed.
+  [warning] CAP-GROUPS: The images form 42 separate groups that do not overlap. Walk between areas while capturing so they connect.
+
+--- stderr ---
