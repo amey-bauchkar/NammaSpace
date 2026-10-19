@@ -37,7 +37,9 @@ export function checkScenePackage(p, label = 'scene_package.json') {
   }
   if (!p.appearance.lods.length) throw new PackageLoadError('invalid_package', `${label}: no appearance levels`);
   const listed = new Set(p.files.map((x) => x.path));
-  for (const rel of [...p.appearance.lods.map((l) => l.path), p.roam, p.cameras, p.pois]) {
+  const est = p.appearance.estimated_surfaces;
+  if (est && est.frame !== 'model') throw new PackageLoadError('invalid_package', `${label}: estimated surfaces must be in the model frame`);
+  for (const rel of [...p.appearance.lods.map((l) => l.path), ...(est ? [est.path] : []), p.roam, p.cameras, p.pois]) {
     if (!listed.has(rel)) throw new PackageLoadError('invalid_package', `${label}: ${rel} is not listed in files[]`);
     if (rel.includes('..') || rel.startsWith('/') || rel.includes('\\')) throw new PackageLoadError('invalid_package', `${label}: unsafe path ${rel}`);
   }
@@ -99,7 +101,9 @@ export async function loadScenePackage(url, { fetchFn, onProgress } = {}) {
   // lightest level first (highest lod number) for a fast first view
   const lods = [...pkg.appearance.lods].sort((a, b) => b.lod - a.lod);
   return { pkg, base: base.href, cameras: cameras.cameras || [], roam, pois, quality, lods,
-    fetchLod: (lod, progress) => getVerified(lod.path, progress || onProgress) };
+    estimated: pkg.appearance.estimated_surfaces || null,
+    fetchLod: (lod, progress) => getVerified(lod.path, progress || onProgress),
+    fetchEstimated: () => getVerified(pkg.appearance.estimated_surfaces.path) };
 }
 
 /** Row-major 4x4 applied to a point. */

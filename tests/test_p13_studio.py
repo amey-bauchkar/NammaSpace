@@ -240,3 +240,18 @@ def test_unread_body_of_a_successful_request_does_not_corrupt_the_next_one(serve
     r2 = c.getresponse(); body = r2.read()
     assert r2.status == 200, body[:200]
     c.close()
+
+
+
+def test_disk_space_check_gives_a_clear_message(tmp_path, monkeypatch):
+    # hall capture (246 photos): the disk filled during dense reconstruction and the run failed with a confusing
+    # texture error; the dense step now checks the space first
+    import collections
+    from namma.studio.pipeline import StageError, dense_disk_need_gb, require_disk
+    assert 7.0 < dense_disk_need_gb(90, 1600) < 8.0
+    ctx = type("C", (), {"run_dir": tmp_path})()
+    monkeypatch.setattr(pipeline.shutil, "disk_usage", lambda p: collections.namedtuple("U", "total used free")(1, 1, 2 * 2**30))
+    with pytest.raises(StageError) as e:
+        require_disk(ctx, "dense", 7.4)
+    assert "7.4 GB" in str(e.value.args) or "7.4 GB" in str(e.value)
+    require_disk(ctx, "dense", 1.0)

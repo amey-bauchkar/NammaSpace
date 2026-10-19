@@ -20,8 +20,9 @@ from namma.core.jsonio import load_strict, write_json  # noqa: E402
 from namma.core import timefmt  # noqa: E402
 from namma.studio.profiles import config_sha256, get_profile  # noqa: E402
 
-LATER_ONLY = {"mesh.target_faces", "pipeline_version", "textures", "timeouts_s.mesh", "timeouts_s.texture"}
-STAGE_DIRS = {"prepare": "10_images", "sfm": "20_sfm", "undistort": "30_undistorted", "dense": "40_dense"}
+LATER_ONLY = {"mesh.target_faces", "pipeline_version", "textures", "timeouts_s.mesh", "timeouts_s.texture", "fill", "exposure", "harmonize", "blend"}
+STAGE_DIRS = {"prepare": "10_images", "sfm": "20_sfm", "undistort": "30_undistorted", "dense": "40_dense",
+              "mesh": "50_mesh", "texture": "60_texture"}
 
 
 def flat(d, p=""):

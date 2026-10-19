@@ -538,7 +538,18 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
                                               "format": {"enum": ["glb"]}, "bytes": {"type": "integer", "minimum": 1},
                                               "sha256": {"$ref": "#/$defs/sha256"},
                                               "faces": {"type": ["integer", "null"], "minimum": 0}},
-                               "additionalProperties": False}}},
+                               "additionalProperties": False}},
+                           "estimated_surfaces": {
+                               "type": "object", "required": ["path", "format", "bytes", "sha256", "frame", "method"],
+                               "description": "1.1.0, optional: ESTIMATED flat surfaces closing holes in floor / walls / "
+                                              "ceiling. Already in the model frame (to_model is NOT applied). Never "
+                                              "scanned geometry; viewers must label it as estimated.",
+                               "properties": {"path": {"type": "string"}, "format": {"enum": ["glb"]},
+                                              "bytes": {"type": "integer", "minimum": 1}, "sha256": {"$ref": "#/$defs/sha256"},
+                                              "faces": {"type": "integer", "minimum": 0}, "frame": {"const": "model"},
+                                              "method": {"type": "string"}, "fit": {"type": "object"},
+                                              "planes": {"type": "array", "items": {"type": "object"}}},
+                               "additionalProperties": False}},
                        "additionalProperties": False},
         "eye_height_units": {"type": "number", "exclusiveMinimum": 0,
                              "description": "Median capture-camera height above the floor, model units."},

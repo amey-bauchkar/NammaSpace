@@ -19,6 +19,7 @@ from namma.recon.runner import run_step  # noqa: E402
 from namma.recon.tools import find_tools, mvs_threads  # noqa: E402
 from texture_coverage import surface_grey_share  # noqa: E402
 from PIL import Image  # noqa: E402
+import numpy as np  # noqa: E402
 
 
 def main():
@@ -41,7 +42,11 @@ def main():
         argv = [tools.mvs("TextureMesh"), "-i", dense / "scene_dense.mvs", "-m", mesh, "-o", d / "tex.glb", "-w", dense,
                 "--export-type", "glb", "--resolution-level", t0["resolution_level"], "--decimate", t0["decimate"],
                 "--max-texture-size", t0["max_texture_size"], "--max-threads", mvs_threads(),
-                "--global-seam-leveling", 0, "--local-seam-leveling", 0, "--empty-color", 0x808080, *extra]
+                "--empty-color", 0x808080, *extra]
+        if "--global-seam-leveling" not in extra:
+            argv += ["--global-seam-leveling", 0]
+        if "--local-seam-leveling" not in extra:
+            argv += ["--local-seam-leveling", 0]
         rec = run_step(f"texture_{name}", argv, d, timeout_s=1800, cwd=dense)
         from namma.recon.glb import embed_textures
         embed_textures(d / "tex.glb", d / "lod0.glb", max_side=t0["embed_max_side"], jpeg_quality=90)
@@ -51,9 +56,17 @@ def main():
         doc, binary = read_glb(d / "lod0.glb")
         bv = doc["bufferViews"][doc["images"][0]["bufferView"]]
         im = Image.open(io.BytesIO(binary[bv.get("byteOffset", 0): bv.get("byteOffset", 0) + bv["byteLength"]]))
+        a = np.asarray(im.convert("RGB")).astype(int)
+        patch = np.abs(a - 128).max(axis=2) > 6                 # not the grey atlas background
+        black = patch & (a.max(axis=2) <= 8)
+        black_share = float(black.sum() / max(patch.sum(), 1))
         im.thumbnail((2048, 2048)); im.save(d / "atlas0_preview.png")
-        rows.append({"variant": name, "options": extra, "texture_wall_s": rec["wall_s"], "peak_rss_mb": rec["peak_rss_mb"],
-                     "grey_share": round(share, 4), "patch_pixels": n})
+        import re as _re
+        logf = max((run / "40_dense").glob("TextureMesh-*.log"), key=lambda f: f.stat().st_mtime).read_text(encoding="utf-8", errors="replace")
+        m1 = _re.search(r"faces, (\d+) patches", logf); m2 = _re.search(r"atlas and image completed: (\d+) patches", logf)
+        rows.append({"variant": name, "patches_assigned": int(m1.group(1)) if m1 else None,
+                     "patches_packed": int(m2.group(1)) if m2 else None, "options": extra, "texture_wall_s": rec["wall_s"], "peak_rss_mb": rec["peak_rss_mb"],
+                     "surface_grey_share": round(share, 4), "black_texel_share": round(black_share, 4)})
         print(json.dumps(rows[-1]), flush=True)
     (out / "results.json").write_text(json.dumps({"run": str(run), "rows": rows}, indent=1), encoding="utf-8")
 

@@ -1,0 +1,24 @@
+  PASS 1 create project via the form: hall-246-photos-20261018-29fa2c; notices []
+  PASS 2 upload through the file input: 246 files uploaded. Next: check the capture.
+  PASS 3 capture check: Ready to reconstruct: 246 photos accepted, 4 things to be aware of.
+  PASS 4 start reconstruction: run-20261018-222437-12f1
+    progress: Starting
+    progress: Preparing photos
+    progress: Placing cameras (structure from motion)
+    progress: Building dense 3D geometry
+    progress: Painting photo textures onto the mesh
+    progress: Failed
+Traceback (most recent call last):
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\browser\studio_e2e.py", line 157, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\browser\studio_e2e.py", line 130, in main
+    (err or res_text or "")[:400], c.screenshot(out / "05_result.png"))
+                                   ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SEBIN\Desktop\NammaSpace\scripts\browser\cdp.py", line 162, in screenshot
+    Path(path).write_bytes(base64.b64decode(data))
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SEBIN\AppData\Local\Programs\Python\Python314\Lib\pathlib\__init__.py", line 801, in write_bytes
+    with self.open(mode='wb') as f:
+         ~~~~~~~~~^^^^^^^^^^^
+OSError: [Errno 28] No space left on device

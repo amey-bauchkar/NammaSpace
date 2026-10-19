@@ -1,0 +1,56 @@
+{
+ "run": "C:\\Users\\SEBIN\\Desktop\\NammaSpace\\projects\\hall-246-photos-20261018-29fa2c\\runs\\run-20261018-235540-reuse",
+ "rows": [
+  {
+   "variant": "default",
+   "patches_assigned": 17861,
+   "patches_packed": 12711,
+   "options": [],
+   "texture_wall_s": 110.18,
+   "peak_rss_mb": 2537.7,
+   "surface_grey_share": 0.0026,
+   "black_texel_share": 0.0136
+  },
+  {
+   "variant": "vfi3",
+   "patches_assigned": 43295,
+   "patches_packed": 35237,
+   "options": [
+    "--virtual-face-images",
+    "3"
+   ],
+   "texture_wall_s": 446.61,
+   "peak_rss_mb": 1524.7,
+   "surface_grey_share": 0.0012,
+   "black_texel_share": 0.0145
+  },
+  {
+   "variant": "smooth001",
+   "patches_assigned": 17974,
+   "patches_packed": 12760,
+   "options": [
+    "--cost-smoothness-ratio",
+    "0.01"
+   ],
+   "texture_wall_s": 129.94,
+   "peak_rss_mb": 2541.0,
+   "surface_grey_share": 0.0029,
+   "black_texel_share": 0.0132
+  },
+  {
+   "variant": "vfi3_smooth001",
+   "patches_assigned": 45600,
+   "patches_packed": 36866,
+   "options": [
+    "--virtual-face-images",
+    "3",
+    "--cost-smoothness-ratio",
+    "0.01"
+   ],
+   "texture_wall_s": 545.73,
+   "peak_rss_mb": 1567.8,
+   "surface_grey_share": 0.0019,
+   "black_texel_share": 0.0146
+  }
+ ]
+}

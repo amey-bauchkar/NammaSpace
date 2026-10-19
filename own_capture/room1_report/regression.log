@@ -1,0 +1,6 @@
+PASS 1_make_examples     0.1s  wrote 50 examples
+PASS 2_contracts         0.5s  note: *.semantic_invalid.json examples are schema-valid by design; their semantic failure is asserted by tests/test_m01_contracts.py
+PASS 3_pytest           55.9s  277 passed in 54.37s
+PASS 4_node              0.4s  ℹ duration_ms 313.5477
+regression PASSED; logs: test_output/phase13/regression-20261018-215237
+SUMMARY_PATH=C:\Users\SEBIN\Desktop\NammaSpace\test_output\phase13\regression-20261018-215237\summary.json

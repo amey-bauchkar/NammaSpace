@@ -12,7 +12,7 @@ import copy
 import hashlib
 import json
 
-PIPELINE_VERSION = "13.4.0"
+PIPELINE_VERSION = "13.10.0"
 
 PROFILES = {
     "preview": {
@@ -46,6 +46,15 @@ PROFILES = {
     },
 }
 COMMON = {
+    # per-photo exposure gains before texturing (namma.recon.exposure): removes brightness patchwork
+    "exposure": {"enabled": True, "max_gain": 2.0},
+    # texture seam harmonisation (namma.recon.harmonize): patch colours pulled to the multi-photo average
+    "harmonize": {"enabled": True, "max_gain": 1.8},
+    # multi-view blended texture (namma.recon.blendtex): every texel from all photos that see it; replaces harmonize
+    "blend": {"enabled": True, "power": 4, "scale": 2, "max_side": 8192, "use_originals": True},
+    # estimated flat surfaces for holes in floor / walls / ceiling (namma.recon.roomfill); a separate, labelled layer
+    "fill": {"enabled": True, "cell_eye": 0.03, "slab_eye": 0.12, "min_pts": 3, "min_fit_near_wall": 0.25,
+             "max_outside_share": 0.15, "offset_eye": 0.035},
     "camera_model_single": "OPENCV",
     "camera_model_mixed": "SIMPLE_RADIAL",
     "roam": {"cells_per_eye": 32, "band": [0.15, 1.2], "min_pts": 3, "min_obstacle_eye": 0.12},

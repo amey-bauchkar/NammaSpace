@@ -1,0 +1,29 @@
+223 views; 223 from originals
+atlas 0: 8192x8192, 27.0 M texels 54 s
+  atlas 0: 25/223 photos blended 152 s
+  atlas 0: 50/223 photos blended 237 s
+  atlas 0: 75/223 photos blended 309 s
+  atlas 0: 100/223 photos blended 419 s
+  atlas 0: 125/223 photos blended 514 s
+  atlas 0: 150/223 photos blended 629 s
+  atlas 0: 175/223 photos blended 739 s
+  atlas 0: 200/223 photos blended 871 s
+atlas 1: 8192x8192, 25.7 M texels 1009 s
+  atlas 1: 25/223 photos blended 1099 s
+  atlas 1: 50/223 photos blended 1181 s
+  atlas 1: 75/223 photos blended 1240 s
+  atlas 1: 100/223 photos blended 1335 s
+  atlas 1: 125/223 photos blended 1425 s
+  atlas 1: 150/223 photos blended 1512 s
+  atlas 1: 175/223 photos blended 1600 s
+  atlas 1: 200/223 photos blended 1700 s
+atlas 2: 8192x8192, 12.9 M texels 1803 s
+  atlas 2: 25/223 photos blended 1845 s
+  atlas 2: 50/223 photos blended 1901 s
+  atlas 2: 75/223 photos blended 1945 s
+  atlas 2: 100/223 photos blended 1996 s
+  atlas 2: 125/223 photos blended 2046 s
+  atlas 2: 150/223 photos blended 2094 s
+  atlas 2: 175/223 photos blended 2144 s
+  atlas 2: 200/223 photos blended 2203 s
+{'photos': 223, 'scale': 2, 'atlas_0_texels_blended': 0.996794978147309, 'atlas_0_size': [8192, 8192], 'photos_used': 223, 'atlas_1_texels_blended': 0.9997417939020223, 'atlas_1_size': [8192, 8192], 'atlas_2_texels_blended': 0.9994592900968122, 'atlas_2_size': [8192, 8192]} 2267 s 79 MB

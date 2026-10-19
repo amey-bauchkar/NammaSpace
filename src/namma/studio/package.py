@@ -18,7 +18,7 @@ from namma.core import timefmt
 from namma.core.issues import errors_only
 from namma.core.jsonio import load_strict, sha256_file, write_json
 
-IF13_VERSION = "1.0.0"
+IF13_VERSION = "1.1.0"
 WEB_FILES = ["viewer.html", "app.css", "favicon.svg", "js", "vendor"]
 
 
@@ -80,6 +80,21 @@ def build_scene_package(ctx, out):
     if quality["verdict"] != "good":
         notices.append(f"Reconstruction quality: {quality['verdict'].replace('_', ' ')} "
                        f"({sum(1 for w in quality['warnings'] if w['severity'] != 'info')} warnings).")
+    fill_src = ctx.dir("frame") / "fill.glb"
+    fill_meta_src = ctx.dir("frame") / "fill.json"
+    estimated = None
+    if fill_src.exists() and fill_meta_src.exists():
+        fm = load_strict(fill_meta_src)
+        if fm.get("status") == "ok":
+            shutil.copy2(fill_src, out / "scene" / "fill.glb")
+            f = out / "scene" / "fill.glb"
+            estimated = {"path": "scene/fill.glb", "format": "glb", "bytes": f.stat().st_size, "sha256": sha256_file(f),
+                         "faces": fm["triangles"], "frame": "model",
+                         "method": "flat room planes fitted to the reconstructed points; holes only; colours from the "
+                                   "photos (median over views) - ESTIMATED, not scanned",
+                         "fit": fm["fit"], "planes": fm["planes"]}
+            notices.append("Holes in walls, floor and ceiling are closed with ESTIMATED flat surfaces "
+                           "(toggle 'Estimated surfaces'); they are not scanned geometry.")
     files = []
     for p in sorted(out.rglob("*")):
         if p.is_file():
@@ -99,7 +114,7 @@ def build_scene_package(ctx, out):
                           "to_model": {"matrix_row_major": [float(v) for row in T for v in row],
                                        "method": "rigid SfM -> model frame (floor plane / camera orientation), "
                                                  "see 70_frame/frame.json"},
-                          "lods": lods},
+                          "lods": lods, **({"estimated_surfaces": estimated} if estimated else {})},
            "eye_height_units": frame["eye_height_units"],
            "bounds": {"min": p1, "max": p99},
            "start_view": {"position": frame["start"]["position"], "target": frame["start"]["target"],

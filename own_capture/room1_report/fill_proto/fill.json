@@ -1,0 +1,109 @@
+{
+ "box": {
+  "theta": 0.1439896632895322,
+  "R": [
+   [
+    0.9896513868196702,
+    0.14349262199117932
+   ],
+   [
+    -0.14349262199117932,
+    0.9896513868196702
+   ]
+  ],
+  "u": [
+   -6.304217606773903,
+   6.711742740034027
+  ],
+  "v": [
+   -4.215114372549922,
+   4.519280070702767
+  ],
+  "height": 10.11090719563943,
+  "eye": 5.7087545380736495,
+  "vertical_normals": 1777941,
+  "near_wall_share": 0.6420331028672821,
+  "outside_share": 0.05127636130592809
+ },
+ "planes": [
+  {
+   "plane": "floor",
+   "cells": 1014,
+   "covered_cells": 768,
+   "filled_cells": 246,
+   "covered_share": 0.757396449704142,
+   "filled_cells_coloured_from_photos": 246,
+   "median_rgb": [
+    0.71,
+    0.69,
+    0.639
+   ]
+  },
+  {
+   "plane": "wall_u0",
+   "cells": 780,
+   "covered_cells": 625,
+   "filled_cells": 155,
+   "covered_share": 0.8012820512820513,
+   "filled_cells_coloured_from_photos": 155,
+   "median_rgb": [
+    0.569,
+    0.541,
+    0.471
+   ]
+  },
+  {
+   "plane": "wall_u1",
+   "cells": 780,
+   "covered_cells": 521,
+   "filled_cells": 259,
+   "covered_share": 0.6679487179487179,
+   "filled_cells_coloured_from_photos": 259,
+   "median_rgb": [
+    0.322,
+    0.29,
+    0.173
+   ]
+  },
+  {
+   "plane": "wall_v0",
+   "cells": 1170,
+   "covered_cells": 429,
+   "filled_cells": 741,
+   "covered_share": 0.36666666666666664,
+   "filled_cells_coloured_from_photos": 741,
+   "median_rgb": [
+    0.157,
+    0.239,
+    0.365
+   ]
+  },
+  {
+   "plane": "wall_v1",
+   "cells": 1170,
+   "covered_cells": 293,
+   "filled_cells": 877,
+   "covered_share": 0.2504273504273504,
+   "filled_cells_coloured_from_photos": 877,
+   "median_rgb": [
+    0.235,
+    0.325,
+    0.361
+   ]
+  },
+  {
+   "plane": "ceiling",
+   "cells": 1014,
+   "covered_cells": 81,
+   "filled_cells": 933,
+   "covered_share": 0.07988165680473373,
+   "filled_cells_coloured_from_photos": 933,
+   "median_rgb": [
+    0.506,
+    0.494,
+    0.455
+   ]
+  }
+ ],
+ "triangles": 6422
+}

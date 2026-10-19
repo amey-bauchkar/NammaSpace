@@ -244,6 +244,11 @@ async function main() {
   wireViewpoints(ctx, startPose);
   if (studio) wireStudioTools(ctx);
 
+  // ---- estimated surfaces (holes in walls / floor / ceiling closed with flat planes; never scanned geometry)
+  if (data.estimated) {
+    loadEstimated(ctx).catch((e) => { state.errors.push({ kind: 'estimated_surfaces', message: e.message }); toast(`Estimated surfaces not shown: ${e.message}`); });
+  }
+
   // ---- full detail in the background
   const full = data.lods.find((l) => l.lod === 0);
   const canUpgrade = forcedLod === null && full && full !== first;
@@ -257,6 +262,39 @@ async function main() {
     await runBenchmark(ctx, Number(params.get('seconds') || 20));
   }
   if (params.has('selftest')) await runSelftest(ctx, startPose);
+}
+
+/** Estimated surfaces: a separate, clearly labelled layer, already in the model frame (no to_model). */
+async function loadEstimated(ctx) {
+  const buf = await ctx.data.fetchEstimated();
+  const gltf = await new GLTFLoader().parseAsync(buf, '');
+  const group = new THREE.Group();
+  group.name = 'estimated_surfaces';
+  gltf.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const old = o.material;
+    // front faces point into the room: seen from outside (overview) the estimate is see-through
+    o.material = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.FrontSide });
+    if (old) old.dispose();
+  });
+  group.add(gltf.scene);
+  ctx.app.scene.add(group);
+  ctx.estimated = group;
+  window.__nammaScene.estimatedShown = true;
+  const btn = $('estimated-toggle');
+  btn.hidden = false;
+  btn.onclick = () => {
+    group.visible = !group.visible;
+    window.__nammaScene.estimatedShown = group.visible;
+    btn.textContent = group.visible ? 'Hide estimated surfaces' : 'Show estimated surfaces';
+  };
+  const est = ctx.data.estimated;
+  const filled = (est.planes || []).filter((p) => p.filled_cells > 0).map((p) => p.plane.replace('_', ' '));
+  const about = $('about');
+  const dt = document.createElement('dt'); dt.textContent = 'Estimated surfaces';
+  const dd = document.createElement('dd');
+  dd.textContent = `holes in ${filled.join(', ') || 'none'} closed with flat surfaces coloured from your photos – an estimate, not a scan`;
+  about.append(dt, dd);
 }
 
 /** Floor guide: a faint grid at the detected floor height inside the walkable footprint. It sits slightly BELOW

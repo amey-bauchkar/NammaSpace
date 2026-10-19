@@ -1,0 +1,16 @@
+run run-20261018-235540-reuse profile preview config e1dcbf10bf8f
+  prepare    done      88.7
+  sfm        done      2507.3
+  undistort  done      3.0
+  dense      done      1569.7
+  mesh       done      136.6
+  texture    done      177.5
+  frame      done      15.5
+  quality    done      0.6
+  navgeom    done      0.5
+  package    done      0.4
+{
+ "run_id": "run-20261018-235540-reuse",
+ "status": "succeeded",
+ "error": null
+}

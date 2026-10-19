@@ -1,0 +1,24 @@
+{
+ "run": "C:\\Users\\SEBIN\\Desktop\\NammaSpace\\projects\\my-room-namah-space-20261018-4c9d65\\runs\\run-20261018-215910-reuse",
+ "rows": [
+  {
+   "variant": "off",
+   "options": [],
+   "texture_wall_s": 81.9,
+   "peak_rss_mb": 2526.1,
+   "surface_grey_share": 0.0001,
+   "black_texel_share": 0.0327
+  },
+  {
+   "variant": "global",
+   "options": [
+    "--global-seam-leveling",
+    "1"
+   ],
+   "texture_wall_s": 92.36,
+   "peak_rss_mb": 2526.3,
+   "surface_grey_share": 0.0,
+   "black_texel_share": 0.4884
+  }
+ ]
+}

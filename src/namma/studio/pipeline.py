@@ -30,7 +30,7 @@ from namma.core import timefmt
 from namma.core.issues import errors_only
 from namma.core.jsonio import load_strict, write_json
 from namma.pipeline.runlog import RunLog
-from namma.recon import colmap, meshclean, modelframe, openmvs, quality
+from namma.recon import roomfill, exposure, harmonize, blendtex, colmap, meshclean, modelframe, openmvs, quality
 from namma.recon import glb as glb_tools
 from namma.recon.io import read_ply
 from namma.recon.runner import StepFailed
@@ -379,6 +379,8 @@ def stage_dense(ctx):
         shutil.rmtree(out)
     out.mkdir(parents=True)
     T, d = ctx.cfg["timeouts_s"], ctx.cfg["dense"]
+    n_imgs = len(list((ctx.dir("undistort") / "images").glob("*")))
+    require_disk(ctx, "dense", dense_disk_need_gb(n_imgs, d["max_resolution"]))
     openmvs.interface_colmap(ctx.tools, ctx.dir("undistort"), out / "scene.mvs", out, ctx.logs,
                              timeout_s=T["interface"], cancel_file=ctx.cancel_file)
     ctx.check_cancel()
@@ -399,12 +401,30 @@ def stage_dense(ctx):
     except StepFailed as e:
         if e.record.get("status") == "cancelled":
             raise Cancelled("cancelled by user") from e
+        if shutil.disk_usage(out).free < 0.5 * 2**30:
+            # a full disk is not a reconstruction problem: say so instead of falling back to a rough mesh
+            raise StageError("dense", "The disk became full while building the dense 3D geometry.",
+                             "Free several GB (old projects, Recycle Bin), then press Resume.", log=e.record.get("log"))
         # genuine fallback: the coarse SfM points in scene.mvs are meshed instead
         ctx.facts.update(dense_fallback=True, dense_fallback_reason=f"{e} (see logs/{e.record.get('log')})")
         result = {"dense": False, "fallback_reason": str(e)}
     write_json(out / "dense_summary.json", {**result, "dense_fallback": ctx.facts["dense_fallback"],
                                             "dense_fallback_reason": ctx.facts.get("dense_fallback_reason")})
     return result
+
+
+def dense_disk_need_gb(n_images, max_resolution):
+    """Free disk needed for dense + mesh + texture. Measured: 246-photo capture, 90 dense images at 1600 px wrote
+    5.5 GB of depth maps (~61 MB per image); scales with the pixel count; +1.5 GB for mesh, texture, package."""
+    return n_images * 0.065 * (max_resolution / 1600) ** 2 + 1.5
+
+
+def require_disk(ctx, stage, need_gb):
+    free = shutil.disk_usage(ctx.run_dir).free / 2**30
+    if free < need_gb:
+        raise StageError(stage, f"Not enough free disk space: about {need_gb:.1f} GB is needed for this step, "
+                                f"{free:.1f} GB is free on this drive.",
+                         "Free some space (delete old projects or empty the Recycle Bin), then press Resume.")
 
 
 class _NoDense(RuntimeError):
@@ -478,6 +498,7 @@ def stage_texture(ctx):
     out.mkdir(parents=True)
     s = _dense_state(ctx)
     scene = ctx.dir("dense") / ("scene.mvs" if s["dense_fallback"] else "scene_dense.mvs")
+    balance = _balance_exposure(ctx)
     lods = []
     for t in ctx.cfg["textures"]:
         ctx.check_cancel()
@@ -496,10 +517,83 @@ def stage_texture(ctx):
         emb = glb_tools.embed_textures(raw, glb, max_side=t.get("embed_max_side"), jpeg_quality=t.get("jpeg_quality", 90))
         if not emb["textures"]:
             raise StageError("texture", f"{raw.name} has no textures to embed", log=rec["log"])
+        emb["harmonize"] = _blend_texture(ctx, glb) if (ctx.cfg.get("blend") or {}).get("enabled") else _harmonize_seams(ctx, glb)
         lods.append({"lod": t["lod"], "file": glb.name, "bytes": glb.stat().st_size, "wall_s": rec["wall_s"],
-                     "triangles": emb["triangles"], "textures": emb["textures"]})
-    write_json(out / "texture_summary.json", {"lods": lods})
-    return {"lods": lods}
+                     "triangles": emb["triangles"], "textures": emb["textures"], "harmonize": emb["harmonize"]})
+    write_json(out / "texture_summary.json", {"lods": lods, "exposure": balance})
+    return {"lods": lods, "exposure": balance}
+
+
+def _blend_texture(ctx, glb):
+    """Recompute every texel from all photos that see it (namma.recon.blendtex); never fails the run."""
+    cfg = ctx.cfg.get("blend") or {}
+    try:
+        ctx.set_progress("texture", "Blending all photos into the texture", None)
+        _, txt_dir, _ = _sfm_model(ctx)
+        imgs = colmap.read_images_txt(txt_dir / "images.txt")
+        gains, gstats = exposure.estimate_gains(exposure.read_observations(txt_dir / "images.txt"), ctx.dir("prepare"),
+                                                sorted(imgs), max_gain=(ctx.cfg.get("exposure") or {}).get("max_gain", 2.0))
+        originals = ctx.project_dir / "capture" / "originals" if cfg.get("use_originals") else None
+        views = blendtex.make_views(imgs, colmap.read_cameras_txt(txt_dir / "cameras.txt"), ctx.dir("prepare"), gains,
+                                    originals_dir=originals)
+        total = len(views)
+        tmp = glb.with_name(glb.stem + "_blend.glb")
+
+        def log(msg):
+            if "photos blended" in msg:
+                done = int(msg.split("/")[0].split()[-1])
+                part = msg.split(":")[0].strip()
+                ctx.set_progress("texture", f"Blending all photos into the texture, {part} ({done}/{total})", None)
+        st = blendtex.blend_texture_glb(glb, tmp, views, power=cfg.get("power", 4), scale=cfg.get("scale", 1),
+                                        max_side=cfg.get("max_side", 8192), log=log)
+        tmp.replace(glb)
+        return {"status": "ok", "method": "multi-view blend", "exposure": gstats, **st}
+    except Exception as e:
+        return {"status": "error", "method": "multi-view blend", "reason": f"{e.__class__.__name__}: {e}"}
+
+
+def _harmonize_seams(ctx, glb):
+    """Even out colour / brightness between texture patches (namma.recon.harmonize); never fails the run."""
+    cfg = ctx.cfg.get("harmonize") or {}
+    if not cfg.get("enabled"):
+        return {"status": "disabled"}
+    try:
+        ctx.set_progress("texture", "Smoothing colour seams between photos", None)
+        _, txt_dir, _ = _sfm_model(ctx)
+        gf = ctx.dir("texture") / "exposure_gains.json"
+        gains = load_strict(gf)["gains"] if gf.exists() else None
+        if not hasattr(ctx, "_harm_views"):
+            ctx._harm_views = harmonize.load_views(colmap.read_images_txt(txt_dir / "images.txt"),
+                                                   colmap.read_cameras_txt(txt_dir / "cameras.txt"), ctx.dir("prepare"), gains)
+        tmp = glb.with_name(glb.stem + "_harm.glb")
+        st = harmonize.harmonize_glb(glb, tmp, ctx._harm_views, max_gain=cfg.get("max_gain", 1.8))
+        tmp.replace(glb)
+        return {"status": "ok", **st}
+    except Exception as e:
+        return {"status": "error", "reason": f"{e.__class__.__name__}: {e}"}
+
+
+def _balance_exposure(ctx):
+    """Equalise the photos' exposure before texturing (namma.recon.exposure); never fails the run."""
+    cfg = ctx.cfg.get("exposure") or {}
+    und = ctx.dir("undistort") / "images"
+    backup = ctx.dir("undistort") / "images_original"
+    if not cfg.get("enabled"):
+        if backup.exists():                       # a previous attempt balanced them: restore the originals
+            for f in backup.iterdir():
+                shutil.copy2(f, und / f.name)
+        return {"status": "disabled"}
+    try:
+        ctx.set_progress("texture", "Matching the brightness of the photos", 0.0)
+        _, txt_dir, _ = _sfm_model(ctx)
+        obs = exposure.read_observations(txt_dir / "images.txt")
+        names = sorted(f.name for f in und.iterdir() if f.is_file())
+        gains, stats = exposure.estimate_gains(obs, ctx.dir("prepare"), names, max_gain=cfg.get("max_gain", 2.0))
+        exposure.apply_gains(und, gains, backup)
+        write_json(ctx.dir("texture") / "exposure_gains.json", {"stats": stats, "gains": gains})
+        return {"status": "ok", **stats}
+    except Exception as e:                       # better unbalanced textures than no model
+        return {"status": "error", "reason": f"{e.__class__.__name__}: {e}"}
 
 
 def stage_frame(ctx):
@@ -565,7 +659,54 @@ def stage_frame(ctx):
     write_json(out / "roam_grid.json", grid)
     np.save(out / "floor_observed.npy", masks["floor_observed"])
     ctx.facts.update(floor_detected=meta["floor_detected"], floor_coverage=round(floor_cov, 4))
-    return {"floor_detected": meta["floor_detected"], "eye_height_units": eye, "floor_coverage": floor_cov}
+    fill = _estimated_surfaces(ctx, None if s["dense_fallback"] else v, T, eye, meta, txt_dir, out)
+    return {"floor_detected": meta["floor_detected"], "eye_height_units": eye, "floor_coverage": floor_cov,
+            "estimated_surfaces": fill}
+
+
+def _estimated_surfaces(ctx, v, T, eye, meta, txt_dir, out):
+    """Estimated flat surfaces for holes (namma.recon.roomfill). Never fails the run: problems are recorded."""
+    cfg = ctx.cfg.get("fill") or {}
+    res = {"status": "skipped"}
+    try:
+        if not cfg.get("enabled"):
+            res["reason"] = "disabled"
+        elif v is None or "nx" not in v:
+            res["reason"] = "no dense points with normals"
+        elif not meta.get("floor_detected") or meta.get("floor_suspect"):
+            res["reason"] = "no trustworthy floor plane"
+        else:
+            T = np.asarray(T, float)
+            P = roomfill.to_model(np.column_stack([v["x"], v["y"], v["z"]]).astype(np.float64), T)
+            N = np.column_stack([v["nx"], v["ny"], v["nz"]]) @ T[:3, :3].T
+            N /= np.linalg.norm(N, axis=1, keepdims=True) + 1e-12
+            C = np.column_stack([v["red"], v["green"], v["blue"]]) / 255.0
+            box = roomfill.fit_room_box(P, N, eye)
+            fit = {k: box[k] for k in ("near_wall_share", "outside_share", "height", "u", "v", "theta")}
+            if box["near_wall_share"] < cfg["min_fit_near_wall"] or box["outside_share"] > cfg["max_outside_share"]:
+                res.update(reason="the points do not look like one box-shaped room", fit=fit)
+            else:
+                ctx.set_progress("frame", "Estimating missing walls and floor", 0.5)
+                imgs = colmap.read_images_txt(txt_dir / "images.txt")
+                cams = colmap.read_cameras_txt(txt_dir / "cameras.txt")
+                if (ctx.cfg.get("blend") or {}).get("enabled"):
+                    gains, _ = exposure.estimate_gains(exposure.read_observations(txt_dir / "images.txt"), ctx.dir("prepare"), sorted(imgs))
+                    mesh_v = read_ply(ctx.dir("mesh") / "mesh.ply")["vertex"]
+                    sampler = roomfill.BlendSampler(blendtex.make_views(imgs, cams, ctx.dir("prepare"), gains),
+                                                    np.column_stack([mesh_v["x"], mesh_v["y"], mesh_v["z"]]), T)
+                else:
+                    sampler = roomfill.PhotoSampler(imgs, cams, ctx.dir("prepare"), T)
+                V, Cc, F, planes = roomfill.build_fill(P, C, box, N=N, photo_sampler=sampler, cell_eye=cfg["cell_eye"],
+                                                        slab_eye=cfg["slab_eye"], min_pts=cfg["min_pts"],
+                                                        offset_eye=cfg.get("offset_eye", 0.01))
+                roomfill.write_fill_glb(out / "fill.glb", V, Cc, F)
+                res = {"status": "ok", "triangles": int(len(F)), "fit": fit, "planes": planes}
+    except Exception as e:                  # an estimate must never break a reconstruction
+        res = {"status": "error", "reason": f"{e.__class__.__name__}: {e}"}
+    if res["status"] != "ok":
+        (out / "fill.glb").unlink(missing_ok=True)
+    write_json(out / "fill.json", res)
+    return {k: res.get(k) for k in ("status", "reason", "triangles")}
 
 
 def choose_start(cameras, pts, eye):
