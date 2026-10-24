@@ -1,0 +1,7 @@
+# OPTIONAL: LiDAR (Record3D) meshing - namma.lidar.mesh. The inventory / validation (namma.lidar.inventory,
+# namma.lidar.ply, namma.lidar.pointcloud) needs only requirements.txt.
+#   python -m pip install -r requirements-lidar.txt
+# Open3D 0.20.0 has a Python 3.14 wheel (tested here on Windows 11, Python 3.14.6). Its Windows wheels are CPU-only
+# (open3d.core.cuda.is_available() == False): Poisson meshing runs on the CPU. It pulls in several packages
+# (dash, plotly, flask, ...) for its web visualiser; none of them are used by Namma Space.
+open3d==0.20.0

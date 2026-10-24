@@ -1,24 +1,15 @@
-"""OpenMVS (CPU) dense stage: import COLMAP -> densify -> mesh -> textured GLB levels of detail.
+"""OpenMVS dense stage: import COLMAP -> densify -> mesh -> textured GLB levels of detail.
 
 OpenMVS is AGPL-3.0 (THIRD_PARTY_NOTICES.md). It is called as unmodified external executables;
 nothing from it is linked into this package.
+DensifyPointCloud may be the CUDA build (depth-map estimation on the GPU, --cuda-device); every other OpenMVS step
+is CPU work. The caller chooses the executable (namma.recon.tools.Tools.densify_exe).
 Progress: OpenMVS prints "... (n/N)"-style counters for depth maps; they are parsed when present.
 """
 import re
 from pathlib import Path
 
 from namma.recon.runner import run_step
-
-DEPTH_PROGRESS = re.compile(r"(?:Estimated|Filtered|Fused) depth-map\s+(\d+)\s*(?:/|of)\s*(\d+)", re.I)
-GENERIC = re.compile(r"\((\d+)/(\d+)\)")
-
-
-def _cb(progress, label):
-    def cb(line):
-        m = DEPTH_PROGRESS.search(line) or GENERIC.search(line)
-        if m and progress is not None and int(m.group(2)):
-            progress(label, int(m.group(1)) / int(m.group(2)))
-    return cb
 
 
 def interface_colmap(tools, undistorted_dir, scene_mvs, work, log_dir, *, timeout_s, cancel_file=None):
@@ -45,13 +36,16 @@ def _densify_progress(progress, n_images):
 
 
 def densify(tools, scene_mvs, dense_mvs, work, log_dir, *, resolution_level, max_resolution, number_views, threads,
-            timeout_s, cancel_file=None, progress=None, n_images=0):
-    argv = [tools.mvs("DensifyPointCloud"), "-i", scene_mvs, "-o", dense_mvs, "-w", work,
+            timeout_s, cancel_file=None, progress=None, n_images=0, exe=None, cuda_device=None):
+    """cuda_device: None = do not pass the option (CPU build); >= 0 = that GPU; -2 = CPU in a CUDA build."""
+    argv = [exe or tools.mvs("DensifyPointCloud"), "-i", scene_mvs, "-o", dense_mvs, "-w", work,
             "--resolution-level", resolution_level, "--max-resolution", max_resolution,
             "--number-views", number_views, "--max-threads", threads,
             # D-03 (Phase 12): ROI estimation / tower mode cropped indoor scenes; keep them off
             "--tower-mode", 0, "--estimate-roi", 0, "--crop-to-roi", 0,
             "--remove-dmaps", 1]
+    if cuda_device is not None:
+        argv += ["--cuda-device", int(cuda_device)]
     return run_step("openmvs_densify", argv, log_dir, timeout_s=timeout_s, cwd=work, cancel_file=cancel_file,
                     on_line=_densify_progress(progress, n_images), follow=(work, "DensifyPointCloud-*.log"))
 

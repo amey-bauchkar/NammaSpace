@@ -4,6 +4,8 @@
     python scripts/studio_cli.py check   <project_dir> [--max-frames 200]
     python scripts/studio_cli.py run     <project_dir> --profile preview|standard [--run <run_id>] [--stop-after <stage>]
     python scripts/studio_cli.py publish <package_dir> <out_dir> [--lods 1] [--max-file-mb 100]
+    python scripts/studio_cli.py import-mesh --title "Room" --from <scan.glb | export.zip> [--app Polycam]
+                                 [--device "iPhone 14"] [--eye-height 1.6] [--root projects]
 
 `run` without --run starts a new run; with --run it resumes that run (completed stages are skipped).
 Input files are COPIED into the project (originals elsewhere are never modified).
@@ -82,6 +84,15 @@ def cmd_publish(a):
     return 0
 
 
+def cmd_import_mesh(a):
+    from namma.studio.mesh_import import import_mesh
+    note = a.notice or f"3D scan made with {a.app} ({a.device}); geometry and textures by {a.app}"
+    r = import_mesh(a.source, a.root, title=a.title, source_note=note, app=a.app, device=a.device,
+                    eye_height_m=a.eye_height, log=lambda m: print("  " + m, flush=True))
+    print(json.dumps(r, indent=1, default=str))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -104,8 +115,17 @@ def main():
     p.add_argument("out_dir")
     p.add_argument("--lods")
     p.add_argument("--max-file-mb", type=float)
+    p = sub.add_parser("import-mesh", help="finished textured mesh (e.g. Polycam GLB) -> project + scene package")
+    p.add_argument("--title", required=True)
+    p.add_argument("--from", dest="source", required=True)
+    p.add_argument("--root", default=str(ROOT / "projects"))
+    p.add_argument("--app", default="Polycam")
+    p.add_argument("--device", default="iPhone")
+    p.add_argument("--notice")
+    p.add_argument("--eye-height", type=float, default=1.6)
     a = ap.parse_args()
-    return {"new": cmd_new, "check": cmd_check, "run": cmd_run, "publish": cmd_publish}[a.cmd](a)
+    return {"new": cmd_new, "check": cmd_check, "run": cmd_run, "publish": cmd_publish,
+            "import-mesh": cmd_import_mesh}[a.cmd](a)
 
 
 if __name__ == "__main__":

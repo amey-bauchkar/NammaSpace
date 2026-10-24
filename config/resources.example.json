@@ -1,0 +1,17 @@
+{
+  "_comment": "Copy to config/resources.json (git-ignored, machine-specific) and change only what you need; null or a missing key = automatic default. Environment variables NAMMA_<KEY> override this file (e.g. NAMMA_GPU=off). Check the result with: python scripts/hw_diag.py",
+  "_defaults_on_hp_victus_15_16gb_rtx4050": "ram_reserve_gb 3.1, ram_budget_gb 12.5, cpu_threads 14, sift/match max threads 10, io_workers 5, gpu auto",
+
+  "ram_reserve_gb": null,
+  "ram_budget_gb": null,
+  "cpu_threads": null,
+  "sift_max_threads": null,
+  "match_max_threads": null,
+  "io_workers": null,
+  "gpu": "auto",
+  "gpu_index": 0,
+  "vram_reserve_mb": 768,
+  "min_free_vram_mb": 1536,
+  "max_images": 300,
+  "max_video_gb": 4.0
+}

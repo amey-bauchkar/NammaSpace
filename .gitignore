@@ -19,6 +19,17 @@ dist/
 releases/
 test_output/
 
+# personal phone captures / app exports dropped in the repo root (photos, depth and audio of a home)
+/GLTF polycam.zip
+/Images Polycam.zip
+/Iphone 14 Lidar/
+/Record3d EXR JPG ,n.r3d/
+
+# machine-specific resource limits (template: config/resources.example.json)
+config/resources.json
+# self-signed TLS certificate + key for the phone capture listener (made on each machine)
+config/lan_tls/
+
 # Python / Node / editor
 __pycache__/
 *.pyc

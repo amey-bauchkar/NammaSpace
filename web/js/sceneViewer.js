@@ -297,9 +297,10 @@ async function loadEstimated(ctx) {
   about.append(dt, dd);
 }
 
-/** Floor guide: a faint grid at the detected floor height inside the walkable footprint. It sits slightly BELOW
- * y = 0, so reconstructed floor always covers it; it is visible only where the photos did not reconstruct the
- * floor. It is labelled as a guide (not geometry) in the panel and can be switched off. */
+/** Floor guide: a faint grid at the detected floor height inside the walkable footprint. It sits BELOW y = 0
+ * (2.5 % of the eye height, 4 cm for a standing eye), so reconstructed floor always covers it - scanned floors dip a
+ * centimetre or two, and at 1 cm the guide showed through real floor - and it is visible only where the photos did
+ * not reconstruct the floor. It is labelled as a guide (not geometry) in the panel and can be switched off. */
 function addFloorGuide(app, g, eye) {
   const ppc = Math.max(1, Math.min(6, Math.floor(4096 / Math.max(g.width, g.height))));
   const c = document.createElement('canvas');
@@ -328,7 +329,7 @@ function addFloorGuide(app, g, eye) {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
   mesh.rotation.x = -Math.PI / 2;
-  mesh.position.set(g.ox + w / 2, -0.006 * eye, g.oz + h / 2);
+  mesh.position.set(g.ox + w / 2, -0.025 * eye, g.oz + h / 2);
   mesh.name = 'floor-guide';
   mesh.renderOrder = -1;
   app.scene.add(mesh);
@@ -377,7 +378,8 @@ function renderAbout(pkg, quality) {
     : suspect ? 'uncertain (may be a table or desk top)' : 'detected');
   if (quality) {
     const f = quality.facts;
-    add('Photos placed', `${f.images_registered} of ${f.images_input}`);
+    if (f.source === 'imported_mesh') add('Source', `${f.app} scan (${f.device}), imported`);
+    else add('Photos placed', `${f.images_registered} of ${f.images_input}`);
     add('Surface', `${(f.mesh_faces / 1e6).toFixed(2)} M triangles`);
     const b = $('quality-badge');
     b.hidden = false;

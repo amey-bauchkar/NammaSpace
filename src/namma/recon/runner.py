@@ -114,6 +114,7 @@ def run_step(step, argv, log_dir, *, timeout_s, cwd=None, cancel_file=None, on_l
         tail = []
         for line in p.stdout:
             log.write(line)
+            log.flush()             # the log is shown live in the Studio ("Technical log")
             tail.append(line.rstrip())
             if len(tail) > 40:
                 tail.pop(0)

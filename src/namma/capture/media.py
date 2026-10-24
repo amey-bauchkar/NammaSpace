@@ -4,17 +4,21 @@ Images: Pillow reads size, format and EXIF (camera make / model, focal length, o
 capture time). Videos: ffprobe reads duration, frame rate, size, rotation and codec.
 """
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
 
 from PIL import ExifTags, Image, UnidentifiedImageError
 
+from namma.recon import hardware
+
 IMAGE_EXT = {".jpg", ".jpeg", ".png"}
-VIDEO_EXT = {".mp4", ".mov", ".m4v"}
+VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm"}      # .webm: Android browsers' recorder (phone capture page)
 HEIC_EXT = {".heic", ".heif"}
 MAX_IMAGE_BYTES = 60 * 2**20
-MAX_VIDEO_BYTES = 4 * 2**30
+# upload size limit (streamed to disk in 1 MB chunks, never held in RAM); configurable, default 4 GB
+MAX_VIDEO_BYTES = int(hardware.resources().max_video_gb * 2**30)
 MIN_IMAGE_SIDE = 480        # hard floor (VGA); below LOW_RES_SIDE a warning is given
 LOW_RES_SIDE = 1000
 Image.MAX_IMAGE_PIXELS = 120_000_000      # refuse decompression bombs; 24-48 MP phone photos are fine
@@ -76,18 +80,29 @@ def _num(v):
         return None
 
 
+def _tool(name):
+    """FFmpeg tools: on PATH, or the portable build from `python scripts/setup_tools.py --ffmpeg` in tools/."""
+    found = shutil.which(name)
+    if found:
+        return found
+    from namma import PROJECT_ROOT
+    exe = name + (".exe" if os.name == "nt" else "")
+    cand = sorted((PROJECT_ROOT / "tools").glob(f"ffmpeg-*/**/bin/{exe}"))
+    return str(cand[0]) if cand else None
+
+
 def ffprobe_path():
-    return shutil.which("ffprobe")
+    return _tool("ffprobe")
 
 
 def ffmpeg_path():
-    return shutil.which("ffmpeg")
+    return _tool("ffmpeg")
 
 
 def probe_video(path):
     path = Path(path)
     if path.stat().st_size > MAX_VIDEO_BYTES:
-        raise MediaError("VID-TOO-LARGE", f"{path.name}: larger than the 4 GB limit")
+        raise MediaError("VID-TOO-LARGE", f"{path.name}: larger than the {MAX_VIDEO_BYTES / 2**30:g} GB limit")
     exe = ffprobe_path()
     if not exe:
         raise MediaError("VID-NO-FFPROBE", "ffprobe (FFmpeg) is required for video input; install FFmpeg")

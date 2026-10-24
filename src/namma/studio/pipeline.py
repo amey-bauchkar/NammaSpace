@@ -34,6 +34,7 @@ from namma.recon import roomfill, exposure, harmonize, blendtex, colmap, meshcle
 from namma.recon import glb as glb_tools
 from namma.recon.io import read_ply
 from namma.recon.runner import StepFailed
+from namma.recon import hardware
 from namma.recon.tools import find_tools, match_threads, mvs_threads, sift_threads
 from namma.studio.profiles import config_sha256
 
@@ -193,31 +194,69 @@ def stage_sfm(ctx):
     n = len(meta["images"])
     cfg, T = ctx.cfg, ctx.cfg["timeouts_s"]
     db = out / "database.db"
-    threads = sift_threads(cfg["sift"]["max_image_px"])
+    gpu = bool(getattr(ctx.tools, "colmap_gpu", False))
+    gpu_index = hardware.resources().gpu_index
+    threads = sift_threads(cfg["sift"]["max_image_px"], gpu=gpu)
     n_features = sift_feature_budget(cfg, n)
     model = cfg["camera_model_single"] if meta["single_camera"] else cfg["camera_model_mixed"]
     cb = ctx.progress_cb("sfm")
-    recs = [colmap.extract_features(ctx.tools, db, img_dir, ctx.logs, camera_model=model,
-                                    single_camera=meta["single_camera"], max_image_px=cfg["sift"]["max_image_px"],
-                                    max_features=n_features, threads=threads,
-                                    timeout_s=T["features"], cancel_file=ctx.cancel_file, progress=cb,
-                                    peak_threshold=cfg["sift"].get("peak_threshold", 0.00667))]
+
+    def extract(on_gpu):
+        return colmap.extract_features(ctx.tools, db, img_dir, ctx.logs, camera_model=model,
+                                       single_camera=meta["single_camera"], max_image_px=cfg["sift"]["max_image_px"],
+                                       max_features=n_features,
+                                       threads=threads if on_gpu == gpu else sift_threads(cfg["sift"]["max_image_px"]),
+                                       timeout_s=T["features"], cancel_file=ctx.cancel_file, progress=cb,
+                                       peak_threshold=cfg["sift"].get("peak_threshold", 0.00667),
+                                       use_gpu=on_gpu, gpu_index=gpu_index)
+
+    def fresh_db():
+        for f in out.glob("database.db*"):
+            f.unlink()
+    rec, dev_features = gpu_then_cpu(ctx, "sfm", "feature extraction", extract, gpu, before_retry=fresh_db)
+    recs = [rec]
     ctx.check_cancel()
     mode = "sequential" if (ctx.facts.get("mode") == "video" or n > cfg["matching"]["exhaustive_max_images"]) \
         else "exhaustive"
     ctx.set_progress("sfm", f"Matching photos ({mode})", 0.0)
-    mthreads = match_threads(n_features)
+    match_gpu = gpu and dev_features == "gpu"
+    mthreads = match_threads(n_features, gpu=match_gpu)
     with _MatchProgress(db, n if mode == "exhaustive" else None,
                         lambda f: ctx.set_progress("sfm", f"Matching photos ({mode})", f)):
-        recs.append(colmap.match_features(ctx.tools, db, ctx.logs, mode=mode, overlap=cfg["matching"]["sequential_overlap"],
-                                          guided=cfg["matching"]["guided"], timeout_s=T["matching"],
-                                          cancel_file=ctx.cancel_file, progress=cb, threads=mthreads))
+        rec, dev_matching = gpu_then_cpu(
+            ctx, "sfm", "feature matching",
+            lambda on_gpu: colmap.match_features(ctx.tools, db, ctx.logs, mode=mode,
+                                                 overlap=cfg["matching"]["sequential_overlap"],
+                                                 guided=cfg["matching"]["guided"], timeout_s=T["matching"],
+                                                 cancel_file=ctx.cancel_file, progress=cb,
+                                                 threads=mthreads if on_gpu == match_gpu else match_threads(n_features),
+                                                 use_gpu=on_gpu, gpu_index=gpu_index),
+            match_gpu)
+        recs.append(rec)
     ctx.check_cancel()
     ctx.set_progress("sfm", "Placing cameras", 0.0)
-    recs.append(colmap.map_sparse(ctx.tools, db, img_dir, out / "sparse", ctx.logs, timeout_s=T["mapper"],
-                                  cancel_file=ctx.cancel_file, progress=cb,
-                                  abs_pose_min_inliers=cfg["mapper"]["abs_pose_min_inliers"]))
-    best = colmap.best_model(ctx.tools, out / "sparse", out / "sparse_txt", ctx.logs)
+    engine = cfg["mapper"].get("engine", "incremental")
+    best = None
+    if engine == "global":
+        # global SfM is ~7x faster; keep it only if it placed at least half the frames, else the incremental mapper
+        try:
+            recs.append(colmap.map_global(ctx.tools, db, img_dir, out / "sparse", ctx.logs, timeout_s=T["mapper"],
+                                          cancel_file=ctx.cancel_file, progress=cb, use_gpu=gpu, gpu_index=gpu_index))
+            best = colmap.best_model(ctx.tools, out / "sparse", out / "sparse_txt", ctx.logs)
+        except StepFailed as e:
+            if e.record.get("status") == "cancelled":
+                raise Cancelled("cancelled by user") from e
+            best = None
+        if best is None or len(best[2]) < max(3, n // 2):
+            ctx.facts["mapper_fallback"] = f"global mapper placed {len(best[2]) if best else 0}/{n} frames"
+            for d in ("sparse", "sparse_txt"):
+                shutil.rmtree(out / d, ignore_errors=True)
+            engine, best = "incremental", None
+    if best is None:
+        recs.append(colmap.map_sparse(ctx.tools, db, img_dir, out / "sparse", ctx.logs, timeout_s=T["mapper"],
+                                      cancel_file=ctx.cancel_file, progress=cb,
+                                      abs_pose_min_inliers=cfg["mapper"]["abs_pose_min_inliers"]))
+        best = colmap.best_model(ctx.tools, out / "sparse", out / "sparse_txt", ctx.logs)
     if best is None:
         raise StageError("sfm", "No 3D model could be built: the photos do not overlap enough.",
                          "Capture again with more overlap (each spot in 3+ photos).")
@@ -251,14 +290,19 @@ def stage_sfm(ctx):
     ctx.facts.update(images_registered=len(imgs), unregistered=unreg, other_models=other_images,
                      sparse_points=int(len(xyz)), mean_reprojection_px=float(err.mean()) if len(err) else None,
                      mean_track_length=float(track.mean()) if len(track) else None, low_texture_images=low_tex,
-                     matching_mode=mode, sift_threads=threads, match_threads=mthreads, camera_model=model)
+                     matching_mode=mode, sift_threads=threads, match_threads=mthreads, camera_model=model,
+                     mapper_engine=engine)
     write_json(out / "sfm_summary.json", {"model_dir": model_dir.relative_to(out).as_posix(),
                                           "txt_dir": txt_dir.relative_to(out).as_posix(),
                                           "registered": len(imgs), "input": n, "unregistered": unreg,
                                           "other_model_images": other_images, "rescue": rescue,
                                           "keypoints": kp, "matching_mode": mode, "threads": threads,
-                                          "match_threads": mthreads, "sift_max_features": n_features,
+                                          "match_threads": mthreads, "sift_max_features": n_features, "mapper_engine": engine,
+                                          "mapper_fallback": ctx.facts.get("mapper_fallback"),
                                           "camera_model": model, "sparse_points": int(len(xyz)),
+                                          "compute": {"features": dev_features, "matching": dev_matching,
+                                                      "gpu_reason": getattr(ctx.tools, "gpu_reason", ""),
+                                                      "fallbacks": ctx.facts.get("gpu_fallbacks", [])},
                                           "models": model_scores,
                                           "mean_reprojection_px": ctx.facts["mean_reprojection_px"],
                                           "mean_track_length": ctx.facts["mean_track_length"]})
@@ -365,7 +409,13 @@ def stage_undistort(ctx):
     for n in imgs:
         with Image.open(ctx.dir("prepare") / n) as im:
             sizes.append(im.size)
-    side = undistort_side(sizes, ctx.cfg["undistort_max_px"], ctx.cfg.get("mvs_pixel_budget_mp"))
+    budget = ctx.cfg.get("mvs_pixel_budget_mp")
+    if budget:
+        ram_mp = ram_pixel_budget_mp(hardware.resources().ram_budget_gb)
+        if ram_mp < budget:
+            result["pixel_budget_clamped_by_ram"] = {"profile_mp": budget, "ram_mp": ram_mp}
+            budget = ram_mp
+    side = undistort_side(sizes, ctx.cfg["undistort_max_px"], budget)
     result.update(max_side=side, input_megapixels=round(sum(w * h for w, h in sizes) / 1e6, 1))
     colmap.undistort(ctx.tools, ctx.dir("prepare"), model_dir, out, ctx.logs, max_image_px=side or -1,
                      timeout_s=ctx.cfg["timeouts_s"]["undistort"], cancel_file=ctx.cancel_file)
@@ -384,12 +434,22 @@ def stage_dense(ctx):
     openmvs.interface_colmap(ctx.tools, ctx.dir("undistort"), out / "scene.mvs", out, ctx.logs,
                              timeout_s=T["interface"], cancel_file=ctx.cancel_file)
     ctx.check_cancel()
+    gpu = bool(getattr(ctx.tools, "densify_gpu", False))
+    dev = "cpu"
+
+    def densify(on_gpu):
+        return openmvs.densify(ctx.tools, out / "scene.mvs", out / "scene_dense.mvs", out, ctx.logs,
+                               resolution_level=d["resolution_level"], max_resolution=d["max_resolution"],
+                               number_views=d["number_views"], threads=mvs_threads(), timeout_s=T["densify"],
+                               cancel_file=ctx.cancel_file, progress=ctx.progress_cb("dense"), n_images=n_imgs,
+                               exe=ctx.tools.densify_exe(on_gpu) if hasattr(ctx.tools, "densify_exe") else None,
+                               cuda_device=hardware.resources().gpu_index if on_gpu else None)
+
+    def clear_partial():
+        for f in list(out.glob("*.dmap")) + list(out.glob("scene_dense*")):
+            f.unlink()
     try:
-        openmvs.densify(ctx.tools, out / "scene.mvs", out / "scene_dense.mvs", out, ctx.logs,
-                        resolution_level=d["resolution_level"], max_resolution=d["max_resolution"],
-                        number_views=d["number_views"], threads=mvs_threads(), timeout_s=T["densify"],
-                        cancel_file=ctx.cancel_file, progress=ctx.progress_cb("dense"),
-                        n_images=len(list((ctx.dir("undistort") / "images").glob("*"))))
+        _, dev = gpu_then_cpu(ctx, "dense", "dense depth maps", densify, gpu, before_retry=clear_partial)
         n_dense = _ply_vertex_count(out / "scene_dense.ply")
         if n_dense < 1000:
             raise _NoDense(f"dense reconstruction produced {n_dense} points")
@@ -408,6 +468,7 @@ def stage_dense(ctx):
         # genuine fallback: the coarse SfM points in scene.mvs are meshed instead
         ctx.facts.update(dense_fallback=True, dense_fallback_reason=f"{e} (see logs/{e.record.get('log')})")
         result = {"dense": False, "fallback_reason": str(e)}
+    result["compute"] = {"densify": dev, "fallbacks": [f for f in ctx.facts.get("gpu_fallbacks", []) if "dense" in f]}
     write_json(out / "dense_summary.json", {**result, "dense_fallback": ctx.facts["dense_fallback"],
                                             "dense_fallback_reason": ctx.facts.get("dense_fallback_reason")})
     return result
@@ -425,6 +486,49 @@ def require_disk(ctx, stage, need_gb):
         raise StageError(stage, f"Not enough free disk space: about {need_gb:.1f} GB is needed for this step, "
                                 f"{free:.1f} GB is free on this drive.",
                          "Free some space (delete old projects or empty the Recycle Bin), then press Resume.")
+
+
+WINDOWS_MAX_PATH = 259
+
+
+def check_path_lengths(ctx):
+    """Fail early with a clear message when output paths would exceed Windows' 260-character limit: COLMAP and
+    OpenMVS then abort with a bare 0xC0000409 / 0xC0000005 (seen on a 262-character undistorted-image path).
+    The deepest files are the undistorted images: <run>/30_undistorted/images/<photo name>.jpg"""
+    if os.name != "nt":
+        return
+    man = ctx.project_dir / "capture" / "capture_manifest.json"
+    names = [Path(p).stem + ".jpg" for p in (load_strict(man).get("inputs") or [])] if man.exists() else []
+    names = names or ["x" * 24 + ".jpg"]          # typical phone / video-frame name length
+    worst = ctx.dir("undistort") / "images" / max(names, key=len)
+    if len(str(worst)) > WINDOWS_MAX_PATH:
+        raise StageError("prepare", f"The project folder path is too long for Windows ({len(str(worst))} characters "
+                                    f"for the deepest file, limit {WINDOWS_MAX_PATH}).",
+                         "Use a shorter projects folder (e.g. start_studio.py --projects C:\\NammaWork\\projects) "
+                         "or shorter photo names.")
+
+
+def gpu_then_cpu(ctx, stage, what, run, gpu, before_retry=None):
+    """run(on_gpu) -> record. A GPU attempt that fails (not cancelled, not timed out) is retried once on the CPU,
+    the validated path: a CUDA / driver / VRAM problem then costs time, not the run. -> (record, "gpu" | "cpu")."""
+    if gpu:
+        try:
+            return run(True), "gpu"
+        except StepFailed as e:
+            if e.record.get("status") in ("cancelled", "timeout"):
+                raise
+            ctx.facts.setdefault("gpu_fallbacks", []).append(
+                f"{what}: GPU attempt failed ({e}; see logs/{e.record.get('log')}), retried on the CPU")
+            ctx.set_progress(stage, f"GPU {what} failed; retrying on the CPU", None)
+            if before_retry:
+                before_retry()
+    return run(False), "cpu"
+
+
+def ram_pixel_budget_mp(ram_budget_gb):
+    """Undistorted megapixels OpenMVS texturing can hold in `ram_budget_gb` (it keeps every view in RAM: 7.0 GB
+    peak for 30 x 24 MP = 720 MP on kicker, i.e. ~9.7 MB per MP). Only ever lowers a profile's own budget."""
+    return int(max(100.0, (ram_budget_gb - 1.0) / 0.0097))
 
 
 class _NoDense(RuntimeError):
@@ -543,7 +647,9 @@ def _blend_texture(ctx, glb):
             if "photos blended" in msg:
                 done = int(msg.split("/")[0].split()[-1])
                 part = msg.split(":")[0].strip()
-                ctx.set_progress("texture", f"Blending all photos into the texture, {part} ({done}/{total})", None)
+                # the blend is most of the texture stage on CPU (Phase 13 + HP Victus runs): let the bar move with it
+                ctx.set_progress("texture", f"Blending all photos into the texture, {part} ({done}/{total})",
+                                 0.3 + 0.65 * done / max(1, total))
         st = blendtex.blend_texture_glb(glb, tmp, views, power=cfg.get("power", 4), scale=cfg.get("scale", 1),
                                         max_side=cfg.get("max_side", 8192), log=log)
         tmp.replace(glb)
@@ -628,6 +734,16 @@ def stage_frame(ctx):
     eye = meta["eye_height_units"]
     if not np.isfinite(eye) or eye <= 0:
         raise StageError("frame", "Could not determine the camera height above the floor.")
+    # proportions check: a room is a few to ~30 eye heights across. Far more means the camera positions are not
+    # trustworthy (first own phone capture, 2026-10-21: turning on the spot -> scene ~90 eye heights wide, cameras
+    # spread over 30+ units, 44 % of the points "below the floor")
+    span = float(max(np.ptp(np.percentile(pm[:, 0], [0.5, 99.5])), np.ptp(np.percentile(pm[:, 2], [0.5, 99.5])))) / eye
+    if span > 60:
+        raise StageError("frame", f"The camera positions could not be worked out reliably: the model came out about "
+                                  f"{span:.0f} times wider than the camera height (a room is 3-30 times), and "
+                                  f"{meta['below_floor_fraction']:.0%} of it lies below the detected floor.",
+                         "This happens when the phone turns on the spot instead of moving. Capture again WALKING slowly "
+                         "around the room along the walls, so every spot is seen from several positions.")
     roam_cfg = ctx.cfg["roam"]
     grid, gstats, masks = modelframe.roam_grid(pm, cm, eye, cells_per_eye=roam_cfg["cells_per_eye"],
                                                band=tuple(roam_cfg["band"]), min_pts=roam_cfg["min_pts"],
@@ -855,8 +971,10 @@ def run_pipeline(project_dir, run_id, cfg, *, stop_after=None):
     write_json(ctx.run_dir / "config.json", {"config": cfg, "config_sha256": ctx.cfg_sha})
     log = RunLog(ctx.run_dir, run_id)
     try:
+        check_path_lengths(ctx)
         ctx.tools = find_tools()
         ctx.status["tools"] = ctx.tools.describe()
+        ctx.status["resources"] = {**hardware.resources().as_dict(), "ram_at_start": hardware.ram_snapshot()}
         for name in STAGES:
             entry = ctx.stage_entry(name)
             marker = ctx.dir(name) / "stage.json"

@@ -60,7 +60,10 @@ async function health() {
     const ok = h.tools.colmap && h.tools.openmvs;
     b.className = `badge ${ok ? 'ok' : 'bad'}`;
     b.textContent = ok ? `Ready · ${h.ram_available_gb} GB RAM free` : 'Reconstruction tools missing';
-    b.title = ok ? `COLMAP and OpenMVS found. Disk free ${h.disk_free_gb} GB.` : h.tools.error;
+    const hw = h.hardware || {};
+    const gpu = hw.gpu ? `GPU ${hw.gpu}: ${hw.gpu_steps && hw.gpu_steps.length ? `used for ${hw.gpu_steps.join(', ')}` : 'not used by the installed tools'}.`
+      : `No GPU in use (${hw.gpu_reason || 'none found'}).`;
+    b.title = ok ? `COLMAP and OpenMVS found. Disk free ${h.disk_free_gb} GB. ${gpu}${hw.projects_onedrive_synced ? ' Projects folder is synchronised by OneDrive: use a local folder.' : ''}` : h.tools.error;
     return h;
   } catch {
     $('#health').textContent = 'Server not reachable';
@@ -78,6 +81,8 @@ async function home() {
     const p = await api('/projects', { method: 'POST', body: JSON.stringify({ title: $('#new-title').value, source: $('#new-source').value }) });
     location.hash = `#/project/${p.project_id}`;
   });
+  showPhone();
+  wirePolycamDrop();
   const list = $('#project-list');
   const { projects } = await api('/projects');
   if (!projects.length) list.append(el('li', { class: 'empty' }, 'No spaces yet – create one above.'));
@@ -86,8 +91,119 @@ async function home() {
     list.append(el('li', {},
       el('div', {}, el('strong', {}, p.title), el('div', { class: 'small muted' }, `${p.uploads} files · created ${p.created_at.slice(0, 16).replace('T', ' ')}`)),
       el('div', { class: 'row' }, last ? badge(last.status) : el('span', { class: 'badge' }, 'not processed'),
-        el('a', { class: 'btn secondary', href: `#/project/${p.project_id}` }, 'Open'))));
+        el('a', { class: 'btn secondary', href: `#/project/${p.project_id}` }, 'Open'),
+        el('button', { type: 'button', class: 'danger', 'aria-label': `Delete ${p.title}`, onclick: async () => {
+          if (!confirm(`Delete "${p.title}"? It moves to the bin; you can restore it from there.`)) return;
+          try { await api(`/projects/${p.project_id}`, { method: 'DELETE' }); home(); } catch (e) { alert(e.message); }
+        } }, 'Delete'))));
   }
+  showBin();
+}
+
+async function showBin() {
+  const { items } = await api('/bin');
+  const card = $('#bin-card');
+  if (!card) return;
+  card.hidden = !items.length;
+  $('#bin-summary').textContent = `Bin (${items.length})`;
+  const ul = $('#bin-list');
+  ul.innerHTML = '';
+  for (const it of items) {
+    const when = `${it.deleted_at.slice(0, 4)}-${it.deleted_at.slice(4, 6)}-${it.deleted_at.slice(6, 8)} ${it.deleted_at.slice(8, 10)}:${it.deleted_at.slice(10, 12)}`;
+    ul.append(el('li', {},
+      el('div', {}, el('strong', {}, it.title), el('div', { class: 'small muted' }, `deleted ${when} · ${fmtMB(it.bytes)}`)),
+      el('div', { class: 'row' },
+        el('button', { type: 'button', class: 'secondary', onclick: async () => {
+          try { await api(`/bin/${encodeURIComponent(it.name)}/restore`, { method: 'POST', body: '{}' }); home(); } catch (e) { alert(e.message); }
+        } }, 'Restore'),
+        el('button', { type: 'button', class: 'danger', onclick: async () => {
+          if (!confirm(`Permanently delete "${it.title}" (${fmtMB(it.bytes)})? Photos, video and models of this space are erased. This cannot be undone.`)) return;
+          try { await api(`/bin/${encodeURIComponent(it.name)}`, { method: 'DELETE' }); showBin(); } catch (e) { alert(e.message); }
+        } }, 'Delete permanently'))));
+  }
+}
+
+// ------------------------------------------------------------------ Polycam import (drag and drop)
+function wirePolycamDrop() {
+  const dz = $('#polycam-drop');
+  if (!dz) return;
+  const input = $('#polycam-input');
+  $('#polycam-pick').onclick = (e) => { e.preventDefault(); input.click(); };
+  dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+  dz.addEventListener('drop', (e) => { e.preventDefault(); dz.classList.remove('drag'); importPolycam([...e.dataTransfer.files]); });
+  input.onchange = () => { importPolycam([...input.files]); input.value = ''; };
+}
+
+async function importPolycam(files) {
+  const msg = $('#polycam-msg');
+  const bar = $('#polycam-progress');
+  if (!files.length) return;
+  msg.className = 'small';
+  try {
+    const { import_id: iid } = await api('/polycam', { method: 'POST', body: '{}' });
+    bar.hidden = false;
+    const total = files.reduce((a, f) => a + f.size, 0);
+    let done = 0;
+    for (const f of files) {
+      msg.textContent = `Uploading ${f.name}…`;
+      await new Promise((resolve, reject) => {
+        const x = new XMLHttpRequest();
+        x.open('PUT', `/api/polycam/${iid}/files/${encodeURIComponent(f.name)}`);
+        x.setRequestHeader('X-Namma-Studio', '1');
+        x.setRequestHeader('Content-Type', 'application/octet-stream');
+        x.upload.onprogress = (e) => { bar.firstElementChild.style.width = `${Math.round((100 * (done + e.loaded)) / total)}%`; };
+        x.onload = () => {
+          let b = {}; try { b = JSON.parse(x.responseText); } catch { /* keep */ }
+          if (x.status >= 200 && x.status < 300) resolve(b); else reject(new Error(b.message || `HTTP ${x.status}`));
+        };
+        x.onerror = () => reject(new Error('network error'));
+        x.send(f);
+      });
+      done += f.size;
+    }
+    msg.textContent = 'Importing: finding the floor, start view and walkable area…';
+    const r = await api(`/polycam/${iid}/import`, { method: 'POST', body: '{}' });
+    location.hash = `#/project/${r.project_id}/run/${r.run_id}`;
+  } catch (e) {
+    msg.className = 'small callout bad';
+    msg.textContent = `Import failed: ${e.message}`;
+  } finally {
+    bar.hidden = true;
+  }
+}
+
+// ------------------------------------------------------------------ phone capture
+async function showPhone() {
+  const box = $('#phone-body');
+  if (!box) return;
+  let ph;
+  try { ph = await api('/phone'); } catch { box.textContent = 'Phone capture status unavailable.'; return; }
+  box.innerHTML = '';
+  if (!ph.enabled) {
+    box.append(el('p', { style: 'margin:0' }, 'Point your phone at the room and frames are captured automatically. ', ph.hint));
+    return;
+  }
+  box.className = 'small';
+  box.append(
+    el('div', { style: 'display:flex;gap:20px;align-items:center;flex-wrap:wrap' },
+      el('img', { src: `/api/phone/qr.svg?c=${ph.code}`, alt: 'QR code: scan with the phone camera to start scanning',
+        width: 180, height: 180, style: 'border-radius:8px;border:1px solid var(--line)' }),
+      el('div', {},
+        el('p', { style: 'margin:0 0 6px;font-size:15px' }, el('strong', {}, 'Scan this with the phone camera'),
+          ' (same Wi-Fi or hotspot) and tap the link: the scan page opens ready to go.'),
+        el('p', { class: 'muted', style: 'margin:0' }, 'Or open ', el('span', { class: 'mono' }, ph.urls[0] || '(no network address found)'),
+          ' and type the code ', el('strong', { class: 'mono' }, ph.code), '.'))),
+    el('p', { class: 'muted', style: 'margin:0' }, `Valid for ${Math.max(1, Math.round(ph.expires_in_s / 60))} min, single use. `,
+      'The phone shows a one-time "not private" warning for this computer\'s own certificate: choose to continue. ',
+      'Tap Done on the phone and the check and Preview model start here automatically.'),
+    ph.urls.length > 1 ? el('p', { class: 'muted', style: 'margin:4px 0 0' },
+      `If that does not open, this computer's other addresses: ${ph.urls.slice(1).join(', ')}`) : '',
+    el('button', { type: 'button', class: 'secondary', style: 'margin-top:8px', onclick: async () => {
+      await api('/phone/code', { method: 'POST', body: '{}' }); showPhone(); } }, 'New code'));
+  clearTimeout(showPhone.timer);
+  showPhone.timer = setTimeout(() => { if (location.hash === '' || location.hash === '#/') showPhone(); }, 15000);
 }
 
 // ------------------------------------------------------------------ project
@@ -96,9 +212,11 @@ function estimate(n, profile) {
   // video) and 4.7 s (TUM 640 px) up to 39 s per 24 MP photo (ETH3D delivery_area). Standard: 79-99 s per 24 MP
   // photo (ETH3D office / kicker); a 44-photo hall needed 11.2 GB to build its surface and exceeded the time limit
   // (D13-14). Larger photos and more images take longer. A rough guide, not a promise.
+  // High was added for GPU laptops after these measurements: no timing of its own yet, shown as Standard's range.
   if (!n) return '';
   const [lo, hi] = profile === 'preview' ? [4, 40] : [80, 200];
   const text = `roughly ${Math.max(2, Math.round((n * lo) / 60))}–${Math.round((n * hi) / 60) + 2} min for ${n} images on the team laptop`;
+  if (profile === 'high') return `CPU-only reference: ${text}; GPU depth maps make it faster (not yet measured)`;
   return profile === 'standard' && n > 40
     ? `${text}. With more than 40 photos Standard can need more memory than a 16 GB laptop has: run Preview first.` : text;
 }
@@ -142,6 +260,8 @@ async function project(pid) {
   const nImages = chk.report ? chk.report.stats.inputs_accepted : p.uploads;
   f('est-preview').textContent = estimate(nImages, 'preview');
   f('est-standard').textContent = estimate(nImages, 'standard');
+  f('est-high').textContent = estimate(nImages, 'high');
+  if (chk.report) showAdvice(pid);
   $('#run-btn').onclick = async () => {
     const profile = $('input[name=profile]:checked').value;
     $('#run-btn').disabled = true;
@@ -245,6 +365,21 @@ function pollCheck(pid) {
   }, 700);
 }
 
+async function showAdvice(pid) {
+  // profile advice for this capture on this machine (namma.studio.advisor); advice only, the user still chooses
+  const box = f('advice');
+  if (!box) return;
+  try {
+    const r = await api(`/projects/${pid}/recommendation`);
+    box.hidden = false;
+    box.innerHTML = '';
+    box.append(el('strong', {}, `Suggested: ${r.profile[0].toUpperCase()}${r.profile.slice(1)}. `), r.reasons.join(' '));
+    for (const w of r.warnings) box.append(el('div', { class: 'small muted' }, `⚠ ${w}`));
+    const radio = $(`input[name=profile][value=${r.profile}]`);
+    if (radio) radio.checked = true;
+  } catch { box.hidden = true; }
+}
+
 function showCheck(pid, s) {
   const box = $('#check-result');
   if (!box) return;
@@ -325,11 +460,15 @@ async function runPage(pid, rid) {
     if (resume && !['running', 'queued'].includes(st.status)) f('state').textContent = 'Resuming…';
     f('cancel').hidden = !active;
     f('resume').hidden = active || !['failed', 'cancelled', 'interrupted'].includes(st.status);
-    const log = await api(`/projects/${pid}/runs/${rid}/log`).catch(() => null);
-    if (log) f('log').textContent = `${log.file || ''}\n${log.lines.join('\n')}`;
+    // the technical log is fetched only while its section is open (it was a second request every 1.5 s)
+    if (f('log').closest('details').open) {
+      const log = await api(`/projects/${pid}/runs/${rid}/log`).catch(() => null);
+      if (log) f('log').textContent = `${log.file || ''}\n${log.lines.join('\n')}`;
+    }
     if (st.status === 'succeeded' && !shownResult) { shownResult = true; showResult(pid, rid); }
     if (!active) clearInterval(pollTimer);
   };
+  f('log').closest('details').ontoggle = (e) => { if (e.target.open) tick(); };
   clearInterval(pollTimer);
   await tick();
   pollTimer = setInterval(tick, 1500);
@@ -345,11 +484,18 @@ async function showResult(pid, rid) {
   const facts = f('facts');
   const add = (k, val) => facts.append(el('dt', {}, k), el('dd', {}, val));
   const fa = q.facts;
-  add('Photos placed', `${fa.images_registered} of ${fa.images_input} (${Math.round(100 * q.registration_rate)}%)`);
+  const imported = fa.source === 'imported_mesh';
+  if (imported) {
+    add('Source', `${fa.app} scan (${fa.device}), imported unchanged`);
+    add('Size', `${fa.extent_m_p1_p99.map((v) => v.toFixed(2)).join(' × ')} m (width × height × depth)`);
+  } else {
+    add('Photos placed', `${fa.images_registered} of ${fa.images_input} (${Math.round(100 * q.registration_rate)}%)`);
+  }
   add('3D surface', `${(fa.mesh_faces / 1e6).toFixed(2)} million triangles`);
-  add('Dense points', fa.dense_points ? fa.dense_points.toLocaleString() : 'none (coarse fallback)');
+  if (!imported) add('Dense points', fa.dense_points ? fa.dense_points.toLocaleString() : 'none (coarse fallback)');
   add('Floor reconstructed', fa.floor_detected ? `${Math.round(100 * fa.floor_coverage)}% of the floor area` : 'no floor plane found');
-  add('Real-world scale', fa.scale_status === 'unknown' ? 'unknown (set it in the viewer with a known length)' : fa.scale_status);
+  add('Real-world scale', fa.scale_status === 'unknown' ? 'unknown (set it in the viewer with a known length)'
+    : fa.scale_status === 'device_tracking' ? 'metres from the phone\'s tracking (check one length in the viewer)' : fa.scale_status);
   const total = (rep.status.stages || []).reduce((a, s) => a + (s.seconds || 0), 0);
   add('Processing time', fmtTime(total));
   if (rep.commands) add('Peak memory', `${(Math.max(...rep.commands.map((c) => c.peak_rss_mb)) / 1024).toFixed(1)} GB`);

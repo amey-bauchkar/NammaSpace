@@ -5,6 +5,8 @@ scipy==1.17.1
 shapely==2.1.2
 jsonschema==4.26.0
 psutil==7.2.2
+cryptography==50.0.0  # self-signed certificate for the phone capture listener (--lan)
+segno==1.6.6       # QR code for phone capture pairing (Studio, localhost only)
 pillow==12.2.0
 opencv-python-headless==5.0.0.93
 # tests and browser automation only

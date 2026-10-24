@@ -475,6 +475,8 @@ SCHEMAS["IF-11"]["properties"]["contract_version"] = {"type": "string", "pattern
 # scale-free MODEL frame (right-handed, +Y up, floor y = 0, units = reconstruction units) instead of the
 # metric site frame of IF-03/IF-04/IF-10. The scale status is explicit and machine-readable (ARCH-032).
 # IF-01..IF-12 are unchanged.
+# 1.2.0 (additive): scale.status / navigation.scale_basis "device_tracking" for meshes imported from a phone LiDAR
+# scanning app, whose units are metres from the device's tracking (docs/CONTRACT_CHANGES.md, section 4).
 _STUDIO_POI = {
     "type": "object", "required": ["poi_id", "name", "position", "created_at", "origin"],
     "properties": {
@@ -510,9 +512,12 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
                                        "datum": {"type": "string"}}, "additionalProperties": False},
         "scale": {"type": "object", "required": ["status", "metres_per_unit", "method"],
                   "properties": {
-                      "status": {"enum": ["unknown", "user_distance", "markers", "reference_alignment"],
+                      "status": {"enum": ["unknown", "user_distance", "markers", "reference_alignment",
+                                          "device_tracking"],
                                  "description": "reference_alignment = scale taken from dataset ground truth; "
-                                                "allowed only with evaluation_only = true"},
+                                                "allowed only with evaluation_only = true. device_tracking (1.2.0) = "
+                                                "metric scale from the capture device's own tracking (e.g. ARKit + "
+                                                "LiDAR in a phone scanning app); method names the device / app"},
                       "metres_per_unit": {"type": ["number", "null"], "exclusiveMinimum": 0},
                       "relative_uncertainty": {"type": ["number", "null"], "minimum": 0},
                       "method": {"type": "string"}, "evaluation_only": {"type": "boolean"}},
@@ -565,7 +570,8 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
                        "properties": {"status": {"enum": ["unavailable", "unverified", "accepted"]},
                                       "geometry": {"type": ["string", "null"]},
                                       "scale_basis": {"enum": ["unknown", "user_distance", "markers",
-                                                               "reference_alignment", "assumed_capture_height"]},
+                                                               "reference_alignment", "assumed_capture_height",
+                                                               "device_tracking"]},
                                       "metres_per_unit": {"type": ["number", "null"]},
                                       "note": {"type": "string"}}, "additionalProperties": False},
         "pois": {"type": "string", "description": "Path to a JSON array of studio POI records ($defs.studio_poi)."},

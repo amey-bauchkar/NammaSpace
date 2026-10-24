@@ -18,7 +18,7 @@ from namma.core import timefmt
 from namma.core.issues import errors_only
 from namma.core.jsonio import load_strict, sha256_file, write_json
 
-IF13_VERSION = "1.1.0"
+IF13_VERSION = "1.2.0"         # 1.2.0: scale status "device_tracking" (imported phone-scan meshes)
 WEB_FILES = ["viewer.html", "app.css", "favicon.svg", "js", "vendor"]
 
 
@@ -75,6 +75,9 @@ def build_scene_package(ctx, out):
     notices = list(project.get("notices", []))
     if scale["status"] == "unknown":
         notices.append("Scale unknown: photos alone do not fix real-world size. Distances are in model units.")
+    elif scale["status"] == "device_tracking":
+        notices.append(f"Scale from the capture device's tracking ({scale['method']}); not checked against a "
+                       "measured length - use 'Set scale' in the viewer with one known distance to verify it.")
     elif scale.get("evaluation_only"):
         notices.append(f"Scale from dataset ground truth ({scale['method']}); evaluation use only.")
     if quality["verdict"] != "good":
@@ -118,7 +121,7 @@ def build_scene_package(ctx, out):
            "eye_height_units": frame["eye_height_units"],
            "bounds": {"min": p1, "max": p99},
            "start_view": {"position": frame["start"]["position"], "target": frame["start"]["target"],
-                          "source": f"capture camera {frame['start']['camera']}"},
+                          "source": frame["start"].get("source") or f"capture camera {frame['start']['camera']}"},
            "cameras": "views/cameras.json", "roam": "nav/roam_grid.json", "navigation": nav,
            "pois": "poi/pois.json",
            "quality": {"verdict": quality["verdict"], "report": "reports/quality_report.json",

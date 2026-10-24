@@ -1,4 +1,4 @@
-"""Multi-view blended texturing (CPU) - replaces OpenMVS's one-photo-per-patch colours.
+"""Multi-view blended texturing - replaces OpenMVS's one-photo-per-patch colours.
 
 OpenMVS TextureMesh paints every face from ONE photo. On glossy floors, plain walls and varnished doors the photos
 disagree (reflections, exposure), so the result is a patchwork of shards. Here every texel of the existing atlas
@@ -12,6 +12,11 @@ patch seams disappear because neighbouring texels use the same photos. Texels no
 `scale` > 1 enlarges the atlas (same UV layout) and the photos can be the full-resolution originals: the camera
 calibration (made on the smaller working copies) is rescaled, EXIF orientation applied. Atlases are processed one
 at a time so memory stays bounded.
+
+Device: with CuPy installed (requirements-gpu.txt) and a usable NVIDIA GPU (namma.recon.hardware), the per-photo
+projection / visibility / weighting runs on the GPU (_blend_views_gpu, same formulas in float32, texels in batches so
+VRAM stays bounded); otherwise, or if the GPU path fails, the original CPU loop runs unchanged. The device used is
+returned in the stats ("device").
 """
 import io
 from pathlib import Path
@@ -127,8 +132,22 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         acc = np.zeros((len(yy), 3), np.float32)
         wsum = np.zeros(len(yy), np.float32)
         log(f"atlas {t}: {W}x{H}, {len(yy) / 1e6:.1f} M texels")
-        n_used = 0
-        for k_view, (v, img, k) in enumerate(_views_iter(views)):
+        gpu = _gpu_blend_ok()
+        if gpu:
+            try:
+                acc, wsum, n_used = _blend_views_gpu(X, N, allP, views, power=power, depth_tol=depth_tol,
+                                                     edge_frac=edge_frac, zbuf_px=zbuf_px, log=log, label=f"atlas {t}")
+                stats["device"] = "gpu"
+            except Exception as e:                     # noqa: BLE001 - any CUDA / memory problem: CPU path below
+                log(f"  GPU blend failed ({e.__class__.__name__}: {e}); blending on the CPU")
+                stats["gpu_fallback"] = f"{e.__class__.__name__}: {e}"[:300]
+                gpu = False
+                acc[:] = 0
+                wsum[:] = 0
+        if not gpu:
+            stats["device"] = "cpu"
+        n_used = n_used if gpu else 0
+        for k_view, (v, img, k) in enumerate([] if gpu else _views_iter(views)):
             n_used += 1
             Hi, Wi = img.shape[:2]
             fx, fy, cx, cy, k1, k2, p1, p2 = _camera(v["cam"], k)
@@ -179,7 +198,19 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         mask[yy, xx] = True
         del X, N, acc, wsum, col
         # gutter: extend texel colours outward so texture filtering / mipmaps do not pull in stale colours
-        _, (iy, ix) = ndimage.distance_transform_edt(~mask, return_indices=True)
+        iy = ix = None
+        if gpu:
+            try:                                       # 8192^2 feature transform: ~10 s on the CPU
+                import cupy as cp
+                from cupyx.scipy import ndimage as cnd
+                _, ind = cnd.distance_transform_edt(cp.asarray(~mask), return_distances=True, return_indices=True)
+                iy, ix = cp.asnumpy(ind[0]), cp.asnumpy(ind[1])
+                del ind
+                cp.get_default_memory_pool().free_all_blocks()
+            except Exception:                          # noqa: BLE001 - CPU below
+                iy = ix = None
+        if iy is None:
+            _, (iy, ix) = ndimage.distance_transform_edt(~mask, return_indices=True)
         near = ndimage.binary_dilation(mask, iterations=2 * sc) & ~mask
         out[near] = out[iy[near], ix[near]]
         del iy, ix, near
@@ -258,3 +289,100 @@ def blend_points(X, N, views, mesh_vertices, *, power=4, depth_tol=0.015, edge_f
         acc[idx] += (c * wt[:, None]).astype(np.float32); wsum[idx] += wt; nv[idx] += 1
     out = np.where(wsum[:, None] > 0, acc / np.maximum(wsum, 1e-12)[:, None], 0.0)
     return out, nv
+
+
+# --------------------------------------------------------------------------------------------- GPU (CuPy)
+def _gpu_blend_ok():
+    """CuPy importable and the configured / detected NVIDIA GPU usable (namma.recon.hardware)."""
+    try:
+        import cupy  # noqa: F401
+        from namma.recon import hardware
+        return hardware.gpu_decision(need_mb=1024)[0]
+    except Exception:                                  # noqa: BLE001 - no CuPy, no driver: CPU
+        return False
+
+
+def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px, log, label, batch=4_000_000):
+    """Same weighted mean as the CPU loop, on the GPU. -> (acc float32 (n,3), wsum float32 (n,), photos used).
+    The next photo is decoded on a CPU thread while the GPU works on the current one."""
+    import queue
+    import threading
+
+    import cupy as cp
+    import cupyx
+    from cupyx.scipy import ndimage as cnd
+    n = len(X)
+    Xg = cp.asarray(X, cp.float32)
+    Ng = cp.asarray(N, cp.float32)
+    Pg = cp.asarray(allP, cp.float32)
+    acc = cp.zeros((n, 3), cp.float32)
+    wsum = cp.zeros(n, cp.float32)
+    q = queue.Queue(maxsize=2)
+
+    def producer():
+        for item in _views_iter(views):
+            q.put(item)
+        q.put(None)
+    threading.Thread(target=producer, daemon=True).start()
+    used = 0
+    while True:
+        item = q.get()
+        if item is None:
+            break
+        v, img_np, k = item
+        used += 1
+        Hi, Wi = img_np.shape[:2]
+        fx, fy, cx, cy, k1, k2, p1, p2 = (float(x) for x in _camera(v["cam"], k))
+        R = cp.asarray(v["R"], cp.float32)
+        tv = cp.asarray(v["t"], cp.float32)
+        C = cp.asarray(v["C"], cp.float32)
+        gain = cp.asarray(np.asarray(v["gain"], np.float32) / 255.0)
+        img = cp.asarray(img_np, cp.float32)
+
+        def project(Q):
+            Xc = Q @ R.T + tv
+            z = Xc[:, 2]
+            zs = cp.where(z > 1e-6, z, 1.0)
+            x, y = Xc[:, 0] / zs, Xc[:, 1] / zs
+            r2 = x * x + y * y
+            rad = 1 + k1 * r2 + k2 * r2 * r2
+            xd = x * rad + 2 * p1 * x * y + p2 * (r2 + 2 * x * x)
+            yd = y * rad + p1 * (r2 + 2 * y * y) + 2 * p2 * x * y
+            return fx * xd + cx, fy * yd + cy, z
+        zsc = zbuf_px / max(Wi, Hi)
+        u, w, z = project(Pg)
+        ok = (z > 1e-6) & (u >= 0) & (u < Wi) & (w >= 0) & (w < Hi)
+        zb = cp.full((int(Hi * zsc) + 1, int(Wi * zsc) + 1), cp.inf, cp.float32)
+        cupyx.scatter_min(zb, ((w[ok] * zsc).astype(cp.int32), (u[ok] * zsc).astype(cp.int32)), z[ok])
+        zb = cnd.minimum_filter(zb, size=3)
+        margin = edge_frac * min(Wi, Hi)
+        for s0 in range(0, n, batch):
+            sl = slice(s0, min(n, s0 + batch))
+            Xb = Xg[sl]
+            u, w, z = project(Xb)
+            ok = (z > 1e-6) & (u >= 0) & (u < Wi - 1) & (w >= 0) & (w < Hi - 1)
+            idx = cp.nonzero(ok)[0]
+            if not len(idx):
+                continue
+            idx = idx[z[idx] <= zb[(w[idx] * zsc).astype(cp.int32), (u[idx] * zsc).astype(cp.int32)] * (1 + depth_tol)]
+            if not len(idx):
+                continue
+            ray = Xb[idx] - C
+            dist = cp.linalg.norm(ray, axis=1) + 1e-9
+            cos = cp.abs((ray * Ng[sl][idx]).sum(1)) / dist
+            uu, ww = u[idx], w[idx]
+            edge = cp.clip(cp.minimum(cp.minimum(uu, ww), cp.minimum(Wi - 1 - uu, Hi - 1 - ww)) / margin, 0, 1)
+            wt = (cos ** power) / (dist * dist) * edge
+            u0, w0 = cp.floor(uu).astype(cp.int32), cp.floor(ww).astype(cp.int32)
+            fu, fw = (uu - u0)[:, None], (ww - w0)[:, None]
+            c = (img[w0, u0] * (1 - fu) * (1 - fw) + img[w0, u0 + 1] * fu * (1 - fw)
+                 + img[w0 + 1, u0] * (1 - fu) * fw + img[w0 + 1, u0 + 1] * fu * fw) * gain
+            gidx = idx + s0
+            acc[gidx] += c * wt[:, None]                 # idx unique within a view: plain fancy-index add is exact
+            wsum[gidx] += wt
+        if used % 25 == 0:
+            log(f"  {label}: {used}/{len(views)} photos blended")
+    out = cp.asnumpy(acc), cp.asnumpy(wsum), used
+    del Xg, Ng, Pg, acc, wsum
+    cp.get_default_memory_pool().free_all_blocks()
+    return out

@@ -318,9 +318,10 @@
       "unknown",
       "user_distance",
       "markers",
-      "reference_alignment"
+      "reference_alignment",
+      "device_tracking"
      ],
-     "description": "reference_alignment = scale taken from dataset ground truth; allowed only with evaluation_only = true"
+     "description": "reference_alignment = scale taken from dataset ground truth; allowed only with evaluation_only = true. device_tracking (1.2.0) = metric scale from the capture device's own tracking (e.g. ARKit + LiDAR in a phone scanning app); method names the device / app"
     },
     "metres_per_unit": {
      "type": [
@@ -594,7 +595,8 @@
       "user_distance",
       "markers",
       "reference_alignment",
-      "assumed_capture_height"
+      "assumed_capture_height",
+      "device_tracking"
      ]
     },
     "metres_per_unit": {

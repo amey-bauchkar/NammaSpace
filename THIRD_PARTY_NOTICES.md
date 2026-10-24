@@ -9,6 +9,7 @@ were read from the projects' own repositories and pages on 2026-10-10 / 2026-10-
 | Component | Version | Licence | How it is used | Distributed by this repository? |
 |---|---|---|---|---|
 | three.js | 0.186.1 | MIT | Browser 3D rendering (`web/vendor/three/`, vendored unmodified, hashes in `VENDOR.md`) | Yes, with its `LICENSE` file |
+| Spark | 2.4.0 | MIT | Gaussian splat rendering in the viewer (`web/vendor/spark/`, vendored unmodified; plus three.js `addons/postprocessing/Pass.js` 0.186.1, which it imports) | Yes, with its `LICENSE` file |
 | COLMAP | 4.2.1 (Windows, no CUDA) | BSD-3-Clause (bundles third-party libraries with their own licences) | Structure from motion, run as an **unmodified external program** | **No** – downloaded by `scripts/setup_tools.py` from the official release |
 | OpenMVS | 2.4.0 (Windows x64) | **AGPL-3.0** | Dense reconstruction, meshing and texturing, run as **unmodified external programs** | **No** – downloaded by `scripts/setup_tools.py` from the official release |
 | FFmpeg | 8.1.1 (gyan.dev full build) | GPL-3.0 (this build) / LGPL-2.1 (core) | Video probing and frame extraction, run as an external program | **No** – installed by the user (e.g. `winget install Gyan.FFmpeg`) |

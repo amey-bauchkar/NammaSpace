@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Namma Space Capture</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+<style>
+  /* capture UI: pairing screen, then a full-screen camera with floating controls */
+  :root { --pill: rgba(255,255,255,.75); }
+  html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  .pill-btn { display: inline-flex; align-items: center; gap: 10px; background: transparent; color: #fff; border: 1.5px solid var(--pill);
+    border-radius: 999px; padding: 10px 20px; font: 17px var(--mono); letter-spacing: .5px; }
+  .pill-btn:disabled { opacity: .35; }
+  .round { width: 52px; height: 52px; border-radius: 50%; padding: 0; justify-content: center; }
+  /* pairing */
+  #s-pair { padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); justify-content: center; }
+  .pair h1 { font: 600 24px var(--font); margin: 0 0 6px; }
+  .pair p { color: #c9d1dd; font-size: 14px; margin: 6px 0 14px; }
+  .pair label { font-size: 13px; color: #c9d1dd; }
+  .pair input { width: 100%; background: #111; color: #fff; border: 1.5px solid #444; border-radius: 12px; padding: 12px; margin: 4px 0 12px; font-size: 16px; }
+  .pair .code { font: 600 30px var(--mono); letter-spacing: 10px; text-align: center; }
+  .pair .go { width: 100%; justify-content: center; background: #fff; color: #000; border-color: #fff; margin-top: 8px; }
+  .msg { color: #fca5a5; font-size: 14px; min-height: 20px; }
+  .pair .go.alt { background: transparent; color: #fff; border-color: var(--pill); }
+  .hint2 { color: #9aa4b2; font-size: 13px; margin: 8px 2px 0; }
+  /* capture: full-bleed camera, floating glass controls, no tint over the image */
+  #cam { background: #000; }
+  .view { position: absolute; inset: 0; overflow: hidden; background: #000; }
+  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .glass { background: rgba(20,20,22,.55); -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(255,255,255,.12); }
+  .top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: grid; grid-template-columns: 44px 1fr 44px; align-items: start;
+    gap: 10px; padding: max(12px, env(safe-area-inset-top)) 16px 0; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; padding: 0; }
+  .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .cap-hud { justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .rec-pill { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 7px 14px; font: 600 15px var(--mono); font-variant-numeric: tabular-nums; }
+  .rec-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #8e8e93; }
+  .rec-pill.on .dot { background: #ff3b30; }
+  .meter { width: 170px; padding: 6px 12px; border-radius: 999px; display: flex; align-items: center; gap: 8px; font: 600 12px var(--font); color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .meter .bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); overflow: hidden; }
+  .meter .bar > div { height: 100%; width: 0; background: #fff; }
+  .sending { font: 12px var(--mono); color: rgba(255,255,255,.75); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .frame { position: absolute; inset: 24% 12% 30%; pointer-events: none; }
+  .frame i { position: absolute; width: 26px; height: 26px; border: 0 solid rgba(255,255,255,.85); }
+  .frame i:nth-child(1) { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 8px; }
+  .frame i:nth-child(2) { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 8px; }
+  .frame i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 8px; }
+  .frame i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 8px; }
+  .center-hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 14px;
+    pointer-events: none; text-align: center; padding: 16px 22px; border-radius: 18px; font: 600 16px var(--font); width: max-content; max-width: 78%; }
+  .center-hint[hidden] { display: none; }
+  .phone-icon { width: 30px; height: 50px; border: 2px solid #fff; border-radius: 8px; animation: wiggle 1.8s ease-in-out infinite; }
+  @keyframes wiggle { 0%, 100% { transform: translateX(-16px) rotate(-6deg); } 50% { transform: translateX(16px) rotate(6deg); } }
+  .side { position: absolute; right: 16px; z-index: 2; }
+  .side[hidden] { display: none; }
+  #warn { top: calc(max(12px, env(safe-area-inset-top)) + 96px); color: #ffd60a; }
+  #torch { top: calc(max(12px, env(safe-area-inset-top)) + 148px); }
+  #torch.on { background: #fff; color: #000; }
+  .toast { position: absolute; left: 50%; top: calc(max(12px, env(safe-area-inset-top)) + 96px); transform: translateX(-50%); z-index: 3; padding: 9px 16px;
+    border-radius: 999px; font: 600 14px var(--font); text-align: center; max-width: 70%; pointer-events: none; }
+  .controls { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    padding: 18px 22px max(26px, calc(env(safe-area-inset-bottom) + 12px)); }
+  .controls .left { justify-self: start; } .controls .right { justify-self: end; }
+  .chip { border-radius: 999px; padding: 10px 18px; color: #fff; font: 600 14px var(--font); display: inline-flex; align-items: center; gap: 6px; }
+  .chip:disabled { opacity: .45; }
+  .chip.primary:not(:disabled) { background: #fff; color: #000; border-color: #fff; }
+  .shutter { width: 78px; height: 78px; border-radius: 50%; border: 4px solid #fff; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; }
+  .shutter i { display: block; width: 62px; height: 62px; border-radius: 50%; background: #ff3b30; }
+  .shutter.armed i { background: rgba(255,255,255,.35); }
+  .shutter.rec i { width: 28px; height: 28px; border-radius: 6px; background: #ff3b30; }
+  .bar { height: 10px; border-radius: 5px; background: #3a3a3c; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: #fff; }
+  /* sheets */
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; background: #1d1d1f; border-radius: 22px 22px 0 0; padding: 20px 22px max(22px, env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 40px rgba(0,0,0,.6); z-index: 5; }
+  .sheet h2 { margin: 0 0 10px; font: 600 20px var(--font); }
+  .sheet li { margin: 8px 0; color: #ddd; font-size: 15px; }
+  .sheet .close { width: 100%; justify-content: center; margin-top: 10px; }
+  .menu button { display: block; width: 100%; text-align: left; background: transparent; border: 0; color: #fff; padding: 12px 4px; font-size: 16px; border-bottom: 1px solid #333; border-radius: 0; }
+  .menu small { display: block; color: #aaa; font-size: 13px; }
+  /* status */
+  #s-status { padding: 24px; justify-content: center; text-align: center; }
+  #s-status h1 { font: 600 24px var(--font); margin: 0 0 14px; }
+  #s-status .bar { height: 10px; margin: 16px 0; }
+  #s-status p { color: #c9d1dd; }
+</style>
+</head>
+<body>
+<section class="screen pair" id="s-pair">
+  <h1>Namma Space Capture</h1>
+  <p>Scan a room with your phone; the computer builds the 3D model. Enter the code shown in the Studio on the computer.</p>
+  <label for="code">Pairing code</label>
+  <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
+  <label for="title">Name of the space (optional)</label>
+  <input id="title" type="text" maxlength="80" placeholder="e.g. Living room">
+  <button class="pill-btn go" id="pair-btn">Continue</button>
+  <button class="pill-btn go alt" id="polycam-btn">Import a Polycam export</button>
+  <input type="file" id="polycam-files" accept=".zip,.glb,application/zip,model/gltf-binary" multiple hidden>
+  <p class="hint2" id="polycam-hint">In Polycam: Export → <b>GLTF</b> (and optionally <b>Images</b>) → Save to Files; then pick
+    the file(s) here.</p>
+  <div class="msg" id="pair-msg" role="alert"></div>
+</section>
+
+<section class="screen" id="cam" hidden>
+  <div class="view" id="view">
+    <video id="video" playsinline muted autoplay></video>
+    <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="center-hint glass" id="hint" hidden><div class="phone-icon"></div><div id="hint-text">Move device to start</div></div>
+  </div>
+  <div class="top">
+    <button class="icon-btn glass" id="tips-btn" aria-label="Scanning tips"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17.2v.01"/></svg></button>
+    <div class="cap-hud">
+      <div class="rec-pill glass" id="rec-pill"><span class="dot"></span><span id="elapsed">00:00.00</span></div>
+      <div class="meter glass" aria-label="Coverage"><div class="bar"><div id="cov-bar"></div></div><span id="cov">0%</span></div>
+      <span class="sending" id="sent"></span>
+    </div>
+    <button class="icon-btn glass" id="close-btn" aria-label="Cancel capture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="toast glass" id="toast" hidden></div>
+  <button class="icon-btn glass side" id="warn" hidden aria-label="Capture warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.01"/></svg></button>
+  <button class="icon-btn glass side" id="torch" hidden aria-label="Flashlight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8l-1 6H9z"/><path d="M9 8l1 14h4l1-14"/></svg></button>
+  <div class="controls">
+    <button class="chip glass left" id="mode-btn">Video</button>
+    <button class="shutter" id="shutter" aria-label="Start recording"><i></i></button>
+    <button class="chip glass primary right" id="done-btn" disabled>Done</button>
+  </div>
+</section>
+
+<div class="sheet" id="tips" hidden>
+  <h2>Scanning tips</h2>
+  <ul>
+    <li><strong>Walk, don't spin.</strong> Move along the walls, 2–3 small steps between looks. Coverage rises when you look at
+      a part of the room again <em>from another spot</em>.</li>
+    <li>Move slowly and smoothly; keep the phone upright.</li>
+    <li>Show every wall, the floor and the furniture from about 1–2 m.</li>
+    <li>Turn the lights on; avoid pointing straight at windows or lamps.</li>
+    <li>When the walls are covered, tap <strong>Done</strong> – the computer does the rest.</li>
+  </ul>
+  <button class="pill-btn close" data-close>Got it</button>
+</div>
+
+<div class="sheet menu" id="mode-menu" hidden>
+  <h2>Capture mode</h2>
+  <button data-mode="video">Video <small>Recommended. The phone only records; the computer picks the frames.</small></button>
+  <button data-mode="frames">Photo frames <small>The phone picks and sends frames itself (more work for the phone).</small></button>
+  <button class="pill-btn close" data-close style="text-align:center;border:1.5px solid var(--pill);border-radius:999px;margin-top:14px">Close</button>
+</div>
+
+<section class="screen" id="s-status" hidden>
+  <h1 id="st-title">Sending…</h1>
+  <div class="bar"><div id="st-bar"></div></div>
+  <p id="st-msg"></p>
+</section>
+<script type="module" src="js/capture.js"></script>
+</body>
+</html>

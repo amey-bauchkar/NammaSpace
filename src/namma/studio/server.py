@@ -35,9 +35,11 @@ from namma.capture.media import (
 )
 from namma.core import timefmt
 from namma.core.jsonio import load_strict, write_json
+from namma.recon import hardware
 from namma.recon.tools import ToolMissing, find_tools
 from namma.studio import routing
 from namma.studio.jobs import JobError, JobManager
+from namma.studio.polycam_bridge import BridgeError
 from namma.studio.package import publish_static_site
 from namma.studio.profiles import PROFILES
 from namma.studio.projects import ProjectError, ProjectStore, safe_filename
@@ -66,9 +68,13 @@ def _finite_vec(v, n):
 
 
 class Studio:
+    phone = None                    # namma.studio.phone_capture.Pairing when started with --lan
+
     def __init__(self, projects_root, record_dir=None):
         self.store = ProjectStore(projects_root)
         self.jobs = JobManager(self.store)
+        from namma.studio.polycam_bridge import PolycamStaging
+        self.polycam = PolycamStaging(self.store.root)
         self.record_dir = Path(record_dir) if record_dir else None
 
     # ------------------------------------------------------------------ helpers
@@ -99,10 +105,36 @@ class Studio:
         except ToolMissing as e:
             tools = {"colmap": False, "openmvs": False, "error": str(e)}
         vm = psutil.virtual_memory()
+        gpu = hardware.detect_gpus()
         return {"ok": True, "version": VERSION, "tools": tools, "ffmpeg": bool(ffmpeg_path()),
                 "ram_total_gb": round(vm.total / 2**30, 1), "ram_available_gb": round(vm.available / 2**30, 1),
                 "disk_free_gb": round(shutil.disk_usage(self.store.root).free / 2**30, 1),
-                "active_job": self.jobs.active(), "profiles": list(PROFILES)}
+                "active_job": self.jobs.active(), "profiles": list(PROFILES),
+                "hardware": {"gpu": gpu["gpus"][0]["name"] if gpu["available"] else None,
+                             "gpu_reason": gpu["reason"], "gpu_steps": (tools.get("paths") or {}).get("gpu_steps", []),
+                             "ram_budget_gb": hardware.resources().ram_budget_gb,
+                             "projects_onedrive_synced": hardware.onedrive_synced(self.store.root)}}
+
+    def recommendation(self, pid):
+        """Profile advice for this capture on this machine (namma.studio.advisor); needs a finished capture check."""
+        from PIL import Image
+
+        from namma.studio.advisor import recommend
+        d = self.store.path(pid)
+        man = d / "capture" / "capture_manifest.json"
+        if not man.exists():
+            raise ApiError(409, "CAPTURE-NOT-CHECKED", "Check the capture first.")
+        sizes = []
+        for rel in load_strict(man).get("inputs", []):
+            with Image.open(d / rel) as im:       # header only: no pixel decoding
+                sizes.append(im.size)
+        try:
+            tools = find_tools()
+        except ToolMissing:
+            tools = None
+        processed = any(r.get("has_package") for r in self.project_summary(self.store.get(pid))["runs"])
+        return recommend(sizes, machine=hardware.describe_machine(self.store.root), tools=tools,
+                         processed_before=processed)
 
     def pois_path(self, pid):
         return self.store.path(pid) / "pois.json"
@@ -237,6 +269,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     studio: Studio = None
     server_version = "NammaStudio/" + VERSION
     protocol_version = "HTTP/1.1"
+    timeout = 300                   # idle keep-alive connections are closed (each one holds a thread)
 
     def log_message(self, fmt, *args):
         sys.stderr.write("%s %s\n" % (time.strftime("%H:%M:%S"), fmt % args))
@@ -330,6 +363,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._error(e.status, e.code, str(e))
         except ProjectError as e:
             return self._error(e.status, e.code, str(e))
+        except BridgeError as e:
+            return self._error(e.status, e.code, str(e))
         except JobError as e:
             return self._error(e.status, e.code, str(e))
         except Exception as e:      # never leak a traceback to the page; keep it in the server log
@@ -361,7 +396,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         rel = path.lstrip("/")
         target = (WEB / rel).resolve()
-        if not str(target).startswith(str(WEB.resolve())) or "tests" in Path(rel).parts:
+        if not target.is_relative_to(WEB.resolve()) or "tests" in Path(rel).parts:
             return self._error(404, "NOT-FOUND", "not found")
         return self._file(target)
 
@@ -370,11 +405,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if len(parts) < 4:
             return self._error(404, "NOT-FOUND", "not found")
         pid, rest = parts[2], parts[3]
+        # ".." would let an allowed prefix (runs/<run>/90_package/../../..) reach any file of the project
+        if ".." in re.split(r"[\\/]", rest):
+            return self._error(404, "NOT-FOUND", "not found")
         if not any(p.match(rest) for p in ALLOWED_PROJECT_FILES) and not re.match(r"^published/run-[0-9a-z-]+\.zip$", rest):
             return self._error(404, "NOT-FOUND", "not found")
         base = self.studio.store.path(pid).resolve()
         target = (base / rest).resolve()
-        if not str(target).startswith(str(base)):
+        if not target.is_relative_to(base):
             return self._error(404, "NOT-FOUND", "not found")
         return self._file(target)
 
@@ -428,6 +466,38 @@ class Handler(http.server.BaseHTTPRequestHandler):
         seg = [s for s in self._segments[2:] if s != ""]
         if seg == ["health"]:
             return self._json(200, st.health())
+        if seg == ["phone"] and method == "GET":
+            # served on 127.0.0.1 only: the pairing code must never be readable from the network
+            if st.phone is None:
+                return self._json(200, {"enabled": False, "hint": "Start the Studio with --lan to capture with a phone: "
+                                                                  "python scripts/start_studio.py --lan"})
+            return self._json(200, st.phone.info())
+        # Polycam exports dropped on the Studio page: start -> files (streamed) -> import
+        if seg == ["polycam"] and method == "POST":
+            return self._json(201, {"import_id": st.polycam.start()})
+        if len(seg) == 4 and seg[0] == "polycam" and seg[2] == "files" and method == "PUT":
+            n = int(self.headers.get("Content-Length") or -1)
+            res = st.polycam.save(seg[1], seg[3], self.rfile, n)
+            self._body_read = True
+            return self._json(201, res)
+        if len(seg) == 3 and seg[0] == "polycam" and seg[2] == "import" and method == "POST":
+            return self._json(201, st.polycam.finish(seg[1], title=self._body_json().get("title", "")))
+        if seg == ["phone", "qr.svg"] and method == "GET" and st.phone is not None:
+            import io
+
+            import segno
+            buf = io.BytesIO()
+            segno.make(st.phone.info()["link"], error="m").save(buf, kind="svg", scale=6, border=2, dark="#0f1a2a")
+            return self._send(200, buf.getvalue(), "image/svg+xml")
+        if seg == ["phone", "code"] and method == "POST" and st.phone is not None:
+            st.phone.new_code()
+            return self._json(200, st.phone.info())
+        if seg == ["bin"] and method == "GET":
+            return self._json(200, {"items": st.store.list_trash()})
+        if len(seg) == 3 and seg[0] == "bin" and seg[2] == "restore" and method == "POST":
+            return self._json(200, {"project_id": st.store.restore(seg[1])})
+        if len(seg) == 2 and seg[0] == "bin" and method == "DELETE":
+            return self._json(200, {"deleted": st.store.purge(seg[1])})
         if seg == ["projects"]:
             if method == "GET":
                 return self._json(200, {"projects": [st.project_summary(p) for p in st.store.list()]})
@@ -443,6 +513,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if method == "GET":
                     return self._json(200, st.project_summary(st.store.get(pid)))
                 if method == "DELETE":
+                    act = st.jobs.active()
+                    if act and act[0] == pid:
+                        raise ApiError(409, "PROJECT-BUSY", "This space is being reconstructed; cancel the run first.")
                     return self._json(200, {"moved_to": st.store.trash(pid)})
             if rest == ["uploads"] and method == "GET":
                 files = sorted(p for p in st.store.originals(pid).iterdir() if p.is_file() and not p.name.startswith("."))
@@ -455,8 +528,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     return self._json(200, {"removed": rest[1]})
             if rest == ["check"]:
                 if method == "POST":
-                    body = self._body_json()
-                    return self._json(202, st.jobs.start_ingest(pid, int(body.get("max_frames", 300))))
+                    def_mf = hardware.resources().max_images
+                    mf = self._body_json().get("max_frames", def_mf)
+                    cap_mf = max(2000, def_mf)
+                    if not (isinstance(mf, int) and not isinstance(mf, bool) and 10 <= mf <= cap_mf):
+                        raise ApiError(400, "CHECK-MAX-FRAMES", f"max_frames must be a whole number from 10 to {cap_mf}")
+                    return self._json(202, st.jobs.start_ingest(pid, mf))
                 if method == "GET":
                     s = st.jobs.ingest_status(pid)
                     man = st.store.path(pid) / "capture" / "capture_manifest.json"
@@ -465,6 +542,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         s["inputs"] = [{"name": x["name"], "flags": x["flags"], "thumb": f"/files/{pid}/capture/thumbs/"
                                         + Path(x["name"]).stem + ".jpg"} for x in m.get("per_input", [])]
                     return self._json(200, s)
+            if rest == ["recommendation"] and method == "GET":
+                return self._json(200, st.recommendation(pid))
             if rest == ["runs"] and method == "POST":
                 body = self._body_json()
                 profile = body.get("profile", "standard")
@@ -509,8 +588,18 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8780)
     ap.add_argument("--projects", default=str(PROJECT_ROOT / "projects"))
     ap.add_argument("--record", help="directory where POST /__bench results are saved")
+    ap.add_argument("--lan", action="store_true",
+                    help="also serve the phone auto-capture page over HTTPS on this computer's network addresses")
+    ap.add_argument("--lan-port", type=int, default=8443)
     a = ap.parse_args(argv)
     Handler.studio = Studio(a.projects, (PROJECT_ROOT / a.record) if a.record else None)
+    if a.lan:
+        from namma.studio.phone_capture import start_phone_server
+        Handler.studio.phone, _ = start_phone_server(Handler.studio, port=a.lan_port)
+        info = Handler.studio.phone.info()
+        print(f"Phone capture: open {' or '.join(info['urls']) or '(no network address found)'} on the phone "
+              f"(same Wi-Fi / hotspot); the pairing code is shown in the Studio. Accept the one-time certificate "
+              f"warning; allow Python through the Windows firewall on private networks if asked.", flush=True)
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", a.port), Handler)
     httpd.daemon_threads = True
     print(f"Namma Space Studio at http://127.0.0.1:{a.port}/  (projects: {Handler.studio.store.root})", flush=True)

@@ -36,9 +36,31 @@
         <input id="new-source" type="text" maxlength="300" placeholder="e.g. TUM RGB-D benchmark, CC BY 4.0" style="width:100%"></label>
     </form>
   </section>
+  <section class="cardbox" id="polycam-card">
+    <h2>New space from Polycam</h2>
+    <div class="dropzone" id="polycam-drop" tabindex="0" role="button" aria-label="Drop Polycam export files or choose them">
+      <p style="margin:0"><strong>Drop the Polycam export here</strong> or <a href="#" id="polycam-pick">choose files</a></p>
+      <p class="small muted" style="margin:4px 0 0">GLTF export (the 3D model, required) and optionally the Images export.
+        The model is used as Polycam made it; Namma Space adds the floor, start view, walking and labels.</p>
+    </div>
+    <input type="file" id="polycam-input" accept=".zip,.glb" multiple hidden>
+    <div class="progress" id="polycam-progress" hidden><div></div></div>
+    <p class="small" id="polycam-msg"></p>
+  </section>
+  <section class="cardbox" id="phone-card">
+    <h2>Capture with your phone</h2>
+    <div id="phone-body" class="small muted">Checking…</div>
+  </section>
   <section class="cardbox">
     <h2>Your spaces</h2>
     <ul class="projects" id="project-list"></ul>
+  </section>
+  <section class="cardbox" id="bin-card" hidden>
+    <details id="bin-box">
+      <summary><strong id="bin-summary">Bin</strong></summary>
+      <p class="small muted" style="margin:6px 0">Deleted spaces stay here until you delete them permanently.</p>
+      <ul class="projects" id="bin-list"></ul>
+    </details>
   </section>
 </template>
 
@@ -89,7 +111,10 @@
         <strong>Preview</strong> – faster, lighter model (1600 px images)<br><span class="small muted" data-f="est-preview"></span></label>
       <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="standard">
         <strong>Standard</strong> – best detail (full-resolution photos, two detail levels)<br><span class="small muted" data-f="est-standard"></span></label>
+      <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="high">
+        <strong>High</strong> – denser surfaces for 16 GB + NVIDIA GPU laptops (not yet evaluated)<br><span class="small muted" data-f="est-high"></span></label>
     </div>
+    <p class="small" data-f="advice" hidden></p>
     <p style="margin-top:12px"><button type="button" id="run-btn" disabled>Start reconstruction</button>
       <span class="small muted" id="run-msg"></span></p>
     <ul class="list" id="run-list"></ul>

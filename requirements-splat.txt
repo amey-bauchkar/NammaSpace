@@ -1,0 +1,17 @@
+# Gaussian-splat training (photoreal view). A SEPARATE Python 3.10 environment in tools/splat-env (git-ignored):
+# gsplat publishes ready-built Windows GPU code only for Python 3.10 + PyTorch 2.4 + CUDA 12.4, so no C++ compiler or
+# CUDA toolkit is needed (verified on the HP Victus, RTX 4050, driver 592.82). The Studio's own Python is not touched.
+#
+#   tools/uv/uv.exe python install 3.10           (UV_PYTHON_INSTALL_DIR=tools/uv/python, UV_CACHE_DIR=tools/uv/cache)
+#   tools/uv/uv.exe venv --python 3.10 tools/splat-env
+#   tools/uv/uv.exe pip install --python tools/splat-env/Scripts/python.exe torch==2.4.1 --index-url https://download.pytorch.org/whl/cu124
+#   tools/uv/uv.exe pip install --python tools/splat-env/Scripts/python.exe -r requirements-splat.txt --find-links https://docs.gsplat.studio/whl/gsplat/
+#
+# uv 0.9.5: https://github.com/astral-sh/uv/releases/download/0.9.5/uv-x86_64-pc-windows-msvc.zip (into tools/uv/)
+gsplat==1.5.3+pt24cu124
+numpy<2
+pillow
+plyfile
+tqdm
+packaging          # imported by gsplat's GPU backend loader
+setuptools<70      # imported by torch.utils.cpp_extension, which gsplat's loader uses

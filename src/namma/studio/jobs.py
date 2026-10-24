@@ -7,7 +7,6 @@ A run whose worker died (closed laptop, crash) is reported as "interrupted" and 
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import psutil
 
@@ -47,7 +46,10 @@ class JobManager:
         self.store = store
 
     # ----------------------------------------------------------------- capture check
-    def start_ingest(self, project_id, max_frames=300):
+    def start_ingest(self, project_id, max_frames=None):
+        if max_frames is None:
+            from namma.recon import hardware
+            max_frames = hardware.resources().max_images
         d = self.store.path(project_id)
         st = d / "capture" / "ingest_status.json"
         if st.exists():
@@ -158,7 +160,3 @@ class JobManager:
             f.seek(max(0, size - 20000))
             text = f.read().decode("utf-8", "replace")
         return {"file": last.name, "lines": text.splitlines()[-lines:]}
-
-
-def worker_log_path(project_dir, run_id):
-    return Path(project_dir) / "runs" / run_id / "logs" / "worker.log"

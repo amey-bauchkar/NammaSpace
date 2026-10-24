@@ -1,0 +1,6 @@
+# OPTIONAL: GPU texture blending (namma.recon.blendtex) on NVIDIA GPUs. Without it the CPU path runs unchanged.
+#   python -m pip install -r requirements-gpu.txt
+# CuPy 14.2.0 for CUDA 13 (needs an NVIDIA driver supporting CUDA 13, e.g. 592.82 on the HP Victus); the [ctk] extra
+# installs NVIDIA's CUDA runtime / NVRTC / cuBLAS pip packages, so no CUDA Toolkit install is needed.
+# Measured (TUM sample, 61 photos, 8192^2 atlas): blend 113 s CPU -> 14 s GPU, same texture (mean diff 0.004/255).
+cupy-cuda13x[ctk]==14.2.0

@@ -94,6 +94,16 @@ test('scene package structural checks refuse unsafe or inconsistent packages', (
   }
 });
 
+test('imported phone-scan meshes carry a device_tracking scale (IF-13 1.2.0); other statuses stay refused', () => {
+  const p = pkg();
+  p.contract_version = '1.2.0';
+  p.scale = { status: 'device_tracking', metres_per_unit: 1, method: 'Polycam export' };
+  checkScenePackage(p);
+  assert.equal(formatLength(2, p.scale), '2.00 m');
+  p.scale.status = 'guessed';
+  assert.throws(() => checkScenePackage(p), PackageLoadError);
+});
+
 test('lengths are labelled with their scale status', () => {
   assert.equal(formatLength(2, { status: 'unknown', metres_per_unit: null }), '2.00 model units (scale unknown)');
   assert.equal(formatLength(2, { status: 'user_distance', metres_per_unit: 0.5 }), '1.00 m');

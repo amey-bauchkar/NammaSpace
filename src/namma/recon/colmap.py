@@ -1,6 +1,7 @@
-"""COLMAP (CPU) structure-from-motion stage: features -> matches -> incremental mapping.
+"""COLMAP structure-from-motion stage: features -> matches -> incremental mapping.
 
-All GPU switches are off. Progress lines of the form "[i/n]" are parsed for the UI.
+Feature extraction and matching run on the GPU only when the caller passes use_gpu=True (a CUDA build of
+COLMAP and a usable NVIDIA GPU: namma.recon.tools); the default is the CPU path used for all Phase 12/13 evidence. Progress lines of the form "[i/n]" are parsed for the UI.
 Models are read from COLMAP's text export (model_converter), so no binary parser is needed.
 """
 import re
@@ -9,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
-from namma.recon.io import qvec_to_rotmat
+from namma.recon.io import qvec_to_rotmat, read_colmap_cameras_txt
 from namma.recon.runner import run_step
 
 PROGRESS = re.compile(r"\[(\d+)/(\d+)\]")
@@ -26,27 +27,33 @@ def _progress_cb(progress, label):
 
 
 def extract_features(tools, db, image_dir, log_dir, *, camera_model, single_camera, max_image_px, max_features,
-                     threads, timeout_s, cancel_file=None, progress=None, peak_threshold=0.00667):
+                     threads, timeout_s, cancel_file=None, progress=None, peak_threshold=0.00667, use_gpu=False,
+                     gpu_index=0):
     argv = [tools.colmap, "feature_extractor", "--database_path", db, "--image_path", image_dir,
             "--ImageReader.camera_model", camera_model, "--ImageReader.single_camera", int(bool(single_camera)),
-            "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", threads,
+            "--FeatureExtraction.use_gpu", int(bool(use_gpu)), "--FeatureExtraction.num_threads", threads,
             "--FeatureExtraction.max_image_size", max_image_px, "--SiftExtraction.max_num_features", max_features,
             "--SiftExtraction.peak_threshold", peak_threshold]
+    if use_gpu:
+        argv += ["--FeatureExtraction.gpu_index", gpu_index]
     return run_step("colmap_feature_extractor", argv, log_dir, timeout_s=timeout_s, cancel_file=cancel_file,
                     on_line=_progress_cb(progress, "Finding features"))
 
 
 def match_features(tools, db, log_dir, *, mode, overlap=15, guided=True, timeout_s, cancel_file=None,
-                   progress=None, threads=-1):
+                   progress=None, threads=-1, use_gpu=False, gpu_index=0):
+    gpu = int(bool(use_gpu))
     if mode == "sequential":
-        argv = [tools.colmap, "sequential_matcher", "--database_path", db, "--FeatureMatching.use_gpu", 0,
+        argv = [tools.colmap, "sequential_matcher", "--database_path", db, "--FeatureMatching.use_gpu", gpu,
                 "--FeatureMatching.num_threads", threads, "--FeatureMatching.guided_matching", int(guided),
                 "--SequentialMatching.overlap", overlap, "--SequentialMatching.quadratic_overlap", 1]
     elif mode == "exhaustive":
-        argv = [tools.colmap, "exhaustive_matcher", "--database_path", db, "--FeatureMatching.use_gpu", 0,
+        argv = [tools.colmap, "exhaustive_matcher", "--database_path", db, "--FeatureMatching.use_gpu", gpu,
                 "--FeatureMatching.num_threads", threads, "--FeatureMatching.guided_matching", int(guided)]
     else:
         raise ValueError(f"unknown matching mode {mode}")
+    if use_gpu:
+        argv += ["--FeatureMatching.gpu_index", gpu_index]
     return run_step(f"colmap_{mode}_matcher", argv, log_dir, timeout_s=timeout_s, cancel_file=cancel_file,
                     on_line=_progress_cb(progress, "Matching photos"))
 
@@ -65,6 +72,30 @@ def map_sparse(tools, db, image_dir, out_dir, log_dir, *, timeout_s, cancel_file
             seen.add(m.group(1))
             progress("Placing cameras", min(1.0, len(seen) / n_images))
     return run_step("colmap_mapper", argv, log_dir, timeout_s=timeout_s, cancel_file=cancel_file, on_line=cb)
+
+
+GLOBAL_PHASES = (("rotation averaging", "running rotation averaging"), ("tracks", "running track establishment"),
+                 ("positions", "running global positioning"), ("bundle adjustment", "running iterative bundle"),
+                 ("retriangulation", "running iterative retriangulation"))
+
+
+def map_global(tools, db, image_dir, out_dir, log_dir, *, timeout_s, cancel_file=None, progress=None,
+               use_gpu=True, gpu_index=0):
+    """COLMAP 4 global SfM (GLOMAP). Measured on the HP Victus (300 video frames, iPhone 14): 93 s vs 635 s for the
+    incremental mapper, one model with 281 frames (incremental: 201 + a separate 37), 0.82 px vs 0.66 px reprojection."""
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    argv = [tools.colmap, "global_mapper", "--database_path", db, "--image_path", image_dir, "--output_path", out_dir,
+            "--GlobalMapper.gp_use_gpu", int(use_gpu), "--GlobalMapper.ba_ceres_use_gpu", int(use_gpu)]
+    state = {"i": 0}
+
+    def cb(line):
+        low = line.lower()
+        for i, (_, key) in enumerate(GLOBAL_PHASES):
+            if key in low and i >= state["i"]:
+                state["i"] = i
+                if progress is not None:
+                    progress(f"Placing cameras ({GLOBAL_PHASES[i][0]})", i / len(GLOBAL_PHASES))
+    return run_step("colmap_global_mapper", argv, log_dir, timeout_s=timeout_s, cancel_file=cancel_file, on_line=cb)
 
 
 def register_remaining(tools, db, model_dir, out_dir, log_dir, *, timeout_s, cancel_file=None,
@@ -153,14 +184,7 @@ def read_points3d_txt(path):
     return np.array(xyz), np.array(rgb, np.uint8), np.array(err), np.array(track)
 
 
-def read_cameras_txt(path):
-    out = {}
-    for ln in Path(path).read_text(encoding="utf-8").splitlines():
-        if not ln or ln.startswith("#"):
-            continue
-        p = ln.split()
-        out[int(p[0])] = {"model": p[1], "width": int(p[2]), "height": int(p[3]), "params": [float(v) for v in p[4:]]}
-    return out
+read_cameras_txt = read_colmap_cameras_txt      # one implementation (namma.recon.io); this name is used by the Studio
 
 
 def model_score(n_images, n_points, min_points_per_image=30):

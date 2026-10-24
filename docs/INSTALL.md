@@ -24,6 +24,21 @@ python scripts/setup_tools.py --check
 Video input additionally needs FFmpeg on the PATH (for example `winget install Gyan.FFmpeg`).
 Photos work without it.
 
+**NVIDIA GPU (optional).** On a machine with an NVIDIA GPU and driver (e.g. HP Victus, RTX 4050), also install the
+CUDA builds of the same tool versions (~430 MB more); feature extraction, matching and dense depth maps then run on
+the GPU, with automatic CPU fallback. Details, resource limits and configuration: [HARDWARE.md](HARDWARE.md).
+
+```bash
+python scripts/setup_tools.py --cuda
+```
+
+```bash
+python scripts/hw_diag.py --gpu-smoke
+```
+
+**LiDAR exports (optional).** Inspection needs nothing extra; experimental meshing needs Open3D
+(`python -m pip install -r requirements-lidar.txt`). See [RECORD3D_LIDAR.md](RECORD3D_LIDAR.md).
+
 Linux / macOS (not tested by the team): install COLMAP and OpenMVS from your package manager or from
 source, then set `NAMMA_COLMAP` (path to the `colmap` executable) and `NAMMA_OPENMVS_DIR` (folder with
 `InterfaceCOLMAP`, `DensifyPointCloud`, `ReconstructMesh`, `TextureMesh`).
@@ -33,6 +48,10 @@ source, then set `NAMMA_COLMAP` (path to the `colmap` executable) and `NAMMA_OPE
 ```bash
 python scripts/start_studio.py --port 8780 --projects projects
 ```
+
+If this folder is inside OneDrive (or another synchronised folder), or its path is long, point `--projects` at a
+short local folder instead (e.g. `C:\NammaWork\projects`): runs write GBs of temporary depth maps, and Windows
+paths are limited to 260 characters (a run checks this before starting).
 
 Open http://127.0.0.1:8780/ in Chrome or Edge. The server answers only on this computer.
 

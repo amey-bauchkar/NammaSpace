@@ -15,8 +15,6 @@ from pathlib import Path
 
 import numpy as np
 from scipy import ndimage
-from shapely.geometry import Point
-from shapely.ops import unary_union
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from namma.contracts.semantic import validate_document  # noqa: E402

@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 import cv2
-import numpy as np
 import pytest
 
 from namma.contracts.semantic import validate_document

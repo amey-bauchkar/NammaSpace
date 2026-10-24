@@ -33,10 +33,11 @@ from namma.contracts.semantic import validate_document
 from namma.core import timefmt
 from namma.core.issues import errors_only
 from namma.core.jsonio import write_json
+from namma.recon import hardware
 
 MIN_IMAGES = 10
 RECOMMENDED_IMAGES = 40
-MAX_IMAGES = 300
+MAX_IMAGES = hardware.resources().max_images      # configurable (namma.recon.hardware); default 300
 THUMB = 320
 
 
@@ -218,7 +219,7 @@ def ingest_capture(project_dir, *, max_frames=300, frame_max_side=1920, venue_la
 
         def work(i):
             metrics[i], feats[i] = checks.image_metrics(inputs[i])
-        with ThreadPoolExecutor(max_workers=4) as ex:
+        with ThreadPoolExecutor(max_workers=hardware.resources().io_workers) as ex:
             for k, _ in enumerate(ex.map(work, range(len(inputs)))):
                 if progress and k % 5 == 0:
                     progress("Measuring sharpness, exposure and detail", k / len(inputs))

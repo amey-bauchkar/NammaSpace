@@ -18,7 +18,6 @@ from collections import Counter
 from pathlib import Path
 
 import cv2
-import numpy as np
 from PIL import ExifTags, Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))

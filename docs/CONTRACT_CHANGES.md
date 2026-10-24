@@ -133,3 +133,16 @@ All-zero SHA-256 values in the examples are **placeholders**. A test confirms th
 |---|---|---|---|
 | CA-13-01 | New contract **IF-13 Studio scene package** 1.0.0 (`architecture/schemas/IF-13.schema.json`): scale-free model frame (`units: "model"`), explicit `scale` block (`unknown` / `user_distance` / `markers` / `reference_alignment` with `evaluation_only`), appearance LODs with SHA-256, rigid `to_model` applied once, start view, cameras, roam grid, navigation status, POIs, quality summary, notices, integrity list | Photo reconstructions have no observable scale; the metric IF-03 / IF-10 path would have required inventing metres (ARCH-032) | Purely additive. `CONTRACT_IDS` now IF-01..IF-13; tests updated (13 schemas). |
 | CA-13-02 | Semantic checks `IF13-*`: unlisted files, LOD / files mismatch, duplicate LODs, non-rigid `to_model`, navigation `accepted` on unknown / assumed scale, calibrated navigation with unknown scale, inverted bounds | Prevent a package from over-claiming | New examples: 1 valid, 2 schema-invalid, 3 semantic-invalid |
+
+## IF-13 1.2.0 (2026-10-21) – scale status `device_tracking` (additive)
+
+- `scale.status` and `navigation.scale_basis` accept a new value, **`device_tracking`**: metric units taken from the
+  capture device's own tracking (ARKit + LiDAR in a phone scanning app). `metres_per_unit` must be a number (as for
+  every status other than `unknown`); `scale.method` names the app / device.
+- Producer: `namma.studio.mesh_import` (meshes imported from Polycam and similar apps). The photo pipeline still
+  writes `unknown` / `user_distance`; `package.py` now writes `contract_version` 1.2.0.
+- Consumers: `web/js/scenePackage.js` accepts the value; the viewer shows "device tracking" and a notice that the
+  scale is the app's claim, checkable with "Set scale".
+- Compatibility: no field changed meaning or became required; every 1.0.0 / 1.1.0 package still validates; viewers
+  accept any 1.x. Source: `architecture/contracts.py` → regenerated `architecture/schemas/IF-13.schema.json` (only
+  that file changed); all 50 contract examples behave as before.

@@ -13,8 +13,6 @@ Method (all in the model frame: +Y up, floor at y = 0, units = model units, eye 
 5. Colour: per-cell mean of nearby real points on that plane (nearest covered cell), else the plane median.
 Assumes one rectangular room; `fit` reports how well the box explains the points (low = do not trust the fill).
 """
-import json
-import struct
 from pathlib import Path
 
 import numpy as np

@@ -11,7 +11,8 @@ export class PackageLoadError extends Error {
   }
 }
 
-const SCALE_STATES = ['unknown', 'user_distance', 'markers', 'reference_alignment'];
+// device_tracking (IF-13 1.2.0): metric units from the capture device's tracking (imported phone-scan meshes)
+const SCALE_STATES = ['unknown', 'user_distance', 'markers', 'reference_alignment', 'device_tracking'];
 
 /** Structural checks the viewer relies on (the full schema is validated when the package is built). */
 export function checkScenePackage(p, label = 'scene_package.json') {

@@ -4,10 +4,15 @@
 Techfest IIT Bombay 2026–27, *Namma Space* challenge – Round 1 (3D reconstruction and roaming).
 
 Everything runs on an ordinary laptop: the team's reference machine is an Intel Core 5 120U with 16 GB RAM,
-integrated graphics and **no GPU compute / no CUDA**. No cloud service, no paid API.
+integrated graphics and **no GPU compute / no CUDA**. No cloud service, no paid API. On a laptop with an NVIDIA GPU
+(set up on an HP Victus, RTX 4050 6 GB) feature extraction, matching and dense depth maps can run on the GPU, and all
+resource limits are configurable: [docs/HARDWARE.md](docs/HARDWARE.md). LiDAR (Record3D) exports can be inspected and
+validated before processing: [docs/RECORD3D_LIDAR.md](docs/RECORD3D_LIDAR.md) (LiDAR reconstruction is not yet
+integrated).
 
 | What you get | How |
 |---|---|
+| **Phone auto-capture** (web page, no install) | Point the phone at the room: frames are kept automatically and sent to the Studio, which checks them and builds a Preview model ([docs/PHONE_CAPTURE.md](docs/PHONE_CAPTURE.md)) |
 | **Studio** (local web app) | Create a space → upload photos or one video → automatic capture check → CPU reconstruction with real progress, cancel and resume → quality report → publish |
 | **Walkthrough viewer** (zero install) | Browser, WASD + mouse, collision with reconstructed furniture, photo viewpoints, fly mode, place labels + search, optional scale calibration |
 | **Static website export** | One folder (or ZIP) any static host can serve; every file hash-verified by the viewer |
