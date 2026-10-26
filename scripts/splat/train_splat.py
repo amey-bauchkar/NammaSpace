@@ -68,15 +68,16 @@ def read_model(d):
 
 # --------------------------------------------------------------------------------------------- loss
 def ssim(a, b, win=11):
-    """SSIM of two (1,3,H,W) images in [0,1] (Gaussian window, as in 3DGS). The Gaussian window is separable: two 1-D
-    passes give the same numbers as the 11x11 one at a fraction of the cost, and the five blurs run as one batch."""
-    g = torch.exp(-((torch.arange(win, device=a.device, dtype=a.dtype) - win // 2) ** 2) / (2 * 1.5 ** 2))
-    g = g / g.sum()
-    x = torch.cat([a, b, a * a, b * b, a * b], 1)                               # (1, 15, H, W)
-    x = Fn.conv2d(x, g.view(1, 1, 1, win).expand(15, 1, 1, win), padding=(0, win // 2), groups=15)
-    x = Fn.conv2d(x, g.view(1, 1, win, 1).expand(15, 1, win, 1), padding=(win // 2, 0), groups=15)
-    mu_a, mu_b, e_aa, e_bb, e_ab = x.split(3, 1)
-    s_a, s_b, s_ab = e_aa - mu_a ** 2, e_bb - mu_b ** 2, e_ab - mu_a * mu_b
+    """SSIM of two (1,3,H,W) images in [0,1] (Gaussian window, as in 3DGS).
+    (A separable / batched version gave the same numbers on contiguous test images but made training diverge and run
+    3x slower on the permuted (channels-last) renders - 2026-10-26; keep this form.)"""
+    g = torch.exp(-((torch.arange(win, device=a.device) - win // 2) ** 2) / (2 * 1.5 ** 2))
+    g = (g / g.sum())[None, :] * (g / g.sum())[:, None]
+    w = g.expand(3, 1, win, win)
+    mu_a, mu_b = Fn.conv2d(a, w, padding=win // 2, groups=3), Fn.conv2d(b, w, padding=win // 2, groups=3)
+    s_a = Fn.conv2d(a * a, w, padding=win // 2, groups=3) - mu_a ** 2
+    s_b = Fn.conv2d(b * b, w, padding=win // 2, groups=3) - mu_b ** 2
+    s_ab = Fn.conv2d(a * b, w, padding=win // 2, groups=3) - mu_a * mu_b
     c1, c2 = 0.01 ** 2, 0.03 ** 2
     return (((2 * mu_a * mu_b + c1) * (2 * s_ab + c2)) / ((mu_a ** 2 + mu_b ** 2 + c1) * (s_a + s_b + c2))).mean()
 
