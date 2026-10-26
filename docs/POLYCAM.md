@@ -60,6 +60,48 @@ so the wall pieces carrying ceiling texture cannot be told apart); a window the 
 around it. A ceiling that needed no repair keeps its texture, and a model with nothing to repair is returned byte for
 byte. The unrepaired model is kept as `60_texture/lod0_unrepaired.glb`; `import_mesh(..., repair=False)` skips it.
 
+## Photoreal view (Gaussian splat) - from the Images export
+
+Import the **GLTF and the Images** export together. On the space's result card, **Make the photoreal view** trains a
+3D Gaussian splat of the room on this computer's GPU and lines it up with the model; the viewer then shows the
+photoreal room ("Show mesh" switches back). The mesh stays underneath for walking, labels, routes and measuring.
+
+1. **Keyframes** (`keyframes_to_colmap`): Polycam's keyframe photos with the phone's own camera poses (ARKit:
+   metres, +Y up) become PINHOLE cameras.
+2. **Camera poses** (`refine_poses`): COLMAP on the keyframe photos, brought into the phone's metric frame by a
+   trimmed similarity fit on the camera centres; cameras COLMAP puts far from the phone's position are left out. The
+   phone's own poses are used if COLMAP places fewer than 60 % of the keyframes.
+3. **Depth guide** (`mesh_depth_maps`): a quick 3,000-step splat is lined up with the mesh; the mesh's depth is
+   rendered for every camera (within 2-6 % of the phone's own depth maps on most keyframes).
+4. **Training** (`scripts/splat/train_splat.py`, separate Python 3.10 environment, `requirements-splat.txt`):
+   gsplat 1.5.3, MCMC (600 k splats), 30,000 steps, per-camera pose correction, per-photo colour correction
+   (auto exposure), relative depth loss against the mesh.
+5. **Line-up** (`namma.studio.splat_align`): the splat's solid splats against the mesh (turn about the vertical, then
+   rigid ICP); refused below 30 % within 5 cm.
+6. **Package**: `appearance.splat` (IF-13 1.3.0). The viewer opens on the photoreal view ("Show mesh" switches;
+   `?mesh` starts on the mesh and downloads the splat only on request).
+
+### How the recipe was chosen ("New room", 2026-10-25, 218 keyframes at 1024x768, RTX 4050 Laptop 6 GB)
+
+Every 8th keyframe was kept out of training and the splat scored on those photos (PSNR after a per-photo colour fit
+and a 150-step pose fit with the splat frozen; 7,000 training steps, 300 k splats unless stated):
+
+| Variant | PSNR (dB) | SSIM |
+|---|---|---|
+| Phone poses (first version you saw) | 22.6 | 0.789 |
+| + per-photo colour correction | 22.7 | 0.789 |
+| + per-camera pose correction | 23.9 | 0.812 |
+| + both | 24.3 | 0.815 |
+| Both, common 23-photo test set, phone poses | 24.5 | 0.798 |
+| ... + mesh depth guide | 24.7 | 0.799 |
+| ... COLMAP poses | 25.9 | 0.838 |
+| ... COLMAP poses + mesh depth guide | 25.9 | 0.839 |
+| **Final: COLMAP + depth + both corrections, 30,000 steps, 600 k splats** | **26.3** | **0.858** |
+
+The final model took 38 minutes to train (0.93 GB GPU), 149 MB. Seen from the walking positions in the viewer it is
+photographic (doors, clothes on a hook, patterned curtains, wardrobe, bags); the mirror stays soft (reflections).
+A 1 M splat cap before these changes needed 9.5 GB and slowed to ~6 steps/s on the 6 GB card.
+
 ## Raw keyframes (step 4): not usable yet - kept with each project
 
 Polycam's exported GLB is rotated / shifted relative to the keyframe poses, and three ways to tie them together failed

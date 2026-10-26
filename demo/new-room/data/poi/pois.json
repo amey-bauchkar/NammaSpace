@@ -1,0 +1,15 @@
+[
+ {
+  "poi_id": "wardrobe",
+  "name": "Wardrobe",
+  "category": "furniture",
+  "aliases": [],
+  "position": [
+   -1.093777513337631,
+   1.6,
+   0.038382599379436555
+  ],
+  "created_at": "2026-10-26T01:51:53+05:30",
+  "origin": "human_authored"
+ }
+]

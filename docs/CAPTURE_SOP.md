@@ -1,12 +1,40 @@
-# Capture SOP – photographing a room for Namma Space
+# Capture SOP – capturing a room for Namma Space
 
 **Who this is for:** anyone with a smartphone. No measuring tape, markers or 3D skills are needed.
-**Time:** about 10–15 minutes for one room. **Output:** 60–150 photos, or one 1–3 minute video.
+**Two routes:** **A. Polycam scan** (recommended; iPhone/iPad with LiDAR) – about 5–10 minutes, gives a metric model
+and the photoreal view; **B. Photos or video** (any phone) – about 10–15 minutes, 60–150 photos or one 1–3 minute video.
 
-> Status of this SOP: it is derived from the reconstruction method (structure from motion + multi-view
-> stereo) and from Phase 12–13 measurements on public datasets. It has **not yet been validated with the
-> team's own iPhone 12 capture** (pending validation item Q-T-11). The app's capture check enforces the
-> limits written here.
+> Status: route A was used for the team's own room (iPhone 14, 2026-10-25; 218 keyframes) and the lessons from that
+> scan are written into it. Route B is derived from the reconstruction method and Phase 12–13 measurements on
+> public datasets and has not been validated with the team's own phone (Q-T-11). Section 1 applies to both routes.
+
+## A. Polycam scan (recommended)
+
+**Settings:** Polycam → **LiDAR** mode (Room/Space). Lights on. Section 1 below (lights, clean lens, nothing moving,
+privacy) applies too.
+
+**How to move** (the photoreal view is learned from the photos Polycam takes while you scan, so *what the phone
+looks at* decides the quality):
+
+1. Start in a corner, phone at chest height, and walk **slowly** (about 30 cm per second) along the walls.
+2. **Point the phone straight at each wall from about 1–1.5 m** and walk along it, including plain white walls and
+   the wall beside every door. *Lesson from our room: a wall the phone only saw from across the room or at a steep
+   angle came out smeared up close, even though the shape was right.*
+3. Do one lap with the phone **tilted down** so the **floor** near the walls and around furniture is covered
+   (needed for walking and routes), and one lap **tilted up** for the ceiling line.
+4. Go **around** large furniture (bed, wardrobe, table), not just past it, so it is seen from several sides.
+5. Do not turn on the spot and do not whip the phone around; keep every part of the room in view for a few
+   seconds. Avoid pointing into bright windows for long.
+6. Finish, let Polycam process, and check the preview for holes; rescan a missed area before leaving the room.
+
+**Export:** Export → **GLTF** (the model) **and Images** (keyframe photos with camera poses – needed for the
+photoreal view). Save both to Files or AirDrop them.
+
+**Into the Studio:** **New space from Polycam** → drop both files (or scan the Studio's QR code on the phone →
+**Import a Polycam export**). Then on the space's card, **Make the photoreal view** (NVIDIA GPU; ~40 min for
+~200 photos). Scale is metric from the phone's tracking; check one known length with the measuring tool (M).
+
+## B. Photos or video (any phone)
 
 ## 1. Before you start (1 minute)
 
@@ -20,7 +48,7 @@
 | Clean the lens | A smudge blurs every photo |
 | Move small things that will move (pets, people) out of the room | Moving objects cannot be reconstructed |
 
-## 2. Photos (recommended)
+## 2. Photos (recommended for route B)
 
 1. **Start at a corner.** Stand about one step in from the wall and face *into* the room.
 2. **Walk along the walls.** Take a photo, take **one small step (about 0.5 m)** sideways, take the next photo.

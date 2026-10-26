@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Splat Preview</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font: 13px system-ui, sans-serif; color: #fff; }
+  #hud { position: fixed; left: 12px; top: 12px; background: rgba(0,0,0,.6); padding: 6px 10px; border-radius: 6px; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<div id="hud">loading…</div>
+<script type="module">
+// Development preview of a trained splat (scripts/splat/train_splat.py): ?ply=<url>&c=x,y,z&f=x,y,z&u=x,y,z
+// c / f / u = camera centre, forward and up in the splat's frame (e.g. one of the training photos).
+import * as THREE from 'three';
+import { SparkRenderer, SplatMesh } from './vendor/spark/spark.module.js';
+
+const q = new URLSearchParams(location.search);
+const vec = (k, d) => (q.get(k) ? new THREE.Vector3(...q.get(k).split(',').map(Number)) : d);
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.01, 2000);
+scene.add(new SparkRenderer({ renderer }));
+const c = vec('c', new THREE.Vector3(0, 0, 0));
+camera.position.copy(c);
+camera.up.copy(vec('u', new THREE.Vector3(0, 1, 0)));
+camera.lookAt(c.clone().add(vec('f', new THREE.Vector3(0, 0, -1))));
+const t0 = performance.now();
+const splat = new SplatMesh({ url: q.get('ply') });
+scene.add(splat);
+splat.initialized.then(() => {
+  document.getElementById('hud').textContent = `${splat.packedSplats.numSplats.toLocaleString()} splats, loaded in ${((performance.now() - t0) / 1000).toFixed(1)} s · WASD + mouse`;
+  window.__splatReady = true;
+}).catch((e) => { document.getElementById('hud').textContent = `error: ${e.message}`; });
+// drag to look, WASD / QE to move (Spark's own controls reset the camera to their own start pose)
+const keys = new Set();
+addEventListener('keydown', (e) => keys.add(e.code));
+addEventListener('keyup', (e) => keys.delete(e.code));
+let drag = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY]; });
+addEventListener('pointerup', () => { drag = null; });
+addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag[0], dy = e.clientY - drag[1];
+  drag = [e.clientX, e.clientY];
+  camera.rotateOnWorldAxis(camera.up, -dx * 0.004);
+  camera.rotateX(-dy * 0.004);
+});
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+window.__splat = { camera, renderer, scene, splat };
+let last = performance.now();
+renderer.setAnimationLoop(() => {
+  const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now;
+  const sp = (keys.has('ShiftLeft') ? 2 : 0.6) * dt;
+  const v = new THREE.Vector3((keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0),
+    (keys.has('KeyS') ? 1 : 0) - (keys.has('KeyW') ? 1 : 0));
+  if (v.lengthSq()) camera.translateOnAxis(v.normalize(), sp);
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

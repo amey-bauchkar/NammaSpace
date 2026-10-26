@@ -76,3 +76,21 @@ def test_labels_and_routes_work_on_an_imported_model(server, tmp_path):  # noqa:
     assert st == 200, route
     # "unverified" = a path was found and is shown as unverified (automatic floor geometry, ARCH-030)
     assert route["status"] == "unverified" and len(route["polyline_model"]) >= 2 and route["scale_basis"] == "device_tracking"
+
+
+def test_route_from_a_spot_too_close_to_a_wall_starts_from_the_nearest_clear_floor(server, tmp_path):  # noqa: F811
+    port, studio = server
+    box_room(tmp_path / "room.glb", size=(6.0, 2.8, 5.0), table=False)
+    r = mi.import_mesh(tmp_path / "room.glb", studio.store.root, title="Imported", source_note="", log=None)
+    pid, rid = r["project_id"], r["run_id"]
+    st, body = req(port, "POST", f"/api/projects/{pid}/runs/{rid}/pois", {"name": "Corner", "position": [2.0, 0.0, 1.8]}, W)
+    poi = body["pois"][0]["poi_id"]
+    # a wall at the edge of the floor: stand 5 cm from it, inside the planner's body clearance (blocked start)
+    lo = np.array(r["frame"]["start"]["position"])
+    import json
+    grid = json.loads((tmp_path / "projects" / pid / "runs" / rid / "70_frame" / "roam_grid.json").read_text())
+    x_edge = grid["origin_xz"][0] + 0.05 + 0.25          # just inside the room's west wall
+    st, route = req(port, "POST", f"/api/projects/{pid}/runs/{rid}/route", {"start": [x_edge, float(lo[2])], "poi_id": poi}, W)
+    assert st == 200, route
+    assert route["status"] == "unverified" and route["start_moved_m"] and 0 < route["start_moved_m"] <= 1.0
+    assert "nearest clear floor" in route["message"]

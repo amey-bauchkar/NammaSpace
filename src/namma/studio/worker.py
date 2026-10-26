@@ -2,6 +2,7 @@
 
     python -m namma.studio.worker ingest      --project-dir <dir> [--max-frames 200]
     python -m namma.studio.worker reconstruct --project-dir <dir> --run <run_id> --profile preview|standard
+    python -m namma.studio.worker splat       --project-dir <dir> --run <run_id>     (photoreal view, imports)
 """
 import argparse
 import json
@@ -48,16 +49,41 @@ def task_reconstruct(a):
     return 0 if st["status"] == "succeeded" else 1
 
 
+def task_splat(a):
+    from namma.studio.splat import make_photoreal
+    work = Path(a.project_dir) / "runs" / a.run / "65_splat"
+    work.mkdir(parents=True, exist_ok=True)
+    st = work / "status.json"
+    cancel = work / "CANCEL"
+    cancel.unlink(missing_ok=True)
+    state = {"status": "running", "pid": os.getpid(), "started_at": timefmt.now_iso(), "label": "Starting", "fraction": 0}
+    write_json(st, state)
+
+    def progress(label, frac):
+        state.update(label=label, fraction=round(frac, 3))
+        write_json(st, state)
+    try:
+        state["result"] = make_photoreal(a.project_dir, a.run, progress=progress, cancel_file=cancel)
+        state.update(status="done", ended_at=timefmt.now_iso(), fraction=1)
+    except Exception as e:
+        (work / "traceback.txt").write_text(traceback.format_exc(), encoding="utf-8")
+        cancelled = cancel.exists()
+        state.update(status="cancelled" if cancelled else "error", ended_at=timefmt.now_iso(),
+                     error=None if cancelled else f"{e}")
+    write_json(st, state)
+    return 0 if state["status"] == "done" else 1
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("task", choices=["ingest", "reconstruct"])
+    ap.add_argument("task", choices=["ingest", "reconstruct", "splat"])
     ap.add_argument("--project-dir", required=True)
     ap.add_argument("--run")
     ap.add_argument("--profile", default="standard")
     ap.add_argument("--max-frames", type=int, default=300)
     ap.add_argument("--stop-after")
     a = ap.parse_args(argv)
-    return task_ingest(a) if a.task == "ingest" else task_reconstruct(a)
+    return {"ingest": task_ingest, "reconstruct": task_reconstruct, "splat": task_splat}[a.task](a)
 
 
 if __name__ == "__main__":

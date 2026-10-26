@@ -2,6 +2,7 @@
 import hashlib
 import json
 import zipfile
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -113,3 +114,51 @@ def test_implausible_size_is_flagged(tmp_path):
     q = json.loads((tmp_path / "projects" / r["project_id"] / "runs" / r["run_id"] / "80_quality" /
                     "quality_report.json").read_text())
     assert "SIZE-IMPLAUSIBLE" in [w["code"] for w in q["warnings"]]
+
+
+def test_imported_space_can_be_published_and_calibrated(tmp_path):
+    """Regression: publishing / "Set scale" re-package the run; for an IMPORT that went through run_pipeline, which
+    refused it ("created with a different configuration") - every Polycam space failed with an internal error."""
+    import http.server
+    import threading
+    from namma.studio.server import Handler, Studio
+    from test_p13_studio import W, free_port, req
+    Handler.studio = Studio(tmp_path / "projects")
+    port = free_port()
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        box_room(tmp_path / "room.glb")
+        r = mesh_import.import_mesh(tmp_path / "room.glb", Handler.studio.store.root, title="Pub", source_note="", log=None)
+        base = f"/api/projects/{r['project_id']}/runs/{r['run_id']}"
+        st, body = req(port, "POST", f"{base}/publish", {}, W)
+        assert st == 200, body
+        assert body["zip_bytes"] > 0 and body["site"].endswith("index.html")
+        st, body = req(port, "POST", f"{base}/calibration", {"p1": [0, 0, 0], "p2": [1, 0, 0], "metres": 2.0}, W)
+        assert st == 200, body
+        pkg = json.loads((Path(r["project_dir"]) / "runs" / r["run_id"] / "90_package" / "scene_package.json").read_text())
+        assert pkg["scale"]["status"] == "user_distance" and abs(pkg["scale"]["metres_per_unit"] - 2.0) < 1e-9
+    finally:
+        httpd.shutdown()
+
+
+
+def test_a_slightly_tilted_export_still_has_walkable_floor(tmp_path):
+    """Regression: Polycam exports were 1.4-1.65 deg off +Y; one side of the floor rose 10-15 cm into the obstacle
+    band and the walkable-floor map had no clear cell (no route). Only the walking maps are levelled."""
+    import json as _json
+    from namma.geometry.model import load_geometry
+    from namma.navigation.grid import build_navlayer
+    box_room(tmp_path / "flat.glb", size=(5.0, 2.8, 4.0), table=False)
+    V, F, _ = mesh_import.mesh_triangles((tmp_path / "flat.glb").read_bytes())
+    a = np.radians(1.6)
+    R = np.array([[1, 0, 0], [0, np.cos(a), -np.sin(a)], [0, np.sin(a), np.cos(a)]])
+    write_vertex_color_glb(tmp_path / "tilted.glb", (V @ R.T).astype(np.float32), None, F.astype(np.uint32))
+    r = mesh_import.import_mesh(tmp_path / "tilted.glb", tmp_path / "projects", title="Tilted", source_note="",
+                                log=None, repair=False)
+    run = Path(r["project_dir"]) / "runs" / r["run_id"]
+    frame = _json.loads((run / "70_frame" / "frame.json").read_text())
+    assert abs(frame["diagnostics"]["nav_floor_tilt_deg"] - 1.6) < 0.2
+    geom, _ = load_geometry(run / "85_navgeom" / "geometry.if04.json")
+    free = np.asarray(build_navlayer(geom, "F0", res=0.05, agent_radius_m=0.25, enforce_resolution=False).free)
+    assert free.sum() * 0.05 ** 2 > 8                                                        # m2 of clear floor

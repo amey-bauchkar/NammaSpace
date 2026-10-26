@@ -155,6 +155,16 @@
       <a class="btn secondary" data-f="report" target="_blank" rel="noopener">Processing report (JSON)</a>
     </p>
     <div data-f="publish-result"></div>
+    <div data-f="splat" hidden style="margin-top:14px">
+      <h3 style="margin:0 0 6px">Photoreal view</h3>
+      <p class="small muted" style="margin:0 0 8px">Trains a Gaussian splat from the Polycam keyframes on this computer's
+        GPU (about 20 minutes) and lines it up with the model. The viewer then shows the photoreal room; the model stays
+        underneath for walking, labels and routes.</p>
+      <div data-f="splat-state"></div>
+      <div class="bar" data-f="splat-barbox" hidden><div data-f="splat-bar"></div></div>
+      <p class="row" style="margin-top:8px"><button type="button" data-f="splat-go">Make the photoreal view</button>
+        <button type="button" class="secondary" data-f="splat-cancel" hidden>Cancel</button></p>
+    </div>
   </section>
 </template>
 

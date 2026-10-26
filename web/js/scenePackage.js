@@ -40,7 +40,15 @@ export function checkScenePackage(p, label = 'scene_package.json') {
   const listed = new Set(p.files.map((x) => x.path));
   const est = p.appearance.estimated_surfaces;
   if (est && est.frame !== 'model') throw new PackageLoadError('invalid_package', `${label}: estimated surfaces must be in the model frame`);
-  for (const rel of [...p.appearance.lods.map((l) => l.path), ...(est ? [est.path] : []), p.roam, p.cameras, p.pois]) {
+  const splat = p.appearance.splat;            // IF-13 1.3.0, optional: photoreal Gaussian splat of the same room
+  if (splat) {
+    const sm = splat.to_model && splat.to_model.matrix_row_major;
+    if (!['3dgs-ply', 'spz'].includes(splat.format) || !Array.isArray(sm) || sm.length !== 16 || !sm.every(Number.isFinite)) {
+      throw new PackageLoadError('invalid_package', `${label}: splat needs format 3dgs-ply or spz and a 16-number to_model`);
+    }
+  }
+  for (const rel of [...p.appearance.lods.map((l) => l.path), ...(est ? [est.path] : []), ...(splat ? [splat.path] : []),
+    p.roam, p.cameras, p.pois]) {
     if (!listed.has(rel)) throw new PackageLoadError('invalid_package', `${label}: ${rel} is not listed in files[]`);
     if (rel.includes('..') || rel.startsWith('/') || rel.includes('\\')) throw new PackageLoadError('invalid_package', `${label}: unsafe path ${rel}`);
   }
@@ -103,6 +111,8 @@ export async function loadScenePackage(url, { fetchFn, onProgress } = {}) {
   const lods = [...pkg.appearance.lods].sort((a, b) => b.lod - a.lod);
   return { pkg, base: base.href, cameras: cameras.cameras || [], roam, pois, quality, lods,
     estimated: pkg.appearance.estimated_surfaces || null,
+    splat: pkg.appearance.splat || null,
+    fetchSplat: (progress) => getVerified(pkg.appearance.splat.path, progress),
     fetchLod: (lod, progress) => getVerified(lod.path, progress || onProgress),
     fetchEstimated: () => getVerified(pkg.appearance.estimated_surfaces.path) };
 }

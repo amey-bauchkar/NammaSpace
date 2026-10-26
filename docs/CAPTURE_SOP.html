@@ -8,15 +8,38 @@ th, td { border: 1px solid #c8ccd6; padding: 2pt 4pt; vertical-align: top; text-
 code { font: 8.4pt Consolas, monospace; background: #f3f4f7; padding: 0 2pt; }
 pre { font: 8pt Consolas, monospace; background: #f3f4f7; padding: 4pt; white-space: pre-wrap; }
 img { max-width: 100%; } .small { font-size: 8pt; color: #444; }
-</style></head><body><h1>Capture SOP – photographing a room for Namma Space</h1>
+</style></head><body><h1>Capture SOP – capturing a room for Namma Space</h1>
 <p><strong>Who this is for:</strong> anyone with a smartphone. No measuring tape, markers or 3D skills are needed.
-<strong>Time:</strong> about 10–15 minutes for one room. <strong>Output:</strong> 60–150 photos, or one 1–3 minute video.</p>
+<strong>Two routes:</strong> <strong>A. Polycam scan</strong> (recommended; iPhone/iPad with LiDAR) – about 5–10 minutes, gives a metric model
+and the photoreal view; <strong>B. Photos or video</strong> (any phone) – about 10–15 minutes, 60–150 photos or one 1–3 minute video.</p>
 <blockquote>
-<p>Status of this SOP: it is derived from the reconstruction method (structure from motion + multi-view
-stereo) and from Phase 12–13 measurements on public datasets. It has <strong>not yet been validated with the
-team's own iPhone 12 capture</strong> (pending validation item Q-T-11). The app's capture check enforces the
-limits written here.</p>
+<p>Status: route A was used for the team's own room (iPhone 14, 2026-10-25; 218 keyframes) and the lessons from that
+scan are written into it. Route B is derived from the reconstruction method and Phase 12–13 measurements on
+public datasets and has not been validated with the team's own phone (Q-T-11). Section 1 applies to both routes.</p>
 </blockquote>
+<h2>A. Polycam scan (recommended)</h2>
+<p><strong>Settings:</strong> Polycam → <strong>LiDAR</strong> mode (Room/Space). Lights on. Section 1 below (lights, clean lens, nothing moving,
+privacy) applies too.</p>
+<p><strong>How to move</strong> (the photoreal view is learned from the photos Polycam takes while you scan, so <em>what the phone
+looks at</em> decides the quality):</p>
+<ol>
+<li>Start in a corner, phone at chest height, and walk <strong>slowly</strong> (about 30 cm per second) along the walls.</li>
+<li><strong>Point the phone straight at each wall from about 1–1.5 m</strong> and walk along it, including plain white walls and
+   the wall beside every door. <em>Lesson from our room: a wall the phone only saw from across the room or at a steep
+   angle came out smeared up close, even though the shape was right.</em></li>
+<li>Do one lap with the phone <strong>tilted down</strong> so the <strong>floor</strong> near the walls and around furniture is covered
+   (needed for walking and routes), and one lap <strong>tilted up</strong> for the ceiling line.</li>
+<li>Go <strong>around</strong> large furniture (bed, wardrobe, table), not just past it, so it is seen from several sides.</li>
+<li>Do not turn on the spot and do not whip the phone around; keep every part of the room in view for a few
+   seconds. Avoid pointing into bright windows for long.</li>
+<li>Finish, let Polycam process, and check the preview for holes; rescan a missed area before leaving the room.</li>
+</ol>
+<p><strong>Export:</strong> Export → <strong>GLTF</strong> (the model) <strong>and Images</strong> (keyframe photos with camera poses – needed for the
+photoreal view). Save both to Files or AirDrop them.</p>
+<p><strong>Into the Studio:</strong> <strong>New space from Polycam</strong> → drop both files (or scan the Studio's QR code on the phone →
+<strong>Import a Polycam export</strong>). Then on the space's card, <strong>Make the photoreal view</strong> (NVIDIA GPU; ~40 min for
+~200 photos). Scale is metric from the phone's tracking; check one known length with the measuring tool (M).</p>
+<h2>B. Photos or video (any phone)</h2>
 <h2>1. Before you start (1 minute)</h2>
 <table>
 <thead>
@@ -33,6 +56,10 @@ limits written here.</p>
 <tr>
 <td>Use the main (1×) camera; do not zoom; keep the same phone for the whole room</td>
 <td>Each lens / zoom needs its own calibration</td>
+</tr>
+<tr>
+<td>Hold the phone <strong>sideways (landscape) for every photo</strong>; do not switch between upright and sideways</td>
+<td>Mixed orientations are calibrated photo by photo, which is less stable (the capture check warns: CAP-MIXED-ORIENTATION)</td>
 </tr>
 <tr>
 <td><strong>iPhone:</strong> Settings › Camera › Formats › <strong>Most Compatible</strong></td>
@@ -52,7 +79,7 @@ limits written here.</p>
 </tr>
 </tbody>
 </table>
-<h2>2. Photos (recommended)</h2>
+<h2>2. Photos (recommended for route B)</h2>
 <ol>
 <li><strong>Start at a corner.</strong> Stand about one step in from the wall and face <em>into</em> the room.</li>
 <li><strong>Walk along the walls.</strong> Take a photo, take <strong>one small step (about 0.5 m)</strong> sideways, take the next photo.
@@ -67,12 +94,19 @@ limits written here.</p>
    always include an edge, a picture, furniture or a corner in the frame.</li>
 <li>Typical counts: small room 40–80 photos, living room 80–150. The app accepts 10–300 per project.</li>
 </ol>
-<h2>3. Video (alternative)</h2>
+<h2>3. Video (alternative – photos are more reliable)</h2>
+<blockquote>
+<p>Evidence (Phase 13): two public iPad room scans recorded with fast sweeps and turns on the spot could not be
+reconstructed correctly by the CPU pipeline (only about a third of the frames could be placed, and the placed
+ones were geometrically wrong); the Studio now stops such runs with a clear message. Slow, steady photos of
+the same kind of room worked. Use video only if you can keep it slow.</p>
+</blockquote>
 <ul>
 <li>One continuous take, <strong>1–3 minutes</strong>, walking <strong>slowly (about 30 cm per second)</strong> along the walls with the
   same rules (face into the room, floor visible, no fast turns).</li>
-<li>Turn in place slowly; never whip the phone around.</li>
-<li>The app extracts up to 200 sharp frames automatically (2 per second, sharpest of each group).</li>
+<li><strong>Never turn on the spot.</strong> Turning without moving gives the software no depth information; walk a curve instead.</li>
+<li>Keep the phone moving smoothly; never whip it around.</li>
+<li>The app extracts up to 300 sharp frames automatically (3 per second, the sharper of each pair) for camera tracking, and builds the detailed surface from an evenly spread subset of them.</li>
 <li>One video per project; do not mix photos and video in the same project.</li>
 </ul>
 <h2>4. Upload and check (in the Studio)</h2>

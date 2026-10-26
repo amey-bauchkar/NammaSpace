@@ -1,6 +1,6 @@
 # Namma Space – Technical Abstract (Round 1: 3D Reconstruction & Roaming)
 
-Techfest IIT Bombay 2026–27 · Team Namma Space · Draft generated 2026-10-11 from the repository evidence.
+Techfest IIT Bombay 2026–27 · Team Namma Space · Draft updated 2026-10-26 from the repository evidence.
 All performance and accuracy figures below come from recorded runs (files named in each table); none are estimates.
 
 ## 1. Problem and scope
@@ -8,8 +8,14 @@ All performance and accuracy figures below come from recorded runs (files named 
 Namma Space turns **ordinary phone photos or one video of an indoor space** into a **photo-textured 3D
 model that anyone can walk through in a web browser**, without installing software and without manual 3D
 modelling (OFF-14…16, OFF-23/24). Round 1 asks for an SOP, a reconstruction pipeline and a free-roaming web
-viewer. Our design constraint is the team's real hardware: a laptop with an **Intel Core 5 120U, 16 GB RAM,
-integrated graphics and no CUDA**, so every core step runs on the CPU, locally, with no paid API or cloud service.
+viewer. Everything runs **locally on the team's own laptops**, with no paid API or cloud service: the photo
+pipeline was built and evaluated on an Intel Core 5 120U (16 GB, integrated graphics, no CUDA) and uses an NVIDIA
+GPU when present (HP Victus, RTX 4050 Laptop 6 GB: COLMAP CUDA, Gaussian-splat training).
+
+**Own home (OFF-34).** The team's room was captured with an iPhone 14 in **Polycam** (LiDAR) following our SOP and
+imported into the Studio, which repairs the scan, adds walking, labels, routes and measuring, and trains a
+**photoreal Gaussian-splat view** from the same capture (§3a). Two routes therefore exist: Polycam import (primary,
+LiDAR phones) and plain photos/video (any phone, §3).
 
 ## 2. System architecture
 
@@ -43,8 +49,25 @@ integrated graphics and no CUDA**, so every core step runs on the CPU, locally, 
 
 Two processing profiles: **Preview** (fast, 1600 px) and **Standard** (full-resolution photos with a memory cap, two levels of detail).
 
+## 3a. Polycam route and photoreal view (own-home capture)
+
+| Stage | Method | Result on the team's room (iPhone 14, 218 keyframes) |
+|---|---|---|
+| Import | GLTF + Images export; zip-bomb and path checks; floating fragments removed; texture LOD ≤ 2048 px | 50 k triangles, metric scale from the phone's tracking |
+| Repair | Ceiling plane parallel to the floor, hanging debris removed, holes closed, backing sheets behind outer walls, texture gutters padded | Black holes and wavy ceiling fixed automatically (~4 s) |
+| Walking maps | Floor found on the mesh; walkable map built on heights above the fitted floor plane (the export was 1.65° off level, which had hidden all clear floor) | Routes found with ≥ 0.28 m clearance |
+| Camera poses | Phone (ARKit) poses refined by COLMAP and fitted back to the phone's metric frame | 188 of 218 photos kept |
+| Photoreal splat | gsplat 1.5.3, MCMC, 600 k Gaussians, 30 k steps, per-photo pose and exposure correction, mesh depth guide, flat-wall prior | Held-out photos: **PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858** over the first version |
+| Line-up | Splat ↔ mesh: yaw search then ICP on solid Gaussians | 55 % within 5 cm |
+| Compression | Own SPZ v2 encoder; Gaussians under 2 % opacity dropped | **149 MB → 8.2 MB**; renders within 33–36 dB PSNR of the original |
+
+Each recipe change was kept only if it scored at least as well on photos held out of training.
+
 ## 4. Capture SOP (summary of docs/CAPTURE_SOP.md)
 
+**Route A, Polycam (used for our room):** LiDAR mode; walk slowly along every wall pointing the phone straight at it
+from 1–1.5 m (a wall seen only from across the room smears in the photoreal view); one lap tilted down for the floor,
+one up for the ceiling line; go around large furniture; export GLTF + Images. **Route B, photos:**
 Lights on; main 1× lens; JPEG ("Most Compatible") on iPhone; walk along the walls facing into the room, one
 step (~0.5 m) between photos, about two-thirds overlap; floor in the lower third of every photo; a second,
 lower lap around large furniture; 3–4 photos while passing each doorway; always include an edge or object
@@ -54,6 +77,10 @@ every warning.
 
 ## 5. Web viewer
 
+The viewer opens on the **photoreal view** (Spark 2.4.0 renders the splat inside the same three.js scene); the
+mesh stays underneath for collision, labels, routes and measuring, and is shown automatically when the camera is
+within ~0.7 m of a surface (where a splat trained from further away smears). A **measuring tool** (M) gives chained
+lengths with across/height components in metres.
 First-person controls: click to capture the mouse (pointer lock) or drag to look; W A S D / arrows to walk;
 Shift to run; F toggles fly mode; R resets to the start view; [ ] jump through the original photo
 viewpoints. Walking keeps the camera at the capture eye height inside the free space connected to where the
@@ -73,11 +100,12 @@ Ground truth: ETH3D laser scans and DSLR poses; ARKitScenes ARKit trajectory, Li
 | eth3d_delivery_area (held-out, preview, frozen) | 44/44 | 14.8 mm | 13.0 mm | 0.61 / 0.71 | 0.61 | 4/12 (8) | 28.6 min · 4.0 GB |
 | eth3d_office (held-out, preview, frozen) | 26/26 | 4.8 mm | 6.8 mm | 0.30 / 0.40 | 0.00 | 0/12 (12) | 7.5 min · 1.9 GB |
 | eth3d_office (held-out, standard, frozen) | 26/26 | 5.3 mm | 6.0 mm | 0.33 / 0.38 | 0.00 | 0/12 (12) | 34.2 min · 6.8 GB |
+| eth3d_delivery_area (dev, standard, earlier) | 44/44 | 13.0 mm | 11.0 mm | 0.66 / 0.76 | 0.62 | 4/12 (8) | 58.5 min · 11.3 GB |
 | eth3d_kicker (dev, standard, earlier) | 30/31 | 7.7 mm | 6.3 mm | 0.49 / 0.59 | 0.34 | 0/12 (12) | 51.1 min · 7.6 GB |
 | eth3d_kicker (dev, standard_fullres, earlier) | 30/31 | 7.5 mm | 6.4 mm | 0.50 / 0.60 | 0.35 | 0/12 (12) | 51.3 min · 6.9 GB |
 | eth3d_pipes (dev, preview, earlier) | 14/14 | 5.1 mm | 8.7 mm | 0.29 / 0.45 | 0.00 | 0/12 (12) | 3.8 min · 1.9 GB |
 | tum_fr3_office_sample (dev, preview, earlier) | 60/61 | 7.4 mm | – | – / – | – | not measurable | 4.8 min · 0.6 GB |
-| tum_fr3_office_sample (dev, preview, final) | 61/61 | 8.6 mm | – | – / – | – | not measurable | 5.7 min · 0.6 GB |
+| tum_fr3_office_sample (dev, preview, earlier) | 61/61 | 8.6 mm | – | – / – | – | not measurable | 5.7 min · 0.6 GB |
 
 **Failed runs (kept on record, not hidden):** arkitscenes-41125700-dev (preview, stopped in mesh): Unexpected error in Building the surface mesh: [WinError 2] The system cannot …; arkitscenes-41125700-dev (preview, stopped in frame): Unexpected error in Finding the floor and orientation: roam grid too large …; eth3d-delivery-area-held-out (standard, stopped in texture): Painting photo textures onto the mesh took longer than allowed.; eth3d-kicker-dev (standard, stopped in sfm): Placing cameras (structure from motion) failed: colmap_exhaustive_matcher …; eth3d-pipes-dev (preview, stopped in undistort): Correcting lens distortion failed: colmap_image_undistorter failed with exit ….
 
@@ -89,8 +117,11 @@ Criteria (Phase 12, unchanged): all photos placed; camera error ≤ 50 mm; dense
 
 ## 7. Limitations and next steps
 
-- **No own-home capture yet.** Round 1 asks for the team's own home (OFF-34); every figure above uses public datasets.
-  The SOP is built for the iPhone 12 but has not been validated with it.
+- **Own home via Polycam.** The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
+  the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
+  only saw from far away smears up close (the viewer then shows the mesh); the SOP now asks for wall passes at 1–1.5 m.
+- **Photoreal training needs an NVIDIA GPU** (~40 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
+  view is used.
 - **Completeness depends on the room.** Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);
   plain white walls, desks and dark floors stay partly missing (held-out office 0.30–0.33). Missing floor is shown
   by a labelled guide grid and reported, never filled with invented geometry.
@@ -100,7 +131,7 @@ Criteria (Phase 12, unchanged): all photos placed; camera error ≤ 50 mm; dense
   known length. The fallback assumption (1.4 m phone height) was off by −5 % to +90 %, so it is never shown as metric.
 - **Navigation is not validated.** No scene meets the route criteria (best: 4 routes, 0 collisions, 8 pairs missed);
   walking paths are shown only as *unverified* (Round 2: floor completion with human verification, ARCH-030).
-- **Compute.** CPU only: Preview 4–40 s per image, Standard 80–100 s per 24 MP photo. A 44-photo hall at Standard
+- **Compute (photo route).** CPU only: Preview 4–40 s per image, Standard 80–100 s per 24 MP photo. A 44-photo hall at Standard
   needed 11.2 GB and exceeded the time limit (failed, kept); Standard is now capped at 4 M faces and the Studio
   advises Preview first above 40 photos.
 - **Licences.** OpenMVS is AGPL-3.0 (used unmodified as an external program, never bundled); ETH3D and ARKitScenes
@@ -110,6 +141,7 @@ Criteria (Phase 12, unchanged): all photos placed; camera error ≤ 50 mm; dense
 
 COLMAP 4.2.1 (BSD-3-Clause), OpenMVS 2.4.0 (AGPL-3.0; used as an unmodified external program, never
 bundled), three.js 0.186.1 (MIT), FFmpeg (external tool), NumPy / SciPy / Shapely (BSD), OpenCV (Apache-2.0),
-Pillow (MIT-CMU), jsonschema (MIT), psutil (BSD). Datasets: ETH3D (Schöps et al., CVPR 2017; CC BY-NC-SA 4.0),
+Pillow (MIT-CMU), jsonschema (MIT), psutil (BSD), PyTorch (BSD-3-Clause), gsplat 1.5.3 (Apache-2.0),
+Spark 2.4.0 (MIT). Polycam (third-party capture app; its exports are the input of the import route). Datasets: ETH3D (Schöps et al., CVPR 2017; CC BY-NC-SA 4.0),
 ARKitScenes (Baruch et al., NeurIPS 2021 D&B; Apple non-commercial licence), TUM RGB-D (Sturm et al.,
 IROS 2012; CC BY 4.0). Full notices: THIRD_PARTY_NOTICES.md.

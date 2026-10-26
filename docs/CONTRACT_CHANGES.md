@@ -146,3 +146,18 @@ All-zero SHA-256 values in the examples are **placeholders**. A test confirms th
 - Compatibility: no field changed meaning or became required; every 1.0.0 / 1.1.0 package still validates; viewers
   accept any 1.x. Source: `architecture/contracts.py` → regenerated `architecture/schemas/IF-13.schema.json` (only
   that file changed); all 50 contract examples behave as before.
+
+## IF-13 1.3.0 (2026-10-25) - optional photoreal splat (additive)
+
+- `appearance.splat` (optional): a 3D Gaussian splat of the same room as a standard 3DGS `.ply`
+  (`format: "3dgs-ply"`, `path`, `bytes`, `sha256`, `splats`, `method`) with its own rigid `to_model`
+  (row-major 4x4, splat frame -> model frame, plus the line-up `fit`). The textured mesh (`lods`) is unchanged and
+  remains the geometry for walking, picking, routes and measuring; viewers may draw either.
+- Producer: `namma.studio.splat` (photoreal view of an imported Polycam scan) via `package.py`, which writes
+  `contract_version` 1.3.0 only when a splat is present; every other package stays 1.2.0.
+- Consumers: `web/js/scenePackage.js` checks the field (format, 16 finite numbers, listed in `files[]`, safe path) and
+  fetches the `.ply` through the same SHA-256 check as the meshes; `web/js/sceneViewer.js` draws it with Spark and
+  hides (does not remove) the mesh; "Show mesh" switches back.
+- Compatibility: no field changed meaning or became required; all 1.0-1.2 packages validate. Source:
+  `architecture/contracts.py` -> regenerated `architecture/schemas/IF-13.schema.json` only; all 50 contract examples
+  behave as before.

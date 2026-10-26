@@ -477,6 +477,8 @@ SCHEMAS["IF-11"]["properties"]["contract_version"] = {"type": "string", "pattern
 # IF-01..IF-12 are unchanged.
 # 1.2.0 (additive): scale.status / navigation.scale_basis "device_tracking" for meshes imported from a phone LiDAR
 # scanning app, whose units are metres from the device's tracking (docs/CONTRACT_CHANGES.md, section 4).
+# 1.3.0 (additive): optional appearance.splat - a photoreal 3D Gaussian splat of the same room, with its own rigid
+# transform to the model frame; the textured mesh stays the geometry for walking, picking and navigation.
 _STUDIO_POI = {
     "type": "object", "required": ["poi_id", "name", "position", "created_at", "origin"],
     "properties": {
@@ -554,6 +556,26 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
                                               "faces": {"type": "integer", "minimum": 0}, "frame": {"const": "model"},
                                               "method": {"type": "string"}, "fit": {"type": "object"},
                                               "planes": {"type": "array", "items": {"type": "object"}}},
+                               "additionalProperties": False},
+                           "splat": {
+                               "type": "object",
+                               "required": ["path", "format", "bytes", "sha256", "to_model", "splats", "method"],
+                               "description": "1.3.0, optional: photoreal 3D Gaussian splat of the same room (standard "
+                                              "3DGS .ply or compact Niantic SPZ v2). to_model maps the splat's own frame to the model frame "
+                                              "(rigid, row-major 4x4). The textured mesh (lods) remains the geometry "
+                                              "for walking, picking and navigation; viewers may show either.",
+                               "properties": {"path": {"type": "string"}, "format": {"enum": ["3dgs-ply", "spz"]},
+                                              "bytes": {"type": "integer", "minimum": 1},
+                                              "sha256": {"$ref": "#/$defs/sha256"},
+                                              "splats": {"type": "integer", "minimum": 1},
+                                              "to_model": {"type": "object", "required": ["matrix_row_major", "method"],
+                                                           "properties": {"matrix_row_major": {
+                                                               "type": "array", "minItems": 16, "maxItems": 16,
+                                                               "items": {"type": "number"}},
+                                                               "method": {"type": "string"},
+                                                               "fit": {"type": "object"}},
+                                                           "additionalProperties": False},
+                                              "method": {"type": "string"}},
                                "additionalProperties": False}},
                        "additionalProperties": False},
         "eye_height_units": {"type": "number", "exclusiveMinimum": 0,

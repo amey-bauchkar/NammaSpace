@@ -80,8 +80,11 @@ def results():
     return "\n".join(L)
 
 
-LIMITS = """- **No own-home capture yet.** Round 1 asks for the team's own home (OFF-34); every figure above uses public datasets.
-  The SOP is built for the iPhone 12 but has not been validated with it.
+LIMITS = """- **Own home via Polycam.** The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
+  the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
+  only saw from far away smears up close (the viewer then shows the mesh); the SOP now asks for wall passes at 1–1.5 m.
+- **Photoreal training needs an NVIDIA GPU** (~40 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
+  view is used.
 - **Completeness depends on the room.** Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);
   plain white walls, desks and dark floors stay partly missing (held-out office 0.30–0.33). Missing floor is shown
   by a labelled guide grid and reported, never filled with invented geometry.
@@ -91,7 +94,7 @@ LIMITS = """- **No own-home capture yet.** Round 1 asks for the team's own home 
   known length. The fallback assumption (1.4 m phone height) was off by −5 % to +90 %, so it is never shown as metric.
 - **Navigation is not validated.** No scene meets the route criteria (best: 4 routes, 0 collisions, 8 pairs missed);
   walking paths are shown only as *unverified* (Round 2: floor completion with human verification, ARCH-030).
-- **Compute.** CPU only: Preview 4–40 s per image, Standard 80–100 s per 24 MP photo. A 44-photo hall at Standard
+- **Compute (photo route).** CPU only: Preview 4–40 s per image, Standard 80–100 s per 24 MP photo. A 44-photo hall at Standard
   needed 11.2 GB and exceeded the time limit (failed, kept); Standard is now capped at 4 M faces and the Studio
   advises Preview first above 40 photos.
 - **Licences.** OpenMVS is AGPL-3.0 (used unmodified as an external program, never bundled); ETH3D and ARKitScenes

@@ -12,6 +12,8 @@ Package layout (<run>/90_package/):
 import shutil
 from pathlib import Path
 
+import numpy as np
+
 from namma import PROJECT_ROOT
 from namma.contracts.semantic import validate_document
 from namma.core import timefmt
@@ -19,6 +21,7 @@ from namma.core.issues import errors_only
 from namma.core.jsonio import load_strict, sha256_file, write_json
 
 IF13_VERSION = "1.2.0"         # 1.2.0: scale status "device_tracking" (imported phone-scan meshes)
+IF13_VERSION_SPLAT = "1.3.0"   # 1.3.0: optional appearance.splat (photoreal Gaussian splat); written only when present
 WEB_FILES = ["viewer.html", "app.css", "favicon.svg", "js", "vendor"]
 
 
@@ -43,6 +46,22 @@ def build_scene_package(ctx, out):
         shutil.copy2(ctx.dir("texture") / t["file"], dst)
         lods.append({"lod": t["lod"], "path": f"scene/{t['file']}", "format": "glb", "bytes": dst.stat().st_size,
                      "sha256": sha256_file(dst), "faces": t.get("triangles")})
+    # photoreal splat (namma.studio.splat): 60_texture/splat.json + the .ply, in the MESH frame's terms
+    splat = None
+    sj = ctx.dir("texture") / "splat.json"
+    if sj.exists():
+        sd = load_strict(sj)
+        src = ctx.dir("texture") / sd["file"]
+        if src.exists():
+            dst = out / "scene" / sd["file"]
+            shutil.copy2(src, dst)
+            Tm = np.asarray(frame["T_model_from_sfm"], float) @ np.asarray(sd["T_mesh_from_splat"], float)
+            splat = {"path": f"scene/{sd['file']}", "format": "spz" if sd["file"].endswith(".spz") else "3dgs-ply",
+                     "bytes": dst.stat().st_size,
+                     "sha256": sha256_file(dst), "splats": int(sd["splats"]), "method": sd["method"],
+                     "to_model": {"matrix_row_major": [float(v) for v in Tm.ravel()],
+                                  "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
+                                  "fit": sd.get("fit", {})}}
     (out / "views").mkdir()
     shutil.copy2(ctx.dir("frame") / "cameras.json", out / "views" / "cameras.json")
     (out / "nav").mkdir()
@@ -104,7 +123,7 @@ def build_scene_package(ctx, out):
             files.append({"path": p.relative_to(out).as_posix(), "sha256": sha256_file(p), "bytes": p.stat().st_size})
     T = frame["T_model_from_sfm"]
     p1, p99 = frame["bounds_p1_p99"]
-    pkg = {"contract": "IF-13", "contract_version": IF13_VERSION,
+    pkg = {"contract": "IF-13", "contract_version": IF13_VERSION_SPLAT if splat else IF13_VERSION,
            "package_id": f"pkg-{ctx.project_dir.name}-{ctx.run_id}",
            "project": {"project_id": ctx.project_dir.name, "title": project.get("title", ctx.project_dir.name)},
            "run_id": ctx.run_id, "created_at": timefmt.now_iso(),
@@ -117,7 +136,8 @@ def build_scene_package(ctx, out):
                           "to_model": {"matrix_row_major": [float(v) for row in T for v in row],
                                        "method": "rigid SfM -> model frame (floor plane / camera orientation), "
                                                  "see 70_frame/frame.json"},
-                          "lods": lods, **({"estimated_surfaces": estimated} if estimated else {})},
+                          "lods": lods, **({"estimated_surfaces": estimated} if estimated else {}),
+                          **({"splat": splat} if splat else {})},
            "eye_height_units": frame["eye_height_units"],
            "bounds": {"min": p1, "max": p99},
            "start_view": {"position": frame["start"]["position"], "target": frame["start"]["target"],

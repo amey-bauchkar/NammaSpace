@@ -520,6 +520,48 @@ async function showResult(pid, rid) {
       out.append(el('div', { class: 'callout bad' }, `Publishing failed: ${e.message}`));
     }
   };
+  if (imported) showSplat(pid, rid);
+}
+
+// photoreal view (Gaussian splat) of an imported Polycam scan: start, follow, cancel
+async function showSplat(pid, rid) {
+  const url = `/projects/${pid}/runs/${rid}/splat`;
+  let timer = null;
+  const paint = (s) => {
+    if (!f('splat')) { clearInterval(timer); return false; }
+    f('splat').hidden = false;
+    const running = ['running', 'starting'].includes(s.status);
+    f('splat-barbox').hidden = !running;
+    f('splat-bar').style.width = `${Math.round(100 * (s.fraction || 0))}%`;
+    f('splat-cancel').hidden = !running;
+    f('splat-go').hidden = running || !s.available;
+    f('splat-go').textContent = s.status === 'done' ? 'Make it again' : 'Make the photoreal view';
+    const box = f('splat-state');
+    box.innerHTML = '';
+    if (running) box.append(el('p', { class: 'small' }, `${s.label || 'Working'}… ${Math.round(100 * (s.fraction || 0))}%`));
+    else if (s.status === 'done') {
+      const r = s.result || {};
+      box.append(el('div', { class: 'callout ok' }, `Ready: ${(r.splats || 0).toLocaleString()} splats from ${r.keyframes} photos; `
+        + `${Math.round(100 * ((r.fit || {}).within_5cm || 0))}% lies within 5 cm of the model. Open the 3D walkthrough to see it.`));
+    } else if (s.status === 'error') box.append(el('div', { class: 'callout bad' }, s.error || 'Failed.'));
+    else if (s.status === 'cancelled') box.append(el('p', { class: 'small muted' }, 'Cancelled.'));
+    else if (!s.available) box.append(el('p', { class: 'small muted' }, s.unavailable_reason || 'Not available for this space.'));
+    return running;
+  };
+  const poll = async () => {
+    try { if (!paint(await api(url))) clearInterval(timer); } catch (e) { clearInterval(timer); }
+  };
+  f('splat-go').onclick = async () => {
+    try {
+      await api(url, { method: 'POST', body: '{}' });
+      clearInterval(timer);
+      timer = setInterval(poll, 3000);
+      poll();
+    } catch (e) { f('splat-state').replaceChildren(el('div', { class: 'callout bad' }, e.message)); }
+  };
+  f('splat-cancel').onclick = () => api(`${url}/cancel`, { method: 'POST', body: '{}' }).then(poll);
+  const s = await api(url);
+  if (paint(s)) timer = setInterval(poll, 3000);
 }
 
 // ------------------------------------------------------------------ router

@@ -26,7 +26,7 @@
     <div class="hud"><span class="chip" id="hud-mode">walk</span><span class="chip" id="hud-fps">– fps</span><span class="chip" id="hud-lod" hidden></span></div>
     <div class="hint" id="hint">
       <span><kbd>Click</kbd> look around</span><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</span>
-      <span><kbd>Shift</kbd> faster</span><span><kbd>F</kbd> fly / walk</span><span><kbd>R</kbd> reset view</span><span><kbd>Esc</kbd> release mouse</span>
+      <span><kbd>Shift</kbd> faster</span><span><kbd>F</kbd> fly / walk</span><span><kbd>R</kbd> reset view</span><span><kbd>M</kbd> measure</span><span><kbd>Esc</kbd> release mouse</span>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
     <div class="touchpad" id="touchpad" aria-hidden="true">
@@ -59,6 +59,7 @@
           <dt>Faster</dt><dd>Hold <kbd>Shift</kbd></dd>
           <dt>Fly / walk</dt><dd><kbd>F</kbd>; while flying <kbd>E</kbd>/<kbd>Space</kbd> up, <kbd>Q</kbd>/<kbd>C</kbd> down</dd>
           <dt>Reset view</dt><dd><kbd>R</kbd> returns to the starting viewpoint</dd>
+          <dt>Measure</dt><dd><kbd>M</kbd> (or the Measure button), then click points; <kbd>Esc</kbd> starts a new length</dd>
           <dt>Photo viewpoints</dt><dd><kbd>[</kbd> and <kbd>]</kbd> step through the original photo positions</dd>
           <dt>Release mouse</dt><dd><kbd>Esc</kbd></dd>
         </dl>
@@ -105,9 +106,17 @@
         <button type="button" class="secondary" id="cam-next" aria-label="Next photo viewpoint">▶</button></div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap"><button type="button" class="secondary" id="reset-view">Reset view</button>
         <button type="button" class="secondary" id="mode-toggle">Fly mode</button>
+        <button type="button" class="secondary" id="measure-btn" title="Measure lengths (M)">Measure</button>
         <button type="button" class="secondary" id="detail-toggle" hidden>Full detail</button>
+        <button type="button" class="secondary" id="splat-toggle" hidden>Show mesh</button>
         <button type="button" class="secondary" id="guide-toggle" hidden>Hide floor guide</button>
         <button type="button" class="secondary" id="estimated-toggle" hidden>Hide estimated surfaces</button></div>
+    </section>
+    <section id="measure-panel" hidden>
+      <h2>Measurements</h2>
+      <p class="small muted" id="measure-hint"></p>
+      <ol class="small" id="measure-list"></ol>
+      <div class="row"><button type="button" class="secondary" id="measure-clear">Clear</button></div>
     </section>
     <section id="studio-tools" hidden>
       <h2>Studio tools</h2>

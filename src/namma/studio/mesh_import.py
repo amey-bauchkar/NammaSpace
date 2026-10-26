@@ -202,6 +202,36 @@ def model_transform(P, up, floor_h, floor_mask):
     return T
 
 
+def floor_relative(pm, nm, band_m=0.2, max_tilt_deg=5.0, iters=300, tol=0.01, seed=0):
+    """Heights above the actual floor plane, for the walkable-floor map ONLY (the mesh, splat and view are untouched).
+    Polycam exports were 1.4-1.65 deg off +Y: across a 4 m room one side of the floor sits 10-15 cm up - in the
+    obstacle band, so the map had no clear floor and no route. -> (points with y above the floor plane, tilt_deg)"""
+    m = (np.abs(pm[:, 1]) < band_m) & (np.abs(nm[:, 1]) > 0.9)
+    if m.sum() < 200:
+        return pm, 0.0
+    A = np.c_[pm[m][:, 0], pm[m][:, 2], np.ones(m.sum())]
+    y = pm[m][:, 1]
+    rng = np.random.default_rng(seed)
+    best, best_n = None, -1
+    for _ in range(iters):                                  # RANSAC plane y = a x + b z + c
+        k = rng.choice(len(y), 3, replace=False)
+        try:
+            c = np.linalg.solve(A[k], y[k])
+        except np.linalg.LinAlgError:
+            continue
+        n_in = int((np.abs(A @ c - y) < tol).sum())
+        if n_in > best_n:
+            best, best_n = c, n_in
+    inl = np.abs(A @ best - y) < tol
+    c = np.linalg.lstsq(A[inl], y[inl], rcond=None)[0]
+    tilt = float(np.degrees(np.arctan(np.hypot(c[0], c[1]))))
+    if tilt > max_tilt_deg:
+        return pm, 0.0
+    out = pm.copy()
+    out[:, 1] -= c[0] * pm[:, 0] + c[1] * pm[:, 2] + c[2]
+    return out, round(tilt, 3)
+
+
 def choose_start(pm, eye, res):
     """Observed floor cell with the largest clearance from anything in the body band -> (xz, look direction)."""
     x0, z0 = pm[:, 0].min() - res, pm[:, 2].min() - res
@@ -274,11 +304,12 @@ def import_mesh(source, projects_root, *, title, source_note, app="Polycam", dev
     floor_mask = (np.abs(P @ up - floor_h) < 0.03) & (np.abs(N @ up) > 0.9)
     T = model_transform(P, up, floor_h, floor_mask)
     pm = modelframe.transform_points(T, P)
+    pn, fdiag["nav_floor_tilt_deg"] = floor_relative(pm, N @ T[:3, :3].T)   # walking maps: heights above the floor
     eye = float(eye_height_m)
     res = eye / 32
-    start_xz, look, sdiag = choose_start(pm, eye, res)
+    start_xz, look, sdiag = choose_start(pn, eye, res)
     cams_model = np.array([[start_xz[0], eye, start_xz[1]]])
-    grid, gstats, masks = modelframe.roam_grid(pm, cams_model, eye)
+    grid, gstats, masks = modelframe.roam_grid(pn, cams_model, eye)
     floor_cov = gstats["observed_floor_in_footprint_cells"] / max(1, gstats["footprint_cells"])
     log(f"mesh: {mstats['triangles']:,} triangles, {area:.1f} m2 surface; floor detected {floor_detected}; "
         f"start clearance {sdiag['clearance_m']} m")
@@ -388,7 +419,7 @@ def import_mesh(source, projects_root, *, title, source_note, app="Polycam", dev
     frame_doc = {"frame_id": f"site:{run_id}", "units": "m", "handedness": "right", "up_axis": "+Y",
                  "datum": f"model frame of run {run_id} (metres from {app}); origin on the floor"}
     try:
-        doc, diag = extract_if04(pm, geometry_id=f"geom-{run_id}", run_id=run_id, frame=frame_doc, provenance=prov,
+        doc, diag = extract_if04(pn, geometry_id=f"geom-{run_id}", run_id=run_id, frame=frame_doc, provenance=prov,
                                  res=nav_cfg["res_m"], floor_tol=nav_cfg["floor_tol_m"], obstacle_min_pts=nav_cfg["obstacle_min_pts"])
         write_json(nd / "geometry.if04.json", doc)
         errs = errors_only(validate_document(doc, "IF-04"))

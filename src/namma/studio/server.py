@@ -201,12 +201,28 @@ class Studio:
                "method": f"user-entered length {metres} m between two picked surface points ({d:.5f} model units)",
                "p1": body["p1"], "p2": body["p2"], "created_at": timefmt.now_iso(), "evaluation_only": False}
         write_json(self.store.path(pid) / "calibration.json", cal)
-        from namma.studio.pipeline import run_pipeline
-        cfg = load_strict(run_dir / "config.json")["config"]      # the run's own (possibly older) configuration
-        res = run_pipeline(self.store.path(pid), rid, cfg)
+        res = self.repackage(pid, rid)
         if res["status"] != "succeeded":
             raise ApiError(500, "CAL-REPACKAGE", f"re-packaging failed: {res.get('error')}")
         return {"calibration": cal}
+
+    def repackage(self, pid, rid):
+        """Rebuild a finished run's scene package (POIs, scale, splat). Photo runs go through run_pipeline (cheap
+        stages only re-run); an IMPORTED run has no pipeline stages - run_pipeline refused it ("created with a
+        different configuration"), so publishing and "Set scale" failed for every Polycam space - and is packaged
+        directly."""
+        from namma.studio.pipeline import RunContext, run_pipeline
+        run_dir = self.store.run_dir(pid, rid)
+        cfg = load_strict(run_dir / "config.json")["config"]      # the run's own (possibly older) configuration
+        if cfg.get("profile") != "import":
+            return run_pipeline(self.store.path(pid), rid, cfg)
+        from namma.studio.package import build_scene_package
+        ctx = RunContext(self.store.path(pid), rid, cfg)
+        try:
+            build_scene_package(ctx, ctx.dir("package"))
+        except Exception as e:                                    # noqa: BLE001 - reported to the caller
+            return {"status": "failed", "error": f"{e.__class__.__name__}: {e}"}
+        return {"status": "succeeded"}
 
     def route(self, pid, rid, body):
         run_dir = self.store.run_dir(pid, rid)
@@ -223,13 +239,9 @@ class Studio:
         pkg = run_dir / "90_package"
         if not (pkg / "scene_package.json").exists():
             raise ApiError(409, "PUBLISH-NO-PACKAGE", "this run has no scene package yet")
-        from namma.studio.pipeline import (
-            run_pipeline,  # refresh POIs into the package first
-        )
         if self.jobs.run_status(pid, rid).get("status") != "succeeded":
             raise ApiError(409, "PUBLISH-RUN", "publish a finished run")
-        cfg = load_strict(run_dir / "config.json")["config"]      # the run's own configuration
-        res = run_pipeline(self.store.path(pid), rid, cfg)
+        res = self.repackage(pid, rid)                            # refresh POIs / scale into the package first
         if res["status"] != "succeeded":
             raise ApiError(500, "PUBLISH-REPACKAGE", f"re-packaging failed: {res.get('error')}")
         out = self.store.path(pid) / "published" / rid
@@ -563,6 +575,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     return self._json(200, st.jobs.tail_log(pid, rid))
                 if sub == ["report"] and method == "GET":
                     return self._json(200, st.run_report(pid, rid))
+                if sub == ["splat"]:
+                    if method == "GET":
+                        return self._json(200, st.jobs.splat_status(pid, rid))
+                    if method == "POST":
+                        return self._json(202, st.jobs.start_splat(pid, rid))
+                if sub == ["splat", "cancel"] and method == "POST":
+                    return self._json(200, st.jobs.cancel_splat(pid, rid))
                 if sub == ["pois"]:
                     if method == "GET":
                         return self._json(200, {"pois": st.list_pois(pid, rid)})

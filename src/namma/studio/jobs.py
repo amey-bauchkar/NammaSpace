@@ -73,6 +73,52 @@ class JobManager:
             s["report"] = load_strict(rep)
         return s
 
+    # ----------------------------------------------------------------- photoreal view (Gaussian splat of an import)
+    def splat_status(self, project_id, run_id):
+        work = self.store.run_dir(project_id, run_id) / "65_splat"
+        st = work / "status.json"
+        s = load_strict(st) if st.exists() else {"status": "not_started"}
+        if s.get("status") in ("running", "starting") and s.get("pid") and not _alive(s["pid"]):
+            s["status"] = "error"
+            s["error"] = "The photoreal training stopped unexpectedly; start it again."
+        from namma.studio.splat import available, find_keyframes_zip
+        ok, why = available()
+        s["available"] = ok and find_keyframes_zip(self.store.path(project_id)) is not None
+        s["unavailable_reason"] = why or (None if s["available"] else
+                                          "No Polycam 'Images' export is kept with this space.")
+        return s
+
+    def start_splat(self, project_id, run_id):
+        s = self.splat_status(project_id, run_id)
+        if s.get("status") in ("running", "starting"):
+            raise JobError("SPLAT-RUNNING", "The photoreal view is already being made.")
+        if not s["available"]:
+            raise JobError("SPLAT-UNAVAILABLE", s["unavailable_reason"], 400)
+        act = self.active()
+        if act:
+            raise JobError("JOB-BUSY", f"A reconstruction is running ({act[0]}); the photoreal training uses the same "
+                                       "GPU and memory - wait for it to finish.")
+        for proj in self.store.list():                         # one GPU training at a time
+            for r in proj.get("runs", []):
+                st = self.store.root / proj["project_id"] / "runs" / r["run_id"] / "65_splat" / "status.json"
+                if st.exists():
+                    o = load_strict(st)
+                    if o.get("status") == "running" and _alive(o.get("pid")):
+                        raise JobError("JOB-BUSY", "Another photoreal view is being made; wait for it to finish.")
+        work = self.store.run_dir(project_id, run_id) / "65_splat"
+        work.mkdir(parents=True, exist_ok=True)
+        write_json(work / "status.json", {"status": "starting", "started_at": timefmt.now_iso(), "label": "Starting",
+                                          "fraction": 0})
+        p = _spawn(["splat", "--project-dir", str(self.store.path(project_id)), "--run", run_id],
+                   work / "worker.log")
+        return {"pid": p.pid}
+
+    def cancel_splat(self, project_id, run_id):
+        work = self.store.run_dir(project_id, run_id) / "65_splat"
+        work.mkdir(parents=True, exist_ok=True)
+        (work / "CANCEL").write_text("cancel", encoding="utf-8")
+        return {"cancel_requested": True}
+
     # ----------------------------------------------------------------- reconstruction
     def active(self):
         """(project_id, run_id) of the reconstruction that is running now (Studio worker or CLI), or None."""

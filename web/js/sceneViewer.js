@@ -6,7 +6,7 @@
 //   &selftest=1               in-page functional checks (used by the browser test harness)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { decodeRoamGrid, isAllowed } from './roam.js';
+import { canOccupyGrid, decodeRoamGrid, isAllowed } from './roam.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
 import { levelStartTarget, Walker } from './walker.js';
@@ -83,6 +83,8 @@ class SceneApp {
       // photo textures already contain the room's lighting: show them unlit (no double shading)
       o.material = new THREE.MeshBasicMaterial({ map, side: THREE.DoubleSide, vertexColors: !map && !!o.geometry.attributes.color,
         color: map || o.geometry.attributes.color ? 0xffffff : 0xb8c2d0 });
+      // with a photoreal splat shown, the mesh stays for walking and picking but is not drawn (raycasts still hit it)
+      o.material.visible = !this.meshHidden;
       if (old) old.dispose();
       tris += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3;
     });
@@ -227,11 +229,14 @@ async function main() {
     fpsAcc += dt; fpsN += 1;
     if (fpsAcc > 0.5) { $('hud-fps').textContent = `${Math.round(fpsN / fpsAcc)} fps`; fpsAcc = 0; fpsN = 0; }
     if (app.tween) app.tween(now); else walker.update(dt);
+    if (++app.frameNo % 8 === 0) closeUpSwap(app);
     app.render();
     app.raf = requestAnimationFrame(tick);
   };
+  app.frameNo = 0;
   app.raf = requestAnimationFrame(tick);
   wireControls(app, walker, startPose, data);
+  wireMeasure({ app, pkg, eye });
 
   // ---- POIs
   const ctx = { app, walker, data, pkg, eye, pois: data.pois, selected: null };
@@ -247,6 +252,19 @@ async function main() {
   // ---- estimated surfaces (holes in walls / floor / ceiling closed with flat planes; never scanned geometry)
   if (data.estimated) {
     loadEstimated(ctx).catch((e) => { state.errors.push({ kind: 'estimated_surfaces', message: e.message }); toast(`Estimated surfaces not shown: ${e.message}`); });
+  }
+
+  // ---- photoreal splat (IF-13 1.3.0): drawn instead of the mesh, which stays for walking, picking and routes
+  if (data.splat) {
+    // shown by default (held-out photos: 26.3 dB, SSIM 0.86 on "New room"); ?mesh starts on the mesh and downloads
+    // the splat (~150 MB) only when asked for
+    const go = () => loadSplat(ctx).catch((e) => { state.errors.push({ kind: 'splat', message: e.message }); toast(`Photoreal view not available: ${e.message}`); });
+    if (!params.has('mesh')) go();
+    else {
+      $('splat-toggle').hidden = false;
+      $('splat-toggle').textContent = `Show photoreal (${mb(data.splat.bytes)})`;
+      $('splat-toggle').onclick = () => { params.delete('mesh'); go(); };
+    }
   }
 
   // ---- full detail in the background
@@ -265,6 +283,73 @@ async function main() {
 }
 
 /** Estimated surfaces: a separate, clearly labelled layer, already in the model frame (no to_model). */
+function setMeshHidden(app, hidden) {
+  app.meshHidden = hidden;
+  if (app.appearance) app.appearance.traverse((o) => { if (o.isMesh) o.material.visible = !hidden; });
+}
+
+/** Right up against a wall the photoreal splat smears (the photos were taken from further away): while part of the
+ * view (2 of 9 sample points: a wall filling one side is enough) is a surface closer than CLOSE_M, show the mesh
+ * instead; back to photoreal once fewer than 2 points are within FAR_M (no flicker between). */
+const CLOSE_M = 0.7, FAR_M = 0.9;
+const closeRay = new THREE.Raycaster();
+const closeDirs = [-0.8, 0, 0.8].flatMap((x) => [-0.6, 0, 0.6].map((y) => [x, y]));
+function closeUpSwap(app) {
+  if (!app.splat || !state.splat || !state.splat.shown || !app.appearance) return;
+  let near = 0, within = 0;
+  for (const [x, y] of closeDirs) {
+    closeRay.setFromCamera({ x, y }, app.camera);
+    closeRay.far = FAR_M;
+    const hit = closeRay.intersectObject(app.appearance, true)[0];
+    if (hit && hit.distance < CLOSE_M) near += 1;
+    if (hit) within += 1;
+  }
+  const close = app.closeUp ? within >= 2 : near >= 2;
+  if (close === !!app.closeUp) return;
+  app.closeUp = close;
+  app.splat.visible = !close;
+  setMeshHidden(app, !close);
+  state.splat.close_up_mesh = close;
+}
+
+async function loadSplat(ctx) {
+  const { app, data } = ctx;
+  const s = data.splat;
+  const btn = $('splat-toggle');
+  btn.hidden = false;
+  btn.disabled = true;
+  btn.textContent = `Loading photoreal view (${mb(s.bytes)})…`;
+  const [bytes, spark] = await Promise.all([
+    data.fetchSplat((got, total) => { btn.textContent = `Loading photoreal view… ${Math.round(100 * got / (total || s.bytes))}%`; }),
+    import('../vendor/spark/spark.module.js')]);
+  if (!app.spark) {
+    app.spark = new spark.SparkRenderer({ renderer: app.renderer });
+    app.scene.add(app.spark);
+  }
+  const type = s.format === 'spz' ? 'spz' : 'ply';
+  const mesh = new spark.SplatMesh({ fileBytes: bytes, fileType: spark.SplatFileType ? spark.SplatFileType[type.toUpperCase()] : type });
+  await mesh.initialized;
+  mesh.matrixAutoUpdate = false;
+  mesh.matrix.set(...s.to_model.matrix_row_major);             // splat frame -> model frame, applied once
+  mesh.matrixWorldNeedsUpdate = true;
+  app.scene.add(mesh);
+  app.splat = mesh;
+  const startSplat = !params.has('mesh');
+  mesh.visible = startSplat;
+  setMeshHidden(app, startSplat);
+  state.splat = { splats: s.splats, bytes: s.bytes, shown: startSplat };
+  btn.disabled = false;
+  btn.textContent = startSplat ? 'Show mesh' : 'Show photoreal';
+  btn.onclick = () => {
+    const show = !state.splat.shown;
+    app.closeUp = false;
+    mesh.visible = show;
+    setMeshHidden(app, show);
+    state.splat.shown = show;
+    btn.textContent = show ? 'Show mesh' : 'Show photoreal';
+  };
+}
+
 async function loadEstimated(ctx) {
   const buf = await ctx.data.fetchEstimated();
   const gltf = await new GLTFLoader().parseAsync(buf, '');
@@ -531,10 +616,53 @@ function flyTo(ctx, pos, target, ms = 900) {
   });
 }
 
+/** Where to look at a label from: a walkable floor spot at eye height, 0.5-2 eye heights away, with a clear line of
+ * sight to it (nearest to ~0.9 eye heights first). A fixed diagonal offset put the camera in the air or behind walls -
+ * and a photoreal splat only looks right near where people stand (where the photos were taken).
+ * -> [position, target, onFloor] */
 function poiView(ctx, p) {
-  if (p.view) return [p.view.position, p.view.target];
-  const e = ctx.eye;
-  return [[p.position[0] + 1.2 * e, e, p.position[2] + 1.2 * e], p.position];
+  if (p.view) return [p.view.position, p.view.target, false];
+  const e = ctx.eye, g = ctx.walker.grid, P = p.position;
+  const fallback = [[P[0] + 1.2 * e, e, P[2] + 1.2 * e], P, false];
+  if (!g) return fallback;
+  const cands = [];
+  for (let r = 0; r < g.height; r++) {
+    for (let c = 0; c < g.width; c++) {
+      if (g.allowed[r * g.width + c] !== 1) continue;
+      const x = g.ox + (c + 0.5) * g.cell, z = g.oz + (r + 0.5) * g.cell;
+      const d = Math.hypot(x - P[0], z - P[2]);
+      if (d >= 0.5 * e && d <= 2 * e) cands.push([Math.abs(d - 0.9 * e), x, z]);
+    }
+  }
+  cands.sort((a, b) => a[0] - b[0]);
+  const ray = new THREE.Raycaster();
+  const target = new THREE.Vector3(...P);
+  for (const [, x, z] of cands.slice(0, 300)) {
+    const from = new THREE.Vector3(x, e, z);
+    const dir = target.clone().sub(from);
+    const len = dir.length();
+    ray.set(from, dir.normalize());
+    ray.far = Math.max(0, len - 0.08 * e);
+    if (!ctx.app.appearance || !ray.intersectObject(ctx.app.appearance, true).length) return [[x, e, z], P, true];
+  }
+  return fallback;
+}
+
+/** Route start: the camera's floor spot, or the nearest walkable spot with room around it (the planner never moves a
+ * blocked start, by design; after a jump or while flying the camera is often not on clear floor). */
+function routeStart(ctx) {
+  const p = ctx.app.camera.position, g = ctx.walker.grid, room = 0.16 * ctx.eye;
+  if (!g || canOccupyGrid(g, p.x, p.z, room)) return [[p.x, p.z], false];
+  let best = null, bestD = Infinity;
+  for (let r = 0; r < g.height; r++) {
+    for (let c = 0; c < g.width; c++) {
+      if (g.allowed[r * g.width + c] !== 1) continue;
+      const x = g.ox + (c + 0.5) * g.cell, z = g.oz + (r + 0.5) * g.cell;
+      const d = Math.hypot(x - p.x, z - p.z);
+      if (d < bestD && canOccupyGrid(g, x, z, room)) { best = [x, z]; bestD = d; }
+    }
+  }
+  return best ? [best, true] : [[p.x, p.z], false];
 }
 
 function wirePlaces(ctx) {
@@ -568,9 +696,14 @@ function wirePlaces(ctx) {
 
 async function goToSelected(ctx) {
   if (!ctx.selected) return;
-  const [pos, target] = poiView(ctx, ctx.selected);
+  const [pos, target, onFloor] = poiView(ctx, ctx.selected);
   await flyTo(ctx, pos, target);
-  state.lastJump = { poi_id: ctx.selected.poi_id, position: pos };
+  if (onFloor) {                                         // standing on the floor: carry on walking from here
+    ctx.walker.setMode('walk');
+    $('hud-mode').textContent = 'walk';
+    $('mode-toggle').textContent = 'Fly mode';
+  }
+  state.lastJump = { poi_id: ctx.selected.poi_id, position: pos, on_floor: onFloor };
 }
 
 async function requestRoute(ctx) {
@@ -578,9 +711,10 @@ async function requestRoute(ctx) {
   box.hidden = false;
   box.dataset.state = 'pending';
   box.textContent = 'Computing a walking path…';
-  const p = ctx.app.camera.position;
+  const [start, moved] = routeStart(ctx);
   try {
-    const r = await api('/route', { method: 'POST', body: JSON.stringify({ start: [p.x, p.z], poi_id: ctx.selected.poi_id }) });
+    const r = await api('/route', { method: 'POST', body: JSON.stringify({ start, poi_id: ctx.selected.poi_id }) });
+    r.start_moved = moved;
     state.lastRoute = r;
     box.dataset.state = r.status;
     box.innerHTML = '';
@@ -588,7 +722,7 @@ async function requestRoute(ctx) {
     strong.textContent = r.title;
     const det = document.createElement('div');
     det.className = 'small';
-    det.textContent = r.message;
+    det.textContent = r.message + (moved ? ' (Starting from the nearest clear floor.)' : '');
     box.append(strong, det);
     ctx.app.routeGroup.clear();
     if (r.polyline_model && r.polyline_model.length > 1) drawRoute(ctx, r.polyline_model, r.status);
@@ -629,6 +763,94 @@ function wireViewpoints(ctx, startPose) {
 }
 
 // ------------------------------------------------------------------ studio tools
+// ---- length measuring: click points in a chain; each segment shows its length in the view (Esc ends a chain).
+// Points are picked on the mesh, which stays under the photoreal splat (lined up to a few centimetres).
+function wireMeasure(ctx) {
+  const { app, pkg, eye } = ctx;
+  const group = new THREE.Group();
+  group.name = 'measurements';
+  app.scene.add(group);
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, depthTest: false });
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, depthTest: false });
+  const m = { on: false, chains: [], current: null };
+  state.measure = m;
+  const fmt = (u) => formatLength(u, pkg.scale);
+  const btn = $('measure-btn');
+  const list = () => {
+    const ol = $('measure-list');
+    ol.innerHTML = '';
+    for (const c of m.chains) {
+      for (let i = 1; i < c.points.length; i++) {
+        const a = c.points[i - 1], b = c.points[i];
+        const flat = Math.hypot(b.x - a.x, b.z - a.z), up = Math.abs(b.y - a.y);
+        const li = document.createElement('li');
+        li.textContent = `${fmt(a.distanceTo(b))}  (across ${fmt(flat)}, height ${fmt(up)})`;
+        ol.append(li);
+      }
+      if (c.points.length > 2) {
+        const li = document.createElement('li');
+        li.className = 'muted';
+        li.textContent = `total ${fmt(c.total)}`;
+        ol.append(li);
+      }
+    }
+    $('measure-panel').hidden = !m.on && !m.chains.length;
+  };
+  const hint = (t) => { $('measure-hint').textContent = t; };
+  const pick = (e) => {
+    let x = e.clientX, y = e.clientY;
+    if (document.pointerLockElement === app.canvas) {          // looking around: measure at the crosshair
+      const r = app.canvas.getBoundingClientRect();
+      x = r.left + r.width / 2; y = r.top + r.height / 2;
+    }
+    const hit = app.pick(x, y, app.appearance ? [app.appearance] : []);
+    if (!hit) { toast('No surface there – click on the room.'); return; }
+    const p = hit.point.clone();
+    if (!m.current) { m.current = { points: [], total: 0 }; m.chains.push(m.current); }
+    const c = m.current;
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.012 * eye, 12, 8), dotMat);
+    dot.position.copy(p);
+    dot.renderOrder = 9;
+    group.add(dot);
+    if (c.points.length) {
+      const a = c.points[c.points.length - 1];
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, p]), lineMat));
+      const d = a.distanceTo(p);
+      c.total += d;
+      const label = labelSprite(fmt(d), eye * 0.6);
+      label.position.copy(a).add(p).multiplyScalar(0.5);
+      group.add(label);
+    }
+    c.points.push(p);
+    hint(c.points.length === 1 ? 'Click the next point.' : 'Click another point to continue, or press Esc to start a new one.');
+    list();
+  };
+  const setOn = (on) => {
+    m.on = on;
+    if (on && document.pointerLockElement) document.exitPointerLock();
+    app.onPick = on ? pick : (app.onPick === pick ? null : app.onPick);
+    btn.textContent = on ? 'Stop measuring' : 'Measure';
+    btn.classList.toggle('active', on);
+    if (!on) m.current = null;
+    hint(on ? 'Click two or more points on the room to measure between them.' : '');
+    list();
+  };
+  btn.onclick = () => setOn(!m.on);
+  $('measure-clear').onclick = () => {
+    group.clear();
+    m.chains = [];
+    m.current = null;
+    if (m.on) hint('Click two or more points on the room to measure between them.');
+    list();
+  };
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target && e.target.tagName)) return;
+    if (e.code === 'KeyM') setOn(!m.on);
+    else if (e.code === 'Escape' && m.on && m.current) { m.current = null; hint('New measurement: click its first point.'); }
+  });
+  if (!pkg.scale.metres_per_unit) hint('The scale of this model is unknown: lengths are in model units.');
+}
+
 function wireStudioTools(ctx) {
   const { app } = ctx;
   const meshTargets = () => (app.appearance ? [app.appearance] : []);

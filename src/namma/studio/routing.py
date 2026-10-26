@@ -20,6 +20,7 @@ from namma.navigation.validator import validate_route
 
 _CACHE = {}
 _LOCK = threading.Lock()
+START_MOVE_MAX_M = 1.0
 GEOMETRIC_CHECKS = ("clearance_ok", "inside_walkable_region", "route_finite", "start_matches_request",
                     "goal_within_snap_limit")
 
@@ -39,6 +40,13 @@ def _layer(run_dir, cfg_nav):
 
 
 def route(run_dir, start_model_xz, goal_model_xyz, cfg_nav, request_id="studio"):
+    out = _route(run_dir, start_model_xz, goal_model_xyz, cfg_nav, request_id)
+    if out.get("start_moved_m") and out.get("message"):
+        out["message"] += f" (Started from the nearest clear floor, {out['start_moved_m']:.2f} m from where you stand.)"
+    return out
+
+
+def _route(run_dir, start_model_xz, goal_model_xyz, cfg_nav, request_id):
     nav_meta_path = Path(run_dir) / "85_navgeom" / "navgeom.json"
     if not nav_meta_path.exists() or load_strict(nav_meta_path).get("status") != "unverified":
         return {"status": "unavailable", "title": "Walking paths are not available for this model",
@@ -49,10 +57,21 @@ def route(run_dir, start_model_xz, goal_model_xyz, cfg_nav, request_id="studio")
     goal = [goal_model_xyz[0] * mpu, goal_model_xyz[2] * mpu]
     req = make_request(request_id, nav, start, goal_xz=goal)
     res = plan_route(nav, req)
+    moved_m = None
+    if res["status"] == "start_blocked":
+        # the planner never moves a blocked start (by design). The Studio retries ONCE from the nearest clear floor
+        # within START_MOVE_MAX_M and says so: after a search jump the viewer stands near furniture, which the
+        # planner's body clearance blocks
+        cell, d = nav.nearest_free(start, START_MOVE_MAX_M)
+        if cell is not None:
+            start = list(nav.centre(cell))
+            req = make_request(request_id, nav, start, goal_xz=goal)
+            res = plan_route(nav, req)
+            moved_m = round(float(d), 2)
     assumed = meta["scale_basis"] == "assumed_capture_height"
     approx = "≈ " if assumed else ""
     out = {"status": res["status"], "scale_basis": meta["scale_basis"], "planner_note": res.get("note"),
-           "polyline_model": []}
+           "polyline_model": [], "start_moved_m": moved_m}
     if res["status"] == "start_blocked":
         out.update(title="Your position is not on confirmed open floor",
                    message="Paths start only from floor that was reconstructed and is clear of obstacles. Walk to an "
