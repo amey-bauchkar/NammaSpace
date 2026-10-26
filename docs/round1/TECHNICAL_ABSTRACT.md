@@ -78,9 +78,9 @@ every warning.
 ## 5. Web viewer
 
 The viewer opens on the **photoreal view** (Spark 2.4.0 renders the splat inside the same three.js scene); the
-mesh stays underneath for collision, labels, routes and measuring, and is shown automatically when the camera is
-within ~0.7 m of a surface (where a splat trained from further away smears). A **measuring tool** (M) gives chained
-lengths with across/height components in metres.
+mesh stays underneath for collision, labels, routes and measuring. A **measuring tool** (M) gives chained lengths with
+across/height components, level/upright snapping and closed-shape areas (m, cm or ft-in); a **mini-map** shows a
+top-down plan of the room with labels, the route and the viewer's position.
 First-person controls: click to capture the mouse (pointer lock) or drag to look; W A S D / arrows to walk;
 Shift to run; F toggles fly mode; R resets to the start view; [ ] jump through the original photo
 viewpoints. Walking keeps the camera at the capture eye height inside the free space connected to where the
@@ -119,7 +119,7 @@ Criteria (Phase 12, unchanged): all photos placed; camera error ≤ 50 mm; dense
 
 - **Own home via Polycam.** The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
   the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
-  only saw from far away smears up close (the viewer then shows the mesh); the SOP now asks for wall passes at 1–1.5 m.
+  only saw from far away smears up close; the SOP now asks for wall passes at 1–1.5 m.
 - **Photoreal training needs an NVIDIA GPU** (~40 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
   view is used.
 - **Completeness depends on the room.** Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);

@@ -3,16 +3,109 @@
 **Purpose:** handoff/context file for continuing the Namma Space repository work in Claude Code or another coding agent. This document combines the uploaded project-memory notes with the substantive findings, user decisions, implementation history, tests, measured runs, current state, and unresolved items from the Claude Code session transcript.
 
 **Source session:** `db3cb469-40bb-46e7-9ba9-8327c32c9db4.jsonl`  
-**Transcript span:** 2026-10-20 19:18:15 UTC through 2026-10-21 18:46:27 UTC (the final item is a background-task notification, not a new engineering result).  
+**Transcript span:** 2026-10-20 through 2026-10-26 (§0 added 2026-10-26; §1–§13 describe the state on 2026-10-21).  
 **Working repo at the time:** `C:\Users\Tanmay\OneDrive\Desktop\NammaSpace`  
 **Remote:** `https://github.com/amey-bauchkar/NammaSpace.git`  
-**Session state:** changes were not committed or pushed. The repo was in a OneDrive-synced folder. Do not assume the current machine or repo still has this exact working state without checking it.
+**Session state (2026-10-26):** most work is pushed to origin/main; recent viewer/trainer changes are uncommitted (see §0). The repo was in a OneDrive-synced folder. Do not assume the current machine or repo still has this exact working state without checking it.
 
 > This is the operational master context, not a byte-for-byte replay of every shell output. The original JSONL remains the exact source for individual tool calls and large intermediate outputs. Hidden/internal reasoning is intentionally not reproduced. The conclusions and user-facing decisions needed to continue the work are captured here.
 
 ---
 
-## 1. Current state — read this first
+## 0. Update 2026-10-26 — read this first (supersedes §1 where they differ)
+
+**Round 1 deadline: 2026-10-31.** Polycam (GLTF + Images export, iPhone 14 LiDAR) is the PRIMARY capture route; the
+browser phone capture is secondary. The user wants the best model among the participants and reports results honestly.
+Rules still in force: never overwrite captures or delete user data; downloads need the user's approval; do not
+rewrite pushed git history without the user (the session's permission check blocks force-push; the user did one
+rewrite themselves); **commit messages must NOT carry a Claude co-author line** (user request).
+
+### Git state
+
+- Pushed to `origin/main` (github.com/amey-bauchkar/NammaSpace): `5079209` (photoreal splat view, Polycam polish,
+  own-home demo, SOP + abstract) and `5f963e8` (SSIM fix in the trainer).
+- **Not committed yet (working tree):** mini-map (`web/js/minimap.js`), improved measuring tool, removal of the
+  "show mesh up close" switch, `scripts/splat/mesh_init.py`, `scripts/splat/speed_summary.py`, `--init-points` /
+  `--half-res-until` / `--eval-every` trainer options, faster splat alignment, abstract/SOP text updates, refreshed
+  `demo/new-room/`, this file. Ask the user before committing/pushing.
+
+### The own-home space ("New room")
+
+- Project `projects/polycam-scan-2026-10-25-17-08-20261025-6b1f39`, run `run-20261025-170828-cfe7` (Studio title
+  "Polycam scan 2026-10-25 17:08"). Originals: `capture/originals/New_room.zip`, `New_room_images.zip` (218 keyframes).
+- Photoreal splat in use: `60_texture/splat.spz` (8.2 MB SPZ, 332 k splats) trained WITH the flat-wall prior
+  (`65_splat/room_walls.ply`, 149 MB). Previous model kept as `60_texture/splat_prev.spz/.json`.
+- Walking maps were rebuilt levelled on the fitted floor plane (export is 1.65° off level); old maps kept as
+  `*.before_nav_level`. Routes now found (≥ 0.28 m clearance; the room is tight).
+- `pois.json` holds a "Wardrobe" label added by Claude during testing (user has not asked to remove it).
+- Extra copy `projects/new-room-20261026-dd673e` (made during a reverted levelling attempt) — user has not decided
+  whether to delete it; do not delete without asking.
+- Published static site: `demo/new-room/` in the repo (19 MB) — candidate for GitHub Pages
+  (Settings → Pages → main / root → `https://amey-bauchkar.github.io/NammaSpace/demo/new-room/`; repo must be public).
+
+### What was built since 2026-10-21 (all verified unless noted)
+
+| Area | Result |
+|---|---|
+| Polycam import repair (`mesh_repair.py`) | ceiling plane, hanging debris, holes, backing sheets, texture gutters |
+| Photoreal view (`splat.py`, `scripts/splat/train_splat.py`, tools/splat-env Python 3.10 + gsplat 1.5.3) | COLMAP-refined keyframe poses → depth guide → MCMC 600 k splats, pose + exposure correction; held-out 22.6 → 26.3 dB vs first version |
+| Flat-wall prior (`--walls`, `scripts/splat/flatten_walls.py` makes walls.json) | close-up streaks gone on the 4 OUTER walls; inner walls not covered |
+| SPZ compression (`splat_spz.py`) | 149 MB → 8.2 MB, 33–36 dB vs uncompressed render |
+| Alignment speed (`splat_align.py`) | 154 s → 12 s, identical transform (coarse-to-fine yaw search) |
+| Walking maps on floor plane (`mesh_import.floor_relative`) | tilted exports get walkable floor; mesh/splat untouched |
+| Viewer | Spark splat rendering; measuring tool (live line, Shift level/upright, closed-shape area, undo, m/cm/ft-in, copy, delete); mini-map (top-down mesh render aligned to walls, labels, route, measurements, you-are-here, click to go, N key); measure/route lines drawn over the splat |
+| Removed at user request | auto "show mesh up close" switch; floor-levelling of the MESH (looked worse) |
+| Docs | `docs/CAPTURE_SOP.md` (+pdf) route A = Polycam with wall-coverage rules; `docs/round1/TECHNICAL_ABSTRACT.*` (4 pages) with own-home results; `docs/NEXT_WALL_FLATNESS.md`; `docs/ROUND1_CHECKLIST.md` updated |
+
+### Lessons (do not repeat)
+
+- A "faster" separable/batched SSIM matched on contiguous test tensors but made training diverge and run 3× slower on
+  the permuted renders → reverted (`5f963e8`). Always run ≥ 1,500 real training steps before trusting a trainer change.
+- Snapping splats onto wall planes AFTER training did not help (splats around white walls are spread 10–20 cm).
+- Close-up smears at ~2 m are capture coverage, not a bug: the SOP now asks for wall passes at 1–1.5 m.
+- The browser pane throttles rendering when hidden; verify viewer logic with direct raycasts if frames are 0.
+- Running the splat viewer in a browser while training slows training ~3×.
+
+### Photoreal speed experiments (in progress when this was written)
+
+Goal: Studio photoreal job 40–50 min → 15–25 min without losing quality. Same 22 held-out photos
+(`C:\Users\Tanmay\AppData\Local\Temp\nb\speed\holdout.txt`), score = held-out PSNR after a 150-step pose fit + colour
+fit (`pose_colour`) and SSIM.
+
+| Run | Recipe | Result |
+|---|---|---|
+| r0 | current: 30k steps | **23.924 dB, SSIM 0.837, 39.6 min** |
+| r1 | 30k, half-size photos for the first half (`--half-res-until 0.5`) | running |
+| r2 | 15k, start from the Polycam mesh (`--init-points mesh_init.npz` from `scripts/splat/mesh_init.py`) | queued |
+| r3 | 15k, normal start | queued |
+
+They run as an independent Windows process (`C:\Users\Tanmay\AppData\Local\Temp\nb\speed\run_rest.cmd`, minimized
+cmd window); when done, `scripts/splat/speed_summary.py` writes **`docs/SPEED_EXPERIMENTS_RESULTS.md`**.
+**Next step:** pick the fastest run within 0.1 dB of r0 and make it the default in `src/namma/studio/splat.py`
+(`make_photoreal`: `iters`, and add `--half-res-until` / mesh init: pre-train → align → `mesh_init` with that T →
+main training with `--init-points`). Re-run tests (`python -m pytest -q tests`, `npm run -s test:web`).
+
+### Test state (2026-10-26)
+
+Python mesh/splat tests pass; full suite last run: all pass except the 4 pre-existing
+`test_phase8_artifacts_preserved.py` hash failures (files identical to HEAD; not caused by this work).
+Web tests 33/33.
+
+### Round 1 still open (user's tasks)
+
+Public viewer link (GitHub Pages / Netlify), 3–5 min demo video (`docs/DEMO_SCRIPT.md` needs updating for the new
+features), Google Drive folder + master PDF, team details in the abstract template then
+`python scripts/docs/build_abstract.py`.
+
+### Ideas offered but not started
+
+Guided tour / "walk me there", room facts + floor-plan export, phone mode (touch + lighter splat), automatic object
+labels (needs a model download), photoreal for the photo route, mesh-vs-photoreal slider, flat-wall prior on inner
+walls (all large vertical planes, ~50 min retrain).
+
+---
+
+## 1. State on 2026-10-21 (historical — see §0 for the current state)
 
 ### Completed
 

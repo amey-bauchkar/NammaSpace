@@ -78,9 +78,9 @@ every warning.
 ## 5. Web viewer
 
 The viewer opens on the **photoreal view** (Spark 2.4.0 renders the splat inside the same three.js scene); the
-mesh stays underneath for collision, labels, routes and measuring, and is shown automatically when the camera is
-within ~0.7 m of a surface (where a splat trained from further away smears). A **measuring tool** (M) gives chained
-lengths with across/height components in metres.
+mesh stays underneath for collision, labels, routes and measuring. A **measuring tool** (M) gives chained lengths with
+across/height components, level/upright snapping and closed-shape areas (m, cm or ft-in); a **mini-map** shows a
+top-down plan of the room with labels, the route and the viewer's position.
 First-person controls: click to capture the mouse (pointer lock) or drag to look; W A S D / arrows to walk;
 Shift to run; F toggles fly mode; R resets to the start view; [ ] jump through the original photo
 viewpoints. Walking keeps the camera at the capture eye height inside the free space connected to where the

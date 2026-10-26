@@ -181,6 +181,7 @@ def main(argv=None):
     ap.add_argument("--depth-weight", type=float, default=0.1)
     ap.add_argument("--half-res-until", type=float, default=0.0,
                     help="train on half-size photos for this fraction of the steps first (faster; detail comes after)")
+    ap.add_argument("--init-points", help="extra starting points (.npz with xyz, rgb in 0..1), e.g. scripts/splat/mesh_init.py")
     ap.add_argument("--eval-every", type=int, default=0, help="quick held-out score (colour fit) every N steps")
     ap.add_argument("--walls", help="walls.json (flat room walls in this frame): splats near a wall are kept flat on it")
     ap.add_argument("--wall-weight", type=float, default=0.05)
@@ -189,6 +190,10 @@ def main(argv=None):
     dev = "cuda"
     t0 = time.time()
     cams, imgs, xyz, rgb = read_model(a.model)
+    if a.init_points:                                    # e.g. the scanned mesh's surface: start from the room's shape
+        extra = np.load(a.init_points)
+        xyz = np.concatenate([xyz, extra["xyz"].astype(np.float32)])
+        rgb = np.concatenate([rgb, extra["rgb"].astype(np.float32)])
     skip = set(Path(a.exclude).read_text(encoding="utf-8").split()) if a.exclude else set()
     # photos (kept on the CPU as uint8; one goes to the GPU per step)
     views = []
@@ -237,8 +242,9 @@ def main(argv=None):
     # start: one splat per SfM point, size from the distance to its 3 nearest neighbours
     pts = torch.from_numpy(xyz).to(dev)
     # mean distance to the 3 nearest neighbours, in chunks on the GPU (150 k points: 150 k x 150 k at once won't fit)
-    knn = torch.cat([torch.cdist(pts[i:i + 4096], pts).topk(4, largest=False).values[:, 1:].mean(1)
-                     for i in range(0, len(pts), 4096)])
+    ch = max(256, min(4096, int(3e8 // len(pts))))      # rows per chunk: <= ~1.2 GB of distances
+    knn = torch.cat([torch.cdist(pts[i:i + ch], pts).topk(4, largest=False).values[:, 1:].mean(1)
+                     for i in range(0, len(pts), ch)])
     n = len(pts)
     params = torch.nn.ParameterDict({
         "means": torch.nn.Parameter(pts.clone()),

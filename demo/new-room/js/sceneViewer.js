@@ -6,6 +6,7 @@
 //   &selftest=1               in-page functional checks (used by the browser test harness)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createMinimap } from './minimap.js';
 import { canOccupyGrid, decodeRoamGrid, isAllowed } from './roam.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
@@ -229,7 +230,10 @@ async function main() {
     fpsAcc += dt; fpsN += 1;
     if (fpsAcc > 0.5) { $('hud-fps').textContent = `${Math.round(fpsN / fpsAcc)} fps`; fpsAcc = 0; fpsN = 0; }
     if (app.tween) app.tween(now); else walker.update(dt);
-    if (++app.frameNo % 8 === 0) closeUpSwap(app);
+    if (app.minimap && ++app.frameNo % 4 === 0) {
+      if (state.measure) app.minimap.setMeasures(state.measure.chains.map((c) => (c.closed ? [...c.points, c.points[0]] : c.points)));
+      app.minimap.update();
+    }
     app.render();
     app.raf = requestAnimationFrame(tick);
   };
@@ -247,6 +251,7 @@ async function main() {
   renderPois(ctx);
   wirePlaces(ctx);
   wireViewpoints(ctx, startPose);
+  wireMinimap(ctx);
   if (studio) wireStudioTools(ctx);
 
   // ---- estimated surfaces (holes in walls / floor / ceiling closed with flat planes; never scanned geometry)
@@ -288,30 +293,6 @@ function setMeshHidden(app, hidden) {
   if (app.appearance) app.appearance.traverse((o) => { if (o.isMesh) o.material.visible = !hidden; });
 }
 
-/** Right up against a wall the photoreal splat smears (the photos were taken from further away): while part of the
- * view (2 of 9 sample points: a wall filling one side is enough) is a surface closer than CLOSE_M, show the mesh
- * instead; back to photoreal once fewer than 2 points are within FAR_M (no flicker between). */
-const CLOSE_M = 0.7, FAR_M = 0.9;
-const closeRay = new THREE.Raycaster();
-const closeDirs = [-0.8, 0, 0.8].flatMap((x) => [-0.6, 0, 0.6].map((y) => [x, y]));
-function closeUpSwap(app) {
-  if (!app.splat || !state.splat || !state.splat.shown || !app.appearance) return;
-  let near = 0, within = 0;
-  for (const [x, y] of closeDirs) {
-    closeRay.setFromCamera({ x, y }, app.camera);
-    closeRay.far = FAR_M;
-    const hit = closeRay.intersectObject(app.appearance, true)[0];
-    if (hit && hit.distance < CLOSE_M) near += 1;
-    if (hit) within += 1;
-  }
-  const close = app.closeUp ? within >= 2 : near >= 2;
-  if (close === !!app.closeUp) return;
-  app.closeUp = close;
-  app.splat.visible = !close;
-  setMeshHidden(app, !close);
-  state.splat.close_up_mesh = close;
-}
-
 async function loadSplat(ctx) {
   const { app, data } = ctx;
   const s = data.splat;
@@ -342,7 +323,6 @@ async function loadSplat(ctx) {
   btn.textContent = startSplat ? 'Show mesh' : 'Show photoreal';
   btn.onclick = () => {
     const show = !state.splat.shown;
-    app.closeUp = false;
     mesh.visible = show;
     setMeshHidden(app, show);
     state.splat.shown = show;
@@ -551,6 +531,7 @@ const asSearchable = (p) => ({ poi_id: p.poi_id, display_name: p.name, aliases: 
 
 function renderPois(ctx) {
   const { app, eye } = ctx;
+  if (app.minimap) app.minimap.setPois(ctx.pois);
   app.markers.clear();
   for (const p of ctx.pois) {
     const g = new THREE.Group();
@@ -586,6 +567,7 @@ function selectPoi(ctx, id) {
   $('route-status').hidden = true;
   $('poi-route').hidden = !studio || ctx.pkg.navigation.status === 'unavailable';
   ctx.app.routeGroup.clear();
+  if (ctx.app.minimap) { ctx.app.minimap.setRoute(null); ctx.app.minimap.setSelected(p.poi_id); }
 }
 
 function flyTo(ctx, pos, target, ms = 900) {
@@ -737,10 +719,50 @@ function drawRoute(ctx, poly, status) {
   const pts = poly.map(([x, z]) => new THREE.Vector3(x, y, z));
   const color = status === 'validated' ? 0x16a34a : 0xf59e0b;
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineDashedMaterial({ color, dashSize: 0.12 * ctx.eye, gapSize: status === 'validated' ? 0.0001 : 0.08 * ctx.eye, depthTest: false }));
+    new THREE.LineDashedMaterial({ color, dashSize: 0.12 * ctx.eye, gapSize: status === 'validated' ? 0.0001 : 0.08 * ctx.eye, depthTest: false,
+      transparent: true }));                              // late pass: over the photoreal splat
   line.computeLineDistances();
   line.renderOrder = 8;
   ctx.app.routeGroup.add(line);
+  if (ctx.app.minimap) ctx.app.minimap.setRoute(poly);
+}
+
+// ------------------------------------------------------------------ mini-map
+function wireMinimap(ctx) {
+  const { app, walker, eye } = ctx;
+  if (!app.appearance) return;
+  try {
+    app.minimap = createMinimap({ app, walker, eye, canvas: $('minimap-canvas'), onGo: (x, z) => {
+      const g = walker.grid;
+      if (walker.mode === 'walk' && g && !isAllowed(g, x, z)) { toast('Not a walking spot – click on open floor (or switch to fly mode).'); return; }
+      const dir = new THREE.Vector3();
+      app.camera.getWorldDirection(dir);
+      const y = walker.mode === 'walk' ? eye : app.camera.position.y;
+      flyTo(ctx, [x, y, z], [x + dir.x, y + dir.y, z + dir.z], 600);
+    } });
+  } catch (e) {
+    state.errors.push({ kind: 'minimap', message: e.message });
+    return;
+  }
+  app.minimap.setPois(ctx.pois);
+  const box = $('minimap'), btn = $('map-toggle');
+  let shown = true;
+  try { shown = localStorage.getItem('namma.map') !== 'off'; } catch { /* no storage */ }
+  const show = (on) => {
+    shown = on;
+    box.hidden = !on;
+    btn.textContent = on ? 'Hide map' : 'Show map';
+    try { localStorage.setItem('namma.map', on ? 'on' : 'off'); } catch { /* no storage */ }
+  };
+  btn.hidden = false;
+  btn.onclick = () => show(!shown);
+  $('minimap-close').onclick = () => show(false);
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target && e.target.tagName)) return;
+    if (e.code === 'KeyN') show(!shown);
+  });
+  show(shown);
+  state.minimap = true;
 }
 
 // ------------------------------------------------------------------ photo viewpoints
@@ -763,67 +785,198 @@ function wireViewpoints(ctx, startPose) {
 }
 
 // ------------------------------------------------------------------ studio tools
-// ---- length measuring: click points in a chain; each segment shows its length in the view (Esc ends a chain).
-// Points are picked on the mesh, which stays under the photoreal splat (lined up to a few centimetres).
+// ---- length measuring: click points in a chain; each segment shows its length in the view. A live line follows the
+// pointer; Shift makes the next segment exactly level or upright; clicking the first point again closes a shape (area);
+// Backspace removes the last point; Esc starts a new chain. Points are picked on the mesh, which stays under the
+// photoreal splat (lined up to a few centimetres).
+const UNITS = {
+  m: { len: (m) => `${m.toFixed(2)} m`, area: (m2) => `${m2.toFixed(2)} m²` },
+  cm: { len: (m) => `${(m * 100).toFixed(1)} cm`, area: (m2) => `${m2.toFixed(2)} m²` },
+  ft: {
+    len: (m) => { const inch = m / 0.0254, ft = Math.floor(inch / 12); return `${ft} ft ${(inch - 12 * ft).toFixed(1)} in`; },
+    area: (m2) => `${(m2 / 0.09290304).toFixed(1)} ft²`,
+  },
+};
+
+function polygonArea(pts) {                     // planar polygon in 3D: half the length of its Newell normal
+  const n = new THREE.Vector3();
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    n.x += (a.y - b.y) * (a.z + b.z); n.y += (a.z - b.z) * (a.x + b.x); n.z += (a.x - b.x) * (a.y + b.y);
+  }
+  return n.length() / 2;
+}
+
 function wireMeasure(ctx) {
   const { app, pkg, eye } = ctx;
   const group = new THREE.Group();
   group.name = 'measurements';
   app.scene.add(group);
-  const dotMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, depthTest: false });
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, depthTest: false });
-  const m = { on: false, chains: [], current: null };
+  // transparent: drawn in the late pass, after the photoreal splat (opaque lines were painted over by it)
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, depthTest: false, transparent: true });
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, depthTest: false, transparent: true });
+  const previewMat = new THREE.LineDashedMaterial({ color: 0xfacc15, dashSize: 0.03 * eye, gapSize: 0.02 * eye, depthTest: false,
+    transparent: true });
+  const m = { on: false, chains: [], current: null, shift: false };
   state.measure = m;
-  const fmt = (u) => formatLength(u, pkg.scale);
+  const mpu = pkg.scale && pkg.scale.metres_per_unit;
+  let unit = 'm';
+  try { const u = localStorage.getItem('namma.measureUnit'); if (UNITS[u]) unit = u; } catch { /* no storage */ }
+  $('measure-unit').value = unit;
+  const fmt = (u) => (mpu ? UNITS[unit].len(u * mpu) : formatLength(u, pkg.scale));
+  const fmtArea = (u2) => (mpu ? UNITS[unit].area(u2 * mpu * mpu) : `${u2.toFixed(2)} model units²`);
   const btn = $('measure-btn');
+  const hint = (t) => { $('measure-hint').textContent = t; };
+  const segs = (c) => {
+    const s = c.points.slice(1).map((b, i) => [c.points[i], b]);
+    if (c.closed) s.push([c.points[c.points.length - 1], c.points[0]]);
+    return s;
+  };
+  const total = (c) => segs(c).reduce((t, [a, b]) => t + a.distanceTo(b), 0);
+
+  // ---- live preview from the last point to the pointer
+  const preview = {
+    line: new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), previewMat),
+    label: labelSprite(' ', eye * 0.6), text: '',
+  };
+  preview.line.renderOrder = 9;
+  const hidePreview = () => { preview.line.visible = false; preview.label.visible = false; };
+  hidePreview();
+
+  // ---- scene objects, rebuilt from the chains on every change (a handful of points: cheap)
+  const redraw = () => {
+    group.clear();
+    for (const c of m.chains) {
+      for (const p of c.points) {
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.012 * eye, 12, 8), dotMat);
+        dot.position.copy(p);
+        dot.renderOrder = 9;
+        group.add(dot);
+      }
+      for (const [a, b] of segs(c)) {
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), lineMat);
+        line.renderOrder = 9;
+        group.add(line);
+        const label = labelSprite(fmt(a.distanceTo(b)), eye * 0.6);
+        label.position.copy(a).add(b).multiplyScalar(0.5);
+        group.add(label);
+      }
+      if (c.closed) {
+        const centre = c.points.reduce((s, p) => s.add(p), new THREE.Vector3()).multiplyScalar(1 / c.points.length);
+        const label = labelSprite(`area ${fmtArea(polygonArea(c.points))}`, eye * 0.7);
+        label.position.copy(centre);
+        group.add(label);
+      }
+    }
+    group.add(preview.line, preview.label);
+  };
+
+  // ---- the list in the side panel
   const list = () => {
     const ol = $('measure-list');
     ol.innerHTML = '';
-    for (const c of m.chains) {
-      for (let i = 1; i < c.points.length; i++) {
-        const a = c.points[i - 1], b = c.points[i];
-        const flat = Math.hypot(b.x - a.x, b.z - a.z), up = Math.abs(b.y - a.y);
+    m.chains.forEach((c, k) => {
+      const head = document.createElement('li');
+      const t = document.createElement('strong');
+      t.textContent = `#${k + 1}` + (segs(c).length > 1 ? ` · total ${fmt(total(c))}` : '')
+        + (c.closed ? ` · area ${fmtArea(polygonArea(c.points))}` : '');
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'secondary'; del.textContent = '×';
+      del.setAttribute('aria-label', `Delete measurement ${k + 1}`);
+      del.onclick = () => { m.chains.splice(k, 1); if (m.current === c) m.current = null; hidePreview(); redraw(); list(); };
+      head.append(t, del);
+      ol.append(head);
+      for (const [a, b] of segs(c)) {
         const li = document.createElement('li');
+        const flat = Math.hypot(b.x - a.x, b.z - a.z), up = Math.abs(b.y - a.y);
         li.textContent = `${fmt(a.distanceTo(b))}  (across ${fmt(flat)}, height ${fmt(up)})`;
         ol.append(li);
       }
-      if (c.points.length > 2) {
-        const li = document.createElement('li');
-        li.className = 'muted';
-        li.textContent = `total ${fmt(c.total)}`;
-        ol.append(li);
-      }
-    }
+    });
     $('measure-panel').hidden = !m.on && !m.chains.length;
   };
-  const hint = (t) => { $('measure-hint').textContent = t; };
-  const pick = (e) => {
-    let x = e.clientX, y = e.clientY;
-    if (document.pointerLockElement === app.canvas) {          // looking around: measure at the crosshair
+
+  // ---- picking
+  const screenXY = (e) => {
+    if (document.pointerLockElement === app.canvas) {           // looking around: measure at the crosshair
       const r = app.canvas.getBoundingClientRect();
-      x = r.left + r.width / 2; y = r.top + r.height / 2;
+      return [r.left + r.width / 2, r.top + r.height / 2];
     }
+    return [e.clientX, e.clientY];
+  };
+  const constrain = (a, p) => {                                 // Shift: exactly level, or exactly upright
+    const flat = Math.hypot(p.x - a.x, p.z - a.z), up = Math.abs(p.y - a.y);
+    return up > flat ? new THREE.Vector3(a.x, p.y, a.z) : new THREE.Vector3(p.x, a.y, p.z);
+  };
+  const hitAt = (x, y) => {
     const hit = app.pick(x, y, app.appearance ? [app.appearance] : []);
-    if (!hit) { toast('No surface there – click on the room.'); return; }
-    const p = hit.point.clone();
-    if (!m.current) { m.current = { points: [], total: 0 }; m.chains.push(m.current); }
-    const c = m.current;
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.012 * eye, 12, 8), dotMat);
-    dot.position.copy(p);
-    dot.renderOrder = 9;
-    group.add(dot);
-    if (c.points.length) {
-      const a = c.points[c.points.length - 1];
-      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, p]), lineMat));
-      const d = a.distanceTo(p);
-      c.total += d;
-      const label = labelSprite(fmt(d), eye * 0.6);
-      label.position.copy(a).add(p).multiplyScalar(0.5);
-      group.add(label);
+    return hit ? hit.point.clone() : null;
+  };
+  const nearFirst = (c, x, y) => {                              // within 14 px of the chain's first point on screen
+    if (!c || c.points.length < 3) return false;
+    const r = app.canvas.getBoundingClientRect();
+    const s = c.points[0].clone().project(app.camera);
+    return Math.hypot((s.x + 1) / 2 * r.width + r.left - x, (1 - s.y) / 2 * r.height + r.top - y) < 14;
+  };
+  const pick = (e) => {
+    const [x, y] = screenXY(e);
+    if (nearFirst(m.current, x, y)) {                           // close the shape
+      m.current.closed = true;
+      m.current = null;
+      hidePreview();
+      hint('Shape closed: its area is shown. Click to start a new measurement.');
+      redraw(); list();
+      return;
     }
+    let p = hitAt(x, y);
+    if (!p) { toast('No surface there – click on the room.'); return; }
+    if (!m.current) { m.current = { points: [], closed: false }; m.chains.push(m.current); }
+    const c = m.current;
+    if (c.points.length && (e.shiftKey || m.shift)) p = constrain(c.points[c.points.length - 1], p);
     c.points.push(p);
-    hint(c.points.length === 1 ? 'Click the next point.' : 'Click another point to continue, or press Esc to start a new one.');
-    list();
+    hint(c.points.length === 1 ? 'Click the next point (hold Shift: level / upright).'
+      : 'Click to continue, the first point to close the shape, Esc for a new measurement.');
+    redraw(); list();
+  };
+
+  let pending = null;
+  const updatePreview = () => {
+    const e = pending;
+    pending = null;
+    const c = m.current;
+    if (!m.on || !c || !c.points.length || !e) { hidePreview(); return; }
+    const [x, y] = screenXY(e);
+    let p = hitAt(x, y);
+    if (!p) { hidePreview(); return; }
+    const a = c.points[c.points.length - 1];
+    if (m.shift) p = constrain(a, p);
+    if (nearFirst(c, x, y)) p = c.points[0].clone();
+    preview.line.geometry.setFromPoints([a, p]);
+    preview.line.computeLineDistances();
+    const text = fmt(a.distanceTo(p));
+    if (text !== preview.text) {
+      group.remove(preview.label);
+      preview.label = labelSprite(text, eye * 0.6);
+      preview.text = text;
+      group.add(preview.label);
+    }
+    preview.label.position.copy(a).add(p).multiplyScalar(0.5);
+    preview.line.visible = preview.label.visible = true;
+  };
+  app.canvas.addEventListener('mousemove', (e) => {
+    if (!m.on) return;
+    if (!pending) requestAnimationFrame(updatePreview);
+    pending = e;
+  });
+
+  // ---- actions
+  const undo = () => {
+    const c = m.current || m.chains[m.chains.length - 1];
+    if (!c) return;
+    if (c.closed) c.closed = false;
+    else c.points.pop();
+    if (!c.points.length) { m.chains.splice(m.chains.indexOf(c), 1); m.current = null; } else m.current = c;
+    hidePreview(); redraw(); list();
   };
   const setOn = (on) => {
     m.on = on;
@@ -831,24 +984,42 @@ function wireMeasure(ctx) {
     app.onPick = on ? pick : (app.onPick === pick ? null : app.onPick);
     btn.textContent = on ? 'Stop measuring' : 'Measure';
     btn.classList.toggle('active', on);
-    if (!on) m.current = null;
+    if (!on) { m.current = null; hidePreview(); }
     hint(on ? 'Click two or more points on the room to measure between them.' : '');
     list();
   };
   btn.onclick = () => setOn(!m.on);
   $('measure-clear').onclick = () => {
-    group.clear();
     m.chains = [];
     m.current = null;
+    hidePreview(); redraw();
     if (m.on) hint('Click two or more points on the room to measure between them.');
     list();
   };
+  $('measure-undo').onclick = undo;
+  $('measure-unit').onchange = (e) => {
+    unit = e.target.value;
+    try { localStorage.setItem('namma.measureUnit', unit); } catch { /* no storage */ }
+    preview.text = '';
+    redraw(); list();
+  };
+  $('measure-copy').onclick = async () => {
+    const lines = [...$('measure-list').children].map((li) => {
+      const head = li.querySelector('strong');
+      return head ? head.textContent : `  ${li.textContent}`;
+    });
+    try { await navigator.clipboard.writeText(lines.join('\n')); toast('Measurements copied.'); } catch { toast('Could not copy (clipboard not allowed here).'); }
+  };
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target && e.target.tagName)) return;
+    if (e.key === 'Shift') m.shift = true;
     if (e.code === 'KeyM') setOn(!m.on);
-    else if (e.code === 'Escape' && m.on && m.current) { m.current = null; hint('New measurement: click its first point.'); }
+    else if (e.code === 'Escape' && m.on && m.current) { m.current = null; hidePreview(); hint('New measurement: click its first point.'); }
+    else if (e.code === 'Backspace' && m.on) { e.preventDefault(); undo(); }
   });
-  if (!pkg.scale.metres_per_unit) hint('The scale of this model is unknown: lengths are in model units.');
+  window.addEventListener('keyup', (e) => { if (e.key === 'Shift') m.shift = false; });
+  redraw();
+  if (!mpu) hint('The scale of this model is unknown: lengths are in model units.');
 }
 
 function wireStudioTools(ctx) {
