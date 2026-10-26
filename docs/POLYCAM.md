@@ -74,7 +74,8 @@ photoreal room ("Show mesh" switches back). The mesh stays underneath for walkin
 3. **Depth guide** (`mesh_depth_maps`): a quick 3,000-step splat is lined up with the mesh; the mesh's depth is
    rendered for every camera (within 2-6 % of the phone's own depth maps on most keyframes).
 4. **Training** (`scripts/splat/train_splat.py`, separate Python 3.10 environment, `requirements-splat.txt`):
-   gsplat 1.5.3, MCMC (600 k splats), 30,000 steps, per-camera pose correction, per-photo colour correction
+   gsplat 1.5.3, MCMC (600 k splats), 15,000 steps starting from 200 k points on the scanned mesh (plus the photo
+   points), per-camera pose correction, per-photo colour correction
    (auto exposure), relative depth loss against the mesh.
 5. **Line-up** (`namma.studio.splat_align`): the splat's solid splats against the mesh (turn about the vertical, then
    rigid ICP); refused below 30 % within 5 cm.
@@ -97,6 +98,10 @@ and a 150-step pose fit with the splat frozen; 7,000 training steps, 300 k splat
 | ... COLMAP poses | 25.9 | 0.838 |
 | ... COLMAP poses + mesh depth guide | 25.9 | 0.839 |
 | **Final: COLMAP + depth + both corrections, 30,000 steps, 600 k splats** | **26.3** | **0.858** |
+
+**Speed (2026-10-26, a common 22-photo test set, pose + colour fit):** 30k steps 23.9 dB / 39.6 min; 30k with half-size
+photos first 24.5 / 28.3 min; 15k 24.1 / 19.4 min; **15k starting from the mesh 24.6 / 19.6 min (now the default)**.
+One run each (differences of ~0.2 dB may be noise). Table: `docs/SPEED_EXPERIMENTS_RESULTS.md`.
 
 The final model took 38 minutes to train (0.93 GB GPU), 149 MB. Seen from the walking positions in the viewer it is
 photographic (doors, clothes on a hook, patterned curtains, wardrobe, bags); the mirror stays soft (reflections).

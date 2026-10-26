@@ -57,7 +57,7 @@ Two processing profiles: **Preview** (fast, 1600 px) and **Standard** (full-reso
 | Repair | Ceiling plane parallel to the floor, hanging debris removed, holes closed, backing sheets behind outer walls, texture gutters padded | Black holes and wavy ceiling fixed automatically (~4 s) |
 | Walking maps | Floor found on the mesh; walkable map built on heights above the fitted floor plane (the export was 1.65° off level, which had hidden all clear floor) | Routes found with ≥ 0.28 m clearance |
 | Camera poses | Phone (ARKit) poses refined by COLMAP and fitted back to the phone's metric frame | 188 of 218 photos kept |
-| Photoreal splat | gsplat 1.5.3, MCMC, 600 k Gaussians, 30 k steps, per-photo pose and exposure correction, mesh depth guide, flat-wall prior | Held-out photos: **PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858** over the first version |
+| Photoreal splat | gsplat 1.5.3, MCMC, 600 k Gaussians, 15 k steps started from points on the scanned mesh, per-photo pose and exposure correction, mesh depth guide, flat-wall prior; **~20 min** on an RTX 4050 Laptop (was 40 min, with a higher held-out score) | Held-out photos: **PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858** over the first version |
 | Line-up | Splat ↔ mesh: yaw search then ICP on solid Gaussians | 55 % within 5 cm |
 | Compression | Own SPZ v2 encoder; Gaussians under 2 % opacity dropped | **149 MB → 8.2 MB**; renders within 33–36 dB PSNR of the original |
 

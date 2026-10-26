@@ -118,7 +118,7 @@ LiDAR phones) and plain photos/video (any phone, §3).</p>
 </tr>
 <tr>
 <td>Photoreal splat</td>
-<td>gsplat 1.5.3, MCMC, 600 k Gaussians, 30 k steps, per-photo pose and exposure correction, mesh depth guide, flat-wall prior</td>
+<td>gsplat 1.5.3, MCMC, 600 k Gaussians, 15 k steps started from points on the scanned mesh, per-photo pose and exposure correction, mesh depth guide, flat-wall prior; <strong>~20 min</strong> on an RTX 4050 Laptop (was 40 min, with a higher held-out score)</td>
 <td>Held-out photos: <strong>PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858</strong> over the first version</td>
 </tr>
 <tr>
@@ -293,7 +293,7 @@ be added by clicking on the model and found by search (jump transition). Walking
 <li><strong>Own home via Polycam.</strong> The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
   the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
   only saw from far away smears up close; the SOP now asks for wall passes at 1–1.5 m.</li>
-<li><strong>Photoreal training needs an NVIDIA GPU</strong> (~40 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
+<li><strong>Photoreal training needs an NVIDIA GPU</strong> (~20–25 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
   view is used.</li>
 <li><strong>Completeness depends on the room.</strong> Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);
   plain white walls, desks and dark floors stay partly missing (held-out office 0.30–0.33). Missing floor is shown

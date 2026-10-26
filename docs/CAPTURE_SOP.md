@@ -31,7 +31,7 @@ looks at* decides the quality):
 photoreal view). Save both to Files or AirDrop them.
 
 **Into the Studio:** **New space from Polycam** → drop both files (or scan the Studio's QR code on the phone →
-**Import a Polycam export**). Then on the space's card, **Make the photoreal view** (NVIDIA GPU; ~40 min for
+**Import a Polycam export**). Then on the space's card, **Make the photoreal view** (NVIDIA GPU; ~20–25 min for
 ~200 photos). Scale is metric from the phone's tracking; check one known length with the measuring tool (M).
 
 ## B. Photos or video (any phone)

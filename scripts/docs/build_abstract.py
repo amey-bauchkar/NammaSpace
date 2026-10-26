@@ -83,7 +83,7 @@ def results():
 LIMITS = """- **Own home via Polycam.** The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
   the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
   only saw from far away smears up close; the SOP now asks for wall passes at 1–1.5 m.
-- **Photoreal training needs an NVIDIA GPU** (~40 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
+- **Photoreal training needs an NVIDIA GPU** (~20–25 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
   view is used.
 - **Completeness depends on the room.** Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);
   plain white walls, desks and dark floors stay partly missing (held-out office 0.30–0.33). Missing floor is shown

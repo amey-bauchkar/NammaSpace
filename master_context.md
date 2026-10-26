@@ -75,13 +75,17 @@ fit (`pose_colour`) and SSIM.
 | Run | Recipe | Result |
 |---|---|---|
 | r0 | current: 30k steps | **23.924 dB, SSIM 0.837, 39.6 min** |
-| r1 | 30k, half-size photos for the first half (`--half-res-until 0.5`) | running |
-| r2 | 15k, start from the Polycam mesh (`--init-points mesh_init.npz` from `scripts/splat/mesh_init.py`) | queued |
-| r3 | 15k, normal start | queued |
+| r1 | 30k, half-size photos for the first half (`--half-res-until 0.5`) | 24.512 dB, SSIM 0.843, 28.3 min |
+| r2 | 15k, start from the Polycam mesh (`--init-points`) | **24.612 dB, SSIM 0.839, 19.6 min — adopted** |
+| r3 | 15k, normal start | 24.148 dB, SSIM 0.833, 19.4 min |
+
+**Done 2026-10-27:** `make_photoreal` now trains 15,000 steps starting from `mesh_points` (200 k points on the
+unrepaired mesh, moved into the training frame with the pre-training line-up T0). Untested idea: add
+`--half-res-until 0.5` on top (r1 suggests it is free quality/speed), verify on the next scan.
 
 They run as an independent Windows process (`C:\Users\Tanmay\AppData\Local\Temp\nb\speed\run_rest.cmd`, minimized
 cmd window); when done, `scripts/splat/speed_summary.py` writes **`docs/SPEED_EXPERIMENTS_RESULTS.md`**.
-**Next step:** pick the fastest run within 0.1 dB of r0 and make it the default in `src/namma/studio/splat.py`
+**Next step (done 2026-10-27, see above):** pick the fastest run within 0.1 dB of r0 and make it the default in `src/namma/studio/splat.py`
 (`make_photoreal`: `iters`, and add `--half-res-until` / mesh init: pre-train → align → `mesh_init` with that T →
 main training with `--init-points`). Re-run tests (`python -m pytest -q tests`, `npm run -s test:web`).
 

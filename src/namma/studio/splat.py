@@ -277,11 +277,55 @@ def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, sampl
 # ---------------------------------------------------------------------------------------- job
 # cap: at 1 M splats (1024 px photos, before MCMC was tamed) training needed 9.5 GB on the 6 GB RTX 4050 and slowed
 # to ~6 steps/s; 600 k stayed within the card (final New room run).
-def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_000, depth_weight=0.1,
+def mesh_points(glb, n, seed=0):
+    """(n,3) points spread over the surface by area and their (n,3) sRGB colours in 0..1."""
+    from namma.studio.mesh_import import _accessor, _parse_glb
+    from namma.studio.mesh_repair import _texture
+    doc, binary = _parse_glb(glb)
+    rng = np.random.default_rng(seed)
+    P_all, C_all, A_all = [], [], []
+    for m in doc.get("meshes", []):
+        for prim in m["primitives"]:
+            if prim.get("mode", 4) != 4 or "indices" not in prim:
+                continue
+            V = _accessor(doc, binary, prim["attributes"]["POSITION"]).astype(np.float64)
+            F = _accessor(doc, binary, prim["indices"]).reshape(-1, 3).astype(np.int64)
+            UV = _accessor(doc, binary, prim["attributes"]["TEXCOORD_0"]) if "TEXCOORD_0" in prim["attributes"] else None
+            tex = _texture(doc, binary, prim) if UV is not None else None
+            area = np.linalg.norm(np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]]), axis=1) / 2
+            P_all.append((V, F, UV, tex))
+            A_all.append(area)
+    areas = np.concatenate(A_all)
+    pick = rng.choice(len(areas), n, p=areas / areas.sum())
+    r1, r2 = np.sqrt(rng.random(n)), rng.random(n)
+    w = np.c_[1 - r1, r1 * (1 - r2), r1 * r2]                          # uniform barycentric weights
+    out_p, out_c = np.zeros((n, 3)), np.full((n, 3), 0.7)
+    start = 0
+    for (V, F, UV, tex), area in zip(P_all, A_all):
+        sel = (pick >= start) & (pick < start + len(area))
+        f = F[pick[sel] - start]
+        out_p[sel] = np.einsum("nk,nkd->nd", w[sel], V[f])
+        if tex is not None:
+            uv = np.einsum("nk,nkd->nd", w[sel], UV[f])
+            h, wd = tex.shape[:2]
+            px = np.clip((uv[:, 0] % 1.0 * wd).astype(int), 0, wd - 1)
+            py = np.clip((uv[:, 1] % 1.0 * h).astype(int), 0, h - 1)
+            out_c[sel] = tex[py, px] / 255.0
+        start += len(area)
+    return out_p, out_c
+
+
+MESH_INIT_POINTS = 200_000
+
+
+def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=600_000, depth_weight=0.1,
                    timeout_s=3 * 3600, progress=None, cancel_file=None):
     """The recipe chosen by held-out scoring on "New room" (every 8th keyframe kept out of training, 7,000 steps):
     phone poses 22.6 dB -> + pose and per-photo colour correction 24.5 -> COLMAP poses 25.9 (SSIM 0.84); the mesh
-    depth guide adds little on held-out photos but keeps floaters out of the walking views."""
+    depth guide adds little on held-out photos but keeps floaters out of the walking views.
+    Speed (2026-10-26, 22 held-out photos, docs/SPEED_EXPERIMENTS_RESULTS.md): starting from points on the scanned
+    mesh and training 15,000 steps scored 24.6 dB in 19.6 min vs 23.9 dB in 39.6 min for 30,000 steps from the
+    sparse photo points."""
     from namma.recon.runner import StepFailed, run_step
     from namma.studio.package import build_scene_package
     from namma.studio.pipeline import RunContext
@@ -333,6 +377,12 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
         if fit0["within_5cm"] >= MIN_WITHIN_5CM:
             mesh_depth_maps(model, glb, T0, work / "depth")
             depth_args = ["--depth-dir", work / "depth", "--depth-weight", depth_weight]
+            # start from the room's shape and colours: points on the scanned surface, in the training frame
+            P, C = mesh_points(glb, MESH_INIT_POINTS)
+            Ti = np.linalg.inv(T0)
+            np.savez(work / "mesh_init.npz", xyz=(P @ Ti[:3, :3].T + Ti[:3, 3]).astype(np.float32),
+                     rgb=C.astype(np.float32))
+            depth_args += ["--init-points", work / "mesh_init.npz"]
     except StepFailed as e:
         raise SplatError(str(e)) from e
     # 3. training
