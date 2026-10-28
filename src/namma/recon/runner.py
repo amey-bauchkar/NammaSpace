@@ -12,7 +12,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import psutil
+try:
+    import psutil
+except ModuleNotFoundError:  # The separate GPU splat environment deliberately has only training dependencies.
+    psutil = None
 
 
 class StepFailed(RuntimeError):
@@ -22,6 +25,8 @@ class StepFailed(RuntimeError):
 
 
 def _tree(proc):
+    if psutil is None:
+        return []
     try:
         return [proc] + proc.children(recursive=True)
     except psutil.Error:
@@ -29,6 +34,8 @@ def _tree(proc):
 
 
 def _tree_rss(proc):
+    if psutil is None:
+        return 0
     total = 0
     for p in _tree(proc):
         try:
@@ -39,6 +46,12 @@ def _tree_rss(proc):
 
 
 def _kill_tree(proc):
+    if psutil is None:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+        return
     for p in reversed(_tree(proc)):
         try:
             p.kill()
@@ -88,7 +101,7 @@ def run_step(step, argv, log_dir, *, timeout_s, cwd=None, cancel_file=None, on_l
         p = subprocess.Popen([str(a) for a in argv], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd,
                              env=env, text=True, encoding="utf-8", errors="replace", bufsize=1,
                              creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        ps = psutil.Process(p.pid)
+        ps = psutil.Process(p.pid) if psutil is not None else p
         peak = [0]
         reason = [None]
         stop = threading.Event()
@@ -131,8 +144,8 @@ def run_step(step, argv, log_dir, *, timeout_s, cwd=None, cancel_file=None, on_l
     rec = {"step": step, "argv": [str(a) for a in argv], "cwd": str(cwd) if cwd else None, "started": started,
            "wall_s": round(time.perf_counter() - t0, 2), "peak_rss_mb": round(peak[0] / 2**20, 1),
            "return_code": rc, "status": status, "timeout_s": timeout_s, "log": log_path.name,
-           "machine_ram_gb": round(psutil.virtual_memory().total / 2**30, 1),
-           "available_ram_gb_after": round(psutil.virtual_memory().available / 2**30, 2)}
+           "machine_ram_gb": round(psutil.virtual_memory().total / 2**30, 1) if psutil is not None else None,
+           "available_ram_gb_after": round(psutil.virtual_memory().available / 2**30, 2) if psutil is not None else None}
     with open(log_dir / "commands.jsonl", "a", encoding="utf-8") as fh:
         fh.write(json.dumps(rec) + "\n")
     if status != "ok":

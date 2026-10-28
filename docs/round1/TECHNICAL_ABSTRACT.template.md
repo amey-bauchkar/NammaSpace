@@ -1,18 +1,20 @@
 # Namma Space – Technical Abstract (Round 1: 3D Reconstruction & Roaming)
 
-Techfest IIT Bombay 2026–27 · Team Namma Space · Draft updated 2026-10-26 from the repository evidence.
-All performance and accuracy figures below come from recorded runs (files named in each table); none are estimates.
+Techfest IIT Bombay 2026–27 · **Team Triple Musketeer** · 27 October 2026
+
+**Code:** github.com/amey-bauchkar/NammaSpace · **Walkthrough of our room:** amey-bauchkar.github.io/NammaSpace/demo/new-room/
+
+All performance and accuracy figures below come from recorded runs; none are estimates.
 
 ## 1. Problem and scope
 
-Namma Space turns **ordinary phone photos or one video of an indoor space** into a **photo-textured 3D
-model that anyone can walk through in a web browser**, without installing software and without manual 3D
-modelling (OFF-14…16, OFF-23/24). Round 1 asks for an SOP, a reconstruction pipeline and a free-roaming web
-viewer. Everything runs **locally on the team's own laptops**, with no paid API or cloud service: the photo
+Namma Space turns **a phone scan of an indoor space** – a Polycam LiDAR scan, or ordinary photos / one video –
+into a **photoreal 3D model that anyone can walk through in a web browser**, without installing software and
+without manual 3D modelling. Round 1 asks for an SOP, a reconstruction pipeline and a free-roaming web viewer. Everything runs **locally on the team's own laptops**, with no paid API or cloud service: the photo
 pipeline was built and evaluated on an Intel Core 5 120U (16 GB, integrated graphics, no CUDA) and uses an NVIDIA
 GPU when present (HP Victus, RTX 4050 Laptop 6 GB: COLMAP CUDA, Gaussian-splat training).
 
-**Own home (OFF-34).** The team's room was captured with an iPhone 14 in **Polycam** (LiDAR) following our SOP and
+**Own home.** The team's room was captured with an iPhone 14 in **Polycam** (LiDAR) following our SOP and
 imported into the Studio, which repairs the scan, adds walking, labels, routes and measuring, and trains a
 **photoreal Gaussian-splat view** from the same capture (§3a). Two routes therefore exist: Polycam import (primary,
 LiDAR phones) and plain photos/video (any phone, §3).
@@ -20,6 +22,7 @@ LiDAR phones) and plain photos/video (any phone, §3).
 ## 2. System architecture
 
 ```
+ Polycam scan ─► Studio import ─► repair ─► walking maps ─► photoreal splat (GPU) ─► IF-13 scene package
  phone photos / video ─► Studio (local web app, 127.0.0.1) ─► capture check ─► worker process
    worker: prepare ─► COLMAP SfM (CPU) ─► undistort ─► OpenMVS dense ─► mesh ─► texture (GLB, embedded)
           ─► model frame (floor, up, start view, collision grid) ─► quality report ─► IF-13 scene package
@@ -30,8 +33,8 @@ LiDAR phones) and plain photos/video (any phone, §3).
   no database; one memory-heavy job at a time; every stage is resumable (completed stages are kept after a
   crash, a cancel or an out-of-memory failure).
 - **Contracts**: the scene package (IF-13) states the model frame (right-handed, +Y up, floor at y = 0) and
-  an explicit **scale status**. Photos alone cannot fix real-world scale, so the default is
-  `unknown`; a user can add one known length later (no markers or tape required).
+  an explicit **scale status**: metric from the phone's tracking for Polycam scans; `unknown` for plain photos
+  until the user enters one known length in the viewer (no markers or tape required).
 - **Viewer**: three.js, vendored (no CDN dependency); loads a light level of detail first, then full detail;
   every file is hash-checked before use; failures show a clear message instead of a broken scene.
 
@@ -57,11 +60,12 @@ Two processing profiles: **Preview** (fast, 1600 px) and **Standard** (full-reso
 | Repair | Ceiling plane parallel to the floor, hanging debris removed, holes closed, backing sheets behind outer walls, texture gutters padded | Black holes and wavy ceiling fixed automatically (~4 s) |
 | Walking maps | Floor found on the mesh; walkable map built on heights above the fitted floor plane (the export was 1.65° off level, which had hidden all clear floor) | Routes found with ≥ 0.28 m clearance |
 | Camera poses | Phone (ARKit) poses refined by COLMAP and fitted back to the phone's metric frame | 188 of 218 photos kept |
-| Photoreal splat | gsplat 1.5.3, MCMC, 600 k Gaussians, 15 k steps started from points on the scanned mesh, per-photo pose and exposure correction, mesh depth guide, flat-wall prior; **~20 min** on an RTX 4050 Laptop (was 40 min, with a higher held-out score) | Held-out photos: **PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858** over the first version |
+| Photoreal splat | gsplat 1.5.3, MCMC, 600 k Gaussians, 15 k steps started from points on the scanned mesh, per-photo pose and exposure correction, mesh depth guide, flat-wall prior; **~20 min** on an RTX 4050 Laptop | Held-out photos: **PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858** over our first version; the mesh start halved training time (39.6 → 19.6 min) and scored 24.6 vs 23.9 dB on a 22-photo test set |
 | Line-up | Splat ↔ mesh: yaw search then ICP on solid Gaussians | 55 % within 5 cm |
 | Compression | Own SPZ v2 encoder; Gaussians under 2 % opacity dropped | **149 MB → 8.2 MB**; renders within 33–36 dB PSNR of the original |
 
-Each recipe change was kept only if it scored at least as well on photos held out of training.
+Each recipe change was kept only if it scored at least as well on photos held out of training (PSNR after a short
+pose and colour fit; full tables in `docs/POLYCAM.md` and `docs/SPEED_EXPERIMENTS_RESULTS.md`).
 
 ## 4. Capture SOP (summary of docs/CAPTURE_SOP.md)
 
@@ -81,6 +85,7 @@ The viewer opens on the **photoreal view** (Spark 2.4.0 renders the splat inside
 mesh stays underneath for collision, labels, routes and measuring. A **measuring tool** (M) gives chained lengths with
 across/height components, level/upright snapping and closed-shape areas (m, cm or ft-in); a **mini-map** shows a
 top-down plan of the room with labels, the route and the viewer's position.
+On the RTX 4050 laptop the photoreal room runs at the display's 144 fps (viewer frame counter).
 First-person controls: click to capture the mouse (pointer lock) or drag to look; W A S D / arrows to walk;
 Shift to run; F toggles fly mode; R resets to the start view; [ ] jump through the original photo
 viewpoints. Walking keeps the camera at the capture eye height inside the free space connected to where the

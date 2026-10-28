@@ -33,8 +33,8 @@ def results():
          "furniture boxes; TUM motion capture. Development scenes were used for tuning; **held-out scenes were "
          "processed once with the frozen configuration** (protocol `phase13_artifacts/PROTOCOL_PHASE13.md`). "
          "Criteria are the Phase 12 pre-registered ones, unchanged.", "",
-         "| Scene (role, profile, config) | Photos placed | Camera error median | Dense accuracy median | Completeness @5 cm (dense / mesh) | Floor IoU | Routes OK (false-unreachable) | Time · peak RAM |",
-         "|---|---|---|---|---|---|---|---|"]
+         "| Scene (role, profile, config) | Photos placed | Camera error median | Dense accuracy median | Completeness @5 cm (dense / mesh) | Floor IoU | Routes OK (false-unreachable) | Minutes | Peak RAM (GB) |",
+         "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         routes = r["routes"]
         if " ok," in str(routes):
@@ -47,16 +47,15 @@ def results():
         L.append(f"| {r['scene_id']} ({'held-out' if r['role'] == 'heldout_test' else 'dev'}, {r['profile']}, {cfg}) | {r['registered']} | "
                  f"{mm(r['pose_median_m'])} | {mm(r['dense_accuracy_median_m'])} | "
                  f"{f(r['dense_completeness_5cm'], 2)} / {f(r['mesh_completeness_5cm'], 2)} | {f(r['floor_iou'], 2)} | {routes} | "
-                 f"{f(r['minutes'], 1)} min · {f(r['peak_ram_gb'], 1)} GB |")
+                 f"{f(r['minutes'], 1)} | {f(r['peak_ram_gb'], 1)} |")
     failed = [u for u in m.get("unevaluated_runs", []) if u["status"] == "failed"]
     if failed:
         L.append("")
-        def short(msg, n=80):
-            msg = msg.split(";")[0]
-            return msg if len(msg) <= n else msg[:n].rsplit(" ", 1)[0] + " …"
-        L.append("**Failed runs (kept on record, not hidden):** " + "; ".join(
-            f"{u['project'].rsplit('-', 2)[0]} ({u['profile']}, stopped in {u['failed_stage']}): {short(u['message'])}"
-            for u in failed) + ".")
+        L.append(f"**Failed runs (kept on record, not hidden):** {len(failed)} runs stopped – "
+                 + "; ".join(f"{u['project'].rsplit('-', 2)[0]} ({u['profile']}, in the {u['failed_stage']} stage)"
+                             for u in failed)
+                 + ". Causes: a missing intermediate file, an implausible scene size, texturing over the time limit and two "
+                 "COLMAP crashes (exit 0xC0000409); full messages in `phase13_artifacts/results/metrics_matrix.json`.")
     L.append("")
     L.append("Config: *frozen* = configuration frozen before the held-out runs; *final* = the submitted code (frozen + "
              "post-freeze face cap D13-14); *earlier* = development configuration.")
@@ -83,6 +82,8 @@ def results():
 LIMITS = """- **Own home via Polycam.** The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
   the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
   only saw from far away smears up close; the SOP now asks for wall passes at 1–1.5 m.
+- **Not yet measured:** viewer frame rate on phones and integrated-graphics laptops with the photoreal view, and
+  measuring-tool accuracy against a tape measure.
 - **Photoreal training needs an NVIDIA GPU** (~20–25 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
   view is used.
 - **Completeness depends on the room.** Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);

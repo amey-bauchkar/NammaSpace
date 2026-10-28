@@ -21,7 +21,8 @@ CSS = """
 body { font: 9.6pt/1.38 "Segoe UI", system-ui, sans-serif; color: #111; }
 h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 11.5pt; margin: 9pt 0 3pt; border-bottom: 1px solid #ccd; }
 h3 { font-size: 10pt; margin: 7pt 0 2pt; } p { margin: 3pt 0; } ul, ol { margin: 2pt 0 3pt 16pt; padding: 0; }
-table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; page-break-inside: avoid; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; }
+tr { page-break-inside: avoid; } thead { display: table-header-group; } h1, h2, h3 { page-break-after: avoid; }
 th, td { border: 1px solid #c8ccd6; padding: 2pt 4pt; vertical-align: top; text-align: left; } th { background: #eef1f6; }
 code { font: 8.4pt Consolas, monospace; background: #f3f4f7; padding: 0 2pt; }
 pre { font: 8pt Consolas, monospace; background: #f3f4f7; padding: 4pt; white-space: pre-wrap; }

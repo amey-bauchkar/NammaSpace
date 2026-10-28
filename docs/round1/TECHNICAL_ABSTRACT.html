@@ -3,27 +3,29 @@
 body { font: 9.6pt/1.38 "Segoe UI", system-ui, sans-serif; color: #111; }
 h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 11.5pt; margin: 9pt 0 3pt; border-bottom: 1px solid #ccd; }
 h3 { font-size: 10pt; margin: 7pt 0 2pt; } p { margin: 3pt 0; } ul, ol { margin: 2pt 0 3pt 16pt; padding: 0; }
-table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; page-break-inside: avoid; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; }
+tr { page-break-inside: avoid; } thead { display: table-header-group; } h1, h2, h3 { page-break-after: avoid; }
 th, td { border: 1px solid #c8ccd6; padding: 2pt 4pt; vertical-align: top; text-align: left; } th { background: #eef1f6; }
 code { font: 8.4pt Consolas, monospace; background: #f3f4f7; padding: 0 2pt; }
 pre { font: 8pt Consolas, monospace; background: #f3f4f7; padding: 4pt; white-space: pre-wrap; }
 img { max-width: 100%; } .small { font-size: 8pt; color: #444; }
 </style></head><body><h1>Namma Space – Technical Abstract (Round 1: 3D Reconstruction &amp; Roaming)</h1>
-<p>Techfest IIT Bombay 2026–27 · Team Namma Space · Draft updated 2026-10-26 from the repository evidence.
-All performance and accuracy figures below come from recorded runs (files named in each table); none are estimates.</p>
+<p>Techfest IIT Bombay 2026–27 · <strong>Team Triple Musketeer</strong> · 27 October 2026</p>
+<p><strong>Code:</strong> github.com/amey-bauchkar/NammaSpace · <strong>Walkthrough of our room:</strong> amey-bauchkar.github.io/NammaSpace/demo/new-room/</p>
+<p>All performance and accuracy figures below come from recorded runs; none are estimates.</p>
 <h2>1. Problem and scope</h2>
-<p>Namma Space turns <strong>ordinary phone photos or one video of an indoor space</strong> into a <strong>photo-textured 3D
-model that anyone can walk through in a web browser</strong>, without installing software and without manual 3D
-modelling (OFF-14…16, OFF-23/24). Round 1 asks for an SOP, a reconstruction pipeline and a free-roaming web
-viewer. Everything runs <strong>locally on the team's own laptops</strong>, with no paid API or cloud service: the photo
+<p>Namma Space turns <strong>a phone scan of an indoor space</strong> – a Polycam LiDAR scan, or ordinary photos / one video –
+into a <strong>photoreal 3D model that anyone can walk through in a web browser</strong>, without installing software and
+without manual 3D modelling. Round 1 asks for an SOP, a reconstruction pipeline and a free-roaming web viewer. Everything runs <strong>locally on the team's own laptops</strong>, with no paid API or cloud service: the photo
 pipeline was built and evaluated on an Intel Core 5 120U (16 GB, integrated graphics, no CUDA) and uses an NVIDIA
 GPU when present (HP Victus, RTX 4050 Laptop 6 GB: COLMAP CUDA, Gaussian-splat training).</p>
-<p><strong>Own home (OFF-34).</strong> The team's room was captured with an iPhone 14 in <strong>Polycam</strong> (LiDAR) following our SOP and
+<p><strong>Own home.</strong> The team's room was captured with an iPhone 14 in <strong>Polycam</strong> (LiDAR) following our SOP and
 imported into the Studio, which repairs the scan, adds walking, labels, routes and measuring, and trains a
 <strong>photoreal Gaussian-splat view</strong> from the same capture (§3a). Two routes therefore exist: Polycam import (primary,
 LiDAR phones) and plain photos/video (any phone, §3).</p>
 <h2>2. System architecture</h2>
-<pre><code> phone photos / video ─► Studio (local web app, 127.0.0.1) ─► capture check ─► worker process
+<pre><code> Polycam scan ─► Studio import ─► repair ─► walking maps ─► photoreal splat (GPU) ─► IF-13 scene package
+ phone photos / video ─► Studio (local web app, 127.0.0.1) ─► capture check ─► worker process
    worker: prepare ─► COLMAP SfM (CPU) ─► undistort ─► OpenMVS dense ─► mesh ─► texture (GLB, embedded)
           ─► model frame (floor, up, start view, collision grid) ─► quality report ─► IF-13 scene package
  viewer.html (three.js) ◄── verified package (SHA-256 per file)      publish ─► static website / ZIP
@@ -33,8 +35,8 @@ LiDAR phones) and plain photos/video (any phone, §3).</p>
   no database; one memory-heavy job at a time; every stage is resumable (completed stages are kept after a
   crash, a cancel or an out-of-memory failure).</li>
 <li><strong>Contracts</strong>: the scene package (IF-13) states the model frame (right-handed, +Y up, floor at y = 0) and
-  an explicit <strong>scale status</strong>. Photos alone cannot fix real-world scale, so the default is
-  <code>unknown</code>; a user can add one known length later (no markers or tape required).</li>
+  an explicit <strong>scale status</strong>: metric from the phone's tracking for Polycam scans; <code>unknown</code> for plain photos
+  until the user enters one known length in the viewer (no markers or tape required).</li>
 <li><strong>Viewer</strong>: three.js, vendored (no CDN dependency); loads a light level of detail first, then full detail;
   every file is hash-checked before use; failures show a clear message instead of a broken scene.</li>
 </ul>
@@ -118,8 +120,8 @@ LiDAR phones) and plain photos/video (any phone, §3).</p>
 </tr>
 <tr>
 <td>Photoreal splat</td>
-<td>gsplat 1.5.3, MCMC, 600 k Gaussians, 15 k steps started from points on the scanned mesh, per-photo pose and exposure correction, mesh depth guide, flat-wall prior; <strong>~20 min</strong> on an RTX 4050 Laptop (was 40 min, with a higher held-out score)</td>
-<td>Held-out photos: <strong>PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858</strong> over the first version</td>
+<td>gsplat 1.5.3, MCMC, 600 k Gaussians, 15 k steps started from points on the scanned mesh, per-photo pose and exposure correction, mesh depth guide, flat-wall prior; <strong>~20 min</strong> on an RTX 4050 Laptop</td>
+<td>Held-out photos: <strong>PSNR 22.6 → 26.3 dB, SSIM 0.789 → 0.858</strong> over our first version; the mesh start halved training time (39.6 → 19.6 min) and scored 24.6 vs 23.9 dB on a 22-photo test set</td>
 </tr>
 <tr>
 <td>Line-up</td>
@@ -133,7 +135,8 @@ LiDAR phones) and plain photos/video (any phone, §3).</p>
 </tr>
 </tbody>
 </table>
-<p>Each recipe change was kept only if it scored at least as well on photos held out of training.</p>
+<p>Each recipe change was kept only if it scored at least as well on photos held out of training (PSNR after a short
+pose and colour fit; full tables in <code>docs/POLYCAM.md</code> and <code>docs/SPEED_EXPERIMENTS_RESULTS.md</code>).</p>
 <h2>4. Capture SOP (summary of docs/CAPTURE_SOP.md)</h2>
 <p><strong>Route A, Polycam (used for our room):</strong> LiDAR mode; walk slowly along every wall pointing the phone straight at it
 from 1–1.5 m (a wall seen only from across the room smears in the photoreal view); one lap tilted down for the floor,
@@ -149,6 +152,7 @@ every warning.</p>
 mesh stays underneath for collision, labels, routes and measuring. A <strong>measuring tool</strong> (M) gives chained lengths with
 across/height components, level/upright snapping and closed-shape areas (m, cm or ft-in); a <strong>mini-map</strong> shows a
 top-down plan of the room with labels, the route and the viewer's position.
+On the RTX 4050 laptop the photoreal room runs at the display's 144 fps (viewer frame counter).
 First-person controls: click to capture the mouse (pointer lock) or drag to look; W A S D / arrows to walk;
 Shift to run; F toggles fly mode; R resets to the start view; [ ] jump through the original photo
 viewpoints. Walking keeps the camera at the capture eye height inside the free space connected to where the
@@ -168,7 +172,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <th>Completeness @5 cm (dense / mesh)</th>
 <th>Floor IoU</th>
 <th>Routes OK (false-unreachable)</th>
-<th>Time · peak RAM</th>
+<th>Minutes</th>
+<th>Peak RAM (GB)</th>
 </tr>
 </thead>
 <tbody>
@@ -180,7 +185,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.14 / 0.16</td>
 <td>0.38</td>
 <td>1/12 (11)</td>
-<td>19.0 min · 2.2 GB</td>
+<td>19.0</td>
+<td>2.2</td>
 </tr>
 <tr>
 <td>arkit_41142280 (held-out, preview, frozen)</td>
@@ -190,7 +196,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.21 / 0.22</td>
 <td>0.10</td>
 <td>not measurable</td>
-<td>22.8 min · 3.0 GB</td>
+<td>22.8</td>
+<td>3.0</td>
 </tr>
 <tr>
 <td>eth3d_delivery_area (held-out, preview, frozen)</td>
@@ -200,7 +207,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.61 / 0.71</td>
 <td>0.61</td>
 <td>4/12 (8)</td>
-<td>28.6 min · 4.0 GB</td>
+<td>28.6</td>
+<td>4.0</td>
 </tr>
 <tr>
 <td>eth3d_office (held-out, preview, frozen)</td>
@@ -210,7 +218,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.30 / 0.40</td>
 <td>0.00</td>
 <td>0/12 (12)</td>
-<td>7.5 min · 1.9 GB</td>
+<td>7.5</td>
+<td>1.9</td>
 </tr>
 <tr>
 <td>eth3d_office (held-out, standard, frozen)</td>
@@ -220,7 +229,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.33 / 0.38</td>
 <td>0.00</td>
 <td>0/12 (12)</td>
-<td>34.2 min · 6.8 GB</td>
+<td>34.2</td>
+<td>6.8</td>
 </tr>
 <tr>
 <td>eth3d_delivery_area (dev, standard, earlier)</td>
@@ -230,7 +240,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.66 / 0.76</td>
 <td>0.62</td>
 <td>4/12 (8)</td>
-<td>58.5 min · 11.3 GB</td>
+<td>58.5</td>
+<td>11.3</td>
 </tr>
 <tr>
 <td>eth3d_kicker (dev, standard, earlier)</td>
@@ -240,7 +251,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.49 / 0.59</td>
 <td>0.34</td>
 <td>0/12 (12)</td>
-<td>51.1 min · 7.6 GB</td>
+<td>51.1</td>
+<td>7.6</td>
 </tr>
 <tr>
 <td>eth3d_kicker (dev, standard_fullres, earlier)</td>
@@ -250,7 +262,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.50 / 0.60</td>
 <td>0.35</td>
 <td>0/12 (12)</td>
-<td>51.3 min · 6.9 GB</td>
+<td>51.3</td>
+<td>6.9</td>
 </tr>
 <tr>
 <td>eth3d_pipes (dev, preview, earlier)</td>
@@ -260,7 +273,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>0.29 / 0.45</td>
 <td>0.00</td>
 <td>0/12 (12)</td>
-<td>3.8 min · 1.9 GB</td>
+<td>3.8</td>
+<td>1.9</td>
 </tr>
 <tr>
 <td>tum_fr3_office_sample (dev, preview, earlier)</td>
@@ -270,7 +284,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>– / –</td>
 <td>–</td>
 <td>not measurable</td>
-<td>4.8 min · 0.6 GB</td>
+<td>4.8</td>
+<td>0.6</td>
 </tr>
 <tr>
 <td>tum_fr3_office_sample (dev, preview, earlier)</td>
@@ -280,11 +295,12 @@ be added by clicking on the model and found by search (jump transition). Walking
 <td>– / –</td>
 <td>–</td>
 <td>not measurable</td>
-<td>5.7 min · 0.6 GB</td>
+<td>5.7</td>
+<td>0.6</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Failed runs (kept on record, not hidden):</strong> arkitscenes-41125700-dev (preview, stopped in mesh): Unexpected error in Building the surface mesh: [WinError 2] The system cannot …; arkitscenes-41125700-dev (preview, stopped in frame): Unexpected error in Finding the floor and orientation: roam grid too large …; eth3d-delivery-area-held-out (standard, stopped in texture): Painting photo textures onto the mesh took longer than allowed.; eth3d-kicker-dev (standard, stopped in sfm): Placing cameras (structure from motion) failed: colmap_exhaustive_matcher …; eth3d-pipes-dev (preview, stopped in undistort): Correcting lens distortion failed: colmap_image_undistorter failed with exit ….</p>
+<p><strong>Failed runs (kept on record, not hidden):</strong> 5 runs stopped – arkitscenes-41125700-dev (preview, in the mesh stage); arkitscenes-41125700-dev (preview, in the frame stage); eth3d-delivery-area-held-out (standard, in the texture stage); eth3d-kicker-dev (standard, in the sfm stage); eth3d-pipes-dev (preview, in the undistort stage). Causes: a missing intermediate file, an implausible scene size, texturing over the time limit and two COLMAP crashes (exit 0xC0000409); full messages in <code>phase13_artifacts/results/metrics_matrix.json</code>.</p>
 <p>Config: <em>frozen</em> = configuration frozen before the held-out runs; <em>final</em> = the submitted code (frozen + post-freeze face cap D13-14); <em>earlier</em> = development configuration.</p>
 <p>Criteria (Phase 12, unchanged): all photos placed; camera error ≤ 50 mm; dense accuracy ≤ 50 mm; dense completeness @5 cm ≥ 0.50; ≥ 1 route with 0 collisions and 0 false-unreachable pairs; preview ≤ 30 min, standard ≤ 90 min; peak RAM ≤ 12 GB. Per-criterion verdicts: <code>docs/RESULTS_SCENES.md</code>; gates A–F: <code>docs/RESULTS_MATRIX.md</code>.</p>
 <p><strong>Viewer frame time on the laptop's Intel iGPU (real key / mouse events):</strong> <strong>visible Chrome window</strong> (visible_kicker_standard): median 16.7 ms / P95 16.9 ms at 3.27 M textured triangles; headless Chrome, 11 records on 9 packages: median 16.7–33.3 ms (not a visible-window benchmark).</p>
@@ -293,6 +309,8 @@ be added by clicking on the model and found by search (jump transition). Walking
 <li><strong>Own home via Polycam.</strong> The own-home model uses Polycam's LiDAR mesh (third-party app; our code repairs it and adds
   the photoreal view, walking, routes and measuring). Splat quality is limited by capture coverage: a wall the phone
   only saw from far away smears up close; the SOP now asks for wall passes at 1–1.5 m.</li>
+<li><strong>Not yet measured:</strong> viewer frame rate on phones and integrated-graphics laptops with the photoreal view, and
+  measuring-tool accuracy against a tape measure.</li>
 <li><strong>Photoreal training needs an NVIDIA GPU</strong> (~20–25 min on an RTX 4050 Laptop for 218 photos); without one, the mesh
   view is used.</li>
 <li><strong>Completeness depends on the room.</strong> Textured, cluttered spaces reconstruct well (held-out delivery_area 0.61);

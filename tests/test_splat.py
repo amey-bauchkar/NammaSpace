@@ -138,3 +138,10 @@ def test_mesh_start_points_lie_on_the_scanned_surface(tmp_path):
     near = lambda v, *ts: np.any([np.isclose(v, t, atol=1e-3) for t in ts], axis=0)
     on = near(P[:, 0], 0.0, 5.0) | near(P[:, 2], 0.0, 4.0) | near(P[:, 1], 0.0, 2.8)
     assert on.all()
+
+
+def test_photoreal_recipe_is_bounded_for_a_6gb_rtx_4050():
+    """The Studio recipe must not revert to the earlier 600k-splat default on the team's 6 GB GPU."""
+    assert sp.RTX_4050_SAFE_CAP == 300_000
+    assert sp.MAX_SPLAT_SCALE_M == 0.50
+    assert sp.MIN_DEPTH_GUIDE_WITHIN_5CM < sp.MIN_WITHIN_5CM

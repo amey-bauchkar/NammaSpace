@@ -169,6 +169,8 @@ def main(argv=None):
     ap.add_argument("--iters", type=int, default=7000)
     ap.add_argument("--max-side", type=int, default=1280)
     ap.add_argument("--cap", type=int, default=1_000_000, help="maximum number of splats (GPU memory)")
+    ap.add_argument("--max-splat-scale", type=float, default=0.50,
+                    help="largest Gaussian axis in metres; prevents unconstrained background splats from corrupting alignment")
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--pose-opt", action="store_true", help="correct each camera's pose while training")
@@ -189,11 +191,12 @@ def main(argv=None):
     torch.manual_seed(a.seed); random.seed(a.seed); np.random.seed(a.seed)
     dev = "cuda"
     t0 = time.time()
-    cams, imgs, xyz, rgb = read_model(a.model)
+    cams, imgs, sparse_xyz, sparse_rgb = read_model(a.model)
+    mesh_xyz = mesh_rgb = None
     if a.init_points:                                    # e.g. the scanned mesh's surface: start from the room's shape
         extra = np.load(a.init_points)
-        xyz = np.concatenate([xyz, extra["xyz"].astype(np.float32)])
-        rgb = np.concatenate([rgb, extra["rgb"].astype(np.float32)])
+        mesh_xyz = extra["xyz"].astype(np.float32)
+        mesh_rgb = extra["rgb"].astype(np.float32)
     skip = set(Path(a.exclude).read_text(encoding="utf-8").split()) if a.exclude else set()
     # photos (kept on the CPU as uint8; one goes to the GPU per step)
     views = []
@@ -224,10 +227,22 @@ def main(argv=None):
     keep = dist <= 5 * max(np.median(dist), 1e-9)
     dropped = [v["name"] for v, k in zip(views, keep) if not k]
     views = [v for v, k in zip(views, keep) if k]
-    scene_scale = float(np.percentile(dist[keep], 90)) * 1.1
-    # start points far outside the cameras' reach are the same kind of outlier
-    near = np.linalg.norm(xyz - np.median(centres[keep], axis=0), axis=1) <= 10 * scene_scale
-    xyz, rgb = xyz[near], rgb[near]
+    camera_scale = float(np.percentile(dist[keep], 90)) * 1.1
+    # Sparse points can contain a bad, far-away COLMAP component.  Mesh seed points are different: they have already
+    # been aligned to the imported Polycam mesh by the healthy pretrain fit, so filtering them by a short COLMAP
+    # camera baseline throws away most of the room.  That happened on the 2026-10-27 scan (55,933 / 200,000 seeds
+    # survived) and left a few unconstrained Gaussians to grow to room-sized blobs.
+    sparse_near = np.linalg.norm(sparse_xyz - np.median(centres[keep], axis=0), axis=1) <= 10 * camera_scale
+    xyz, rgb = sparse_xyz[sparse_near], sparse_rgb[sparse_near]
+    if mesh_xyz is not None:
+        xyz = np.concatenate([xyz, mesh_xyz])
+        rgb = np.concatenate([rgb, mesh_rgb])
+    # The camera path can be tiny even for a multi-metre room.  Keep that scale for the MCMC position-noise learning
+    # rate (where a larger value is destabilising), but log a useful room size separately for diagnostics.
+    mesh_scale = 0.0
+    if mesh_xyz is not None:
+        mesh_scale = float(np.percentile(np.linalg.norm(mesh_xyz - np.median(mesh_xyz, axis=0), axis=1), 90))
+    scene_scale = max(camera_scale, 0.01)
     if a.holdout_names:
         hn = set(Path(a.holdout_names).read_text(encoding="utf-8").split())
         test = [v for v in views if v["name"] in hn]
@@ -237,7 +252,7 @@ def main(argv=None):
     views = [v for v in views if v["name"] not in tnames]
     print(f"{len(views)} training photos{f' + {len(test)} held out' if test else ''} "
           f"{views[0]['img'].shape[1]}x{views[0]['img'].shape[0]} ({len(dropped)} outlying cameras dropped), "
-          f"{len(xyz)} start points, scene scale {scene_scale:.2f}", flush=True)
+          f"{len(xyz)} start points, camera scale {scene_scale:.2f}, mesh scale {mesh_scale:.2f}", flush=True)
 
     # start: one splat per SfM point, size from the distance to its 3 nearest neighbours
     pts = torch.from_numpy(xyz).to(dev)
@@ -332,6 +347,11 @@ def main(argv=None):
             o.step(); o.zero_grad(set_to_none=True)
         sched.step()
         strategy.step_post_backward(params, opts, state, step, info, lr=sched.get_last_lr()[0])
+        # MCMC relocation can assign a nearly transparent splat a very large covariance.  It costs little in the
+        # image loss but poisons the solid-surface alignment used to package the result.  Polycam is metric, so a
+        # half-metre maximum axis remains far above useful room detail while stopping runaway 10-100 m Gaussians.
+        with torch.no_grad():
+            params["scales"].clamp_(max=math.log(a.max_splat_scale))
         if test and a.eval_every and (step + 1) % a.eval_every == 0 and step + 1 < a.iters:
             agg, _ = evaluate(params, test, dev, min(step // 1000, a.sh_degree), 0)
             print(f"eval step {step + 1} heldout colour PSNR {agg['colour']:.3f} {time.time() - t0:.0f}s", flush=True)
@@ -347,7 +367,9 @@ def main(argv=None):
     summary = {"photos": len(views), "iters": a.iters, "splats": len(params["means"]), "seconds": round(time.time() - t0, 1),
                "gpu_peak_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2), "max_side": a.max_side,
                "bytes": out_path.stat().st_size, "frame": "input cameras", "pose_opt": a.pose_opt,
-               "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0}
+               "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0,
+               "camera_scale": round(scene_scale, 4), "mesh_scale": round(mesh_scale, 4),
+               "max_splat_scale": a.max_splat_scale}
     if a.pose_opt:
         dd = pose_d.detach()
         rot = torch.rad2deg(dd[:, :3].norm(dim=1))
