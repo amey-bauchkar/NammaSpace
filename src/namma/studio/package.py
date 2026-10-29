@@ -29,19 +29,6 @@ class PackageError(RuntimeError):
     pass
 
 
-def current_scale(ctx):
-    """Scale basis needed by packaging, kept lightweight so imported-scan packaging does not load the recon pipeline."""
-    p = ctx.project_dir / "calibration.json"
-    if p.exists():
-        cal = load_strict(p)
-        if cal.get("run_id") == ctx.run_id and cal.get("metres_per_unit"):
-            return {"status": cal.get("status", "user_distance"), "metres_per_unit": cal["metres_per_unit"],
-                    "relative_uncertainty": cal.get("relative_uncertainty"), "method": cal.get("method", ""),
-                    "evaluation_only": bool(cal.get("evaluation_only", False))}
-    return {"status": "unknown", "metres_per_unit": None, "relative_uncertainty": None,
-            "method": "photos only: scale not observable", "evaluation_only": False}
-
-
 def build_scene_package(ctx, out):
     out = Path(out)
     if out.exists():
@@ -51,6 +38,7 @@ def build_scene_package(ctx, out):
     quality = load_strict(ctx.dir("quality") / "quality_report.json")
     tex = load_strict(ctx.dir("texture") / "texture_summary.json")
     project = load_strict(ctx.project_dir / "project.json") if (ctx.project_dir / "project.json").exists() else {}
+    from namma.studio.pipeline import current_scale
     scale = current_scale(ctx)
     lods = []
     for t in tex["lods"]:

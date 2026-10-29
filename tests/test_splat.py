@@ -81,6 +81,12 @@ def test_splat_is_lined_up_with_the_mesh_by_its_surface(tmp_path):
     assert np.median(np.linalg.norm(back - S, axis=1)) < 0.03          # every splat back where it came from
     assert fit["within_5cm"] > 0.9 and fit["tilt_deg"] < 1.0
 
+    # Refining from a prior transform (e.g. pretrain T0) skips 0-tilt yaw search and directly refines
+    T_perturbed = T.copy()
+    T_perturbed[:3, 3] += [0.03, -0.02, 0.01]
+    T2, fit2 = align_splat_to_mesh(tmp_path / "s.ply", glb, init_T=T_perturbed, samples=60000)
+    assert fit2["within_5cm"] > 0.9
+
 
 def test_package_carries_the_splat_with_its_transform(tmp_path):
     from namma.contracts.semantic import validate_document
@@ -140,8 +146,17 @@ def test_mesh_start_points_lie_on_the_scanned_surface(tmp_path):
     assert on.all()
 
 
-def test_photoreal_recipe_is_bounded_for_a_6gb_rtx_4050():
-    """The Studio recipe must not revert to the earlier 600k-splat default on the team's 6 GB GPU."""
-    assert sp.RTX_4050_SAFE_CAP == 300_000
+def test_photoreal_recipe_fits_6gb_vram():
+    """Cap and scale bound must stay within RTX 4050 6 GB budget."""
     assert sp.MAX_SPLAT_SCALE_M == 0.50
-    assert sp.MIN_DEPTH_GUIDE_WITHIN_5CM < sp.MIN_WITHIN_5CM
+    import inspect
+    sig = inspect.signature(sp.make_photoreal)
+    assert sig.parameters["cap"].default == 300_000
+
+
+def test_colmap_pose_rejection_thresholds():
+    """COLMAP must be rejected if camera residual exceeds 20 cm, preventing sideways/drifted models."""
+    assert sp.MAX_COLMAP_RESIDUAL_M == 0.20
+    assert sp.MIN_PRETRAIN_WITHIN_5CM == 0.20
+    assert sp.MAX_PRETRAIN_TILT_DEG == 10.0
+

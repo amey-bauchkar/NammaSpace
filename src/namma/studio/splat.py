@@ -29,11 +29,11 @@ from namma.core.jsonio import load_strict, write_json
 SPLAT_PYTHON = PROJECT_ROOT / "tools" / "splat-env" / "Scripts" / "python.exe"
 TRAINER = PROJECT_ROOT / "scripts" / "splat" / "train_splat.py"
 MIN_WITHIN_5CM = 0.30
-# A pretrain need not be publication-quality to establish a safe mesh-to-camera transform.  This lower bar is only
-# for constructing the depth guide and mesh seeds; the final trained splat still must satisfy MIN_WITHIN_5CM.
-MIN_DEPTH_GUIDE_WITHIN_5CM = 0.20
-MAX_DEPTH_GUIDE_MEDIAN_M = 0.15
+MIN_PRETRAIN_WITHIN_5CM = 0.20
+MAX_PRETRAIN_TILT_DEG = 10.0
+MAX_COLMAP_RESIDUAL_M = 0.20
 MIN_SPLAT_OPACITY = 0.02
+MAX_SPLAT_SCALE_M = 0.50
 
 
 class SplatError(RuntimeError):
@@ -320,27 +320,9 @@ def mesh_points(glb, n, seed=0):
 
 
 MESH_INIT_POINTS = 200_000
-# RTX 4050 Laptop GPU (6 GB): the previous 600 k cap was viable on the earlier 218-photo room, but the 433-photo
-# scan needs headroom for its larger image/pose state.  The trainer itself measures under 2 GB at 300 k; reserve the
-# rest for gsplat allocations and the display driver rather than risking an out-of-memory failure.
-RTX_4050_SAFE_CAP = 300_000
-MAX_SPLAT_SCALE_M = 0.50
-_PACKAGE_DIRS = {"texture": "60_texture", "frame": "70_frame", "quality": "80_quality", "navgeom": "85_navgeom"}
 
 
-class _SplatPackageContext:
-    """The small package-building subset of RunContext; avoids importing photo-reconstruction modules into CUDA Python."""
-    def __init__(self, project_dir, run_id, cfg):
-        self.project_dir = Path(project_dir).resolve()
-        self.run_id = run_id
-        self.run_dir = self.project_dir / "runs" / run_id
-        self.cfg = cfg
-
-    def dir(self, stage):
-        return self.run_dir / _PACKAGE_DIRS[stage]
-
-
-def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=RTX_4050_SAFE_CAP, depth_weight=0.1,
+def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=300_000, depth_weight=0.1,
                    timeout_s=3 * 3600, progress=None, cancel_file=None):
     """The recipe chosen by held-out scoring on "New room" (every 8th keyframe kept out of training, 7,000 steps):
     phone poses 22.6 dB -> + pose and per-photo colour correction 24.5 -> COLMAP poses 25.9 (SSIM 0.84); the mesh
@@ -350,6 +332,7 @@ def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=RTX_4
     sparse photo points."""
     from namma.recon.runner import StepFailed, run_step
     from namma.studio.package import build_scene_package
+    from namma.studio.pipeline import RunContext
     from namma.studio.splat_align import align_splat_to_mesh
 
     progress = progress or (lambda *_: None)
@@ -374,12 +357,17 @@ def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=RTX_4
     progress("Preparing the keyframes", 0.01)
     kf = keyframes_to_colmap(kz, work / "input")
     # 1. camera poses: COLMAP's (in the phone's metric frame); the phone's own if COLMAP cannot place enough photos
+    #    or if COLMAP camera centres diverge from phone tracking (> 20 cm median residual)
     progress("Refining the camera positions (COLMAP)", 0.03)
     model, poses = work / "input" / "sparse", "phone tracking (ARKit)"
     try:
         rp = refine_poses(work / "input", work / "colmap", log_dir=logs, timeout_s=3600, cancel_file=cancel_file)
-        if rp["kept"] >= 0.6 * kf["keyframes"]:
+        median_res = rp.get("centre_residual_m", {}).get("median", 999.0)
+        if rp.get("kept", 0) >= 0.6 * kf["keyframes"] and median_res <= MAX_COLMAP_RESIDUAL_M:
             model, poses = work / "colmap" / "sparse", f"COLMAP ({rp['kept']} of {kf['keyframes']} keyframes)"
+        elif rp.get("kept", 0) >= 0.6 * kf["keyframes"]:
+            rp["rejected_reason"] = (f"COLMAP camera centres diverged from phone tracking: "
+                                     f"median residual {median_res:.3f} m exceeds {MAX_COLMAP_RESIDUAL_M:.2f} m limit")
     except (StepFailed, SplatError) as e:
         if cancel_file is not None and Path(cancel_file).exists():
             raise SplatError("cancelled") from e
@@ -389,14 +377,15 @@ def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=RTX_4
     progress("Rendering the depth guide from the model", 0.12)
     depth_args = []
     pre = work / "pre.ply"
+    T0, fit0 = None, None
     try:
         run_step("splat_pretrain", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", model,
                                     "--images", work / "input" / "images", "--out", pre, "--iters", 3000,
-                                    "--max-side", max_side, "--cap", 200_000], logs, timeout_s=1800,
+                                    "--max-side", max_side, "--cap", 200_000,
+                                    "--max-splat-scale", MAX_SPLAT_SCALE_M], logs, timeout_s=1800,
                  cancel_file=cancel_file)
         T0, fit0 = align_splat_to_mesh(pre, glb)
-        if (fit0["within_5cm"] >= MIN_DEPTH_GUIDE_WITHIN_5CM and
-                fit0["median_m"] <= MAX_DEPTH_GUIDE_MEDIAN_M):
+        if fit0["within_5cm"] >= MIN_PRETRAIN_WITHIN_5CM and fit0.get("tilt_deg", 0.0) <= MAX_PRETRAIN_TILT_DEG:
             mesh_depth_maps(model, glb, T0, work / "depth")
             depth_args = ["--depth-dir", work / "depth", "--depth-weight", depth_weight]
             # start from the room's shape and colours: points on the scanned surface, in the training frame
@@ -426,7 +415,7 @@ def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=RTX_4
         raise SplatError(str(e)) from e
     # 4. line-up of the trained splat (pose correction may have moved it slightly) and packaging
     progress("Lining it up with the 3D model", 0.93)
-    T, fit = align_splat_to_mesh(ply, glb)
+    T, fit = align_splat_to_mesh(ply, glb, init_T=T0)
     write_json(work / "align.json", {"T_mesh_from_splat": T.tolist(), "fit": fit, "pre_fit": fit0})
     if fit["within_5cm"] < MIN_WITHIN_5CM:
         raise SplatError(f"the photoreal view could not be lined up with the model (only {fit['within_5cm']:.0%} "
@@ -446,7 +435,7 @@ def make_photoreal(project_dir, run_id, *, iters=15000, max_side=1024, cap=RTX_4
                                               f"{kf['keyframes']} Polycam keyframes, camera poses from {poses}; lined "
                                               "up with the imported mesh by the splat's solid surface (ICP)",
                                     "training": train})
-    ctx = _SplatPackageContext(pdir, run_id, cfg)
+    ctx = RunContext(pdir, run_id, cfg)
     res = build_scene_package(ctx, ctx.dir("package"))
     progress("Done", 1.0)
     return {"package_id": res["package_id"], "splats": spz["splats_out"], "bytes": spz["bytes"], "fit": fit,
