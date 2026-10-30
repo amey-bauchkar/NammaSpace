@@ -1,1 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#60a5fa"/><stop offset=".55" stop-color="#2563eb"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><path d="M14 46V22l18-10 18 10v24l-18 8z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M14 22l18 10 18-10M32 32v22" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round" opacity=".8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Rounded Base Plate in Deep Midnight Navy (#192A56) -->
+  <rect width="100" height="100" rx="22" fill="#192A56" />
+
+  <!-- Hard Drop Shadows -->
+  <polygon points="42,16 74,1 98,15 98,69 68,98 42,70" fill="#000" opacity="0.45" transform="translate(2.5, 3)" />
+  <rect x="2" y="14" width="26" height="70" rx="5.5" fill="#000" opacity="0.45" transform="translate(2, 2.5)" />
+
+  <!-- ==================== 3D OPEN ROOM DIORAMA (SCALED TO EDGES) ==================== -->
+  <!-- Floor plane (Perspective Tiled Grid) -->
+  <polygon points="42,70 72,54 98,69 68,98" fill="#FCFBFB" stroke="#192A56" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Floor grid lines -->
+  <line x1="52" y1="64.5" x2="78" y2="78.5" stroke="#192A56" stroke-width="1.2" opacity="0.45"/>
+  <line x1="62" y1="59.5" x2="88" y2="73.5" stroke="#192A56" stroke-width="1.2" opacity="0.45"/>
+  <line x1="51" y1="79.5" x2="81" y2="59" stroke="#192A56" stroke-width="1.2" opacity="0.45"/>
+  <line x1="60" y1="89" x2="90" y2="64" stroke="#192A56" stroke-width="1.2" opacity="0.45"/>
+
+  <!-- Back Left Wall (Sunflower Yellow #F7D794) -->
+  <polygon points="42,18 72,2 72,54 42,70" fill="#F7D794" stroke="#192A56" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Doorway in Yellow Wall -->
+  <polygon points="50,34 62,27.5 62,51 50,57.5" fill="#192A56" stroke="#FCFBFB" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="53,36 59,32.5 59,49 53,52.5" fill="#EDA6A3" opacity="0.8"/>
+
+  <!-- Back Right Wall (Salmon Coral #EDA6A3) -->
+  <polygon points="72,2 98,15 98,69 72,54" fill="#EDA6A3" stroke="#192A56" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Window in Coral Wall -->
+  <polygon points="78,28 92,35 92,53 78,46" fill="#F7D794" stroke="#192A56" stroke-width="1.5" stroke-linejoin="round"/>
+  <line x1="85" y1="31.5" x2="85" y2="49.5" stroke="#192A56" stroke-width="1.2"/>
+  <line x1="78" y1="37" x2="92" y2="44" stroke="#192A56" stroke-width="1.2"/>
+
+  <!-- Yellow/White Wall Rim Trims (Architectural Thickness) -->
+  <polygon points="42,18 72,2 74,3.5 44,19.5" fill="#FCFBFB" stroke="#192A56" stroke-width="1"/>
+  <polygon points="72,2 98,15 99.5,16.5 73.5,3.5" fill="#FCFBFB" stroke="#192A56" stroke-width="1"/>
+
+  <!-- ==================== EXACTLY 4 PROJECTION RAYS ==================== -->
+  <!-- Origin from rear camera bump point C: (28, 38) -->
+  <!-- Ray 1: Camera -> Top-Left (42, 18) -->
+  <line x1="28" y1="38" x2="42" y2="18" stroke="#FCFBFB" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Ray 2: Camera -> Top-Right (98, 15) -->
+  <line x1="28" y1="38" x2="98" y2="15" stroke="#FCFBFB" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Ray 3: Camera -> Bottom-Right (98, 69) -->
+  <line x1="28" y1="38" x2="98" y2="69" stroke="#FCFBFB" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Ray 4: Camera -> Bottom-Left (42, 70) -->
+  <line x1="28" y1="38" x2="42" y2="70" stroke="#FCFBFB" stroke-width="2.8" stroke-linecap="round"/>
+
+  <!-- Vertex Target Anchors -->
+  <circle cx="42" cy="18" r="2.5" fill="#FCFBFB" stroke="#192A56" stroke-width="1.5"/>
+  <circle cx="98" cy="15" r="2.5" fill="#FCFBFB" stroke="#192A56" stroke-width="1.5"/>
+  <circle cx="98" cy="69" r="2.5" fill="#FCFBFB" stroke="#192A56" stroke-width="1.5"/>
+  <circle cx="42" cy="70" r="2.5" fill="#FCFBFB" stroke="#192A56" stroke-width="1.5"/>
+
+  <!-- ==================== SMARTPHONE (SCALED TO LEFT EDGE, BLACK SCREEN) ==================== -->
+  <!-- Rear Camera Bump (peaking from back-top right of phone) -->
+  <rect x="23" y="31" width="8" height="14" rx="2.5" fill="#F7D794" stroke="#192A56" stroke-width="1.8"/>
+  <circle cx="27" cy="38" r="2.5" fill="#192A56" stroke="#FCFBFB" stroke-width="1"/>
+
+  <!-- Phone Outer Chassis in Snow Off-White (#FCFBFB) -->
+  <rect x="2" y="14" width="26" height="70" rx="5.5" fill="#FCFBFB" stroke="#192A56" stroke-width="2.6" />
+  
+  <!-- Phone Screen Glass (FACING VIEWER) in SOLID JET BLACK (#000000) -->
+  <rect x="4.5" y="19" width="21" height="60" rx="3.5" fill="#000000" stroke="#192A56" stroke-width="1" />
+  
+  <!-- Top Speaker / Dynamic Island Pill on Black Screen -->
+  <rect x="10" y="21.5" width="10" height="2.2" rx="1.1" fill="#FCFBFB" />
+  
+  <!-- AR Reticle on Jet Black Screen -->
+  <path d="M7.5 30 H10 V32.5" stroke="#F7D794" stroke-width="1.2" fill="none"/>
+  <path d="M22.5 30 H20 V32.5" stroke="#F7D794" stroke-width="1.2" fill="none"/>
+  <path d="M7.5 54 H10 V51.5" stroke="#F7D794" stroke-width="1.2" fill="none"/>
+  <path d="M22.5 54 H20 V51.5" stroke="#F7D794" stroke-width="1.2" fill="none"/>
+  <line x1="13" y1="42" x2="17" y2="42" stroke="#EDA6A3" stroke-width="1.2"/>
+  <line x1="15" y1="40" x2="15" y2="44" stroke="#EDA6A3" stroke-width="1.2"/>
+  <line x1="6" y1="68" x2="15" y2="45" stroke="#FCFBFB" stroke-width="0.8" opacity="0.3"/>
+  <line x1="24" y1="68" x2="15" y2="45" stroke="#FCFBFB" stroke-width="0.8" opacity="0.3"/>
+  
+  <!-- Bottom Home Swipe Bar -->
+  <line x1="11" y1="74" x2="19" y2="74" stroke="#FCFBFB" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
