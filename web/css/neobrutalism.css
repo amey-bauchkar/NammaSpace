@@ -258,7 +258,7 @@ kbd {
   height: 28px;
   border-radius: 7px;
   border: 2px solid var(--neo-accent);
-  background: var(--neo-dominant) url('../favicon.svg') center / contain no-repeat;
+  background: var(--neo-dominant) url('../logo.png') center / cover no-repeat;
   box-shadow: 2px 2px 0px var(--neo-secondary);
   display: inline-block;
   flex-shrink: 0;
