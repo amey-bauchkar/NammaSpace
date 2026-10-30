@@ -607,18 +607,23 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8780)
     ap.add_argument("--projects", default=str(PROJECT_ROOT / "projects"))
     ap.add_argument("--record", help="directory where POST /__bench results are saved")
-    ap.add_argument("--lan", action="store_true",
-                    help="also serve the phone auto-capture page over HTTPS on this computer's network addresses")
+    ap.add_argument("--lan", dest="lan", action="store_true", default=True,
+                    help="also serve the phone auto-capture page over HTTPS on this computer's network addresses (default: enabled)")
+    ap.add_argument("--no-lan", dest="lan", action="store_false",
+                    help="disable the phone auto-capture page over HTTPS")
     ap.add_argument("--lan-port", type=int, default=8443)
     a = ap.parse_args(argv)
     Handler.studio = Studio(a.projects, (PROJECT_ROOT / a.record) if a.record else None)
     if a.lan:
-        from namma.studio.phone_capture import start_phone_server
-        Handler.studio.phone, _ = start_phone_server(Handler.studio, port=a.lan_port)
-        info = Handler.studio.phone.info()
-        print(f"Phone capture: open {' or '.join(info['urls']) or '(no network address found)'} on the phone "
-              f"(same Wi-Fi / hotspot); the pairing code is shown in the Studio. Accept the one-time certificate "
-              f"warning; allow Python through the Windows firewall on private networks if asked.", flush=True)
+        try:
+            from namma.studio.phone_capture import start_phone_server
+            Handler.studio.phone, _ = start_phone_server(Handler.studio, port=a.lan_port)
+            info = Handler.studio.phone.info()
+            print(f"Phone capture: open {' or '.join(info['urls']) or '(no network address found)'} on the phone "
+                  f"(same Wi-Fi / hotspot); the pairing code is shown in the Studio. Accept the one-time certificate "
+                  f"warning; allow Python through the Windows firewall on private networks if asked.", flush=True)
+        except Exception as e:
+            print(f"Warning: Could not start phone capture HTTPS server on port {a.lan_port}: {e}", flush=True)
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", a.port), Handler)
     httpd.daemon_threads = True
     print(f"Namma Space Studio at http://127.0.0.1:{a.port}/  (projects: {Handler.studio.store.root})", flush=True)

@@ -3,139 +3,566 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#192A56">
 <title>Namma Space Capture</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app.css">
 <style>
-  /* capture UI: pairing screen, then a full-screen camera with floating controls */
-  :root { --pill: rgba(255,255,255,.75); }
-  html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
-  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
-  .pill-btn { display: inline-flex; align-items: center; gap: 10px; background: transparent; color: #fff; border: 1.5px solid var(--pill);
-    border-radius: 999px; padding: 10px 20px; font: 17px var(--mono); letter-spacing: .5px; }
-  .pill-btn:disabled { opacity: .35; }
-  .round { width: 52px; height: 52px; border-radius: 50%; padding: 0; justify-content: center; }
-  /* pairing */
-  #s-pair { padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); justify-content: center; }
-  .pair h1 { font: 600 24px var(--font); margin: 0 0 6px; }
-  .pair p { color: #c9d1dd; font-size: 14px; margin: 6px 0 14px; }
-  .pair label { font-size: 13px; color: #c9d1dd; }
-  .pair input { width: 100%; background: #111; color: #fff; border: 1.5px solid #444; border-radius: 12px; padding: 12px; margin: 4px 0 12px; font-size: 16px; }
-  .pair .code { font: 600 30px var(--mono); letter-spacing: 10px; text-align: center; }
-  .pair .go { width: 100%; justify-content: center; background: #fff; color: #000; border-color: #fff; margin-top: 8px; }
-  .msg { color: #fca5a5; font-size: 14px; min-height: 20px; }
-  .pair .go.alt { background: transparent; color: #fff; border-color: var(--pill); }
-  .hint2 { color: #9aa4b2; font-size: 13px; margin: 8px 2px 0; }
-  /* capture: full-bleed camera, floating glass controls, no tint over the image */
-  #cam { background: #000; }
-  .view { position: absolute; inset: 0; overflow: hidden; background: #000; }
-  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .glass { background: rgba(20,20,22,.55); -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
-    border: 1px solid rgba(255,255,255,.12); }
-  .top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: grid; grid-template-columns: 44px 1fr 44px; align-items: start;
-    gap: 10px; padding: max(12px, env(safe-area-inset-top)) 16px 0; }
-  .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; padding: 0; }
-  .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .cap-hud { justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .rec-pill { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 7px 14px; font: 600 15px var(--mono); font-variant-numeric: tabular-nums; }
-  .rec-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #8e8e93; }
-  .rec-pill.on .dot { background: #ff3b30; }
-  .meter { width: 170px; padding: 6px 12px; border-radius: 999px; display: flex; align-items: center; gap: 8px; font: 600 12px var(--font); color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
-  .meter .bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); overflow: hidden; }
-  .meter .bar > div { height: 100%; width: 0; background: #fff; }
-  .sending { font: 12px var(--mono); color: rgba(255,255,255,.75); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
-  .frame { position: absolute; inset: 24% 12% 30%; pointer-events: none; }
-  .frame i { position: absolute; width: 26px; height: 26px; border: 0 solid rgba(255,255,255,.85); }
-  .frame i:nth-child(1) { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 8px; }
-  .frame i:nth-child(2) { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 8px; }
-  .frame i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 8px; }
-  .frame i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 8px; }
-  .center-hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 14px;
-    pointer-events: none; text-align: center; padding: 16px 22px; border-radius: 18px; font: 600 16px var(--font); width: max-content; max-width: 78%; }
+  /* Neo-Brutalist Mobile Capture UI */
+  html, body {
+    background: var(--neo-dominant);
+    color: var(--neo-accent);
+    overflow: hidden;
+    height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    font-family: var(--font-display);
+  }
+
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--neo-accent);
+    color: var(--neo-dominant);
+    border: var(--neo-border-regular);
+    border-radius: var(--neo-radius-pill);
+    padding: 12px 22px;
+    font: 800 16px var(--font-display);
+    box-shadow: var(--neo-shadow-sm);
+    transition: var(--neo-transition);
+  }
+
+  .pill-btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--neo-shadow-md);
+  }
+
+  .pill-btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: var(--neo-shadow-xs);
+  }
+
+  .pill-btn:disabled {
+    opacity: 0.45;
+  }
+
+  /* Pairing Screen */
+  #s-pair {
+    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+    justify-content: center;
+    background: var(--neo-dominant);
+  }
+
+  .pair-card {
+    background: var(--neo-accent);
+    color: var(--neo-dominant);
+    border: var(--neo-border-thick);
+    border-radius: var(--neo-radius-lg);
+    padding: 26px 24px;
+    box-shadow: var(--neo-shadow-lg);
+  }
+
+  .pair h1 {
+    font: 900 26px var(--font-display);
+    color: var(--neo-dominant);
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .pair p {
+    color: var(--ink-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 6px 0 16px;
+    line-height: 1.5;
+  }
+
+  .pair label {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--neo-dominant);
+    display: block;
+    margin-top: 10px;
+  }
+
+  .pair input {
+    width: 100%;
+    background: #ffffff;
+    color: var(--neo-dominant);
+    border: var(--neo-border-regular);
+    border-radius: var(--neo-radius-sm);
+    padding: 12px;
+    margin: 6px 0 14px;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: var(--neo-shadow-xs);
+  }
+
+  .pair .code {
+    font: 800 32px var(--font-mono);
+    letter-spacing: 12px;
+    text-align: center;
+    background: var(--neo-secondary);
+    border: var(--neo-border-thick);
+    box-shadow: var(--neo-shadow-sm);
+  }
+
+  .pair .go {
+    width: 100%;
+    justify-content: center;
+    background: var(--neo-secondary);
+    color: var(--neo-dominant);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-sm);
+    margin-top: 10px;
+  }
+
+  .pair .go.alt {
+    background: var(--neo-accent);
+    color: var(--neo-dominant);
+    border: var(--neo-border-regular);
+    margin-top: 8px;
+  }
+
+  .msg {
+    color: var(--neo-extra);
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 22px;
+    margin-top: 8px;
+  }
+
+  .hint2 {
+    color: var(--ink-muted);
+    font-size: 13px;
+    margin: 10px 2px 0;
+  }
+
+  /* Full-Bleed Camera Viewport */
+  #cam {
+    background: #000;
+  }
+
+  .view {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+
+  video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .glass-neo {
+    background: var(--neo-dominant-alpha);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-sm);
+  }
+
+  .top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: start;
+    gap: 12px;
+    padding: max(14px, env(safe-area-inset-top)) 16px 0;
+  }
+
+  .icon-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--neo-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neo-accent);
+    background: var(--neo-dominant);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-xs);
+    padding: 0;
+    cursor: pointer;
+    transition: var(--neo-transition);
+  }
+
+  .icon-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+
+  .icon-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .cap-hud {
+    justify-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rec-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--neo-radius-pill);
+    padding: 7px 16px;
+    font: 800 15px var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    background: var(--neo-dominant);
+    color: var(--neo-accent);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-xs);
+  }
+
+  .rec-pill .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #8e8e93;
+    border: 1.5px solid #fff;
+  }
+
+  .rec-pill.on .dot {
+    background: var(--neo-extra);
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0.3; }
+  }
+
+  .meter {
+    width: 180px;
+    padding: 6px 14px;
+    border-radius: var(--neo-radius-pill);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 800 12px var(--font-display);
+    color: var(--neo-accent);
+    background: var(--neo-dominant);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-xs);
+  }
+
+  .meter .bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+  }
+
+  .meter .bar > div {
+    height: 100%;
+    width: 0;
+    background: var(--neo-secondary);
+    transition: width 0.2s;
+  }
+
+  .sending {
+    font: 700 12px var(--font-mono);
+    color: var(--neo-secondary);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .frame {
+    position: absolute;
+    inset: 22% 10% 28%;
+    pointer-events: none;
+  }
+
+  .frame i {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border: 0 solid var(--neo-secondary);
+  }
+
+  .frame i:nth-child(1) { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 10px; }
+  .frame i:nth-child(2) { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 10px; }
+  .frame i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 10px; }
+  .frame i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 10px; }
+
+  .center-hint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    pointer-events: none;
+    text-align: center;
+    padding: 18px 24px;
+    border-radius: var(--neo-radius-md);
+    font: 800 16px var(--font-display);
+    background: var(--neo-dominant);
+    color: var(--neo-accent);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-md);
+    width: max-content;
+    max-width: 82%;
+  }
+
   .center-hint[hidden] { display: none; }
-  .phone-icon { width: 30px; height: 50px; border: 2px solid #fff; border-radius: 8px; animation: wiggle 1.8s ease-in-out infinite; }
-  @keyframes wiggle { 0%, 100% { transform: translateX(-16px) rotate(-6deg); } 50% { transform: translateX(16px) rotate(6deg); } }
-  .side { position: absolute; right: 16px; z-index: 2; }
+
+  .phone-icon {
+    width: 34px;
+    height: 54px;
+    border: 3px solid var(--neo-secondary);
+    border-radius: 9px;
+    animation: wiggle 1.8s ease-in-out infinite;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: translateX(-16px) rotate(-6deg); }
+    50% { transform: translateX(16px) rotate(6deg); }
+  }
+
+  .side {
+    position: absolute;
+    right: 16px;
+    z-index: 2;
+  }
+
   .side[hidden] { display: none; }
-  #warn { top: calc(max(12px, env(safe-area-inset-top)) + 96px); color: #ffd60a; }
-  #torch { top: calc(max(12px, env(safe-area-inset-top)) + 148px); }
-  #torch.on { background: #fff; color: #000; }
-  .toast { position: absolute; left: 50%; top: calc(max(12px, env(safe-area-inset-top)) + 96px); transform: translateX(-50%); z-index: 3; padding: 9px 16px;
-    border-radius: 999px; font: 600 14px var(--font); text-align: center; max-width: 70%; pointer-events: none; }
-  .controls { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-    padding: 18px 22px max(26px, calc(env(safe-area-inset-bottom) + 12px)); }
-  .controls .left { justify-self: start; } .controls .right { justify-self: end; }
-  .chip { border-radius: 999px; padding: 10px 18px; color: #fff; font: 600 14px var(--font); display: inline-flex; align-items: center; gap: 6px; }
-  .chip:disabled { opacity: .45; }
-  .chip.primary:not(:disabled) { background: #fff; color: #000; border-color: #fff; }
-  .shutter { width: 78px; height: 78px; border-radius: 50%; border: 4px solid #fff; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; }
-  .shutter i { display: block; width: 62px; height: 62px; border-radius: 50%; background: #ff3b30; }
-  .shutter.armed i { background: rgba(255,255,255,.35); }
-  .shutter.rec i { width: 28px; height: 28px; border-radius: 6px; background: #ff3b30; }
-  .bar { height: 10px; border-radius: 5px; background: #3a3a3c; overflow: hidden; }
-  .bar > div { height: 100%; width: 0; background: #fff; }
-  /* sheets */
-  .sheet { position: fixed; left: 0; right: 0; bottom: 0; background: #1d1d1f; border-radius: 22px 22px 0 0; padding: 20px 22px max(22px, env(safe-area-inset-bottom));
-    box-shadow: 0 -10px 40px rgba(0,0,0,.6); z-index: 5; }
-  .sheet h2 { margin: 0 0 10px; font: 600 20px var(--font); }
-  .sheet li { margin: 8px 0; color: #ddd; font-size: 15px; }
-  .sheet .close { width: 100%; justify-content: center; margin-top: 10px; }
-  .menu button { display: block; width: 100%; text-align: left; background: transparent; border: 0; color: #fff; padding: 12px 4px; font-size: 16px; border-bottom: 1px solid #333; border-radius: 0; }
-  .menu small { display: block; color: #aaa; font-size: 13px; }
-  /* status */
-  #s-status { padding: 24px; justify-content: center; text-align: center; }
-  #s-status h1 { font: 600 24px var(--font); margin: 0 0 14px; }
-  #s-status .bar { height: 10px; margin: 16px 0; }
-  #s-status p { color: #c9d1dd; }
+  #warn { top: calc(max(14px, env(safe-area-inset-top)) + 98px); color: var(--neo-secondary); }
+  #torch { top: calc(max(14px, env(safe-area-inset-top)) + 152px); }
+  #torch.on { background: var(--neo-secondary); color: var(--neo-dominant); }
+
+  .controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 18px 24px max(28px, calc(env(safe-area-inset-bottom) + 14px));
+  }
+
+  .controls .left { justify-self: start; }
+  .controls .right { justify-self: end; }
+
+  .chip-control {
+    border-radius: var(--neo-radius-pill);
+    padding: 10px 20px;
+    color: var(--neo-dominant);
+    background: var(--neo-accent);
+    font: 800 14px var(--font-display);
+    border: var(--neo-border-regular);
+    box-shadow: var(--neo-shadow-xs);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chip-control:disabled { opacity: 0.45; }
+  .chip-control.primary:not(:disabled) {
+    background: var(--neo-secondary);
+    color: var(--neo-dominant);
+  }
+
+  /* Chunky Shutter Button */
+  .shutter {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    border: 4px solid var(--neo-accent);
+    background: var(--neo-dominant);
+    box-shadow: var(--neo-shadow-md);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--neo-transition);
+  }
+
+  .shutter:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--neo-shadow-xs);
+  }
+
+  .shutter i {
+    display: block;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: var(--neo-extra);
+    border: 2px solid var(--neo-dominant);
+    transition: var(--neo-transition);
+  }
+
+  .shutter.armed i {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .shutter.rec i {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--neo-extra);
+  }
+
+  /* Sheet Panels */
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--neo-accent);
+    color: var(--neo-dominant);
+    border-top: var(--neo-border-thick);
+    border-radius: 22px 22px 0 0;
+    padding: 24px 24px max(24px, env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 0px var(--neo-dominant);
+    z-index: 50;
+  }
+
+  .sheet h2 {
+    margin: 0 0 12px;
+    font: 900 22px var(--font-display);
+    color: var(--neo-dominant);
+  }
+
+  .sheet li {
+    margin: 8px 0;
+    color: var(--ink-secondary);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .sheet .close {
+    width: 100%;
+    justify-content: center;
+    margin-top: 14px;
+    background: var(--neo-secondary);
+    color: var(--neo-dominant);
+  }
+
+  .menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: var(--neo-dominant);
+    padding: 14px 4px;
+    font-size: 16px;
+    font-weight: 800;
+    border-bottom: 2px solid #e2e8f0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .menu button:hover {
+    background: var(--neo-secondary);
+  }
+
+  .menu small {
+    display: block;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  #s-status {
+    padding: 26px;
+    justify-content: center;
+    text-align: center;
+    background: var(--neo-dominant);
+  }
+
+  #s-status h1 {
+    font: 900 26px var(--font-display);
+    color: var(--neo-accent);
+    margin: 0 0 16px;
+  }
+
+  #s-status p {
+    color: var(--neo-secondary);
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
 <section class="screen pair" id="s-pair">
-  <h1>Namma Space Capture</h1>
-  <p>Scan a room with your phone; the computer builds the 3D model. Enter the code shown in the Studio on the computer.</p>
-  <label for="code">Pairing code</label>
-  <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
-  <label for="title">Name of the space (optional)</label>
-  <input id="title" type="text" maxlength="80" placeholder="e.g. Living room">
-  <button class="pill-btn go" id="pair-btn">Continue</button>
-  <button class="pill-btn go alt" id="polycam-btn">Import a Polycam export</button>
-  <input type="file" id="polycam-files" accept=".zip,.glb,application/zip,model/gltf-binary" multiple hidden>
-  <p class="hint2" id="polycam-hint">In Polycam: Export → <b>GLTF</b> (and optionally <b>Images</b>) → Save to Files; then pick
-    the file(s) here.</p>
-  <div class="msg" id="pair-msg" role="alert"></div>
+  <div class="pair-card">
+    <h1>Namma Space Capture</h1>
+    <p>Scan a room with your phone; the computer builds the 3D model. Enter the code shown in the Studio on the computer.</p>
+    <label for="code">Pairing code</label>
+    <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
+    <label for="title">Name of the space (optional)</label>
+    <input id="title" type="text" maxlength="80" placeholder="e.g. Living room">
+    <button class="pill-btn go" id="pair-btn">Continue</button>
+    <button class="pill-btn go alt" id="polycam-btn">Import a Polycam export</button>
+    <input type="file" id="polycam-files" accept=".zip,.glb,application/zip,model/gltf-binary" multiple hidden>
+    <p class="hint2" id="polycam-hint">In Polycam: Export → <b>GLTF</b> (and optionally <b>Images</b>) → Save to Files; then pick the file(s) here.</p>
+    <div class="msg" id="pair-msg" role="alert"></div>
+  </div>
 </section>
 
 <section class="screen" id="cam" hidden>
   <div class="view" id="view">
     <video id="video" playsinline muted autoplay></video>
     <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-    <div class="center-hint glass" id="hint" hidden><div class="phone-icon"></div><div id="hint-text">Move device to start</div></div>
+    <div class="center-hint" id="hint" hidden><div class="phone-icon"></div><div id="hint-text">Move device to start</div></div>
   </div>
   <div class="top">
-    <button class="icon-btn glass" id="tips-btn" aria-label="Scanning tips"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17.2v.01"/></svg></button>
+    <button class="icon-btn" id="tips-btn" aria-label="Scanning tips"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17.2v.01"/></svg></button>
     <div class="cap-hud">
-      <div class="rec-pill glass" id="rec-pill"><span class="dot"></span><span id="elapsed">00:00.00</span></div>
-      <div class="meter glass" aria-label="Coverage"><div class="bar"><div id="cov-bar"></div></div><span id="cov">0%</span></div>
+      <div class="rec-pill" id="rec-pill"><span class="dot"></span><span id="elapsed">00:00.00</span></div>
+      <div class="meter" aria-label="Coverage"><div class="bar"><div id="cov-bar"></div></div><span id="cov">0%</span></div>
       <span class="sending" id="sent"></span>
     </div>
-    <button class="icon-btn glass" id="close-btn" aria-label="Cancel capture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="icon-btn" id="close-btn" aria-label="Cancel capture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-  <div class="toast glass" id="toast" hidden></div>
-  <button class="icon-btn glass side" id="warn" hidden aria-label="Capture warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.01"/></svg></button>
-  <button class="icon-btn glass side" id="torch" hidden aria-label="Flashlight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8l-1 6H9z"/><path d="M9 8l1 14h4l1-14"/></svg></button>
+  <div class="toast" id="toast" hidden></div>
+  <button class="icon-btn side" id="warn" hidden aria-label="Capture warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.01"/></svg></button>
+  <button class="icon-btn side" id="torch" hidden aria-label="Flashlight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8l-1 6H9z"/><path d="M9 8l1 14h4l1-14"/></svg></button>
   <div class="controls">
-    <button class="chip glass left" id="mode-btn">Video</button>
+    <button class="chip-control left" id="mode-btn">Video</button>
     <button class="shutter" id="shutter" aria-label="Start recording"><i></i></button>
-    <button class="chip glass primary right" id="done-btn" disabled>Done</button>
+    <button class="chip-control primary right" id="done-btn" disabled>Done</button>
   </div>
 </section>
 
 <div class="sheet" id="tips" hidden>
   <h2>Scanning tips</h2>
   <ul>
-    <li><strong>Walk, don't spin.</strong> Move along the walls, 2–3 small steps between looks. Coverage rises when you look at
-      a part of the room again <em>from another spot</em>.</li>
+    <li><strong>Walk, don't spin.</strong> Move along the walls, 2–3 small steps between looks. Coverage rises when you look at a part of the room again <em>from another spot</em>.</li>
     <li>Move slowly and smoothly; keep the phone upright.</li>
     <li>Show every wall, the floor and the furniture from about 1–2 m.</li>
     <li>Turn the lights on; avoid pointing straight at windows or lamps.</li>
@@ -148,12 +575,12 @@
   <h2>Capture mode</h2>
   <button data-mode="video">Video <small>Recommended. The phone only records; the computer picks the frames.</small></button>
   <button data-mode="frames">Photo frames <small>The phone picks and sends frames itself (more work for the phone).</small></button>
-  <button class="pill-btn close" data-close style="text-align:center;border:1.5px solid var(--pill);border-radius:999px;margin-top:14px">Close</button>
+  <button class="pill-btn close" data-close style="text-align:center;margin-top:14px">Close</button>
 </div>
 
 <section class="screen" id="s-status" hidden>
   <h1 id="st-title">Sending…</h1>
-  <div class="bar"><div id="st-bar"></div></div>
+  <div class="progress" style="width:240px;margin:16px auto"><div id="st-bar"></div></div>
   <p id="st-msg"></p>
 </section>
 <script type="module" src="js/capture.js"></script>

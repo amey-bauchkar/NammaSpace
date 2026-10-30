@@ -15,66 +15,106 @@
   <span class="badge" id="health" title="Local processing status">checking…</span>
 </header>
 <main class="page" id="app" aria-live="polite">
-  <p class="muted">Loading…</p>
+  <div class="cardbox" style="text-align:center;padding:40px 20px">
+    <p style="font-weight:700;font-size:16px;margin:0">Loading Namma Space…</p>
+  </div>
 </main>
 
 <template id="tpl-home">
-  <section>
-    <h1>Turn photos of a room into a 3D walkthrough</h1>
-    <p class="muted">Everything runs on this computer. Capture a room with your phone, upload the photos or one video,
+  <section class="cardbox alt-secondary" style="margin-top:0">
+    <div class="row" style="margin-bottom:8px">
+      <span class="badge" style="background:var(--neo-dominant);color:var(--neo-accent)">Local 3D Studio</span>
+    </div>
+    <h1 style="color:var(--neo-dominant);text-shadow:none;margin-top:0">Turn photos of a room into a 3D walkthrough</h1>
+    <p style="color:var(--neo-dominant);font-weight:600;margin:6px 0 14px">Everything runs on this computer. Capture a room with your phone, upload the photos or one video,
       and Namma Space reconstructs a photo-textured 3D model you can walk through in the browser.</p>
     <ol class="steps"><li>1 Capture</li><li>2 Check</li><li>3 Reconstruct</li><li>4 Explore &amp; label</li><li>5 Publish</li></ol>
   </section>
+
   <section class="cardbox">
-    <h2>New space</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">New space</h2>
+      <span class="badge info">Step 1</span>
+    </div>
     <form class="row" id="new-form">
       <label class="small muted" for="new-title" style="position:absolute;left:-9999px">Name of the space</label>
       <input id="new-title" type="text" maxlength="80" placeholder="Name of the space, e.g. Our living room" required>
       <button type="submit">Create project</button>
-      <label class="small muted" for="new-source" style="flex-basis:100%">Only if the photos are not your own: their source
+      <label class="small" for="new-source" style="flex-basis:100%;font-weight:600;color:var(--ink-secondary)">Only if the photos are not your own: their source
         and licence (shown with the published model)
-        <input id="new-source" type="text" maxlength="300" placeholder="e.g. TUM RGB-D benchmark, CC BY 4.0" style="width:100%"></label>
+        <input id="new-source" type="text" maxlength="300" placeholder="e.g. TUM RGB-D benchmark, CC BY 4.0" style="width:100%;margin-top:4px"></label>
     </form>
   </section>
+
   <section class="cardbox" id="polycam-card">
-    <h2>New space from Polycam</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">New space from Polycam</h2>
+      <span class="badge coral">Import</span>
+    </div>
     <div class="dropzone" id="polycam-drop" tabindex="0" role="button" aria-label="Drop Polycam export files or choose them">
-      <p style="margin:0"><strong>Drop the Polycam export here</strong> or <a href="#" id="polycam-pick">choose files</a></p>
-      <p class="small muted" style="margin:4px 0 0">GLTF export (the 3D model, required) and optionally the Images export.
+      <p style="margin:0;font-size:16px"><strong>Drop the Polycam export here</strong> or <a href="#" id="polycam-pick">choose files</a></p>
+      <p class="small" style="margin:6px 0 0;font-weight:600;color:var(--ink-secondary)">GLTF export (the 3D model, required) and optionally the Images export.
         The model is used as Polycam made it; Namma Space adds the floor, start view, walking and labels.</p>
     </div>
     <input type="file" id="polycam-input" accept=".zip,.glb" multiple hidden>
     <div class="progress" id="polycam-progress" hidden><div></div></div>
-    <p class="small" id="polycam-msg"></p>
+    <p class="small" id="polycam-msg" style="font-weight:700"></p>
   </section>
+
   <section class="cardbox" id="phone-card">
-    <h2>Capture with your phone</h2>
-    <div id="phone-body" class="small muted">Checking…</div>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Capture with your phone</h2>
+      <span class="badge info">Mobile</span>
+    </div>
+    <div id="phone-body" class="small" style="font-weight:600;color:var(--ink-secondary)">Checking…</div>
   </section>
+
   <section class="cardbox">
-    <h2>Your spaces</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Your spaces</h2>
+      <span class="badge">Library</span>
+    </div>
     <ul class="projects" id="project-list"></ul>
   </section>
+
   <section class="cardbox" id="bin-card" hidden>
     <details id="bin-box">
       <summary><strong id="bin-summary">Bin</strong></summary>
-      <p class="small muted" style="margin:6px 0">Deleted spaces stay here until you delete them permanently.</p>
+      <p class="small" style="margin:8px 0;font-weight:600;color:var(--ink-secondary)">Deleted spaces stay here until you delete them permanently.</p>
       <ul class="projects" id="bin-list"></ul>
     </details>
   </section>
 </template>
 
 <template id="tpl-project">
-  <section>
-    <p class="small"><a href="#/">← All spaces</a></p>
+  <section style="margin-bottom:14px">
+    <p class="small" style="margin:0 0 6px"><a href="#/">← All spaces</a></p>
     <h1 data-f="title"></h1>
     <ol class="steps" data-f="steps"></ol>
   </section>
+
+  <!-- High-Visibility 3D Model Ready Hero Card -->
+  <section class="ready-banner" id="ready-card" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <span class="badge ok" style="font-size:13px">3D Walkthrough Ready</span>
+      <span class="small" id="ready-meta" style="font-weight:800;color:var(--neo-dominant)"></span>
+    </div>
+    <h2 style="margin:4px 0 8px;font-size:22px;color:var(--neo-dominant)">Your 3D space is reconstructed &amp; ready to explore</h2>
+    <p class="small" style="font-weight:600;color:var(--neo-dominant);margin:0 0 16px">The 3D model, floor collision mesh, and walking route navigation are generated. You can walk through in the browser, measure lengths, add labels, or generate a photoreal splat.</p>
+    <div class="row" style="flex-wrap:wrap;gap:12px">
+      <a class="btn" id="ready-open-btn" style="background:var(--neo-accent);font-size:15px;padding:9px 20px" href="#">Open 3D Walkthrough</a>
+      <a class="btn secondary" id="ready-details-btn" style="background:#ffffff;font-size:14px" href="#">View Model Details &amp; Export</a>
+    </div>
+  </section>
+
   <section class="cardbox">
-    <h2>1 · Capture and upload</h2>
-    <details>
-      <summary>How to capture a room (2-minute guide)</summary>
-      <ol class="sop">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">1 · Capture and upload</h2>
+      <span class="badge info">Upload</span>
+    </div>
+    <details style="margin-bottom:14px">
+      <summary style="font-weight:700">How to capture a room (2-minute guide)</summary>
+      <ol class="sop" style="margin-top:10px">
         <li><strong>Light:</strong> switch on all lights; avoid filming straight into bright windows.</li>
         <li><strong>Phone settings:</strong> use the normal 1× lens; on iPhone set <em>Camera › Formats › Most Compatible</em> (JPEG); turn off HDR video.</li>
         <li><strong>Walk the edges:</strong> stand near a wall and face into the room; take a photo every step (about 0.5 m) while walking all the way around.</li>
@@ -84,85 +124,102 @@
         <li><strong>Hold still:</strong> sharp photos matter more than many photos. 60–150 photos suit a typical room.</li>
         <li><strong>Video instead:</strong> one continuous, slow walk (about 30 cm per second) of 1–3 minutes also works.</li>
       </ol>
-      <p class="small muted">Measuring tape and printed markers are optional. They only help to set the real-world scale.</p>
+      <p class="small" style="font-weight:600;color:var(--ink-secondary)">Measuring tape and printed markers are optional. They only help to set the real-world scale.</p>
     </details>
     <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Add photos or a video">
-      <p style="margin:0 0 8px"><strong>Drop photos or one video here</strong></p>
-      <p class="small muted" style="margin:0 0 12px">JPEG / PNG photos (up to 60 MB each) or one MP4 / MOV video (up to 4 GB)</p>
+      <p style="margin:0 0 8px;font-size:16px"><strong>Drop photos or one video here</strong></p>
+      <p class="small" style="margin:0 0 14px;font-weight:600;color:var(--ink-secondary)">JPEG / PNG photos (up to 60 MB each) or one MP4 / MOV video (up to 4 GB)</p>
       <button type="button" class="secondary" id="pick">Choose files</button>
       <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.mp4,.mov,.m4v,.heic,.heif" hidden>
     </div>
-    <p class="small" id="upload-msg" aria-live="polite"></p>
+    <p class="small" id="upload-msg" aria-live="polite" style="font-weight:700;margin-top:8px"></p>
     <div class="progress" id="upload-progress" hidden><div></div></div>
-    <details id="files-box"><summary data-f="files-summary">Uploaded files</summary><ul class="list small" id="file-list"></ul></details>
+    <details id="files-box" style="margin-top:12px"><summary data-f="files-summary" style="font-weight:700">Uploaded files</summary><ul class="list small" id="file-list"></ul></details>
   </section>
+
   <section class="cardbox">
-    <h2>2 · Check the capture</h2>
-    <p class="small muted">Checks sharpness, lighting, duplicates and whether the photos overlap enough before any long processing starts.</p>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">2 · Check the capture</h2>
+      <span class="badge info">QA Check</span>
+    </div>
+    <p class="small" style="font-weight:600;color:var(--ink-secondary)">Checks sharpness, lighting, duplicates and whether the photos overlap enough before any long processing starts.</p>
     <button type="button" id="check-btn">Check my capture</button>
     <div class="progress" id="check-progress" hidden><div></div></div>
-    <p class="small muted" id="check-step"></p>
+    <p class="small" id="check-step" style="font-weight:700;color:var(--ink-secondary);margin-top:6px"></p>
     <div id="check-result"></div>
   </section>
+
   <section class="cardbox">
-    <h2>3 · Reconstruct</h2>
-    <div class="grid2">
-      <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="preview" checked>
-        <strong>Preview</strong> – faster, lighter model (1600 px images)<br><span class="small muted" data-f="est-preview"></span></label>
-      <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="standard">
-        <strong>Standard</strong> – best detail (full-resolution photos, two detail levels)<br><span class="small muted" data-f="est-standard"></span></label>
-      <label class="cardbox" style="margin:0;cursor:pointer"><input type="radio" name="profile" value="high">
-        <strong>High</strong> – denser surfaces for 16 GB + NVIDIA GPU laptops (not yet evaluated)<br><span class="small muted" data-f="est-high"></span></label>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">3 · Reconstruct</h2>
+      <span class="badge coral">Engine</span>
     </div>
-    <p class="small" data-f="advice" hidden></p>
-    <p style="margin-top:12px"><button type="button" id="run-btn" disabled>Start reconstruction</button>
-      <span class="small muted" id="run-msg"></span></p>
+    <div class="grid2">
+      <label class="cardbox" style="margin:0;cursor:pointer;border:var(--neo-border-regular);box-shadow:var(--neo-shadow-xs)"><input type="radio" name="profile" value="preview" checked>
+        <strong>Preview</strong> – basic processing (fast but poor quality)<br><span class="small" style="font-weight:600;color:var(--ink-secondary)" data-f="est-preview"></span></label>
+      <label class="cardbox" style="margin:0;cursor:pointer;border:var(--neo-border-regular);box-shadow:var(--neo-shadow-xs)"><input type="radio" name="profile" value="standard">
+        <strong>Standard</strong> – moderate quality, slower than preview<br><span class="small" style="font-weight:600;color:var(--ink-secondary)" data-f="est-standard"></span></label>
+      <label class="cardbox" style="margin:0;cursor:pointer;border:var(--neo-border-regular);box-shadow:var(--neo-shadow-xs)"><input type="radio" name="profile" value="high">
+        <strong>High</strong> – Best quality, slowest (suited for NVIDIA GPUs)<br><span class="small" style="font-weight:600;color:var(--ink-secondary)" data-f="est-high"></span></label>
+    </div>
+    <p class="small" data-f="advice" hidden style="font-weight:700;margin-top:10px"></p>
+    <p style="margin-top:16px"><button type="button" id="run-btn" disabled>Start reconstruction</button>
+      <span class="small" style="font-weight:600;color:var(--ink-secondary);margin-left:8px" id="run-msg"></span></p>
     <ul class="list" id="run-list"></ul>
   </section>
+
   <section class="cardbox">
-    <h2>Space settings</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Space settings</h2>
+      <span class="badge">Options</span>
+    </div>
     <button type="button" class="danger" id="trash-btn">Move this space to the bin</button>
-    <span class="small muted">Files are moved to projects/_trash, never deleted.</span>
+    <span class="small" style="font-weight:600;color:var(--ink-secondary);margin-left:10px">Files are moved to projects/_trash, never deleted.</span>
   </section>
 </template>
 
 <template id="tpl-run">
-  <section>
-    <p class="small"><a data-f="back">← Back to the space</a></p>
+  <section style="margin-bottom:14px">
+    <p class="small" style="margin:0 0 6px"><a data-f="back">← Back to the space</a></p>
     <h1 data-f="title">Reconstruction</h1>
-    <p class="muted small" data-f="sub"></p>
+    <p class="small" style="font-weight:600;color:rgba(252,251,251,0.9)" data-f="sub"></p>
   </section>
+
   <section class="cardbox">
-    <div class="row"><strong data-f="state">Starting…</strong><span class="spacer" style="flex:1"></span><span class="mono small" data-f="elapsed"></span></div>
+    <div class="row"><strong data-f="state" style="font-size:16px">Starting…</strong><span class="spacer" style="flex:1"></span><span class="mono small" data-f="elapsed" style="font-weight:700"></span></div>
     <div class="progress"><div data-f="bar"></div></div>
-    <p class="small muted" data-f="detail"></p>
+    <p class="small" style="font-weight:600;color:var(--ink-secondary)" data-f="detail"></p>
     <div data-f="error"></div>
-    <div class="row" style="gap:8px">
+    <div class="row" style="gap:10px;margin-top:10px">
       <button type="button" class="danger" data-f="cancel">Cancel</button>
-      <button type="button" data-f="resume" hidden>Resume</button>
+      <button type="button" class="secondary" data-f="resume" hidden>Resume</button>
     </div>
     <ul class="stage-list" data-f="stages"></ul>
-    <details><summary>Technical log</summary><pre class="logbox" data-f="log"></pre></details>
+    <details style="margin-top:14px"><summary style="font-weight:700">Technical log</summary><pre class="logbox" data-f="log" style="margin-top:8px"></pre></details>
   </section>
+
   <section class="cardbox" data-f="result" hidden>
-    <h2>Result</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Result</h2>
+      <span class="badge ok">Complete</span>
+    </div>
     <div data-f="verdict"></div>
-    <dl class="kv" data-f="facts" style="margin:12px 0"></dl>
+    <dl class="kv" data-f="facts" style="margin:14px 0"></dl>
     <ul class="warn-list" data-f="warnings"></ul>
-    <p class="row" style="margin-top:14px;flex-wrap:wrap">
+    <p class="row" style="margin-top:18px;flex-wrap:wrap">
       <a class="btn" data-f="open">Open the 3D walkthrough</a>
       <button type="button" class="secondary" data-f="publish">Publish / export</button>
       <a class="btn secondary" data-f="report" target="_blank" rel="noopener">Processing report (JSON)</a>
     </p>
     <div data-f="publish-result"></div>
-    <div data-f="splat" hidden style="margin-top:14px">
+    <div data-f="splat" hidden style="margin-top:18px;padding-top:16px;border-top:var(--neo-border-regular)">
       <h3 style="margin:0 0 6px">Photoreal view</h3>
-      <p class="small muted" style="margin:0 0 8px">Trains a Gaussian splat from the Polycam keyframes on this computer's
+      <p class="small" style="margin:0 0 10px;font-weight:600;color:var(--ink-secondary)">Trains a Gaussian splat from the Polycam keyframes on this computer's
         GPU (about 20 minutes) and lines it up with the model. The viewer then shows the photoreal room; the model stays
         underneath for walking, labels and routes.</p>
       <div data-f="splat-state"></div>
-      <div class="bar" data-f="splat-barbox" hidden><div data-f="splat-bar"></div></div>
-      <p class="row" style="margin-top:8px"><button type="button" data-f="splat-go">Make the photoreal view</button>
+      <div class="progress" data-f="splat-barbox" hidden><div data-f="splat-bar"></div></div>
+      <p class="row" style="margin-top:10px"><button type="button" data-f="splat-go">Make the photoreal view</button>
         <button type="button" class="secondary" data-f="splat-cancel" hidden>Cancel</button></p>
     </div>
   </section>

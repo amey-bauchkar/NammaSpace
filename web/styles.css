@@ -4,7 +4,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  font: 15px/1.45 'Fira Sans', system-ui, -apple-system, "Segoe UI", sans-serif; }
 #banner { background: var(--banner); border-bottom: 1px solid #e8d49a; padding: 6px 16px; font-size: 13px; }
 #layout { display: flex; height: calc(100% - 34px); }
 #stage { position: relative; flex: 1; min-width: 0; }

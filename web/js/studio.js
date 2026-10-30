@@ -88,14 +88,22 @@ async function home() {
   if (!projects.length) list.append(el('li', { class: 'empty' }, 'No spaces yet – create one above.'));
   for (const p of projects) {
     const last = p.runs[p.runs.length - 1];
-    list.append(el('li', {},
+    const lastSuccess = [...p.runs].reverse().find((r) => r.status === 'succeeded' || r.has_package);
+    const actions = el('div', { class: 'row' },
+      last ? badge(last.status) : el('span', { class: 'badge' }, 'not processed'),
+      lastSuccess ? el('a', {
+        class: 'btn',
+        style: 'background:var(--neo-secondary);font-size:13px;padding:6px 12px;box-shadow:var(--neo-shadow-xs)',
+        href: `viewer.html?package=${encodeURIComponent(`/files/${p.project_id}/runs/${lastSuccess.run_id}/90_package/scene_package.json`)}&project=${encodeURIComponent(p.project_id)}&run=${encodeURIComponent(lastSuccess.run_id)}`
+      }, 'View 3D') : null,
+      el('a', { class: 'btn secondary', href: `#/project/${p.project_id}` }, 'Open'),
+      el('button', { type: 'button', class: 'danger', 'aria-label': `Delete ${p.title}`, onclick: async () => {
+        if (!confirm(`Delete "${p.title}"? It moves to the bin; you can restore it from there.`)) return;
+        try { await api(`/projects/${p.project_id}`, { method: 'DELETE' }); home(); } catch (e) { alert(e.message); }
+      } }, 'Delete'));
+    list.append(el('li', { class: lastSuccess ? 'project-card-has-model' : '' },
       el('div', {}, el('strong', {}, p.title), el('div', { class: 'small muted' }, `${p.uploads} files · created ${p.created_at.slice(0, 16).replace('T', ' ')}`)),
-      el('div', { class: 'row' }, last ? badge(last.status) : el('span', { class: 'badge' }, 'not processed'),
-        el('a', { class: 'btn secondary', href: `#/project/${p.project_id}` }, 'Open'),
-        el('button', { type: 'button', class: 'danger', 'aria-label': `Delete ${p.title}`, onclick: async () => {
-          if (!confirm(`Delete "${p.title}"? It moves to the bin; you can restore it from there.`)) return;
-          try { await api(`/projects/${p.project_id}`, { method: 'DELETE' }); home(); } catch (e) { alert(e.message); }
-        } }, 'Delete'))));
+      actions));
   }
   showBin();
 }
@@ -236,6 +244,17 @@ async function project(pid) {
   const hasPackage = p.runs.some((r) => r.has_package);
   refreshSteps(hasPackage ? 3 : p.capture_status === 'ready' ? 2 : p.uploads ? 1 : 0);
 
+  // High-visibility hero banner if a 3D reconstruction is already present
+  const latestSuccess = [...p.runs].reverse().find((r) => r.status === 'succeeded' || r.has_package);
+  const readyCard = $('#ready-card');
+  if (latestSuccess && readyCard) {
+    readyCard.hidden = false;
+    $('#ready-meta').textContent = `${(latestSuccess.profile || '3D Space').toUpperCase()} · ${latestSuccess.created_at.slice(0, 16).replace('T', ' ')}`;
+    const pkg = `/files/${pid}/runs/${latestSuccess.run_id}/90_package/scene_package.json`;
+    $('#ready-open-btn').href = `viewer.html?package=${encodeURIComponent(pkg)}&project=${encodeURIComponent(pid)}&run=${encodeURIComponent(latestSuccess.run_id)}`;
+    $('#ready-details-btn').href = `#/project/${pid}/run/${latestSuccess.run_id}`;
+  }
+
   // uploads
   const input = $('#file-input');
   const dz = $('#dropzone');
@@ -275,8 +294,40 @@ async function project(pid) {
   };
   const rl = $('#run-list');
   for (const r of [...p.runs].reverse()) {
-    rl.append(el('li', {}, el('button', { type: 'button', onclick: () => { location.hash = `#/project/${pid}/run/${r.run_id}`; } },
-      el('span', {}, `${r.profile} · ${r.created_at.slice(0, 16).replace('T', ' ')}`), badge(r.status))));
+    const isReady = r.status === 'succeeded' || r.has_package;
+    if (isReady) {
+      const pkg = `/files/${pid}/runs/${r.run_id}/90_package/scene_package.json`;
+      const viewerUrl = `viewer.html?package=${encodeURIComponent(pkg)}&project=${encodeURIComponent(pid)}&run=${encodeURIComponent(r.run_id)}`;
+      rl.append(el('li', { class: 'run-card-ready' },
+        el('div', { class: 'run-meta' },
+          el('div', { class: 'run-title' },
+            el('span', {}, `${(r.profile || '3D Space').toUpperCase()} Walkthrough`),
+            badge(r.status)
+          ),
+          el('div', { class: 'small', style: 'color:var(--neo-dominant);font-weight:700;margin-top:2px' },
+            `Completed ${r.created_at.slice(0, 16).replace('T', ' ')} · Ready for walking, labels & routes`
+          )
+        ),
+        el('div', { class: 'run-actions' },
+          el('a', { class: 'btn btn-walk', href: viewerUrl }, 'Open 3D Walkthrough'),
+          el('button', { type: 'button', class: 'secondary', onclick: () => { location.hash = `#/project/${pid}/run/${r.run_id}`; } }, 'Details & Export')
+        )
+      ));
+    } else if (r.status === 'running' || r.status === 'queued') {
+      rl.append(el('li', { class: 'run-card-running' },
+        el('div', {},
+          el('strong', {}, `${r.profile.toUpperCase()} in progress...`),
+          el('div', { class: 'small muted' }, `Started ${r.created_at.slice(0, 16).replace('T', ' ')}`)
+        ),
+        el('div', { class: 'row' },
+          badge(r.status),
+          el('button', { type: 'button', class: 'secondary', onclick: () => { location.hash = `#/project/${pid}/run/${r.run_id}`; } }, 'View Progress')
+        )
+      ));
+    } else {
+      rl.append(el('li', {}, el('button', { type: 'button', onclick: () => { location.hash = `#/project/${pid}/run/${r.run_id}`; } },
+        el('span', {}, `${r.profile} · ${r.created_at.slice(0, 16).replace('T', ' ')}`), badge(r.status))));
+    }
   }
   $('#trash-btn').onclick = async () => {
     if (!confirm(`Move "${p.title}" to the bin (projects/_trash)?`)) return;
