@@ -254,12 +254,11 @@ kbd {
 }
 
 .brand .logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  border: 2px solid var(--neo-accent);
-  background: var(--neo-dominant) url('../logo.png') center / cover no-repeat;
-  box-shadow: 2px 2px 0px var(--neo-secondary);
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent url('../logo.png') center / contain no-repeat;
+  box-shadow: none;
   display: inline-block;
   flex-shrink: 0;
 }
