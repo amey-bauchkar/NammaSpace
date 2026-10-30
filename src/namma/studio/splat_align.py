@@ -52,15 +52,18 @@ def _icp(X, Q, tree, iters, keep, yaw_only, radius):
     return X, R_tot, t_tot
 
 
-def align_splat_to_mesh(ply_path, glb, **kw):
+def align_splat_to_mesh(ply_path, glb, *, init_T=None, min_opacity=0.05, **kw):
     s = read_splat_ply(ply_path)
-    P = np.c_[s["x"], s["y"], s["z"]].astype(np.float64)
-    solid = 1 / (1 + np.exp(-s["opacity"])) > 0.5
-    T, stats = align_points_to_mesh(P[solid], glb, **kw)
+    op = 1 / (1 + np.exp(-s["opacity"]))
+    solid = op > 0.5
+    if solid.sum() < 5000:
+        solid = op >= min_opacity
+    P = np.c_[s["x"][solid], s["y"][solid], s["z"][solid]].astype(np.float64)
+    T, stats = align_points_to_mesh(P, glb, init_T=init_T, **kw)
     return T, {"solid_splats": int(solid.sum()), **stats}
 
 
-def align_points_to_mesh(P, glb, *, samples=200_000, max_points=40_000, seed=0):
+def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, max_points=40_000, seed=0):
     """Surface points (splat or triangulated photo points) -> (4x4 points frame -> mesh frame, fit stats)."""
     P = np.asarray(P, np.float64)
     rng = np.random.default_rng(seed)
@@ -70,18 +73,25 @@ def align_points_to_mesh(P, glb, *, samples=200_000, max_points=40_000, seed=0):
     Q, _, _ = mi.sample_surface(V, F, samples)
     tree = cKDTree(Q)
 
-    def yaw_fit(Ps, deg):
-        R0 = _rot_y(np.radians(deg))
-        t0 = Q.mean(0) - P.mean(0) @ R0.T
-        X, R, t = _icp(Ps @ R0.T + t0, Q, tree, 8, 70, True, 0.5)
-        return float((tree.query(X, workers=-1)[0] < 0.05).mean()), deg, R @ R0, R @ t0 + t
+    if init_T is not None:
+        init_T = np.asarray(init_T, float)
+        R0 = init_T[:3, :3]
+        t0 = init_T[:3, 3]
+        X, R2, t2 = _icp(P @ R0.T + t0, Q, tree, 40, 70, False, 0.2)
+        Rf, tf = R2 @ R0, R2 @ t0 + t2
+    else:
+        def yaw_fit(Ps, deg):
+            R0 = _rot_y(np.radians(deg))
+            t0 = Q.mean(0) - P.mean(0) @ R0.T
+            X, R, t = _icp(Ps @ R0.T + t0, Q, tree, 8, 70, True, 0.5)
+            return float((tree.query(X, workers=-1)[0] < 0.05).mean()), deg, R @ R0, R @ t0 + t
 
-    # coarse-to-fine (same answer, ~10x faster): every turn on a 5 k subsample, then the 3 best on all points
-    sub = P[rng.choice(len(P), min(len(P), 5000), replace=False)]
-    coarse = sorted((yaw_fit(sub, deg) for deg in np.arange(0, 360, 2.0)), key=lambda b: -b[0])
-    _, deg, Rb, tb = max((yaw_fit(P, c[1]) for c in coarse[:3]), key=lambda b: b[0])
-    X, R2, t2 = _icp(P @ Rb.T + tb, Q, tree, 40, 70, False, 0.2)
-    Rf, tf = R2 @ Rb, R2 @ tb + t2
+        # coarse-to-fine (same answer, ~10x faster): every turn on a 5 k subsample, then the 3 best on all points
+        sub = P[rng.choice(len(P), min(len(P), 5000), replace=False)]
+        coarse = sorted((yaw_fit(sub, deg) for deg in np.arange(0, 360, 2.0)), key=lambda b: -b[0])
+        _, deg, Rb, tb = max((yaw_fit(P, c[1]) for c in coarse[:3]), key=lambda b: b[0])
+        X, R2, t2 = _icp(P @ Rb.T + tb, Q, tree, 40, 70, False, 0.2)
+        Rf, tf = R2 @ Rb, R2 @ tb + t2
     dd = tree.query(X, workers=-1)[0]
     T = np.eye(4)
     T[:3, :3], T[:3, 3] = Rf, tf
