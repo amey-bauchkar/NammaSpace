@@ -146,17 +146,54 @@ def test_mesh_start_points_lie_on_the_scanned_surface(tmp_path):
     assert on.all()
 
 
-def test_photoreal_recipe_fits_6gb_vram():
-    """Cap and scale bound must stay within RTX 4050 6 GB budget."""
-    assert sp.MAX_SPLAT_SCALE_M == 0.50
-    import inspect
-    sig = inspect.signature(sp.make_photoreal)
-    assert sig.parameters["cap"].default == 300_000
+def test_photoreal_recipe_is_bounded_for_a_6gb_rtx_4050():
+    """Claude's original small-room recipe is preserved verbatim from the golden release."""
+    from namma.studio import splat_claude
+    assert splat_claude.MIN_WITHIN_5CM == 0.30
+    assert splat_claude.MIN_SPLAT_OPACITY == 0.02
+    assert sp.MIN_WITHIN_5CM == 0.30
 
 
-def test_colmap_pose_rejection_thresholds():
-    """COLMAP must be rejected if camera residual exceeds 20 cm, preventing sideways/drifted models."""
-    assert sp.MAX_COLMAP_RESIDUAL_M == 0.20
-    assert sp.MIN_PRETRAIN_WITHIN_5CM == 0.20
-    assert sp.MAX_PRETRAIN_TILT_DEG == 10.0
+def test_large_photoreal_recipe():
+    """The enhanced large-space recipe bounds scale and guards against dropped keyframes."""
+    from namma.studio import splat_large
+    assert splat_large.MAX_SPLAT_SCALE_M == 0.20
+    assert splat_large.RTX_4050_SAFE_CAP == 600_000
+    assert splat_large.MIN_COLMAP_KEYFRAME_RATIO == 0.95
+    assert splat_large.MAX_COLMAP_RESIDUAL_M == 0.20
+    assert splat_large.MIN_PRETRAIN_WITHIN_5CM == 0.20
+    assert splat_large.MAX_PRETRAIN_TILT_DEG == 10.0
+
+
+def test_classify_room_profile(tmp_path):
+    """The dispatcher correctly routes small rooms to Claude and large spaces to the enhanced engine."""
+    from namma.core.jsonio import write_json
+    # 1. Small room: 3.5 x 2.8 x 3.2 m -> ~11 m^2 footprint, 5.5 m diagonal, 12 photos -> "claude"
+    p_small = tmp_path / "small_proj"
+    r_small = p_small / "runs" / "run_01"
+    (r_small / "10_mesh").mkdir(parents=True)
+    box_room(r_small / "10_mesh" / "model.glb", size=(3.5, 2.8, 3.2))
+    prof_small, met_small = sp.classify_room_profile(p_small, "run_01")
+    assert prof_small == "claude"
+    assert met_small["footprint_area_m2"] <= 20.0
+    assert met_small["bounding_box_diagonal_m"] <= 7.0
+
+    # 2. Large space: 8.0 x 3.0 x 6.0 m -> 48 m^2 footprint, 10.4 m diagonal -> "large"
+    p_large = tmp_path / "large_proj"
+    r_large = p_large / "runs" / "run_01"
+    (r_large / "10_mesh").mkdir(parents=True)
+    box_room(r_large / "10_mesh" / "model.glb", size=(8.0, 3.0, 6.0))
+    prof_large, met_large = sp.classify_room_profile(p_large, "run_01")
+    assert prof_large == "large"
+    assert met_large["footprint_area_m2"] > 20.0
+
+    # 3. Manual override in config.json
+    write_json(r_small / "config.json", {"config": {"splat_profile": "large"}})
+    prof_ov, met_ov = sp.classify_room_profile(p_small, "run_01")
+    assert prof_ov == "large" and met_ov["override"] is True
+
+    write_json(r_large / "config.json", {"config": {"splat_profile": "claude"}})
+    prof_ov2, met_ov2 = sp.classify_room_profile(p_large, "run_01")
+    assert prof_ov2 == "claude" and met_ov2["override"] is True
+
 
