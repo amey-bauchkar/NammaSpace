@@ -130,14 +130,14 @@ class PolycamStaging:
         meshes = [k for k in kinds if k[1] == "mesh"]
         raws = [k for k in kinds if k[1] == "raw"]
         if len(meshes) != 1:
-            raise BridgeError(400, "IMPORT-NEED-MESH", "Add exactly one Polycam GLTF export (the 3D model)"
+            raise BridgeError(400, "IMPORT-NEED-MESH", "Add exactly one GLTF/GLB export (the 3D model)"
                               + ("; the Images export alone has no model." if raws and not meshes else "."))
         raw_info = [raw_summary(p) for p, _, _ in raws]
         device = next((r["device"] for r in raw_info if r["device"]), None) or "iPhone"
-        title = " ".join(str(title or "").split())[:80] or f"Polycam scan {time.strftime('%Y-%m-%d %H:%M')}"
+        title = " ".join(str(title or "").split())[:80] or f"3D scan {time.strftime('%Y-%m-%d %H:%M')}"
         try:
-            res = import_mesh(meshes[0][0], self.root.parent, title=title, app="Polycam", device=device,
-                              source_note=f"3D scan made with Polycam ({device}); geometry and textures by Polycam",
+            res = import_mesh(meshes[0][0], self.root.parent, title=title, app="3D Scan", device=device,
+                              source_note=f"3D scan ({device})",
                               eye_height_m=eye_height_m, log=log)
         except ImportError_ as e:
             raise BridgeError(422, "IMPORT-MESH", str(e)) from e

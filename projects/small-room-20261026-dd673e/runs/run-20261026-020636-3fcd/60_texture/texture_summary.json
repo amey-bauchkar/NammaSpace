@@ -1,0 +1,524 @@
+{
+ "lods": [
+  {
+   "lod": 0,
+   "file": "lod0.glb",
+   "bytes": 4241292,
+   "triangles": 50057,
+   "textures": [
+    [
+     4096,
+     3488
+    ]
+   ],
+   "source": "Polycam export 25_10_2026.glb, repaired (ceiling flattened, 19 hole(s) closed)"
+  },
+  {
+   "lod": 1,
+   "file": "lod1.glb",
+   "bytes": 1953232,
+   "triangles": 50057,
+   "textures": [
+    [
+     2048,
+     1744
+    ]
+   ],
+   "source": "lod0 with textures <= 2048 px"
+  }
+ ],
+ "fragments": {
+  "pieces": 1,
+  "removed_pieces": 0,
+  "removed_area": 0.0,
+  "removed_triangles": 0,
+  "total_area": 55.37713666315153
+ },
+ "repair": {
+  "applied": true,
+  "ceiling": {
+   "tilt_deg": 1.65,
+   "height": 1.332,
+   "inlier_share": 0.664,
+   "down_area_m2": 9.92,
+   "parallel_to": "floor"
+  },
+  "removed_above_triangles": 0,
+  "removed_hanging_object_triangles": 408,
+  "flattened_vertices": 2331,
+  "flattened_triangles": 3960,
+  "hanging_triangles": 557,
+  "removed_slivers": 12,
+  "plain_ceiling_triangles": 4005,
+  "ceiling_debris_triangles": 666,
+  "max_vertex_move_m": 0.258,
+  "straighten": {
+   "walls": [
+    {
+     "facing_deg": 178.9,
+     "vertices": 501,
+     "max_move_m": 0.05
+    },
+    {
+     "facing_deg": 178.9,
+     "vertices": 676,
+     "max_move_m": 0.05
+    },
+    {
+     "facing_deg": 90.9,
+     "vertices": 1727,
+     "max_move_m": 0.05
+    },
+    {
+     "facing_deg": 90.9,
+     "vertices": 559,
+     "max_move_m": 0.05
+    }
+   ],
+   "floor": {
+    "vertices": 625,
+    "max_move_m": 0.03,
+    "height": -1.544
+   },
+   "wall_top_triangles": 554
+  },
+  "holes": [
+   {
+    "vertices": 446,
+    "perimeter_m": 9.73,
+    "centre": [
+     -1.35,
+     0.1,
+     1.02
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.27,
+    "centre": [
+     0.93,
+     1.19,
+     -1.38
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     219,
+     220,
+     210
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.38,
+    "centre": [
+     0.87,
+     1.27,
+     -1.44
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 2,
+    "colour_rgb": [
+     217,
+     215,
+     207
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.23,
+    "centre": [
+     1.54,
+     1.26,
+     -1.34
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     148,
+     143,
+     124
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.17,
+    "centre": [
+     1.5,
+     1.29,
+     -0.77
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     167,
+     170,
+     161
+    ]
+   },
+   {
+    "vertices": 187,
+    "perimeter_m": 15.6,
+    "centre": [
+     0.08,
+     1.27,
+     0.02
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.24,
+    "centre": [
+     -1.54,
+     1.37,
+     1.55
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     173,
+     173,
+     161
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.24,
+    "centre": [
+     -1.5,
+     1.34,
+     -0.63
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     194,
+     190,
+     178
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.18,
+    "centre": [
+     -1.5,
+     1.36,
+     -0.6
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     197,
+     193,
+     181
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.15,
+    "centre": [
+     -1.41,
+     1.38,
+     1.55
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.39,
+    "centre": [
+     -1.35,
+     1.42,
+     -1.46
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     173,
+     164,
+     148
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.05,
+    "centre": [
+     -1.38,
+     1.34,
+     -1.42
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     189,
+     181,
+     162
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.26,
+    "centre": [
+     -1.16,
+     1.27,
+     -1.44
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     177,
+     169,
+     151
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.2,
+    "centre": [
+     -1.12,
+     1.26,
+     -1.46
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     179,
+     170,
+     153
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.3,
+    "centre": [
+     -0.82,
+     1.3,
+     -1.47
+    ],
+    "filled": true,
+    "rms_m": 0.009,
+    "triangles": 2,
+    "colour_rgb": [
+     180,
+     173,
+     156
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.36,
+    "centre": [
+     -0.85,
+     1.28,
+     -1.47
+    ],
+    "filled": true,
+    "rms_m": 0.011,
+    "triangles": 2,
+    "colour_rgb": [
+     181,
+     174,
+     158
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.4,
+    "centre": [
+     0.07,
+     1.28,
+     -1.4
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 3,
+    "colour_rgb": [
+     202,
+     198,
+     187
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.28,
+    "centre": [
+     0.34,
+     1.29,
+     -1.43
+    ],
+    "filled": true,
+    "rms_m": 0.011,
+    "triangles": 2,
+    "colour_rgb": [
+     210,
+     207,
+     198
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.23,
+    "centre": [
+     0.87,
+     1.3,
+     -1.42
+    ],
+    "filled": true,
+    "rms_m": 0.007,
+    "triangles": 2,
+    "colour_rgb": [
+     195,
+     194,
+     184
+    ]
+   },
+   {
+    "vertices": 2,
+    "perimeter_m": null,
+    "centre": [
+     1.06,
+     1.06,
+     -1.45
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.55,
+    "centre": [
+     1.16,
+     1.06,
+     -1.54
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     201,
+     199,
+     186
+    ]
+   },
+   {
+    "vertices": 87,
+    "perimeter_m": 1.33,
+    "centre": [
+     1.33,
+     0.65,
+     0.75
+    ],
+    "filled": true,
+    "rms_m": 0.016,
+    "triangles": 85,
+    "colour_rgb": [
+     115,
+     150,
+     178
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.11,
+    "centre": [
+     1.4,
+     1.28,
+     -1.36
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 3,
+    "colour_rgb": [
+     179,
+     177,
+     162
+    ]
+   }
+  ],
+  "filled_holes": 19,
+  "backings": [
+   {
+    "surface": "ceiling",
+    "colour_rgb": [
+     180,
+     178,
+     169
+    ],
+    "height": 1.332
+   },
+   {
+    "surface": "floor",
+    "colour_rgb": [
+     169,
+     157,
+     144
+    ],
+    "height": -1.544
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     194,
+     184,
+     164
+    ],
+    "facing_deg": 91.1,
+    "area_m2": 3.24,
+    "width_m": 3.13
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     190,
+     181,
+     164
+    ],
+    "facing_deg": 91.1,
+    "area_m2": 2.05,
+    "width_m": 3.13
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     163,
+     162,
+     148
+    ],
+    "facing_deg": 178.7,
+    "area_m2": 2.45,
+    "width_m": 2.07
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     201,
+     197,
+     188
+    ],
+    "facing_deg": 178.7,
+    "area_m2": 1.3,
+    "width_m": 2.9
+   }
+  ],
+  "texture_padding": {
+   "unused_texel_share": 0.363
+  }
+ }
+}

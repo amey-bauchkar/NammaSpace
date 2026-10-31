@@ -6,7 +6,7 @@
 <title>Namma Space Studio</title>
 <link rel="icon" href="favicon.svg?v=4" type="image/svg+xml">
 <link rel="alternate icon" href="logo.png?v=4" type="image/png">
-<link rel="stylesheet" href="app.css?v=5">
+<link rel="stylesheet" href="app.css?v=6">
 </head>
 <body>
 <header class="topbar">
@@ -49,13 +49,14 @@
 
   <section class="cardbox" id="polycam-card">
     <div class="row" style="justify-content:space-between;margin-bottom:10px">
-      <h2 style="margin:0">New space from Polycam</h2>
+      <h2 style="margin:0">Import 3D model or scan</h2>
       <span class="badge coral">Import</span>
     </div>
-    <div class="dropzone" id="polycam-drop" tabindex="0" role="button" aria-label="Drop Polycam export files or choose them">
-      <p style="margin:0;font-size:16px"><strong>Drop the Polycam export here</strong> or <a href="#" id="polycam-pick">choose files</a></p>
-      <p class="small" style="margin:6px 0 0;font-weight:600;color:var(--ink-secondary)">GLTF export (the 3D model, required) and optionally the Images export.
-        The model is used as Polycam made it; Namma Space adds the floor, start view, walking and labels.</p>
+    <div class="dropzone" id="polycam-drop" tabindex="0" role="button" aria-label="Drop 3D model or scan files or choose them">
+      <p style="margin:0;font-size:16px"><strong>Drop your 3D model or scan here</strong> or <a href="#" id="polycam-pick">choose files</a></p>
+      <p class="small" style="margin:6px 0 0;font-weight:600;color:var(--ink-secondary)">GLTF/GLB file (.glb or .zip with model and optional photos).
+        Namma Space adds the floor, start view, walking and labels.<br>
+        <span style="display:inline-block;margin-top:4px;font-size:12px;font-weight:500;opacity:0.85">* Note: We use Polycam as a GLTF file and images importer, but any other model will work as well.</span></p>
     </div>
     <input type="file" id="polycam-input" accept=".zip,.glb" multiple hidden>
     <div class="progress" id="polycam-progress" hidden><div></div></div>
@@ -90,7 +91,16 @@
 <template id="tpl-project">
   <section style="margin-bottom:14px">
     <p class="small" style="margin:0 0 6px"><a href="#/">← All spaces</a></p>
-    <h1 data-f="title"></h1>
+    <div class="row" style="align-items:center;gap:12px;flex-wrap:wrap">
+      <h1 data-f="title" style="margin:0"></h1>
+      <button type="button" class="secondary" id="rename-btn" style="padding:4px 12px;font-size:13px;border-radius:var(--neo-radius-pill)" title="Rename this space">Rename</button>
+    </div>
+    <form class="row" id="rename-form" hidden style="margin-top:10px;gap:8px">
+      <label for="rename-input" class="small muted" style="position:absolute;left:-9999px">New name</label>
+      <input type="text" id="rename-input" maxlength="80" required placeholder="Name of this space" style="max-width:340px;font-weight:700">
+      <button type="submit" style="padding:7px 16px;font-size:14px">Save</button>
+      <button type="button" class="secondary" id="rename-cancel" style="padding:7px 16px;font-size:14px">Cancel</button>
+    </form>
     <ol class="steps" data-f="steps"></ol>
   </section>
 
@@ -155,7 +165,7 @@
       <h2 style="margin:0">3 · Reconstruct</h2>
       <span class="badge coral">Engine</span>
     </div>
-    <div class="grid2">
+    <div class="grid3">
       <label class="cardbox" style="margin:0;cursor:pointer;border:var(--neo-border-regular);box-shadow:var(--neo-shadow-xs)"><input type="radio" name="profile" value="preview" checked>
         <strong>Preview</strong> – basic processing (fast but poor quality)<br><span class="small" style="font-weight:600;color:var(--ink-secondary)" data-f="est-preview"></span></label>
       <label class="cardbox" style="margin:0;cursor:pointer;border:var(--neo-border-regular);box-shadow:var(--neo-shadow-xs)"><input type="radio" name="profile" value="standard">
@@ -174,8 +184,11 @@
       <h2 style="margin:0">Space settings</h2>
       <span class="badge">Options</span>
     </div>
-    <button type="button" class="danger" id="trash-btn">Move this space to the bin</button>
-    <span class="small" style="font-weight:600;color:var(--ink-secondary);margin-left:10px">Files are moved to projects/_trash, never deleted.</span>
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      <button type="button" class="secondary" id="settings-rename-btn">Rename space</button>
+      <button type="button" class="danger" id="trash-btn">Move this space to the bin</button>
+      <span class="small" style="font-weight:600;color:var(--ink-secondary)">Files are moved to projects/_trash, never deleted.</span>
+    </div>
   </section>
 </template>
 
@@ -215,7 +228,7 @@
     <div data-f="publish-result"></div>
     <div data-f="splat" hidden style="margin-top:18px;padding-top:16px;border-top:var(--neo-border-regular)">
       <h3 style="margin:0 0 6px">Photoreal view</h3>
-      <p class="small" style="margin:0 0 10px;font-weight:600;color:var(--ink-secondary)">Trains a Gaussian splat from the Polycam keyframes on this computer's
+      <p class="small" style="margin:0 0 10px;font-weight:600;color:var(--ink-secondary)">Trains a Gaussian splat from the captured keyframes on this computer's
         GPU (about 20 minutes) and lines it up with the model. The viewer then shows the photoreal room; the model stays
         underneath for walking, labels and routes.</p>
       <div data-f="splat-state"></div>
@@ -226,6 +239,6 @@
   </section>
 </template>
 
-<script type="module" src="js/studio.js?v=3"></script>
+<script type="module" src="js/studio.js?v=5"></script>
 </body>
 </html>

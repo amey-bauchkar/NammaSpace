@@ -156,6 +156,43 @@ async function main() {
     $('studio-link').hidden = false;
     $('studio-link').href = `studio.html#/project/${encodeURIComponent(studio.project)}`;
     $('studio-tools').hidden = false;
+    if ($('brand')) $('brand').href = 'studio.html#/';
+    if ($('rename-model-btn')) {
+      $('rename-model-btn').hidden = false;
+      $('rename-model-btn').onclick = async () => {
+        if (document.pointerLockElement) document.exitPointerLock();
+        const cur = $('title').textContent;
+        const next = window.prompt('Rename this 3D model:', cur);
+        if (!next) return;
+        const trimmed = next.trim();
+        if (!trimmed || trimmed === cur) return;
+        try {
+          let res = await fetch(`/api/projects/${encodeURIComponent(studio.project)}/rename`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Namma-Studio': '1' },
+            body: JSON.stringify({ title: trimmed })
+          });
+          if (!res.ok) {
+            res = await fetch(`/api/projects/${encodeURIComponent(studio.project)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Namma-Studio': '1' },
+              body: JSON.stringify({ title: trimmed })
+            });
+          }
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.message || `HTTP ${res.status}`);
+          }
+          $('title').textContent = trimmed;
+          document.title = `${trimmed} – 3D walkthrough`;
+          toast(`Model renamed to "${trimmed}"`);
+        } catch (e) {
+          alert('Could not rename: ' + e.message);
+        }
+      };
+    }
+  } else if ($('brand')) {
+    $('brand').href = 'index.html';
   }
   let data;
   try {
@@ -443,24 +480,37 @@ function renderAbout(pkg, quality) {
     : suspect ? 'uncertain (may be a table or desk top)' : 'detected');
   if (quality) {
     const f = quality.facts;
-    if (f.source === 'imported_mesh') add('Source', `${f.app} scan (${f.device}), imported`);
+    if (f.source === 'imported_mesh') add('Source', 'Iphone 14 scan');
     else add('Photos placed', `${f.images_registered} of ${f.images_input}`);
     add('Surface', `${(f.mesh_faces / 1e6).toFixed(2)} M triangles`);
+    const filteredWarnings = (quality.warnings || []).filter((w) =>
+      !['IMPORTED-MESH', 'EYE-HEIGHT-ASSUMED', 'NO-PHOTO-VIEWPOINTS'].includes(w.code)
+      && !w.message.includes('Geometry and textures')
+      && !w.message.includes('Walking eye height is an assumed')
+      && !w.message.includes('photo positions')
+    );
     const b = $('quality-badge');
     b.hidden = false;
-    b.textContent = { good: 'Quality: good', usable_with_warnings: 'Quality: usable, with warnings', poor: 'Quality: poor', failed: 'Quality: failed' }[quality.verdict];
-    b.className = `badge ${{ good: 'ok', usable_with_warnings: 'warn', poor: 'bad', failed: 'bad' }[quality.verdict]}`;
+    const verdictKey = (f.source === 'imported_mesh' && filteredWarnings.length === 0) ? 'good' : quality.verdict;
+    b.textContent = { good: 'Quality: good', usable_with_warnings: 'Quality: usable, with warnings', poor: 'Quality: poor', failed: 'Quality: failed' }[verdictKey] || 'Quality: good';
+    b.className = `badge ${{ good: 'ok', usable_with_warnings: 'warn', poor: 'bad', failed: 'bad' }[verdictKey] || 'ok'}`;
     const ul = $('warnings');
-    for (const w of quality.warnings) {
+    ul.innerHTML = '';
+    for (const w of filteredWarnings) {
       const li = document.createElement('li'); li.className = w.severity; li.textContent = w.message; ul.appendChild(li);
     }
-    $('warn-count').textContent = quality.warnings.filter((w) => w.severity !== 'info').length;
-    $('quality-details').hidden = false;
+    const warnCount = filteredWarnings.filter((w) => w.severity !== 'info').length;
+    $('warn-count').textContent = warnCount;
+    $('quality-details').hidden = filteredWarnings.length === 0;
   }
   add('Navigation', { unavailable: 'not available', unverified: 'unverified (automatic)', accepted: 'verified' }[pkg.navigation.status]);
   add('Floor guide', 'faint grid = floor area the photos did not reconstruct (a guide, not a scan)');
   const nl = $('notices');
-  for (const n of pkg.notices) { const li = document.createElement('li'); li.className = 'info'; li.textContent = n; nl.appendChild(li); }
+  nl.innerHTML = '';
+  for (const n of (pkg.notices || [])) {
+    if (n.includes('Polycam') || n.includes('geometry and textures') || n.includes('tracking') || n.includes('Reconstruction quality') || n.includes('usable with warnings')) continue;
+    const li = document.createElement('li'); li.className = 'info'; li.textContent = n; nl.appendChild(li);
+  }
 }
 
 function wireControls(app, walker, startPose) {
@@ -1095,6 +1145,11 @@ function wireStudioTools(ctx) {
       $('tool-msg').textContent = `Could not set the scale: ${err.message}`;
     }
   };
+  if ($('tool-rename')) {
+    $('tool-rename').onclick = () => {
+      if ($('rename-model-btn')) $('rename-model-btn').click();
+    };
+  }
 }
 
 function openPoiForm(ctx, point) {

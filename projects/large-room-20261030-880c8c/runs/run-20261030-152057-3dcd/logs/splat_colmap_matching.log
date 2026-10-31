@@ -1,0 +1,399 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe exhaustive_matcher --database_path projects\polycam-scan-2026-10-30-15-20-20261030-880c8c\runs\run-20261030-152057-3dcd\65_splat\colmap\database.db --FeatureMatching.use_gpu 1
+
+I20261030 15:24:01.922541  2252 feature_matching.cc:196] === Feature matching & geometric verification ===
+I20261030 15:24:01.970777 11792 feature_matching_utils.cc:79] Bind FeatureMatcherWorker to GPU device 0
+I20261030 15:24:01.972962 11792 sift.cc:1679] Creating SIFT GPU feature matcher
+I20261030 15:24:01.975802  2252 pairing.cc:181] Generating exhaustive image pairs...
+I20261030 15:24:01.975839  2252 pairing.cc:214] Processing block [1/14, 1/14]
+I20261030 15:24:02.661461  2252 feature_matching.cc:218] in 0.686s
+I20261030 15:24:02.661527  2252 pairing.cc:214] Processing block [1/14, 2/14]
+I20261030 15:24:03.165468  2252 feature_matching.cc:218] in 0.504s
+I20261030 15:24:03.165517  2252 pairing.cc:214] Processing block [1/14, 3/14]
+I20261030 15:24:03.775736  2252 feature_matching.cc:218] in 0.610s
+I20261030 15:24:03.775793  2252 pairing.cc:214] Processing block [1/14, 4/14]
+I20261030 15:24:04.485273  2252 feature_matching.cc:218] in 0.709s
+I20261030 15:24:04.485323  2252 pairing.cc:214] Processing block [1/14, 5/14]
+I20261030 15:24:05.706493  2252 feature_matching.cc:218] in 1.221s
+I20261030 15:24:05.706548  2252 pairing.cc:214] Processing block [1/14, 6/14]
+I20261030 15:24:06.070787  2252 feature_matching.cc:218] in 0.364s
+I20261030 15:24:06.070846  2252 pairing.cc:214] Processing block [1/14, 7/14]
+I20261030 15:24:06.486985  2252 feature_matching.cc:218] in 0.416s
+I20261030 15:24:06.487036  2252 pairing.cc:214] Processing block [1/14, 8/14]
+I20261030 15:24:07.548849  2252 feature_matching.cc:218] in 1.062s
+I20261030 15:24:07.548930  2252 pairing.cc:214] Processing block [1/14, 9/14]
+I20261030 15:24:08.186527  2252 feature_matching.cc:218] in 0.638s
+I20261030 15:24:08.186598  2252 pairing.cc:214] Processing block [1/14, 10/14]
+I20261030 15:24:08.714311  2252 feature_matching.cc:218] in 0.528s
+I20261030 15:24:08.714363  2252 pairing.cc:214] Processing block [1/14, 11/14]
+I20261030 15:24:09.200511  2252 feature_matching.cc:218] in 0.486s
+I20261030 15:24:09.200565  2252 pairing.cc:214] Processing block [1/14, 12/14]
+I20261030 15:24:09.557091  2252 feature_matching.cc:218] in 0.357s
+I20261030 15:24:09.557150  2252 pairing.cc:214] Processing block [1/14, 13/14]
+I20261030 15:24:10.202887  2252 feature_matching.cc:218] in 0.646s
+I20261030 15:24:10.202945  2252 pairing.cc:214] Processing block [1/14, 14/14]
+I20261030 15:24:11.496300  2252 feature_matching.cc:218] in 1.293s
+I20261030 15:24:11.496374  2252 pairing.cc:214] Processing block [2/14, 1/14]
+I20261030 15:24:12.972473  2252 feature_matching.cc:218] in 1.476s
+I20261030 15:24:12.972548  2252 pairing.cc:214] Processing block [2/14, 2/14]
+I20261030 15:24:13.995212  2252 feature_matching.cc:218] in 1.023s
+I20261030 15:24:13.995292  2252 pairing.cc:214] Processing block [2/14, 3/14]
+I20261030 15:24:15.007834  2252 feature_matching.cc:218] in 1.013s
+I20261030 15:24:15.007914  2252 pairing.cc:214] Processing block [2/14, 4/14]
+I20261030 15:24:16.078835  2252 feature_matching.cc:218] in 1.071s
+I20261030 15:24:16.078888  2252 pairing.cc:214] Processing block [2/14, 5/14]
+I20261030 15:24:18.173645  2252 feature_matching.cc:218] in 2.095s
+I20261030 15:24:18.173701  2252 pairing.cc:214] Processing block [2/14, 6/14]
+I20261030 15:24:18.672964  2252 feature_matching.cc:218] in 0.499s
+I20261030 15:24:18.673011  2252 pairing.cc:214] Processing block [2/14, 7/14]
+I20261030 15:24:19.269935  2252 feature_matching.cc:218] in 0.597s
+I20261030 15:24:19.269983  2252 pairing.cc:214] Processing block [2/14, 8/14]
+I20261030 15:24:20.257992  2252 feature_matching.cc:218] in 0.988s
+I20261030 15:24:20.258048  2252 pairing.cc:214] Processing block [2/14, 9/14]
+I20261030 15:24:21.096250  2252 feature_matching.cc:218] in 0.838s
+I20261030 15:24:21.096302  2252 pairing.cc:214] Processing block [2/14, 10/14]
+I20261030 15:24:21.916033  2252 feature_matching.cc:218] in 0.820s
+I20261030 15:24:21.916083  2252 pairing.cc:214] Processing block [2/14, 11/14]
+I20261030 15:24:22.564597  2252 feature_matching.cc:218] in 0.649s
+I20261030 15:24:22.564655  2252 pairing.cc:214] Processing block [2/14, 12/14]
+I20261030 15:24:23.016350  2252 feature_matching.cc:218] in 0.452s
+I20261030 15:24:23.016407  2252 pairing.cc:214] Processing block [2/14, 13/14]
+I20261030 15:24:23.921484  2252 feature_matching.cc:218] in 0.905s
+I20261030 15:24:23.921534  2252 pairing.cc:214] Processing block [2/14, 14/14]
+I20261030 15:24:25.797036  2252 feature_matching.cc:218] in 1.876s
+I20261030 15:24:25.797089  2252 pairing.cc:214] Processing block [3/14, 1/14]
+I20261030 15:24:26.309139  2252 feature_matching.cc:218] in 0.512s
+I20261030 15:24:26.309191  2252 pairing.cc:214] Processing block [3/14, 2/14]
+I20261030 15:24:26.655770  2252 feature_matching.cc:218] in 0.347s
+I20261030 15:24:26.655822  2252 pairing.cc:214] Processing block [3/14, 3/14]
+I20261030 15:24:27.387762  2252 feature_matching.cc:218] in 0.732s
+I20261030 15:24:27.387815  2252 pairing.cc:214] Processing block [3/14, 4/14]
+I20261030 15:24:28.042907  2252 feature_matching.cc:218] in 0.655s
+I20261030 15:24:28.042964  2252 pairing.cc:214] Processing block [3/14, 5/14]
+I20261030 15:24:29.075602  2252 feature_matching.cc:218] in 1.033s
+I20261030 15:24:29.075653  2252 pairing.cc:214] Processing block [3/14, 6/14]
+I20261030 15:24:29.354493  2252 feature_matching.cc:218] in 0.279s
+I20261030 15:24:29.354551  2252 pairing.cc:214] Processing block [3/14, 7/14]
+I20261030 15:24:29.683772  2252 feature_matching.cc:218] in 0.329s
+I20261030 15:24:29.683822  2252 pairing.cc:214] Processing block [3/14, 8/14]
+I20261030 15:24:30.221140  2252 feature_matching.cc:218] in 0.537s
+I20261030 15:24:30.221190  2252 pairing.cc:214] Processing block [3/14, 9/14]
+I20261030 15:24:30.646860  2252 feature_matching.cc:218] in 0.426s
+I20261030 15:24:30.646928  2252 pairing.cc:214] Processing block [3/14, 10/14]
+I20261030 15:24:31.023638  2252 feature_matching.cc:218] in 0.377s
+I20261030 15:24:31.023686  2252 pairing.cc:214] Processing block [3/14, 11/14]
+I20261030 15:24:31.577208  2252 feature_matching.cc:218] in 0.554s
+I20261030 15:24:31.577255  2252 pairing.cc:214] Processing block [3/14, 12/14]
+I20261030 15:24:31.879576  2252 feature_matching.cc:218] in 0.302s
+I20261030 15:24:31.879636  2252 pairing.cc:214] Processing block [3/14, 13/14]
+I20261030 15:24:33.325997  2252 feature_matching.cc:218] in 1.446s
+I20261030 15:24:33.326065  2252 pairing.cc:214] Processing block [3/14, 14/14]
+I20261030 15:24:34.743804  2252 feature_matching.cc:218] in 1.418s
+I20261030 15:24:34.743857  2252 pairing.cc:214] Processing block [4/14, 1/14]
+I20261030 15:24:35.350568  2252 feature_matching.cc:218] in 0.607s
+I20261030 15:24:35.350618  2252 pairing.cc:214] Processing block [4/14, 2/14]
+I20261030 15:24:35.813422  2252 feature_matching.cc:218] in 0.463s
+I20261030 15:24:35.813478  2252 pairing.cc:214] Processing block [4/14, 3/14]
+I20261030 15:24:36.453007  2252 feature_matching.cc:218] in 0.640s
+I20261030 15:24:36.453064  2252 pairing.cc:214] Processing block [4/14, 4/14]
+I20261030 15:24:37.368606  2252 feature_matching.cc:218] in 0.916s
+I20261030 15:24:37.368668  2252 pairing.cc:214] Processing block [4/14, 5/14]
+I20261030 15:24:40.043909  2252 feature_matching.cc:218] in 2.675s
+I20261030 15:24:40.043976  2252 pairing.cc:214] Processing block [4/14, 6/14]
+I20261030 15:24:41.245709  2252 feature_matching.cc:218] in 1.202s
+I20261030 15:24:41.245755  2252 pairing.cc:214] Processing block [4/14, 7/14]
+I20261030 15:24:42.296159  2252 feature_matching.cc:218] in 1.050s
+I20261030 15:24:42.296206  2252 pairing.cc:214] Processing block [4/14, 8/14]
+I20261030 15:24:43.554279  2252 feature_matching.cc:218] in 1.258s
+I20261030 15:24:43.554326  2252 pairing.cc:214] Processing block [4/14, 9/14]
+I20261030 15:24:44.961780  2252 feature_matching.cc:218] in 1.407s
+I20261030 15:24:44.961834  2252 pairing.cc:214] Processing block [4/14, 10/14]
+I20261030 15:24:46.111945  2252 feature_matching.cc:218] in 1.150s
+I20261030 15:24:46.111992  2252 pairing.cc:214] Processing block [4/14, 11/14]
+I20261030 15:24:47.134572  2252 feature_matching.cc:218] in 1.023s
+I20261030 15:24:47.134627  2252 pairing.cc:214] Processing block [4/14, 12/14]
+I20261030 15:24:47.971948  2252 feature_matching.cc:218] in 0.837s
+I20261030 15:24:47.971996  2252 pairing.cc:214] Processing block [4/14, 13/14]
+I20261030 15:24:49.370024  2252 feature_matching.cc:218] in 1.398s
+I20261030 15:24:49.370075  2252 pairing.cc:214] Processing block [4/14, 14/14]
+I20261030 15:24:51.118155  2252 feature_matching.cc:218] in 1.748s
+I20261030 15:24:51.118206  2252 pairing.cc:214] Processing block [5/14, 1/14]
+I20261030 15:24:53.181783  2252 feature_matching.cc:218] in 2.064s
+I20261030 15:24:53.181838  2252 pairing.cc:214] Processing block [5/14, 2/14]
+I20261030 15:24:54.903134  2252 feature_matching.cc:218] in 1.721s
+I20261030 15:24:54.903228  2252 pairing.cc:214] Processing block [5/14, 3/14]
+I20261030 15:24:57.528164  2252 feature_matching.cc:218] in 2.625s
+I20261030 15:24:57.528229  2252 pairing.cc:214] Processing block [5/14, 4/14]
+I20261030 15:24:59.823851  2252 feature_matching.cc:218] in 2.296s
+I20261030 15:24:59.823902  2252 pairing.cc:214] Processing block [5/14, 5/14]
+I20261030 15:25:05.595814  2252 feature_matching.cc:218] in 5.772s
+I20261030 15:25:05.595961  2252 pairing.cc:214] Processing block [5/14, 6/14]
+I20261030 15:25:06.536825  2252 feature_matching.cc:218] in 0.941s
+I20261030 15:25:06.536873  2252 pairing.cc:214] Processing block [5/14, 7/14]
+I20261030 15:25:07.485443  2252 feature_matching.cc:218] in 0.949s
+I20261030 15:25:07.485495  2252 pairing.cc:214] Processing block [5/14, 8/14]
+I20261030 15:25:09.160023  2252 feature_matching.cc:218] in 1.675s
+I20261030 15:25:09.160077  2252 pairing.cc:214] Processing block [5/14, 9/14]
+I20261030 15:25:10.572691  2252 feature_matching.cc:218] in 1.413s
+I20261030 15:25:10.572741  2252 pairing.cc:214] Processing block [5/14, 10/14]
+I20261030 15:25:11.832062  2252 feature_matching.cc:218] in 1.259s
+I20261030 15:25:11.832124  2252 pairing.cc:214] Processing block [5/14, 11/14]
+I20261030 15:25:12.933821  2252 feature_matching.cc:218] in 1.102s
+I20261030 15:25:12.933877  2252 pairing.cc:214] Processing block [5/14, 12/14]
+I20261030 15:25:13.654840  2252 feature_matching.cc:218] in 0.721s
+I20261030 15:25:13.654893  2252 pairing.cc:214] Processing block [5/14, 13/14]
+I20261030 15:25:16.856337  2252 feature_matching.cc:218] in 3.201s
+I20261030 15:25:16.856401  2252 pairing.cc:214] Processing block [5/14, 14/14]
+I20261030 15:25:24.858323  2252 feature_matching.cc:218] in 8.002s
+I20261030 15:25:24.858375  2252 pairing.cc:214] Processing block [6/14, 1/14]
+I20261030 15:25:25.473112  2252 feature_matching.cc:218] in 0.615s
+I20261030 15:25:25.473161  2252 pairing.cc:214] Processing block [6/14, 2/14]
+I20261030 15:25:25.863795  2252 feature_matching.cc:218] in 0.391s
+I20261030 15:25:25.863848  2252 pairing.cc:214] Processing block [6/14, 3/14]
+I20261030 15:25:26.268321  2252 feature_matching.cc:218] in 0.404s
+I20261030 15:25:26.268377  2252 pairing.cc:214] Processing block [6/14, 4/14]
+I20261030 15:25:26.706586  2252 feature_matching.cc:218] in 0.438s
+I20261030 15:25:26.706647  2252 pairing.cc:214] Processing block [6/14, 5/14]
+I20261030 15:25:27.673747  2252 feature_matching.cc:218] in 0.967s
+I20261030 15:25:27.673808  2252 pairing.cc:214] Processing block [6/14, 6/14]
+I20261030 15:25:27.933386  2252 feature_matching.cc:218] in 0.260s
+I20261030 15:25:27.933442  2252 pairing.cc:214] Processing block [6/14, 7/14]
+I20261030 15:25:28.214111  2252 feature_matching.cc:218] in 0.281s
+I20261030 15:25:28.214160  2252 pairing.cc:214] Processing block [6/14, 8/14]
+I20261030 15:25:28.674131  2252 feature_matching.cc:218] in 0.460s
+I20261030 15:25:28.674179  2252 pairing.cc:214] Processing block [6/14, 9/14]
+I20261030 15:25:29.093113  2252 feature_matching.cc:218] in 0.419s
+I20261030 15:25:29.093167  2252 pairing.cc:214] Processing block [6/14, 10/14]
+I20261030 15:25:29.420317  2252 feature_matching.cc:218] in 0.327s
+I20261030 15:25:29.420375  2252 pairing.cc:214] Processing block [6/14, 11/14]
+I20261030 15:25:29.734065  2252 feature_matching.cc:218] in 0.314s
+I20261030 15:25:29.734114  2252 pairing.cc:214] Processing block [6/14, 12/14]
+I20261030 15:25:29.995650  2252 feature_matching.cc:218] in 0.262s
+I20261030 15:25:29.995701  2252 pairing.cc:214] Processing block [6/14, 13/14]
+I20261030 15:25:30.437951  2252 feature_matching.cc:218] in 0.442s
+I20261030 15:25:30.438019  2252 pairing.cc:214] Processing block [6/14, 14/14]
+I20261030 15:25:31.122410  2252 feature_matching.cc:218] in 0.684s
+I20261030 15:25:31.122460  2252 pairing.cc:214] Processing block [7/14, 1/14]
+I20261030 15:25:31.617038  2252 feature_matching.cc:218] in 0.495s
+I20261030 15:25:31.617094  2252 pairing.cc:214] Processing block [7/14, 2/14]
+I20261030 15:25:32.028298  2252 feature_matching.cc:218] in 0.411s
+I20261030 15:25:32.028346  2252 pairing.cc:214] Processing block [7/14, 3/14]
+I20261030 15:25:32.714718  2252 feature_matching.cc:218] in 0.686s
+I20261030 15:25:32.714781  2252 pairing.cc:214] Processing block [7/14, 4/14]
+I20261030 15:25:33.345707  2252 feature_matching.cc:218] in 0.631s
+I20261030 15:25:33.345762  2252 pairing.cc:214] Processing block [7/14, 5/14]
+I20261030 15:25:34.968061  2252 feature_matching.cc:218] in 1.622s
+I20261030 15:25:34.968120  2252 pairing.cc:214] Processing block [7/14, 6/14]
+I20261030 15:25:35.279318  2252 feature_matching.cc:218] in 0.311s
+I20261030 15:25:35.279374  2252 pairing.cc:214] Processing block [7/14, 7/14]
+I20261030 15:25:35.598375  2252 feature_matching.cc:218] in 0.319s
+I20261030 15:25:35.598435  2252 pairing.cc:214] Processing block [7/14, 8/14]
+I20261030 15:25:36.017015  2252 feature_matching.cc:218] in 0.419s
+I20261030 15:25:36.017070  2252 pairing.cc:214] Processing block [7/14, 9/14]
+I20261030 15:25:36.473659  2252 feature_matching.cc:218] in 0.457s
+I20261030 15:25:36.473709  2252 pairing.cc:214] Processing block [7/14, 10/14]
+I20261030 15:25:36.835309  2252 feature_matching.cc:218] in 0.362s
+I20261030 15:25:36.835357  2252 pairing.cc:214] Processing block [7/14, 11/14]
+I20261030 15:25:37.171931  2252 feature_matching.cc:218] in 0.337s
+I20261030 15:25:37.171994  2252 pairing.cc:214] Processing block [7/14, 12/14]
+I20261030 15:25:37.435158  2252 feature_matching.cc:218] in 0.263s
+I20261030 15:25:37.435203  2252 pairing.cc:214] Processing block [7/14, 13/14]
+I20261030 15:25:38.660245  2252 feature_matching.cc:218] in 1.225s
+I20261030 15:25:38.660310  2252 pairing.cc:214] Processing block [7/14, 14/14]
+I20261030 15:25:39.648344  2252 feature_matching.cc:218] in 0.988s
+I20261030 15:25:39.648402  2252 pairing.cc:214] Processing block [8/14, 1/14]
+I20261030 15:25:40.104836  2252 feature_matching.cc:218] in 0.456s
+I20261030 15:25:40.104889  2252 pairing.cc:214] Processing block [8/14, 2/14]
+I20261030 15:25:40.469127  2252 feature_matching.cc:218] in 0.364s
+I20261030 15:25:40.469181  2252 pairing.cc:214] Processing block [8/14, 3/14]
+I20261030 15:25:41.059295  2252 feature_matching.cc:218] in 0.590s
+I20261030 15:25:41.059355  2252 pairing.cc:214] Processing block [8/14, 4/14]
+I20261030 15:25:41.657796  2252 feature_matching.cc:218] in 0.598s
+I20261030 15:25:41.657873  2252 pairing.cc:214] Processing block [8/14, 5/14]
+I20261030 15:25:42.435768  2252 feature_matching.cc:218] in 0.778s
+I20261030 15:25:42.435824  2252 pairing.cc:214] Processing block [8/14, 6/14]
+I20261030 15:25:42.706388  2252 feature_matching.cc:218] in 0.271s
+I20261030 15:25:42.706454  2252 pairing.cc:214] Processing block [8/14, 7/14]
+I20261030 15:25:42.987504  2252 feature_matching.cc:218] in 0.281s
+I20261030 15:25:42.987558  2252 pairing.cc:214] Processing block [8/14, 8/14]
+I20261030 15:25:43.869017  2252 feature_matching.cc:218] in 0.881s
+I20261030 15:25:43.869082  2252 pairing.cc:214] Processing block [8/14, 9/14]
+I20261030 15:25:44.550409  2252 feature_matching.cc:218] in 0.681s
+I20261030 15:25:44.550462  2252 pairing.cc:214] Processing block [8/14, 10/14]
+I20261030 15:25:45.314201  2252 feature_matching.cc:218] in 0.764s
+I20261030 15:25:45.314326  2252 pairing.cc:214] Processing block [8/14, 11/14]
+I20261030 15:25:45.672803  2252 feature_matching.cc:218] in 0.358s
+I20261030 15:25:45.672855  2252 pairing.cc:214] Processing block [8/14, 12/14]
+I20261030 15:25:45.967888  2252 feature_matching.cc:218] in 0.295s
+I20261030 15:25:45.967947  2252 pairing.cc:214] Processing block [8/14, 13/14]
+I20261030 15:25:46.506521  2252 feature_matching.cc:218] in 0.539s
+I20261030 15:25:46.506573  2252 pairing.cc:214] Processing block [8/14, 14/14]
+I20261030 15:25:47.444742  2252 feature_matching.cc:218] in 0.938s
+I20261030 15:25:47.444790  2252 pairing.cc:214] Processing block [9/14, 1/14]
+I20261030 15:25:47.921369  2252 feature_matching.cc:218] in 0.477s
+I20261030 15:25:47.921430  2252 pairing.cc:214] Processing block [9/14, 2/14]
+I20261030 15:25:48.389960  2252 feature_matching.cc:218] in 0.469s
+I20261030 15:25:48.390012  2252 pairing.cc:214] Processing block [9/14, 3/14]
+I20261030 15:25:48.877517  2252 feature_matching.cc:218] in 0.488s
+I20261030 15:25:48.877576  2252 pairing.cc:214] Processing block [9/14, 4/14]
+I20261030 15:25:49.444129  2252 feature_matching.cc:218] in 0.567s
+I20261030 15:25:49.444177  2252 pairing.cc:214] Processing block [9/14, 5/14]
+I20261030 15:25:50.403916  2252 feature_matching.cc:218] in 0.960s
+I20261030 15:25:50.403977  2252 pairing.cc:214] Processing block [9/14, 6/14]
+I20261030 15:25:50.695871  2252 feature_matching.cc:218] in 0.292s
+I20261030 15:25:50.695922  2252 pairing.cc:214] Processing block [9/14, 7/14]
+I20261030 15:25:51.002579  2252 feature_matching.cc:218] in 0.307s
+I20261030 15:25:51.002627  2252 pairing.cc:214] Processing block [9/14, 8/14]
+I20261030 15:25:51.881429  2252 feature_matching.cc:218] in 0.879s
+I20261030 15:25:51.881483  2252 pairing.cc:214] Processing block [9/14, 9/14]
+I20261030 15:25:52.479771  2252 feature_matching.cc:218] in 0.598s
+I20261030 15:25:52.479824  2252 pairing.cc:214] Processing block [9/14, 10/14]
+I20261030 15:25:53.015187  2252 feature_matching.cc:218] in 0.535s
+I20261030 15:25:53.015249  2252 pairing.cc:214] Processing block [9/14, 11/14]
+I20261030 15:25:53.386517  2252 feature_matching.cc:218] in 0.371s
+I20261030 15:25:53.386574  2252 pairing.cc:214] Processing block [9/14, 12/14]
+I20261030 15:25:53.654938  2252 feature_matching.cc:218] in 0.268s
+I20261030 15:25:53.654986  2252 pairing.cc:214] Processing block [9/14, 13/14]
+I20261030 15:25:54.124624  2252 feature_matching.cc:218] in 0.470s
+I20261030 15:25:54.124681  2252 pairing.cc:214] Processing block [9/14, 14/14]
+I20261030 15:25:55.179911  2252 feature_matching.cc:218] in 1.055s
+I20261030 15:25:55.179965  2252 pairing.cc:214] Processing block [10/14, 1/14]
+I20261030 15:25:55.753869  2252 feature_matching.cc:218] in 0.574s
+I20261030 15:25:55.753915  2252 pairing.cc:214] Processing block [10/14, 2/14]
+I20261030 15:25:56.296084  2252 feature_matching.cc:218] in 0.542s
+I20261030 15:25:56.296144  2252 pairing.cc:214] Processing block [10/14, 3/14]
+I20261030 15:25:56.775942  2252 feature_matching.cc:218] in 0.480s
+I20261030 15:25:56.775989  2252 pairing.cc:214] Processing block [10/14, 4/14]
+I20261030 15:25:57.409477  2252 feature_matching.cc:218] in 0.633s
+I20261030 15:25:57.409523  2252 pairing.cc:214] Processing block [10/14, 5/14]
+I20261030 15:25:58.431506  2252 feature_matching.cc:218] in 1.022s
+I20261030 15:25:58.431563  2252 pairing.cc:214] Processing block [10/14, 6/14]
+I20261030 15:25:58.745206  2252 feature_matching.cc:218] in 0.314s
+I20261030 15:25:58.745264  2252 pairing.cc:214] Processing block [10/14, 7/14]
+I20261030 15:25:59.083837  2252 feature_matching.cc:218] in 0.339s
+I20261030 15:25:59.083888  2252 pairing.cc:214] Processing block [10/14, 8/14]
+I20261030 15:26:00.394443  2252 feature_matching.cc:218] in 1.311s
+I20261030 15:26:00.394496  2252 pairing.cc:214] Processing block [10/14, 9/14]
+I20261030 15:26:01.045514  2252 feature_matching.cc:218] in 0.651s
+I20261030 15:26:01.045570  2252 pairing.cc:214] Processing block [10/14, 10/14]
+I20261030 15:26:01.770002  2252 feature_matching.cc:218] in 0.724s
+I20261030 15:26:01.770055  2252 pairing.cc:214] Processing block [10/14, 11/14]
+I20261030 15:26:02.118111  2252 feature_matching.cc:218] in 0.348s
+I20261030 15:26:02.118165  2252 pairing.cc:214] Processing block [10/14, 12/14]
+I20261030 15:26:02.414664  2252 feature_matching.cc:218] in 0.297s
+I20261030 15:26:02.414709  2252 pairing.cc:214] Processing block [10/14, 13/14]
+I20261030 15:26:02.998667  2252 feature_matching.cc:218] in 0.584s
+I20261030 15:26:02.998718  2252 pairing.cc:214] Processing block [10/14, 14/14]
+I20261030 15:26:03.931350  2252 feature_matching.cc:218] in 0.933s
+I20261030 15:26:03.931400  2252 pairing.cc:214] Processing block [11/14, 1/14]
+I20261030 15:26:04.454054  2252 feature_matching.cc:218] in 0.523s
+I20261030 15:26:04.454100  2252 pairing.cc:214] Processing block [11/14, 2/14]
+I20261030 15:26:04.993038  2252 feature_matching.cc:218] in 0.539s
+I20261030 15:26:04.993089  2252 pairing.cc:214] Processing block [11/14, 3/14]
+I20261030 15:26:05.452941  2252 feature_matching.cc:218] in 0.460s
+I20261030 15:26:05.452991  2252 pairing.cc:214] Processing block [11/14, 4/14]
+I20261030 15:26:05.994791  2252 feature_matching.cc:218] in 0.542s
+I20261030 15:26:05.994854  2252 pairing.cc:214] Processing block [11/14, 5/14]
+I20261030 15:26:07.001777  2252 feature_matching.cc:218] in 1.007s
+I20261030 15:26:07.001829  2252 pairing.cc:214] Processing block [11/14, 6/14]
+I20261030 15:26:07.308752  2252 feature_matching.cc:218] in 0.307s
+I20261030 15:26:07.308800  2252 pairing.cc:214] Processing block [11/14, 7/14]
+I20261030 15:26:07.651000  2252 feature_matching.cc:218] in 0.342s
+I20261030 15:26:07.651051  2252 pairing.cc:214] Processing block [11/14, 8/14]
+I20261030 15:26:08.596114  2252 feature_matching.cc:218] in 0.945s
+I20261030 15:26:08.596170  2252 pairing.cc:214] Processing block [11/14, 9/14]
+I20261030 15:26:09.187898  2252 feature_matching.cc:218] in 0.592s
+I20261030 15:26:09.187956  2252 pairing.cc:214] Processing block [11/14, 10/14]
+I20261030 15:26:10.047672  2252 feature_matching.cc:218] in 0.860s
+I20261030 15:26:10.047732  2252 pairing.cc:214] Processing block [11/14, 11/14]
+I20261030 15:26:10.433251  2252 feature_matching.cc:218] in 0.386s
+I20261030 15:26:10.433332  2252 pairing.cc:214] Processing block [11/14, 12/14]
+I20261030 15:26:10.697550  2252 feature_matching.cc:218] in 0.264s
+I20261030 15:26:10.697598  2252 pairing.cc:214] Processing block [11/14, 13/14]
+I20261030 15:26:11.126990  2252 feature_matching.cc:218] in 0.429s
+I20261030 15:26:11.127046  2252 pairing.cc:214] Processing block [11/14, 14/14]
+I20261030 15:26:11.905767  2252 feature_matching.cc:218] in 0.779s
+I20261030 15:26:11.905815  2252 pairing.cc:214] Processing block [12/14, 1/14]
+I20261030 15:26:12.187636  2252 feature_matching.cc:218] in 0.282s
+I20261030 15:26:12.187684  2252 pairing.cc:214] Processing block [12/14, 2/14]
+I20261030 15:26:12.455570  2252 feature_matching.cc:218] in 0.268s
+I20261030 15:26:12.455630  2252 pairing.cc:214] Processing block [12/14, 3/14]
+I20261030 15:26:12.716209  2252 feature_matching.cc:218] in 0.261s
+I20261030 15:26:12.716262  2252 pairing.cc:214] Processing block [12/14, 4/14]
+I20261030 15:26:13.007741  2252 feature_matching.cc:218] in 0.291s
+I20261030 15:26:13.007795  2252 pairing.cc:214] Processing block [12/14, 5/14]
+I20261030 15:26:13.388899  2252 feature_matching.cc:218] in 0.381s
+I20261030 15:26:13.388952  2252 pairing.cc:214] Processing block [12/14, 6/14]
+I20261030 15:26:13.597032  2252 feature_matching.cc:218] in 0.208s
+I20261030 15:26:13.597082  2252 pairing.cc:214] Processing block [12/14, 7/14]
+I20261030 15:26:13.827534  2252 feature_matching.cc:218] in 0.230s
+I20261030 15:26:13.827592  2252 pairing.cc:214] Processing block [12/14, 8/14]
+I20261030 15:26:14.101407  2252 feature_matching.cc:218] in 0.274s
+I20261030 15:26:14.101465  2252 pairing.cc:214] Processing block [12/14, 9/14]
+I20261030 15:26:14.375805  2252 feature_matching.cc:218] in 0.274s
+I20261030 15:26:14.375866  2252 pairing.cc:214] Processing block [12/14, 10/14]
+I20261030 15:26:14.618991  2252 feature_matching.cc:218] in 0.243s
+I20261030 15:26:14.619039  2252 pairing.cc:214] Processing block [12/14, 11/14]
+I20261030 15:26:14.896370  2252 feature_matching.cc:218] in 0.277s
+I20261030 15:26:14.896419  2252 pairing.cc:214] Processing block [12/14, 12/14]
+I20261030 15:26:15.118594  2252 feature_matching.cc:218] in 0.222s
+I20261030 15:26:15.118651  2252 pairing.cc:214] Processing block [12/14, 13/14]
+I20261030 15:26:15.393146  2252 feature_matching.cc:218] in 0.275s
+I20261030 15:26:15.393201  2252 pairing.cc:214] Processing block [12/14, 14/14]
+I20261030 15:26:15.768503  2252 feature_matching.cc:218] in 0.375s
+I20261030 15:26:15.768557  2252 pairing.cc:214] Processing block [13/14, 1/14]
+I20261030 15:26:16.152472  2252 feature_matching.cc:218] in 0.384s
+I20261030 15:26:16.152532  2252 pairing.cc:214] Processing block [13/14, 2/14]
+I20261030 15:26:16.469727  2252 feature_matching.cc:218] in 0.317s
+I20261030 15:26:16.469776  2252 pairing.cc:214] Processing block [13/14, 3/14]
+I20261030 15:26:17.168433  2252 feature_matching.cc:218] in 0.699s
+I20261030 15:26:17.168493  2252 pairing.cc:214] Processing block [13/14, 4/14]
+I20261030 15:26:17.748756  2252 feature_matching.cc:218] in 0.580s
+I20261030 15:26:17.748866  2252 pairing.cc:214] Processing block [13/14, 5/14]
+I20261030 15:26:18.509038  2252 feature_matching.cc:218] in 0.760s
+I20261030 15:26:18.509095  2252 pairing.cc:214] Processing block [13/14, 6/14]
+I20261030 15:26:18.785458  2252 feature_matching.cc:218] in 0.276s
+I20261030 15:26:18.785507  2252 pairing.cc:214] Processing block [13/14, 7/14]
+I20261030 15:26:19.054294  2252 feature_matching.cc:218] in 0.269s
+I20261030 15:26:19.054350  2252 pairing.cc:214] Processing block [13/14, 8/14]
+I20261030 15:26:19.400290  2252 feature_matching.cc:218] in 0.346s
+I20261030 15:26:19.400347  2252 pairing.cc:214] Processing block [13/14, 9/14]
+I20261030 15:26:19.880312  2252 feature_matching.cc:218] in 0.480s
+I20261030 15:26:19.880363  2252 pairing.cc:214] Processing block [13/14, 10/14]
+I20261030 15:26:20.205398  2252 feature_matching.cc:218] in 0.325s
+I20261030 15:26:20.205450  2252 pairing.cc:214] Processing block [13/14, 11/14]
+I20261030 15:26:20.557349  2252 feature_matching.cc:218] in 0.352s
+I20261030 15:26:20.557398  2252 pairing.cc:214] Processing block [13/14, 12/14]
+I20261030 15:26:20.809026  2252 feature_matching.cc:218] in 0.252s
+I20261030 15:26:20.809073  2252 pairing.cc:214] Processing block [13/14, 13/14]
+I20261030 15:26:21.633881  2252 feature_matching.cc:218] in 0.825s
+I20261030 15:26:21.633940  2252 pairing.cc:214] Processing block [13/14, 14/14]
+I20261030 15:26:23.598861  2252 feature_matching.cc:218] in 1.965s
+I20261030 15:26:23.598920  2252 pairing.cc:214] Processing block [14/14, 1/14]
+I20261030 15:26:24.433237  2252 feature_matching.cc:218] in 0.834s
+I20261030 15:26:24.433293  2252 pairing.cc:214] Processing block [14/14, 2/14]
+I20261030 15:26:24.908044  2252 feature_matching.cc:218] in 0.475s
+I20261030 15:26:24.908095  2252 pairing.cc:214] Processing block [14/14, 3/14]
+I20261030 15:26:26.298836  2252 feature_matching.cc:218] in 1.391s
+I20261030 15:26:26.298890  2252 pairing.cc:214] Processing block [14/14, 4/14]
+I20261030 15:26:27.337574  2252 feature_matching.cc:218] in 1.039s
+I20261030 15:26:27.337629  2252 pairing.cc:214] Processing block [14/14, 5/14]
+I20261030 15:26:30.198948  2252 feature_matching.cc:218] in 2.861s
+I20261030 15:26:30.199063  2252 pairing.cc:214] Processing block [14/14, 6/14]
+I20261030 15:26:30.735704  2252 feature_matching.cc:218] in 0.537s
+I20261030 15:26:30.735748  2252 pairing.cc:214] Processing block [14/14, 7/14]
+I20261030 15:26:31.118265  2252 feature_matching.cc:218] in 0.383s
+I20261030 15:26:31.118313  2252 pairing.cc:214] Processing block [14/14, 8/14]
+I20261030 15:26:31.894795  2252 feature_matching.cc:218] in 0.776s
+I20261030 15:26:31.894858  2252 pairing.cc:214] Processing block [14/14, 9/14]
+I20261030 15:26:32.716120  2252 feature_matching.cc:218] in 0.821s
+I20261030 15:26:32.716171  2252 pairing.cc:214] Processing block [14/14, 10/14]
+I20261030 15:26:33.319925  2252 feature_matching.cc:218] in 0.604s
+I20261030 15:26:33.319975  2252 pairing.cc:214] Processing block [14/14, 11/14]
+I20261030 15:26:33.922987  2252 feature_matching.cc:218] in 0.603s
+I20261030 15:26:33.923033  2252 pairing.cc:214] Processing block [14/14, 12/14]
+I20261030 15:26:34.361882  2252 feature_matching.cc:218] in 0.439s
+I20261030 15:26:34.361931  2252 pairing.cc:214] Processing block [14/14, 13/14]
+I20261030 15:26:37.428907  2252 feature_matching.cc:218] in 3.067s
+I20261030 15:26:37.428972  2252 pairing.cc:214] Processing block [14/14, 14/14]
+I20261030 15:26:39.707250  2252 feature_matching.cc:218] in 2.278s
+I20261030 15:26:39.707313  2252 timer.cc:90] Elapsed time: 2.630 [minutes]

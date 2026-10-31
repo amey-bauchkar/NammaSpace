@@ -1,0 +1,200 @@
+{
+ "contract": "IF-13",
+ "contract_version": "1.3.0",
+ "package_id": "pkg-small-room-20261026-dd673e-run-20261026-020636-3fcd",
+ "project": {
+  "project_id": "small-room-20261026-dd673e",
+  "title": "Small room"
+ },
+ "run_id": "run-20261026-020636-3fcd",
+ "created_at": "2026-10-26T13:22:28+05:30",
+ "model_frame": {
+  "frame_id": "model:run-20261026-020636-3fcd",
+  "units": "model",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "floor_detected": true,
+  "up_source": "floor_plane",
+  "datum": "origin on the floor plane below the centroid of the capture cameras; +X along the principal horizontal axis of the floor; units = reconstruction units"
+ },
+ "scale": {
+  "status": "device_tracking",
+  "metres_per_unit": 1.0,
+  "relative_uncertainty": null,
+  "method": "iPhone 14 scan; units metres from the phone's motion tracking, not verified by Namma Space",
+  "evaluation_only": false
+ },
+ "appearance": {
+  "representation": "textured_mesh",
+  "to_model": {
+   "matrix_row_major": [
+    -0.8472699993254648,
+    0.011726271676909249,
+    -0.5310329959574888,
+    -0.010771042854308837,
+    0.023954827841964798,
+    0.9995826259163798,
+    -0.016147451476208777,
+    1.6095612259059506,
+    0.5306220071445292,
+    -0.026402055197919817,
+    -0.8471972716051659,
+    0.009047469204557245,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "method": "rigid SfM -> model frame (floor plane / camera orientation), see 70_frame/frame.json"
+  },
+  "lods": [
+   {
+    "lod": 0,
+    "path": "scene/lod0.glb",
+    "format": "glb",
+    "bytes": 4241292,
+    "sha256": "48ec2cd3882167354267226f8f2e129e25b72d2e028dda6884c54a49a501e3d9",
+    "faces": 50057
+   },
+   {
+    "lod": 1,
+    "path": "scene/lod1.glb",
+    "format": "glb",
+    "bytes": 1953232,
+    "sha256": "8df78ed3fb781338ff652f82c88f63d52c13a38fdb198331ded3216537f8962d",
+    "faces": 50057
+   }
+  ],
+  "splat": {
+   "path": "scene/splat.spz",
+   "format": "spz",
+   "bytes": 8674876,
+   "sha256": "06a0fdcd4a4515a42cafc137097235a49bf61e55ad5fc4cdd7d048b2ec29d658",
+   "splats": 366842,
+   "method": "3D Gaussian splat (gsplat 1.5.3, MCMC, 30000 steps, pose and colour correction) from 218 iPhone 14 keyframes, camera poses from COLMAP (188 of 218 keyframes); lined up with the imported mesh by the splat's solid surface (ICP)",
+   "to_model": {
+    "matrix_row_major": [
+     0.7424135185323124,
+     0.012977425281449025,
+     0.6698162090704668,
+     -0.16999716840072193,
+     -0.04080330669264074,
+     0.9988321376640161,
+     0.02587374987273321,
+     1.379504663710058,
+     -0.6686981812921394,
+     -0.046539737887045726,
+     0.7420760036101349,
+     1.2247332012949426,
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
+    "fit": {
+     "solid_splats": 18178,
+     "used": 18178,
+     "yaw_deg": -170.03,
+     "tilt_deg": 1.16,
+     "within_2cm": 0.155,
+     "within_5cm": 0.392,
+     "median_m": 0.0696
+    }
+   }
+  }
+ },
+ "eye_height_units": 1.6,
+ "bounds": {
+  "min": [
+   -1.9673484086205482,
+   -0.0006228949322008015,
+   -2.1770779612541964
+  ],
+  "max": [
+   1.939104744651528,
+   2.962362469270773,
+   2.0445747344432528
+  ]
+ },
+ "start_view": {
+  "position": [
+   -0.1063,
+   1.6,
+   0.2935
+  ],
+  "target": [
+   1.4937,
+   1.52,
+   0.2935
+  ],
+  "source": "imported mesh: floor spot with the most clearance, looking along the longest free line"
+ },
+ "cameras": "views/cameras.json",
+ "roam": "nav/roam_grid.json",
+ "navigation": {
+  "status": "unverified",
+  "geometry": "nav/geometry.if04.json",
+  "scale_basis": "device_tracking",
+  "metres_per_unit": 1.0,
+  "note": "Automatic floor / obstacle map from the reconstruction. NOT verified: unobserved floor is treated as blocked, missing obstacles cannot be detected without a reference, and the scale comes from device_tracking."
+ },
+ "pois": "poi/pois.json",
+ "quality": {
+  "verdict": "usable_with_warnings",
+  "report": "reports/quality_report.json",
+  "capture_report": null,
+  "warnings": [
+   "IMPORTED-MESH",
+   "EYE-HEIGHT-ASSUMED",
+   "NO-PHOTO-VIEWPOINTS"
+  ]
+ },
+ "notices": [
+  "3D scan (iPhone 14)",
+  "Scale from the capture device's tracking (iPhone 14 scan; units metres from the phone's motion tracking, not verified by Namma Space); not checked against a measured length - use 'Set scale' in the viewer with one known distance to verify it.",
+  "Reconstruction quality: usable with warnings (1 warnings)."
+ ],
+ "files": [
+  {
+   "path": "nav/geometry.if04.json",
+   "sha256": "f18147a48a2bed1fed21d0e4bb79816c7722d0e26f241c21a29fa1978801af28",
+   "bytes": 39858
+  },
+  {
+   "path": "nav/roam_grid.json",
+   "sha256": "31967bad0dfed969324578b2948f6b6ffc0962f651dd2e9e3ef4afbfe03bbd48",
+   "bytes": 2567
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+   "bytes": 3
+  },
+  {
+   "path": "reports/quality_report.json",
+   "sha256": "3a720e133f3f8c07f72acc8761d004e41fd26ffad4efa97060f4e6c0c22e17c5",
+   "bytes": 1162
+  },
+  {
+   "path": "scene/lod0.glb",
+   "sha256": "48ec2cd3882167354267226f8f2e129e25b72d2e028dda6884c54a49a501e3d9",
+   "bytes": 4241292
+  },
+  {
+   "path": "scene/lod1.glb",
+   "sha256": "8df78ed3fb781338ff652f82c88f63d52c13a38fdb198331ded3216537f8962d",
+   "bytes": 1953232
+  },
+  {
+   "path": "scene/splat.spz",
+   "sha256": "06a0fdcd4a4515a42cafc137097235a49bf61e55ad5fc4cdd7d048b2ec29d658",
+   "bytes": 8674876
+  },
+  {
+   "path": "views/cameras.json",
+   "sha256": "ab2013851c2ebd8167e6dd93cb141c9b1a1984d6ebcc9e3fd3a0db8f89dac731",
+   "bytes": 19
+  }
+ ]
+}

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Namma Space 3D Walkthrough</title>
+<link rel="icon" href="favicon.svg?v=4" type="image/svg+xml">
+<link rel="alternate icon" href="logo.png?v=4" type="image/png">
+<link rel="stylesheet" href="app.css?v=6">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="studio.html#/" id="brand" title="Home"><span class="logo" aria-hidden="true"></span>Namma Space</a>
+  <span class="title" id="title">Loading…</span>
+  <button id="rename-model-btn" class="secondary" type="button" title="Rename model" style="padding:2px 10px;font-size:12px;margin-left:6px;border-radius:var(--neo-radius-pill)" hidden>Rename</button>
+  <span id="quality-badge" class="badge" hidden></span>
+  <span class="spacer"></span>
+  <a id="studio-link" class="btn secondary" href="studio.html" hidden>Back to Studio</a>
+  <button id="help-btn" class="secondary" type="button" aria-haspopup="dialog">Controls</button>
+</header>
+<main class="viewer-layout">
+  <div class="stage" id="stage">
+    <canvas id="view" tabindex="0" aria-label="3D walkthrough. Click to look around with the mouse; W A S D or arrow keys to walk."></canvas>
+    <div class="crosshair" id="crosshair" hidden></div>
+    <div class="hud"><span class="chip" id="hud-mode">walk</span><span class="chip" id="hud-fps">– fps</span><span class="chip" id="hud-lod" hidden></span></div>
+    <div class="hint" id="hint">
+      <span><kbd>Click</kbd> look around</span><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</span>
+      <span><kbd>Shift</kbd> faster</span><span><kbd>F</kbd> fly / walk</span><span><kbd>R</kbd> reset view</span><span><kbd>M</kbd> measure</span><span><kbd>N</kbd> map</span><span><kbd>Esc</kbd> release mouse</span>
+    </div>
+    <div class="minimap" id="minimap" hidden>
+      <canvas id="minimap-canvas" width="440" height="440" aria-label="Map of the room: click a spot to go there"></canvas>
+      <button type="button" class="minimap-close" id="minimap-close" aria-label="Hide the map (N)">×</button>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <div class="touchpad" id="touchpad" aria-hidden="true">
+      <span></span><button data-key="KeyW" aria-label="forward">▲</button><span></span>
+      <button data-key="KeyA" aria-label="left">◀</button><button data-key="KeyS" aria-label="back">▼</button><button data-key="KeyD" aria-label="right">▶</button>
+    </div>
+    <div class="overlay" id="loading">
+      <div class="card" role="status" aria-live="polite">
+        <h3 style="margin:0">Opening the 3D space</h3>
+        <p class="muted small" id="loading-step" style="margin:6px 0 0">Checking the scene package…</p>
+        <div class="progress"><div id="loading-bar"></div></div>
+        <p class="muted small mono" id="loading-bytes" style="margin:0"></p>
+      </div>
+    </div>
+    <div class="overlay" id="error" hidden>
+      <div class="card" role="alert">
+        <h3 style="margin:0;color:var(--bad)">This 3D space cannot be shown</h3>
+        <p id="error-message"></p>
+        <details><summary>Technical details</summary><p class="mono" id="error-detail"></p></details>
+        <p class="small muted">Nothing is displayed from a package that fails its integrity checks.</p>
+        <button id="error-retry" type="button">Try again</button>
+      </div>
+    </div>
+    <div class="modal" id="help" hidden role="dialog" aria-labelledby="help-title">
+      <div class="card">
+        <h3 id="help-title" style="margin-top:0">Controls</h3>
+        <dl class="kv">
+          <dt>Look around</dt><dd>Click the view, then move the mouse (or drag with the mouse button held)</dd>
+          <dt>Walk</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys</dd>
+          <dt>Faster</dt><dd>Hold <kbd>Shift</kbd></dd>
+          <dt>Fly / walk</dt><dd><kbd>F</kbd>; while flying <kbd>E</kbd>/<kbd>Space</kbd> up, <kbd>Q</kbd>/<kbd>C</kbd> down</dd>
+          <dt>Reset view</dt><dd><kbd>R</kbd> returns to the starting viewpoint</dd>
+          <dt>Measure</dt><dd><kbd>M</kbd> (or the Measure button), then click points; <kbd>Esc</kbd> starts a new length</dd>
+          <dt>Photo viewpoints</dt><dd><kbd>[</kbd> and <kbd>]</kbd> step through the original photo positions</dd>
+          <dt>Release mouse</dt><dd><kbd>Esc</kbd></dd>
+        </dl>
+        <p class="small muted">Walking keeps you inside the reconstructed room and stops at furniture that was reconstructed. Fly mode moves freely.</p>
+        <button id="help-close" type="button">Close</button>
+      </div>
+    </div>
+    <div class="modal" id="poi-form" hidden role="dialog" aria-labelledby="poi-form-title">
+      <form class="card" id="poi-form-el">
+        <h3 id="poi-form-title" style="margin-top:0">Label this place</h3>
+        <label for="poi-name">Name</label><input id="poi-name" type="text" required maxlength="80" placeholder="e.g. Meeting table">
+        <label for="poi-cat">Category (optional)</label><input id="poi-cat" type="text" maxlength="40" placeholder="e.g. furniture, room, exit">
+        <label for="poi-alias">Other names (optional, comma separated)</label><input id="poi-alias" type="text" maxlength="200">
+        <div class="row" style="margin-top:14px"><button type="submit">Save label</button><button type="button" class="secondary" id="poi-cancel">Cancel</button></div>
+      </form>
+    </div>
+  </div>
+  <aside class="panel" id="panel">
+    <section>
+      <h2>About this model</h2>
+      <dl class="kv" id="about"></dl>
+      <ul class="warn-list" id="notices"></ul>
+      <details id="quality-details" hidden><summary>Quality checks (<span id="warn-count">0</span>)</summary><ul class="warn-list" id="warnings"></ul></details>
+    </section>
+    <section>
+      <h2>Places</h2>
+      <form class="row" id="search-form" role="search">
+        <input id="search" type="search" placeholder="Search places, e.g. table" autocomplete="off" aria-label="Search places">
+        <button type="submit" id="search-btn">Search</button>
+      </form>
+      <p class="small muted" id="search-msg" aria-live="polite"></p>
+      <ul class="list" id="results"></ul>
+      <div id="poi-card" hidden>
+        <h3 id="poi-title"></h3>
+        <p class="small muted" id="poi-meta"></p>
+        <div class="row"><button type="button" id="poi-jump">Go there</button><button type="button" class="secondary" id="poi-route" hidden>Show walking path</button></div>
+        <div class="status-box" id="route-status" hidden></div>
+      </div>
+    </section>
+    <section>
+      <h2>Photo viewpoints</h2>
+      <div class="row"><button type="button" class="secondary" id="cam-prev" aria-label="Previous photo viewpoint">◀</button>
+        <span class="small" id="cam-label" style="flex:1;text-align:center">–</span>
+        <button type="button" class="secondary" id="cam-next" aria-label="Next photo viewpoint">▶</button></div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap"><button type="button" class="secondary" id="reset-view">Reset view</button>
+        <button type="button" class="secondary" id="mode-toggle">Fly mode</button>
+        <button type="button" class="secondary" id="measure-btn" title="Measure lengths (M)">Measure</button>
+        <button type="button" class="secondary" id="map-toggle" title="Show or hide the map (N)" hidden>Hide map</button>
+        <button type="button" class="secondary" id="detail-toggle" hidden>Full detail</button>
+        <button type="button" class="secondary" id="splat-toggle" hidden>Show mesh</button>
+        <button type="button" class="secondary" id="guide-toggle" hidden>Hide floor guide</button>
+        <button type="button" class="secondary" id="estimated-toggle" hidden>Hide estimated surfaces</button></div>
+    </section>
+    <section id="measure-panel" hidden>
+      <h2>Measurements</h2>
+      <p class="small muted" id="measure-hint"></p>
+      <ol class="small measure-list" id="measure-list"></ol>
+      <div class="row" style="flex-wrap:wrap">
+        <label class="small" for="measure-unit">Units</label>
+        <select id="measure-unit"><option value="m">m</option><option value="cm">cm</option><option value="ft">ft-in</option></select>
+        <button type="button" class="secondary" id="measure-undo" title="Remove the last point (Backspace)">Undo</button>
+        <button type="button" class="secondary" id="measure-copy">Copy</button>
+        <button type="button" class="secondary" id="measure-clear">Clear</button></div>
+      <p class="small muted">Hold <kbd>Shift</kbd> for exactly level or upright lines; click the first point again to close a
+        shape and get its area; <kbd>Backspace</kbd> undoes a point; <kbd>Esc</kbd> starts a new measurement.</p>
+    </section>
+    <section id="studio-tools" hidden>
+      <h2>Studio tools</h2>
+      <div class="row" style="flex-wrap:wrap"><button type="button" id="tool-poi">Add a place label</button><button type="button" class="secondary" id="tool-measure">Measure / set scale</button><button type="button" class="secondary" id="tool-rename">Rename model</button></div>
+      <p class="small muted" id="tool-msg"></p>
+      <div id="measure-box" hidden>
+        <p class="small">Measured: <strong id="measure-value">–</strong></p>
+        <label class="small" for="measure-real">If you know the real length of this distance, enter it in metres to set the model's scale:</label>
+        <div class="row"><input id="measure-real" type="number" min="0.05" step="0.01" placeholder="e.g. 0.90"><button type="button" id="measure-apply">Set scale</button></div>
+      </div>
+    </section>
+    <section id="bench-box" hidden>
+      <h2>Benchmark</h2>
+      <p class="small mono" id="bench-summary"></p>
+    </section>
+  </aside>
+</main>
+<script type="module" src="js/sceneViewer.js?v=5"></script>
+</body>
+</html>

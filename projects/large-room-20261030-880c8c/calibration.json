@@ -1,0 +1,8 @@
+{
+ "run_id": "run-20261030-152057-3dcd",
+ "status": "device_tracking",
+ "metres_per_unit": 1.0,
+ "relative_uncertainty": null,
+ "method": "Polycam export (iPhone 14); units metres from the phone's motion tracking, not verified by Namma Space",
+ "evaluation_only": false
+}

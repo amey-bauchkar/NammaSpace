@@ -1,0 +1,81 @@
+{
+ "file": "splat.spz",
+ "T_mesh_from_splat": [
+  [
+   -0.9848281086644246,
+   -0.011763540338300888,
+   -0.1731335192940917,
+   0.7744661571617556
+  ],
+  [
+   -0.014425527541757579,
+   0.9997961725589758,
+   0.01412506607288147,
+   -0.26392427315725797
+  ],
+  [
+   0.17293206914737091,
+   0.01640830445629479,
+   -0.9847970689463267,
+   -0.9416564816978465
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "splats": 366842,
+ "fit": {
+  "solid_splats": 18178,
+  "used": 18178,
+  "yaw_deg": -170.03,
+  "tilt_deg": 1.16,
+  "within_2cm": 0.155,
+  "within_5cm": 0.392,
+  "median_m": 0.0696
+ },
+ "created_at": "2026-10-26T00:18:06+05:30",
+ "poses": "COLMAP (188 of 218 keyframes)",
+ "colmap": {
+  "registered": 196,
+  "kept": 188,
+  "dropped_far": 8,
+  "points": 42223,
+  "scale": 0.2512516828698792,
+  "mapper": "global_mapper",
+  "centre_residual_m": {
+   "median": 0.0381,
+   "p90": 0.1345
+  }
+ },
+ "method": "3D Gaussian splat (gsplat 1.5.3, MCMC, 30000 steps, pose and colour correction) from 218 Polycam keyframes, camera poses from COLMAP (188 of 218 keyframes); lined up with the imported mesh by the splat's solid surface (ICP)",
+ "training": {
+  "photos": 188,
+  "iters": 30000,
+  "splats": 600000,
+  "seconds": 2358.7,
+  "gpu_peak_gb": 0.9,
+  "max_side": 1024,
+  "bytes": 148801531,
+  "frame": "input cameras",
+  "pose_opt": true,
+  "appearance": true,
+  "depth_weight": 0,
+  "pose_correction": {
+   "rot_deg_median": 0.226,
+   "rot_deg_max": 2.906,
+   "shift_median": 0.0081,
+   "shift_max": 0.066
+  }
+ },
+ "compression": {
+  "splats_in": 600000,
+  "splats_out": 366842,
+  "removed_low_opacity": 233158,
+  "removed_outside": 0,
+  "sh_degree": 3,
+  "bytes": 8674876
+ }
+}

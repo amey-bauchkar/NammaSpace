@@ -22,7 +22,7 @@ from namma.core.jsonio import load_strict, sha256_file, write_json
 
 IF13_VERSION = "1.2.0"         # 1.2.0: scale status "device_tracking" (imported phone-scan meshes)
 IF13_VERSION_SPLAT = "1.3.0"   # 1.3.0: optional appearance.splat (photoreal Gaussian splat); written only when present
-WEB_FILES = ["viewer.html", "app.css", "favicon.svg", "js", "vendor"]
+WEB_FILES = ["viewer.html", "app.css", "favicon.svg", "logo.png", "css", "js", "vendor"]
 
 
 class PackageError(RuntimeError):

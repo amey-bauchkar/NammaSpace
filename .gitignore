@@ -6,16 +6,23 @@ external_data/
 # third-party binaries (installed by scripts/setup_tools.py; OpenMVS is AGPL-3.0)
 tools/
 
-# Studio projects: personal photos / videos and their reconstructions
-projects/
+# Studio projects: personal photos / videos and their reconstructions (keep example rooms in repo)
+projects/*
+!projects/small-room-20261026-dd673e/
+!projects/large-room-20261030-880c8c/
+
+# Exclude large intermediate training data (>100MB COLMAP/PLY) and raw phone upload archives
+projects/*/capture/originals/*.zip
+projects/*/runs/*/65_splat/
+projects/*/published/*.zip
 
 # evaluation runs and large generated artifacts (summaries are kept under docs/ and phase13_artifacts/results/)
 phase13_artifacts/projects/
 phase13_artifacts/browser/**/*.png
 phase12_artifacts/exp015_openmvs_kicker_run1/
 phase12_artifacts/exp014_colmap_kicker_run*/database.db*
-runs/
-dist/
+/runs/
+/dist/
 releases/
 test_output/
 

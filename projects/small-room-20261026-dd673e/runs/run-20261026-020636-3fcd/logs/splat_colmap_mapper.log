@@ -1,0 +1,44 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe global_mapper --database_path projects\new-room-20261026-dd673e\runs\run-20261026-020636-3fcd\65_splat\colmap\database.db --image_path projects\new-room-20261026-dd673e\runs\run-20261026-020636-3fcd\65_splat\input\images --output_path projects\new-room-20261026-dd673e\runs\run-20261026-020636-3fcd\65_splat\colmap\model
+
+I20261026 13:17:26.545263  2724 database_cache.cc:82] Loading rigs...
+I20261026 13:17:26.546395  2724 database_cache.cc:92]  1 in 0.001s
+I20261026 13:17:26.546419  2724 database_cache.cc:100] Loading cameras...
+I20261026 13:17:26.546447  2724 database_cache.cc:118]  1 in 0.000s
+I20261026 13:17:26.546454  2724 database_cache.cc:126] Loading frames...
+I20261026 13:17:26.546704  2724 database_cache.cc:136]  218 in 0.000s
+I20261026 13:17:26.546711  2724 database_cache.cc:144] Loading matches...
+I20261026 13:17:26.559961  2724 database_cache.cc:163]  4567 in 0.013s
+I20261026 13:17:26.560017  2724 database_cache.cc:171] Loading images...
+I20261026 13:17:26.582729  2724 database_cache.cc:268]  218 in 0.023s (connected 202, loaded 202)
+I20261026 13:17:26.582787  2724 database_cache.cc:282] Loading pose priors...
+I20261026 13:17:26.582808  2724 database_cache.cc:290]  0 in 0.000s
+I20261026 13:17:26.582816  2724 database_cache.cc:298] Building correspondence graph...
+I20261026 13:17:26.683304  2724 database_cache.cc:327]  in 0.101s (ignored 0)
+I20261026 13:17:26.683775  2724 two_view_geometry.cc:1834] Decomposing relative poses...
+I20261026 13:17:27.576599  2724 two_view_geometry.cc:1936] Decomposed 4567 relative poses (11 failed) in 0.893s
+I20261026 13:17:27.585932  2724 pose_graph.cc:51] Loaded 4556 edges into pose graph
+I20261026 13:17:27.708893  2724 rotation_averaging.cc:274] Marked 2456 image pairs as invalid with relative rotation error > 10 degrees
+I20261026 13:17:27.722975  2724 rotation_averaging.cc:274] Marked 1 image pairs as invalid with relative rotation error > 10 degrees
+I20261026 13:17:27.725697  2724 global_pipeline.cc:302] Found 2 connected component(s) after rotation filtering
+I20261026 13:17:27.725755  2724 global_pipeline.cc:322] === Reconstructing component 1 / 2 with 198 images ===
+I20261026 13:17:28.341248  2724 pose_graph.cc:51] Loaded 4551 edges into pose graph
+I20261026 13:17:28.341311  2724 global_mapper.cc:553] === Running rotation averaging ===
+I20261026 13:17:28.438638  2724 rotation_averaging.cc:274] Marked 2456 image pairs as invalid with relative rotation error > 10 degrees
+I20261026 13:17:28.480064  2724 rotation_averaging.cc:274] Marked 2 image pairs as invalid with relative rotation error > 10 degrees
+I20261026 13:17:28.480644  2724 global_mapper.cc:559] Rotation averaging done in 0.139332 seconds
+I20261026 13:17:28.480681  2724 global_mapper.cc:565] === Running track establishment ===
+I20261026 13:17:28.896273  2724 global_mapper.cc:206] Established 84104 tracks from 342361 observations
+I20261026 13:17:28.975335  2724 global_mapper.cc:261] Kept 41698 tracks, discarded 1275 due to inconsistency
+I20261026 13:17:28.995431  2724 global_mapper.cc:302] Before filtering: 41698, after filtering: 41698
+I20261026 13:17:29.013595  2724 global_mapper.cc:569] Track establishment done in 0.532917 seconds
+I20261026 13:17:29.013655  2724 global_mapper.cc:575] === Running global positioning ===
+I20261026 13:17:29.013678  2724 global_positioning.cc:39] Setting up the global positioner problem
+W20261026 13:17:29.415739  2724 global_positioning.cc:375] Requested to use GPU for bundle adjustment, but Ceres was compiled without CUDA support. Falling back to CPU-based dense solvers.
+W20261026 13:17:29.416350  2724 global_positioning.cc:394] Requested to use GPU for bundle adjustment, but Ceres was compiled without cuDSS support. Falling back to CPU-based sparse solvers.
+I20261026 13:17:29.418562  2724 global_positioning.cc:59] Solving the global positioner problem
+I20261026 13:17:47.467193  2724 global_positioning.cc:70] Ceres Solver Report: Iterations: 57, Initial cost: 2.992389e+06, Final cost: 1.261331e+02, Termination: CONVERGENCE
+I20261026 13:17:47.662978  2724 global_mapper.cc:584] Global positioning done in 18.6493 seconds
+I20261026 13:17:47.675250  2724 global_mapper.cc:596] === Running iterative bundle adjustment ===
+W20261026 13:17:47.865905  2724 bundle_adjustment_ceres.cc:162] Requested to use GPU for bundle adjustment, but Ceres was compiled without CUDA support. Falling back to CPU-based dense solvers.
+W20261026 13:17:47.865976  2724 bundle_adjustment_ceres.cc:181] Requested to use GPU for bundle adjustment, but Ceres was compiled without cuDSS support. Falling back to CPU-based sparse solvers.
+I20261026 13:17:50.444271  2724 global_mapper.cc:391] Global bundle adjustment iteration 1 / 3, fixed-rotation stage finished

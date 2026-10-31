@@ -1,0 +1,57 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe exhaustive_matcher --database_path projects\new-room-20261026-dd673e\runs\run-20261026-020636-3fcd\65_splat\colmap\database.db --FeatureMatching.use_gpu 1
+
+I20261026 13:16:52.740628 20988 feature_matching.cc:196] === Feature matching & geometric verification ===
+I20261026 13:16:52.776963  7468 feature_matching_utils.cc:79] Bind FeatureMatcherWorker to GPU device 0
+I20261026 13:16:52.777994  7468 sift.cc:1679] Creating SIFT GPU feature matcher
+I20261026 13:16:52.782472 20988 pairing.cc:181] Generating exhaustive image pairs...
+I20261026 13:16:52.782528 20988 pairing.cc:214] Processing block [1/5, 1/5]
+I20261026 13:16:54.457208 20988 feature_matching.cc:218] in 1.675s
+I20261026 13:16:54.457275 20988 pairing.cc:214] Processing block [1/5, 2/5]
+I20261026 13:16:56.193413 20988 feature_matching.cc:218] in 1.736s
+I20261026 13:16:56.193494 20988 pairing.cc:214] Processing block [1/5, 3/5]
+I20261026 13:16:56.789003 20988 feature_matching.cc:218] in 0.596s
+I20261026 13:16:56.789138 20988 pairing.cc:214] Processing block [1/5, 4/5]
+I20261026 13:16:58.259027 20988 feature_matching.cc:218] in 1.470s
+I20261026 13:16:58.259101 20988 pairing.cc:214] Processing block [1/5, 5/5]
+I20261026 13:16:58.679859 20988 feature_matching.cc:218] in 0.421s
+I20261026 13:16:58.680252 20988 pairing.cc:214] Processing block [2/5, 1/5]
+I20261026 13:17:01.448922 20988 feature_matching.cc:218] in 2.769s
+I20261026 13:17:01.448986 20988 pairing.cc:214] Processing block [2/5, 2/5]
+I20261026 13:17:04.069422 20988 feature_matching.cc:218] in 2.620s
+I20261026 13:17:04.069481 20988 pairing.cc:214] Processing block [2/5, 3/5]
+I20261026 13:17:04.886894 20988 feature_matching.cc:218] in 0.817s
+I20261026 13:17:04.886950 20988 pairing.cc:214] Processing block [2/5, 4/5]
+I20261026 13:17:06.891071 20988 feature_matching.cc:218] in 2.004s
+I20261026 13:17:06.891122 20988 pairing.cc:214] Processing block [2/5, 5/5]
+I20261026 13:17:07.523356 20988 feature_matching.cc:218] in 0.632s
+I20261026 13:17:07.523413 20988 pairing.cc:214] Processing block [3/5, 1/5]
+I20261026 13:17:08.243462 20988 feature_matching.cc:218] in 0.720s
+I20261026 13:17:08.243512 20988 pairing.cc:214] Processing block [3/5, 2/5]
+I20261026 13:17:08.982876 20988 feature_matching.cc:218] in 0.739s
+I20261026 13:17:08.982932 20988 pairing.cc:214] Processing block [3/5, 3/5]
+I20261026 13:17:09.373149 20988 feature_matching.cc:218] in 0.390s
+I20261026 13:17:09.373201 20988 pairing.cc:214] Processing block [3/5, 4/5]
+I20261026 13:17:09.894905 20988 feature_matching.cc:218] in 0.522s
+I20261026 13:17:09.894958 20988 pairing.cc:214] Processing block [3/5, 5/5]
+I20261026 13:17:10.064127 20988 feature_matching.cc:218] in 0.169s
+I20261026 13:17:10.064186 20988 pairing.cc:214] Processing block [4/5, 1/5]
+I20261026 13:17:12.623205 20988 feature_matching.cc:218] in 2.559s
+I20261026 13:17:12.623266 20988 pairing.cc:214] Processing block [4/5, 2/5]
+I20261026 13:17:15.459085 20988 feature_matching.cc:218] in 2.836s
+I20261026 13:17:15.459137 20988 pairing.cc:214] Processing block [4/5, 3/5]
+I20261026 13:17:16.287940 20988 feature_matching.cc:218] in 0.829s
+I20261026 13:17:16.287992 20988 pairing.cc:214] Processing block [4/5, 4/5]
+I20261026 13:17:18.256412 20988 feature_matching.cc:218] in 1.968s
+I20261026 13:17:18.256467 20988 pairing.cc:214] Processing block [4/5, 5/5]
+I20261026 13:17:18.701933 20988 feature_matching.cc:218] in 0.445s
+I20261026 13:17:18.701991 20988 pairing.cc:214] Processing block [5/5, 1/5]
+I20261026 13:17:20.649409 20988 feature_matching.cc:218] in 1.947s
+I20261026 13:17:20.649473 20988 pairing.cc:214] Processing block [5/5, 2/5]
+I20261026 13:17:22.948008 20988 feature_matching.cc:218] in 2.299s
+I20261026 13:17:22.985636 20988 pairing.cc:214] Processing block [5/5, 3/5]
+I20261026 13:17:23.597492 20988 feature_matching.cc:218] in 0.612s
+I20261026 13:17:23.597544 20988 pairing.cc:214] Processing block [5/5, 4/5]
+I20261026 13:17:25.663496 20988 feature_matching.cc:218] in 2.066s
+I20261026 13:17:25.663594 20988 pairing.cc:214] Processing block [5/5, 5/5]
+I20261026 13:17:26.347324 20988 feature_matching.cc:218] in 0.684s
+I20261026 13:17:26.347425 20988 timer.cc:90] Elapsed time: 0.560 [minutes]

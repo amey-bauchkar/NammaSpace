@@ -14,6 +14,7 @@ integrated).
 |---|---|
 | **Phone auto-capture** (web page, no install) | Point the phone at the room: frames are kept automatically and sent to the Studio, which checks them and builds a Preview model ([docs/PHONE_CAPTURE.md](docs/PHONE_CAPTURE.md)) |
 | **Studio** (local web app) | Create a space → upload photos or one video → automatic capture check → CPU reconstruction with real progress, cancel and resume → quality report → publish |
+| **3D model & scan import** | Import existing 3D models or room scans (.glb or .zip). *Note: We use Polycam as a GLTF file and images importer, but any other model will work as well.* |
 | **Walkthrough viewer** (zero install) | Browser, WASD + mouse, collision with reconstructed furniture, photo viewpoints, fly mode, place labels + search, optional scale calibration |
 | **Static website export** | One folder (or ZIP) any static host can serve; every file hash-verified by the viewer |
 
@@ -31,8 +32,7 @@ python scripts/setup_tools.py
 python scripts/start_studio.py --port 8780 --projects projects
 ```
 
-Open http://127.0.0.1:8780/, create a space and upload the included public sample
-`samples/tum_fr3_office/images/` (61 frames, TUM RGB-D, CC BY 4.0). Details: [docs/INSTALL.md](docs/INSTALL.md).
+Open http://127.0.0.1:8780/. Two pre-packaged example spaces (**Small room** and **Large room**) are included and ready to roam immediately on the Studio home screen. You can also create a new space and upload your own capture or test reconstruction with `samples/tum_fr3_office/images/` (61 frames, TUM RGB-D, CC BY 4.0). Details: [docs/INSTALL.md](docs/INSTALL.md).
 
 ## How it works
 

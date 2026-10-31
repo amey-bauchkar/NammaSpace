@@ -90,6 +90,40 @@ class ProjectStore:
     def save(self, doc):
         write_json(self.path(doc["project_id"]) / "project.json", doc)
 
+    def rename(self, project_id, title):
+        title = (title or "").strip()[:80]
+        if not title:
+            raise ProjectError("PROJECT-TITLE-EMPTY", "Title cannot be empty")
+        doc = self.get(project_id)
+        doc["title"] = title
+        self.save(doc)
+        p = self.path(project_id)
+        runs_dir = p / "runs"
+        if runs_dir.exists():
+            for rd in runs_dir.iterdir():
+                pkg_file = rd / "90_package" / "scene_package.json"
+                if pkg_file.is_file():
+                    try:
+                        pkg = load_strict(pkg_file)
+                        if "project" in pkg and isinstance(pkg["project"], dict):
+                            pkg["project"]["title"] = title
+                            write_json(pkg_file, pkg)
+                    except Exception:
+                        pass
+        pub_dir = p / "published"
+        if pub_dir.exists():
+            for rd in pub_dir.iterdir():
+                pkg_file = rd / "data" / "scene_package.json"
+                if pkg_file.is_file():
+                    try:
+                        pkg = load_strict(pkg_file)
+                        if "project" in pkg and isinstance(pkg["project"], dict):
+                            pkg["project"]["title"] = title
+                            write_json(pkg_file, pkg)
+                    except Exception:
+                        pass
+        return doc
+
     def list(self):
         out = []
         for d in sorted(self.root.iterdir()):

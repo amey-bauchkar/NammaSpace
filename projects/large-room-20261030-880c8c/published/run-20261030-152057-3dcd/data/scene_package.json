@@ -1,0 +1,200 @@
+{
+ "contract": "IF-13",
+ "contract_version": "1.3.0",
+ "package_id": "pkg-large-room-20261030-880c8c-run-20261030-152057-3dcd",
+ "project": {
+  "project_id": "large-room-20261030-880c8c",
+  "title": "Large room"
+ },
+ "run_id": "run-20261030-152057-3dcd",
+ "created_at": "2026-11-01T01:37:16+05:30",
+ "model_frame": {
+  "frame_id": "model:run-20261030-152057-3dcd",
+  "units": "model",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "floor_detected": true,
+  "up_source": "floor_plane",
+  "datum": "origin on the floor plane below the centroid of the capture cameras; +X along the principal horizontal axis of the floor; units = reconstruction units"
+ },
+ "scale": {
+  "status": "device_tracking",
+  "metres_per_unit": 1.0,
+  "relative_uncertainty": null,
+  "method": "Polycam export (iPhone 14); units metres from the phone's motion tracking, not verified by Namma Space",
+  "evaluation_only": false
+ },
+ "appearance": {
+  "representation": "textured_mesh",
+  "to_model": {
+   "matrix_row_major": [
+    -0.9984313363279822,
+    0.0,
+    -0.055989879784830276,
+    0.44911481796087616,
+    0.0,
+    1.0,
+    0.0,
+    1.5694102497360347,
+    0.055989879784830276,
+    0.0,
+    -0.9984313363279822,
+    1.8332784774973276,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "method": "rigid SfM -> model frame (floor plane / camera orientation), see 70_frame/frame.json"
+  },
+  "lods": [
+   {
+    "lod": 0,
+    "path": "scene/lod0.glb",
+    "format": "glb",
+    "bytes": 8212640,
+    "sha256": "6bec4a34e165709fbaba9b080b92baf04179f9ddc26eddfe5c16441c09fd9173",
+    "faces": 93641
+   },
+   {
+    "lod": 1,
+    "path": "scene/lod1.glb",
+    "format": "glb",
+    "bytes": 4275740,
+    "sha256": "d6d05cf45ab0787347654bfb0dc59f6a16df9de7557ec4c9707a7f9313f87fee",
+    "faces": 93641
+   }
+  ],
+  "splat": {
+   "path": "scene/splat.spz",
+   "format": "spz",
+   "bytes": 5880227,
+   "sha256": "b4b8638c53206758d967f8285b3602364a3a9bca53ff287846ec7041ab95b6a4",
+   "splats": 271189,
+   "method": "3D Gaussian splat (gsplat 1.5.3, MCMC, 20000 steps, pose and colour correction, mesh depth guide) from 700 Polycam keyframes, camera poses from phone tracking (ARKit); lined up with the imported mesh by the splat's solid surface (ICP)",
+   "to_model": {
+    "matrix_row_major": [
+     0.9964372015348785,
+     0.0037516080995327115,
+     0.08425454785365794,
+     4.783131229211042,
+     -0.003543961933929763,
+     0.9999903037825039,
+     -0.0026139385581491204,
+     1.3645440902820132,
+     -0.08426353737630304,
+     0.002306030711509494,
+     0.9964408354193502,
+     -0.6132343436425722,
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
+    "fit": {
+     "solid_splats": 67086,
+     "used": 40000,
+     "yaw_deg": -178.38,
+     "tilt_deg": 0.25,
+     "within_2cm": 0.081,
+     "within_5cm": 0.328,
+     "median_m": 0.0857
+    }
+   }
+  }
+ },
+ "eye_height_units": 1.6,
+ "bounds": {
+  "min": [
+   -5.354864423005789,
+   -0.002174986108315131,
+   -2.878781368229685
+  ],
+  "max": [
+   5.5938710731857295,
+   2.911820403806239,
+   5.339087279389044
+  ]
+ },
+ "start_view": {
+  "position": [
+   3.8236,
+   1.6,
+   -0.4993
+  ],
+  "target": [
+   2.2543,
+   1.52,
+   -0.8114
+  ],
+  "source": "imported mesh: floor spot with the most clearance, looking along the longest free line"
+ },
+ "cameras": "views/cameras.json",
+ "roam": "nav/roam_grid.json",
+ "navigation": {
+  "status": "unverified",
+  "geometry": "nav/geometry.if04.json",
+  "scale_basis": "device_tracking",
+  "metres_per_unit": 1.0,
+  "note": "Automatic floor / obstacle map from the reconstruction. NOT verified: unobserved floor is treated as blocked, missing obstacles cannot be detected without a reference, and the scale comes from device_tracking."
+ },
+ "pois": "poi/pois.json",
+ "quality": {
+  "verdict": "usable_with_warnings",
+  "report": "reports/quality_report.json",
+  "capture_report": null,
+  "warnings": [
+   "IMPORTED-MESH",
+   "EYE-HEIGHT-ASSUMED",
+   "NO-PHOTO-VIEWPOINTS"
+  ]
+ },
+ "notices": [
+  "3D scan (iPhone 14)",
+  "Scale from the capture device's tracking (Polycam export (iPhone 14); units metres from the phone's motion tracking, not verified by Namma Space); not checked against a measured length - use 'Set scale' in the viewer with one known distance to verify it.",
+  "Reconstruction quality: usable with warnings (1 warnings)."
+ ],
+ "files": [
+  {
+   "path": "nav/geometry.if04.json",
+   "sha256": "681074417cecef8cbaf614c52b917c935ab96153268f8e04d1b3766fe6791cdf",
+   "bytes": 66306
+  },
+  {
+   "path": "nav/roam_grid.json",
+   "sha256": "40426582c283ec5535b9d77f1515a638e50416285d378f3ba98a9ed04983fd9b",
+   "bytes": 6281
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+   "bytes": 3
+  },
+  {
+   "path": "reports/quality_report.json",
+   "sha256": "6638e977df8b4060dce97eaabd702278a529de20ef0b64cb7ef13e66cfb61e76",
+   "bytes": 1267
+  },
+  {
+   "path": "scene/lod0.glb",
+   "sha256": "6bec4a34e165709fbaba9b080b92baf04179f9ddc26eddfe5c16441c09fd9173",
+   "bytes": 8212640
+  },
+  {
+   "path": "scene/lod1.glb",
+   "sha256": "d6d05cf45ab0787347654bfb0dc59f6a16df9de7557ec4c9707a7f9313f87fee",
+   "bytes": 4275740
+  },
+  {
+   "path": "scene/splat.spz",
+   "sha256": "b4b8638c53206758d967f8285b3602364a3a9bca53ff287846ec7041ab95b6a4",
+   "bytes": 5880227
+  },
+  {
+   "path": "views/cameras.json",
+   "sha256": "ab2013851c2ebd8167e6dd93cb141c9b1a1984d6ebcc9e3fd3a0db8f89dac731",
+   "bytes": 19
+  }
+ ]
+}

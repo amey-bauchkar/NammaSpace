@@ -1,0 +1,95 @@
+{
+ "T_model_from_sfm": [
+  [
+   -0.9984313363279822,
+   0.0,
+   -0.055989879784830276,
+   0.44911481796087616
+  ],
+  [
+   0.0,
+   1.0,
+   0.0,
+   1.5694102497360347
+  ],
+  [
+   0.055989879784830276,
+   0.0,
+   -0.9984313363279822,
+   1.8332784774973276
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "eye_height_units": 1.6,
+ "points_source": "imported_mesh_surface",
+ "points": 600000,
+ "bounds_p1_p99": [
+  [
+   -5.354864423005789,
+   -0.002174986108315131,
+   -2.878781368229685
+  ],
+  [
+   5.5938710731857295,
+   2.911820403806239,
+   5.339087279389044
+  ]
+ ],
+ "bounds_minmax": [
+  [
+   -5.501391344264965,
+   -0.04099839095124347,
+   -2.9742525530920005
+  ],
+  [
+   6.1874356753825115,
+   3.1800289275539297,
+   6.293936873299183
+  ]
+ ],
+ "floor_detected": true,
+ "up_source": "floor_plane",
+ "floor_suspect": false,
+ "below_floor_fraction": 0.0,
+ "diagnostics": {
+  "horizontal_share": 0.32,
+  "horizontal_samples": 191919,
+  "floor_share_of_upward": 0.078,
+  "floor_height_raw": -1.5694,
+  "nav_floor_tilt_deg": 0.72,
+  "clearance_m": 1.101,
+  "view_free_m": 5.05
+ },
+ "roam_stats": {
+  "cell_units": 0.05,
+  "width": 229,
+  "height": 177,
+  "allowed_cells": 9679,
+  "min_obstacle_cells": 15,
+  "blocked_cells": 6369,
+  "observed_floor_cells": 11283,
+  "footprint_cells": 17137,
+  "observed_floor_in_footprint_cells": 11280
+ },
+ "floor_coverage": 0.6582,
+ "start": {
+  "camera": "start",
+  "position": [
+   3.8236,
+   1.6,
+   -0.4993
+  ],
+  "target": [
+   2.2543,
+   1.52,
+   -0.8114
+  ],
+  "source": "imported mesh: floor spot with the most clearance, looking along the longest free line"
+ },
+ "eye_height_source": "assumed standing eye height 1.6 m (an imported mesh has no camera heights)"
+}

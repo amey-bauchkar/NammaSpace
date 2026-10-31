@@ -1,0 +1,16 @@
+{
+ "project_id": "large-room-20261030-880c8c",
+ "title": "Large room",
+ "created_at": "2026-10-30T15:20:57+05:30",
+ "notices": [
+  "3D scan (iPhone 14)"
+ ],
+ "runs": [
+  {
+   "run_id": "run-20261030-152057-3dcd",
+   "profile": "import",
+   "created_at": "2026-10-30T15:20:57+05:30",
+   "config_sha256": "7426d13f748dc4cf04446b4c2e51684c9440b2a06b17dd8de1fb9c5708f24ed0"
+  }
+ ]
+}

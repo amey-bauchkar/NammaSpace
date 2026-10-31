@@ -1,0 +1,187 @@
+/* Namma Space Application Styles
+   Incorporates the Neo-Brutalist Engine (60% #192A56, 30% #F7D794, Extra #EDA6A3, 10% #FCFBFB) */
+
+@import url('./css/neobrutalism.css');
+
+/* Additional Studio & Walkthrough Specific Extensions */
+
+/* Row & Layout Flex Helpers */
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.row > input {
+  flex: 1;
+}
+
+/* List Items with Tactile Depress Effect */
+.list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.list li {
+  margin: 6px 0;
+}
+
+.list button {
+  width: 100%;
+  justify-content: space-between;
+  background: var(--neo-accent);
+  color: var(--neo-dominant);
+  border: var(--neo-border-regular);
+  box-shadow: var(--neo-shadow-xs);
+  padding: 9px 14px;
+}
+
+.list button:hover {
+  background: var(--neo-secondary);
+  border-color: var(--neo-dominant);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--neo-shadow-sm);
+}
+
+/* Status Box Callouts */
+.status-box {
+  padding: 12px 14px;
+  border-radius: var(--neo-radius-sm);
+  border: var(--neo-border-regular);
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--neo-shadow-xs);
+}
+
+.status-box[data-state=validated] {
+  background: var(--neo-status-ok-bg);
+  border-color: var(--neo-dominant);
+}
+
+.status-box[data-state=unverified] {
+  background: var(--neo-secondary);
+  border-color: var(--neo-dominant);
+}
+
+.status-box[data-state=unreachable],
+.status-box[data-state=unavailable],
+.status-box[data-state=error] {
+  background: var(--neo-extra);
+  border-color: var(--neo-dominant);
+}
+
+/* Callouts */
+.callout {
+  padding: 14px 16px;
+  border-radius: var(--neo-radius-sm);
+  background: var(--neo-secondary);
+  border: var(--neo-border-regular);
+  box-shadow: var(--neo-shadow-xs);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--neo-dominant);
+  margin: 12px 0;
+}
+
+.callout.warn {
+  background: var(--neo-secondary);
+  border-color: var(--neo-dominant);
+}
+
+.callout.bad {
+  background: var(--neo-extra);
+  border-color: var(--neo-dominant);
+}
+
+.callout.ok {
+  background: var(--neo-status-ok-bg);
+  border-color: var(--neo-dominant);
+}
+
+/* SOP Checklist (Standard Operating Procedure) */
+ol.sop {
+  padding-left: 20px;
+  font-weight: 500;
+}
+
+ol.sop li {
+  margin: 8px 0;
+}
+
+ol.sop li strong {
+  color: var(--neo-dominant);
+  font-weight: 800;
+}
+
+/* In-Scene Measurement List */
+.measure-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1.5px dashed var(--neo-dominant);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.measure-list li button {
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 18px;
+  background: var(--neo-extra);
+}
+
+/* Toast Notification (Floating Brutalist Sticker) */
+.toast {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: var(--neo-secondary);
+  color: var(--neo-dominant);
+  border: var(--neo-border-thick);
+  padding: 10px 20px;
+  border-radius: var(--neo-radius-pill);
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: var(--neo-shadow-md);
+  max-width: 85%;
+}
+
+.toast[hidden] {
+  display: none;
+}
+
+/* Touchpad for Mobile Viewers */
+.touchpad {
+  position: absolute;
+  right: 18px;
+  bottom: 70px;
+  z-index: 25;
+  display: none;
+  grid-template-columns: repeat(3, 50px);
+  gap: 8px;
+}
+
+.touchpad button {
+  width: 50px;
+  height: 50px;
+  justify-content: center;
+  background: var(--neo-accent);
+  color: var(--neo-dominant);
+  border: var(--neo-border-regular);
+  box-shadow: var(--neo-shadow-sm);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+@media (pointer: coarse) {
+  .touchpad {
+    display: grid;
+  }
+}

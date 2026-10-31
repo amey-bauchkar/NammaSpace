@@ -6,15 +6,16 @@
 <title>Namma Space 3D Walkthrough</title>
 <link rel="icon" href="favicon.svg?v=4" type="image/svg+xml">
 <link rel="alternate icon" href="logo.png?v=4" type="image/png">
-<link rel="stylesheet" href="app.css?v=5">
+<link rel="stylesheet" href="app.css?v=6">
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="#" id="brand"><span class="logo" aria-hidden="true"></span>Namma Space</a>
+  <a class="brand" href="studio.html#/" id="brand" title="Home"><span class="logo" aria-hidden="true"></span>Namma Space</a>
   <span class="title" id="title">Loading…</span>
+  <button id="rename-model-btn" class="secondary" type="button" title="Rename model" style="padding:2px 10px;font-size:12px;margin-left:6px;border-radius:var(--neo-radius-pill)" hidden>Rename</button>
   <span id="quality-badge" class="badge" hidden></span>
   <span class="spacer"></span>
   <a id="studio-link" class="btn secondary" href="studio.html" hidden>Back to Studio</a>
@@ -133,7 +134,7 @@
     </section>
     <section id="studio-tools" hidden>
       <h2>Studio tools</h2>
-      <div class="row"><button type="button" id="tool-poi">Add a place label</button><button type="button" class="secondary" id="tool-measure">Measure / set scale</button></div>
+      <div class="row" style="flex-wrap:wrap"><button type="button" id="tool-poi">Add a place label</button><button type="button" class="secondary" id="tool-measure">Measure / set scale</button><button type="button" class="secondary" id="tool-rename">Rename model</button></div>
       <p class="small muted" id="tool-msg"></p>
       <div id="measure-box" hidden>
         <p class="small">Measured: <strong id="measure-value">–</strong></p>
@@ -147,6 +148,6 @@
     </section>
   </aside>
 </main>
-<script type="module" src="js/sceneViewer.js?v=3"></script>
+<script type="module" src="js/sceneViewer.js?v=5"></script>
 </body>
 </html>

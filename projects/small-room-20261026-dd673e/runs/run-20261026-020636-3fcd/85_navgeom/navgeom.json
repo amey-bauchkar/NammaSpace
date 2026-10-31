@@ -1,0 +1,22 @@
+{
+ "status": "unverified",
+ "scale_basis": "device_tracking",
+ "metres_per_unit": 1.0,
+ "relative_uncertainty": null,
+ "diagnostics": {
+  "grid": {
+   "res_m": 0.05,
+   "x0": -2.4000000000000004,
+   "z0": -2.35,
+   "width": 97,
+   "height": 95
+  },
+  "points_used": 600000,
+  "floor_cells": 4814,
+  "obstacle_cells": 2989,
+  "obstacles": 9,
+  "walkable_area_m2": 12.035
+ },
+ "if04_errors": [],
+ "note": "Routes on this geometry are never shown as validated (ARCH-030)."
+}

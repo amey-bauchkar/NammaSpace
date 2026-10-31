@@ -392,6 +392,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         self._dispatch("POST")
 
+    def do_PATCH(self):
+        self._dispatch("PATCH")
+
     def do_PUT(self):
         self._dispatch("PUT")
 
@@ -524,11 +527,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if not rest:
                 if method == "GET":
                     return self._json(200, st.project_summary(st.store.get(pid)))
+                if method in ("PATCH", "POST"):
+                    body = self._body_json()
+                    new_title = (body.get("title") or "").strip()
+                    if not new_title:
+                        raise ApiError(400, "PROJECT-TITLE-EMPTY", "Title cannot be empty")
+                    doc = st.store.rename(pid, new_title)
+                    return self._json(200, st.project_summary(doc))
                 if method == "DELETE":
                     act = st.jobs.active()
                     if act and act[0] == pid:
                         raise ApiError(409, "PROJECT-BUSY", "This space is being reconstructed; cancel the run first.")
                     return self._json(200, {"moved_to": st.store.trash(pid)})
+            if rest == ["rename"] and method == "POST":
+                body = self._body_json()
+                new_title = (body.get("title") or "").strip()
+                if not new_title:
+                    raise ApiError(400, "PROJECT-TITLE-EMPTY", "Title cannot be empty")
+                doc = st.store.rename(pid, new_title)
+                return self._json(200, st.project_summary(doc))
             if rest == ["uploads"] and method == "GET":
                 files = sorted(p for p in st.store.originals(pid).iterdir() if p.is_file() and not p.name.startswith("."))
                 return self._json(200, {"files": [{"name": p.name, "bytes": p.stat().st_size} for p in files]})

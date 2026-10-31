@@ -1,0 +1,49 @@
+{
+ "verdict": "usable_with_warnings",
+ "warnings": [
+  {
+   "code": "IMPORTED-MESH",
+   "severity": "warning",
+   "message": "Geometry and textures were made by Polycam, not by Namma Space; Namma Space only measured them. Holes, merged furniture and texture seams are the app's."
+  },
+  {
+   "code": "EYE-HEIGHT-ASSUMED",
+   "severity": "info",
+   "message": "Walking eye height is an assumed 1.6 m (the export has no camera heights)."
+  },
+  {
+   "code": "NO-PHOTO-VIEWPOINTS",
+   "severity": "info",
+   "message": "The export has no photo positions, so 'jump to photo viewpoint' is unavailable."
+  }
+ ],
+ "facts": {
+  "source": "imported_mesh",
+  "app": "Polycam",
+  "device": "iPhone 14",
+  "file": "New_room.zip",
+  "glb": "25_10_2026.glb",
+  "mesh_faces": 50057,
+  "mesh_vertices": 31710,
+  "textures": [
+   [
+    4096,
+    3488
+   ]
+  ],
+  "surface_area_m2": 100.8,
+  "extent_m_p1_p99": [
+   3.906,
+   2.963,
+   4.222
+  ],
+  "floor_detected": true,
+  "floor_coverage": 0.9998,
+  "scale_status": "device_tracking",
+  "fragments_removed": 0,
+  "fragments_removed_area_m2": 0.0,
+  "lods": 2
+ },
+ "thresholds": {},
+ "created_at": "2026-10-26T02:06:36+05:30"
+}

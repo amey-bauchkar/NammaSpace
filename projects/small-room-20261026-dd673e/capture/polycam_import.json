@@ -1,0 +1,26 @@
+{
+ "imported_at": "2026-10-26T02:06:37+05:30",
+ "mesh": {
+  "file": "New_room.zip",
+  "glb": "25_10_2026.glb"
+ },
+ "raw": [
+  {
+   "file": "New_room_images.zip",
+   "keyframes": 218,
+   "folders": {
+    "segmentation_confidence": 199,
+    "cameras": 218,
+    "motion": 24,
+    "location": 218,
+    "segmentation": 199,
+    "images": 218,
+    "depth": 199,
+    "confidence": 199,
+    "arkit_motion": 8
+   },
+   "device": "iPhone 14"
+  }
+ ],
+ "device": "iPhone 14"
+}

@@ -100,7 +100,7 @@ $('polycam-files').onchange = async () => {
     $('st-title').textContent = 'Imported';
     $('st-bar').style.width = '100%';
     $('st-msg').textContent = `${ext} m, ${(r.facts.mesh_faces / 1000).toFixed(0)}k triangles`
-      + (r.raw.length ? `, plus ${r.raw[0].keyframes} Polycam photos kept for later` : '')
+      + (r.raw.length ? `, plus ${r.raw[0].keyframes} photos kept for later` : '')
       + '. Open the Studio on the computer to walk through it.';
   } catch (e) {
     showScreen('s-status');

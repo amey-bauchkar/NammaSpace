@@ -1,0 +1,26 @@
+{
+ "imported_at": "2026-10-30T15:20:59+05:30",
+ "mesh": {
+  "file": "Shraddha_all_rooms.zip",
+  "glb": "27_10_2026.glb"
+ },
+ "raw": [
+  {
+   "file": "Shraddha_all_rooms_images.zip",
+   "keyframes": 700,
+   "folders": {
+    "segmentation_confidence": 698,
+    "cameras": 700,
+    "motion": 102,
+    "location": 700,
+    "images": 700,
+    "confidence": 698,
+    "depth": 698,
+    "segmentation": 698,
+    "arkit_motion": 43
+   },
+   "device": "iPhone 14"
+  }
+ ],
+ "device": "iPhone 14"
+}

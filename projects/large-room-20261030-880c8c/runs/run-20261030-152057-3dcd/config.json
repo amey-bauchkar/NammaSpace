@@ -1,0 +1,28 @@
+{
+ "config": {
+  "profile": "import",
+  "pipeline_version": "import-1.0.0",
+  "app": "Polycam",
+  "eye_height_m": 1.6,
+  "units_m": 1.0,
+  "samples": 600000,
+  "nav": {
+   "res_m": 0.05,
+   "agent_radius_m": 0.25,
+   "floor_tol_m": 0.05,
+   "obstacle_min_pts": 3,
+   "assumed_capture_height_m": 1.4,
+   "assumed_capture_height_rel_uncertainty": 0.15
+  },
+  "roam": {
+   "cells_per_eye": 32,
+   "band": [
+    0.15,
+    1.2
+   ],
+   "min_pts": 3,
+   "min_obstacle_eye": 0.12
+  }
+ },
+ "config_sha256": "7426d13f748dc4cf04446b4c2e51684c9440b2a06b17dd8de1fb9c5708f24ed0"
+}

@@ -1,0 +1,2 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe model_converter --input_path projects\polycam-scan-2026-10-30-15-20-20261030-880c8c\runs\run-20261030-152057-3dcd\65_splat\colmap\model\0 --output_path projects\polycam-scan-2026-10-30-15-20-20261030-880c8c\runs\run-20261030-152057-3dcd\65_splat\colmap\txt\0 --output_type TXT
+

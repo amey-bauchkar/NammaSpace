@@ -243,6 +243,29 @@ def test_unread_body_of_a_successful_request_does_not_corrupt_the_next_one(serve
 
 
 
+def test_rename_project(server):
+    port, studio = server
+    st, p = req(port, "POST", "/api/projects", {"title": "Original Room"}, W)
+    assert st == 201
+    pid = p["project_id"]
+
+    # Rename via POST /api/projects/{pid}/rename
+    st, res = req(port, "POST", f"/api/projects/{pid}/rename", {"title": "Renamed Room"}, W)
+    assert st == 200 and res["title"] == "Renamed Room"
+
+    # Rename via PATCH /api/projects/{pid}
+    st, res = req(port, "PATCH", f"/api/projects/{pid}", {"title": "Patched Room"}, W)
+    assert st == 200 and res["title"] == "Patched Room"
+
+    # Empty title should be rejected
+    st, err = req(port, "POST", f"/api/projects/{pid}/rename", {"title": "   "}, W)
+    assert st == 400 and err["error"] == "PROJECT-TITLE-EMPTY"
+
+    # Verify persistence via GET
+    st, p2 = req(port, "GET", f"/api/projects/{pid}")
+    assert st == 200 and p2["title"] == "Patched Room"
+
+
 def test_disk_space_check_gives_a_clear_message(tmp_path, monkeypatch):
     # hall capture (246 photos): the disk filled during dense reconstruction and the run failed with a confusing
     # texture error; the dense step now checks the space first

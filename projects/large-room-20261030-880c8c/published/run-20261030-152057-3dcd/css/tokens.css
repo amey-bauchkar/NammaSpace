@@ -1,0 +1,71 @@
+/* Namma Space Neo-Brutalist Design Tokens
+   Strict 60-30-10 Color Ratio & Brutalist Geometry */
+
+:root {
+  /* --- 60-30-10 Palette --- */
+  --neo-dominant:   #192A56;  /* 60% - Deep Midnight Navy */
+  --neo-secondary:  #F7D794;  /* 30% - Warm Pastel Sunflower */
+  --neo-extra:      #EDA6A3;  /* Extra - Soft Coral / Salmon */
+  --neo-accent:     #FCFBFB;  /* 10% - Crisp Snow White / Off-white */
+
+  /* Dark Navy Variations */
+  --neo-dominant-dark:  #101c3d;
+  --neo-dominant-light: #243b73;
+  --neo-dominant-alpha: rgba(25, 42, 86, 0.88);
+
+  /* Secondary & Extra Tones */
+  --neo-secondary-hover: #edd087;
+  --neo-extra-hover:     #e59794;
+
+  /* Semantic Theme Mappings */
+  --bg-page:        var(--neo-dominant);
+  --bg-canvas:      #0b1224;
+  --bg-surface:     var(--neo-accent);
+  --bg-surface-alt: var(--neo-secondary);
+  --bg-card:        var(--neo-accent);
+  --bg-card-alt:    var(--neo-secondary);
+  --bg-header:      var(--neo-dominant);
+
+  --ink-primary:    var(--neo-dominant);
+  --ink-secondary:  #2f3d5d;
+  --ink-muted:      #576574;
+  --ink-inverse:    var(--neo-accent);
+
+  /* Status Colors */
+  --neo-status-ok:      #10b981;
+  --neo-status-ok-bg:   #d1fae5;
+  --neo-status-warn:    #f59e0b;
+  --neo-status-warn-bg: #fef3c7;
+  --neo-status-bad:     #ef4444;
+  --neo-status-bad-bg:  #fee2e2;
+  --neo-status-info:    #3b82f6;
+  --neo-status-info-bg: #dbeafe;
+
+  /* Neo-Brutalist Contours & Borders */
+  --neo-border-thick:   3px solid var(--neo-dominant);
+  --neo-border-regular: 2px solid var(--neo-dominant);
+  --neo-border-thin:    1.5px solid var(--neo-dominant);
+  --neo-border-light:   2px solid var(--neo-accent);
+
+  /* Hard-Edged Offset Shadows (Zero Blur) */
+  --neo-shadow-xs:      2px 2px 0px var(--neo-dominant);
+  --neo-shadow-sm:      3px 3px 0px var(--neo-dominant);
+  --neo-shadow-md:      5px 5px 0px var(--neo-dominant);
+  --neo-shadow-lg:      8px 8px 0px var(--neo-dominant);
+  --neo-shadow-light:   4px 4px 0px var(--neo-accent);
+  --neo-shadow-coral:   4px 4px 0px var(--neo-extra);
+
+  /* Radii (Brutalist Hybrid: Sharp Structure + Friendly Rounded Caps) */
+  --neo-radius-sm:      6px;
+  --neo-radius-md:      12px;
+  --neo-radius-lg:      18px;
+  --neo-radius-pill:    9999px;
+
+  /* Typography */
+  --font-display:   'Fira Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono:      'Fira Mono', 'JetBrains Mono', ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Mechanical Animation */
+  --neo-transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+

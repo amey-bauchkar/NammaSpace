@@ -1,0 +1,125 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe global_mapper --database_path projects\polycam-scan-2026-10-30-15-20-20261030-880c8c\runs\run-20261030-152057-3dcd\65_splat\colmap\database.db --image_path projects\polycam-scan-2026-10-30-15-20-20261030-880c8c\runs\run-20261030-152057-3dcd\65_splat\input\images --output_path projects\polycam-scan-2026-10-30-15-20-20261030-880c8c\runs\run-20261030-152057-3dcd\65_splat\colmap\model
+
+I20261030 15:26:39.845935  7484 database_cache.cc:82] Loading rigs...
+I20261030 15:26:39.846674  7484 database_cache.cc:92]  1 in 0.001s
+I20261030 15:26:39.846690  7484 database_cache.cc:100] Loading cameras...
+I20261030 15:26:39.846711  7484 database_cache.cc:118]  1 in 0.000s
+I20261030 15:26:39.846717  7484 database_cache.cc:126] Loading frames...
+I20261030 15:26:39.847367  7484 database_cache.cc:136]  700 in 0.001s
+I20261030 15:26:39.847382  7484 database_cache.cc:144] Loading matches...
+I20261030 15:26:39.902475  7484 database_cache.cc:163]  16456 in 0.055s
+I20261030 15:26:39.902543  7484 database_cache.cc:171] Loading images...
+I20261030 15:26:39.944868  7484 database_cache.cc:268]  700 in 0.042s (connected 651, loaded 651)
+I20261030 15:26:39.944929  7484 database_cache.cc:282] Loading pose priors...
+I20261030 15:26:39.944946  7484 database_cache.cc:290]  0 in 0.000s
+I20261030 15:26:39.944952  7484 database_cache.cc:298] Building correspondence graph...
+I20261030 15:26:40.151752  7484 database_cache.cc:327]  in 0.207s (ignored 0)
+I20261030 15:26:40.152533  7484 two_view_geometry.cc:1834] Decomposing relative poses...
+I20261030 15:26:42.314339  7484 two_view_geometry.cc:1936] Decomposed 16447 relative poses (0 failed) in 2.162s
+I20261030 15:26:42.328369  7484 pose_graph.cc:51] Loaded 16447 edges into pose graph
+I20261030 15:26:42.717552  7484 rotation_averaging.cc:274] Marked 11248 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:26:42.734756  7484 rotation_averaging_impl.cc:761] std::abs(prev_norm - curr_norm) < 1e-12
+I20261030 15:26:42.734861  7484 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:26:42.749343  7484 rotation_averaging_impl.cc:761] std::abs(prev_norm - curr_norm) < 1e-12
+I20261030 15:26:42.749436  7484 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:26:42.751963  7484 global_pipeline.cc:302] Found 3 connected component(s) after rotation filtering
+I20261030 15:26:42.752007  7484 global_pipeline.cc:322] === Reconstructing component 1 / 3 with 638 images ===
+I20261030 15:26:43.968137  7484 pose_graph.cc:51] Loaded 16439 edges into pose graph
+I20261030 15:26:43.968198  7484 global_mapper.cc:553] === Running rotation averaging ===
+I20261030 15:26:44.347899  7484 rotation_averaging.cc:274] Marked 11248 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:26:44.452864  7484 rotation_averaging.cc:274] Marked 26 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:26:44.454264  7484 global_mapper.cc:559] Rotation averaging done in 0.486064 seconds
+I20261030 15:26:44.454300  7484 global_mapper.cc:565] === Running track establishment ===
+I20261030 15:26:44.932980  7484 global_mapper.cc:206] Established 120273 tracks from 515035 observations
+I20261030 15:26:45.025449  7484 global_mapper.cc:261] Kept 50996 tracks, discarded 3822 due to inconsistency
+I20261030 15:26:45.050924  7484 global_mapper.cc:302] Before filtering: 50996, after filtering: 50996
+I20261030 15:26:45.080524  7484 global_mapper.cc:569] Track establishment done in 0.626229 seconds
+I20261030 15:26:45.080594  7484 global_mapper.cc:575] === Running global positioning ===
+I20261030 15:26:45.080614  7484 global_positioning.cc:39] Setting up the global positioner problem
+W20261030 15:26:45.517180  7484 global_positioning.cc:375] Requested to use GPU for bundle adjustment, but Ceres was compiled without CUDA support. Falling back to CPU-based dense solvers.
+W20261030 15:26:45.518012  7484 global_positioning.cc:394] Requested to use GPU for bundle adjustment, but Ceres was compiled without cuDSS support. Falling back to CPU-based sparse solvers.
+I20261030 15:26:45.520532  7484 global_positioning.cc:59] Solving the global positioner problem
+I20261030 15:27:05.051285  7484 global_positioning.cc:70] Ceres Solver Report: Iterations: 62, Initial cost: 3.376806e+06, Final cost: 4.668940e+02, Termination: CONVERGENCE
+I20261030 15:27:05.264589  7484 global_mapper.cc:584] Global positioning done in 20.184 seconds
+I20261030 15:27:05.272717  7484 global_mapper.cc:596] === Running iterative bundle adjustment ===
+W20261030 15:27:05.428622  7484 bundle_adjustment_ceres.cc:162] Requested to use GPU for bundle adjustment, but Ceres was compiled without CUDA support. Falling back to CPU-based dense solvers.
+W20261030 15:27:05.428683  7484 bundle_adjustment_ceres.cc:181] Requested to use GPU for bundle adjustment, but Ceres was compiled without cuDSS support. Falling back to CPU-based sparse solvers.
+I20261030 15:27:08.302935  7484 global_mapper.cc:391] Global bundle adjustment iteration 1 / 3, fixed-rotation stage finished
+I20261030 15:27:12.255569  7484 global_mapper.cc:401] Global bundle adjustment iteration 1 / 3 finished
+I20261030 15:27:12.268142  7484 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261030 15:27:15.902447  7484 global_mapper.cc:391] Global bundle adjustment iteration 2 / 3, fixed-rotation stage finished
+I20261030 15:27:18.552877  7484 global_mapper.cc:401] Global bundle adjustment iteration 2 / 3 finished
+I20261030 15:27:18.566692  7484 global_mapper.cc:424] Filtering tracks by reprojection ...
+W20261030 15:27:20.111655  7484 levenberg_marquardt_strategy.cc:123] Linear solver failure. Failed to compute a step: CHOLMOD warning: Matrix not positive definite.
+W20261030 15:27:20.246639  7484 levenberg_marquardt_strategy.cc:123] Linear solver failure. Failed to compute a step: CHOLMOD warning: Matrix not positive definite.
+W20261030 15:27:20.299371  7484 levenberg_marquardt_strategy.cc:123] Linear solver failure. Failed to compute a step: CHOLMOD warning: Matrix not positive definite.
+I20261030 15:27:21.149739  7484 global_mapper.cc:391] Global bundle adjustment iteration 3 / 3, fixed-rotation stage finished
+I20261030 15:27:23.121672  7484 global_mapper.cc:401] Global bundle adjustment iteration 3 / 3 finished
+I20261030 15:27:23.134620  7484 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261030 15:27:23.154482  7484 global_mapper.cc:449] Filtering tracks by reprojection ...
+I20261030 15:27:23.175116  7484 global_mapper.cc:608] Iterative bundle adjustment done in 17.9001 seconds
+I20261030 15:27:23.175163  7484 global_mapper.cc:614] === Running iterative retriangulation and refinement ===
+I20261030 15:27:51.316067  7484 global_mapper.cc:623] Iterative retriangulation and refinement done in 28.1409 seconds
+I20261030 15:27:51.361254  7484 global_pipeline.cc:183] Reconstruction done in 67.3931 seconds
+I20261030 15:27:51.369088  7484 global_pipeline.cc:322] === Reconstructing component 2 / 3 with 4 images ===
+I20261030 15:27:51.371523  7484 pose_graph.cc:51] Loaded 3 edges into pose graph
+I20261030 15:27:51.371573  7484 global_mapper.cc:553] === Running rotation averaging ===
+I20261030 15:27:51.371681  7484 rotation_averaging_impl.cc:761] std::abs(prev_norm - curr_norm) < 1e-12
+I20261030 15:27:51.371714  7484 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:27:51.371749  7484 rotation_averaging_impl.cc:761] std::abs(prev_norm - curr_norm) < 1e-12
+I20261030 15:27:51.371770  7484 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:27:51.371781  7484 global_mapper.cc:559] Rotation averaging done in 0.000202 seconds
+I20261030 15:27:51.371790  7484 global_mapper.cc:565] === Running track establishment ===
+I20261030 15:27:51.371825  7484 global_mapper.cc:206] Established 52 tracks from 118 observations
+I20261030 15:27:51.371854  7484 global_mapper.cc:261] Kept 12 tracks, discarded 0 due to inconsistency
+I20261030 15:27:51.371864  7484 global_mapper.cc:302] Before filtering: 12, after filtering: 12
+I20261030 15:27:51.371874  7484 global_mapper.cc:569] Track establishment done in 8.1e-05 seconds
+I20261030 15:27:51.371880  7484 global_mapper.cc:575] === Running global positioning ===
+I20261030 15:27:51.371887  7484 global_positioning.cc:39] Setting up the global positioner problem
+I20261030 15:27:51.371939  7484 global_positioning.cc:59] Solving the global positioner problem
+I20261030 15:27:51.375533  7484 global_positioning.cc:70] Ceres Solver Report: Iterations: 23, Initial cost: 4.740270e+02, Final cost: 2.062984e-04, Termination: CONVERGENCE
+I20261030 15:27:51.376078  7484 global_mapper.cc:584] Global positioning done in 0.004198 seconds
+I20261030 15:27:51.376102  7484 global_mapper.cc:596] === Running iterative bundle adjustment ===
+I20261030 15:27:51.376657  7484 global_mapper.cc:391] Global bundle adjustment iteration 1 / 3, fixed-rotation stage finished
+I20261030 15:27:51.382012  7484 global_mapper.cc:401] Global bundle adjustment iteration 1 / 3 finished
+I20261030 15:27:51.382040  7484 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261030 15:27:51.382334  7484 global_mapper.cc:391] Global bundle adjustment iteration 3 / 3, fixed-rotation stage finished
+I20261030 15:27:51.383664  7484 global_mapper.cc:401] Global bundle adjustment iteration 3 / 3 finished
+I20261030 15:27:51.383683  7484 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261030 15:27:51.383702  7484 global_mapper.cc:449] Filtering tracks by reprojection ...
+I20261030 15:27:51.383717  7484 global_mapper.cc:608] Iterative bundle adjustment done in 0.00761 seconds
+I20261030 15:27:51.383727  7484 global_mapper.cc:614] === Running iterative retriangulation and refinement ===
+I20261030 15:27:51.384795  7484 global_mapper.cc:623] Iterative retriangulation and refinement done in 0.001069 seconds
+I20261030 15:27:51.384831  7484 global_pipeline.cc:183] Reconstruction done in 0.013262 seconds
+I20261030 15:27:51.384850  7484 global_pipeline.cc:322] === Reconstructing component 3 / 3 with 3 images ===
+I20261030 15:27:51.386243  7484 pose_graph.cc:51] Loaded 2 edges into pose graph
+I20261030 15:27:51.386268  7484 global_mapper.cc:553] === Running rotation averaging ===
+I20261030 15:27:51.386336  7484 rotation_averaging_impl.cc:761] std::abs(prev_norm - curr_norm) < 1e-12
+I20261030 15:27:51.386365  7484 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:27:51.386401  7484 rotation_averaging_impl.cc:761] std::abs(prev_norm - curr_norm) < 1e-12
+I20261030 15:27:51.386425  7484 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261030 15:27:51.386438  7484 global_mapper.cc:559] Rotation averaging done in 0.000165 seconds
+I20261030 15:27:51.386515  7484 global_mapper.cc:565] === Running track establishment ===
+I20261030 15:27:51.386538  7484 global_mapper.cc:206] Established 26 tracks from 62 observations
+I20261030 15:27:51.386559  7484 global_mapper.cc:261] Kept 10 tracks, discarded 0 due to inconsistency
+I20261030 15:27:51.386571  7484 global_mapper.cc:302] Before filtering: 10, after filtering: 10
+I20261030 15:27:51.386582  7484 global_mapper.cc:569] Track establishment done in 6.1e-05 seconds
+I20261030 15:27:51.386592  7484 global_mapper.cc:575] === Running global positioning ===
+I20261030 15:27:51.386600  7484 global_positioning.cc:39] Setting up the global positioner problem
+I20261030 15:27:51.386644  7484 global_positioning.cc:59] Solving the global positioner problem
+I20261030 15:27:51.387950  7484 global_positioning.cc:70] Ceres Solver Report: Iterations: 8, Initial cost: 4.339803e+02, Final cost: 7.679212e-04, Termination: CONVERGENCE
+I20261030 15:27:51.388516  7484 global_mapper.cc:584] Global positioning done in 0.001924 seconds
+I20261030 15:27:51.388543  7484 global_mapper.cc:596] === Running iterative bundle adjustment ===
+I20261030 15:27:51.388915  7484 global_mapper.cc:391] Global bundle adjustment iteration 1 / 3, fixed-rotation stage finished
+I20261030 15:27:51.392666  7484 global_mapper.cc:401] Global bundle adjustment iteration 1 / 3 finished
+I20261030 15:27:51.392685  7484 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261030 15:27:51.392699  7484 global_mapper.cc:443] fewer than 0.1% tracks are filtered, stop the iteration.
+I20261030 15:27:51.392705  7484 global_mapper.cc:449] Filtering tracks by reprojection ...
+I20261030 15:27:51.392715  7484 global_mapper.cc:608] Iterative bundle adjustment done in 0.004165 seconds
+I20261030 15:27:51.392722  7484 global_mapper.cc:614] === Running iterative retriangulation and refinement ===
+I20261030 15:27:51.396294  7484 global_mapper.cc:623] Iterative retriangulation and refinement done in 0.003572 seconds
+I20261030 15:27:51.396317  7484 global_pipeline.cc:183] Reconstruction done in 0.010052 seconds
+I20261030 15:27:51.400165  7484 global_pipeline.cc:254] Extracting colors ...
+I20261030 15:27:51.724602  7484 global_pipeline.cc:254] Extracting colors ...
+I20261030 15:27:51.730840  7484 global_pipeline.cc:254] Extracting colors ...
+I20261030 15:27:51.736801  7484 global_pipeline.cc:260] Kept 3 reconstruction(s), discarded 3 with fewer than 3 registered frames, and failed to reconstruct 0

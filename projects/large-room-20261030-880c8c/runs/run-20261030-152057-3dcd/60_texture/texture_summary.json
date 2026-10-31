@@ -1,0 +1,65 @@
+{
+ "lods": [
+  {
+   "lod": 0,
+   "file": "lod0.glb",
+   "bytes": 8212640,
+   "triangles": 93641,
+   "textures": [
+    [
+     4096,
+     4096
+    ],
+    [
+     4096,
+     4096
+    ],
+    [
+     4096,
+     4096
+    ],
+    [
+     3200,
+     320
+    ]
+   ],
+   "source": "Polycam export 27_10_2026.glb, 178 floating fragment(s) removed"
+  },
+  {
+   "lod": 1,
+   "file": "lod1.glb",
+   "bytes": 4275740,
+   "triangles": 93641,
+   "textures": [
+    [
+     2048,
+     2048
+    ],
+    [
+     2048,
+     2048
+    ],
+    [
+     2048,
+     2048
+    ],
+    [
+     2048,
+     205
+    ]
+   ],
+   "source": "lod0 with textures <= 2048 px"
+  }
+ ],
+ "fragments": {
+  "pieces": 263,
+  "removed_pieces": 178,
+  "removed_area": 4.042,
+  "removed_triangles": 4833,
+  "total_area": 211.317
+ },
+ "repair": {
+  "applied": false,
+  "skipped": "only single-primitive meshes without node transforms are repaired"
+ }
+}

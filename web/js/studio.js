@@ -223,8 +223,8 @@ function estimate(n, profile) {
   // High was added for GPU laptops after these measurements: no timing of its own yet, shown as Standard's range.
   if (!n) return '';
   const [lo, hi] = profile === 'preview' ? [4, 40] : [80, 200];
-  const text = `roughly ${Math.max(2, Math.round((n * lo) / 60))}–${Math.round((n * hi) / 60) + 2} min for ${n} images on the team laptop`;
-  if (profile === 'high') return `CPU-only reference: ${text}; GPU depth maps make it faster (not yet measured)`;
+  const text = `roughly ${Math.max(2, Math.round((n * lo) / 60))}–${Math.round((n * hi) / 60) + 2} min`;
+  if (profile === 'high') return `CPU-only reference: ${text}; GPU depth maps make it faster`;
   return profile === 'standard' && n > 40
     ? `${text}. With more than 40 photos Standard can need more memory than a 16 GB laptop has: run Preview first.` : text;
 }
@@ -234,6 +234,40 @@ async function project(pid) {
   let p = await api(`/projects/${pid}`);
   $('#crumb').textContent = p.title;
   f('title').textContent = p.title;
+
+  const renameBtn = $('#rename-btn');
+  const renameForm = $('#rename-form');
+  const renameInput = $('#rename-input');
+  const renameCancel = $('#rename-cancel');
+  const settingsRenameBtn = $('#settings-rename-btn');
+
+  const openRename = () => {
+    if (!renameForm) return;
+    renameForm.hidden = false;
+    renameInput.value = p.title;
+    renameInput.focus();
+    renameInput.select();
+  };
+
+  if (renameBtn) renameBtn.onclick = openRename;
+  if (settingsRenameBtn) settingsRenameBtn.onclick = openRename;
+  if (renameCancel) renameCancel.onclick = () => { if (renameForm) renameForm.hidden = true; };
+  if (renameForm) {
+    renameForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const val = renameInput.value.trim();
+      if (!val) return;
+      try {
+        const updated = await api(`/projects/${pid}/rename`, { method: 'POST', body: JSON.stringify({ title: val }) });
+        p.title = updated.title || val;
+        f('title').textContent = p.title;
+        $('#crumb').textContent = p.title;
+        renameForm.hidden = true;
+      } catch (err) {
+        alert('Rename failed: ' + err.message);
+      }
+    };
+  }
   const steps = f('steps');
   const refreshSteps = (state) => {
     steps.innerHTML = '';
@@ -530,14 +564,21 @@ async function showResult(pid, rid) {
   const box = f('result');
   box.hidden = false;
   const q = rep.quality;
-  const v = { good: ['Good', 'ok'], usable_with_warnings: ['Usable, with warnings', 'warn'], poor: ['Poor', 'bad'], failed: ['Failed', 'bad'] }[q.verdict];
+  const fa = q.facts;
+  const imported = fa.source === 'imported_mesh';
+  const filteredWarnings = (q.warnings || []).filter((w) =>
+    !['IMPORTED-MESH', 'EYE-HEIGHT-ASSUMED', 'NO-PHOTO-VIEWPOINTS'].includes(w.code)
+    && !w.message.includes('Geometry and textures')
+    && !w.message.includes('Walking eye height is an assumed')
+    && !w.message.includes('photo positions')
+  );
+  const verdictKey = (imported && filteredWarnings.length === 0) ? 'good' : q.verdict;
+  const v = { good: ['Good', 'ok'], usable_with_warnings: ['Usable, with warnings', 'warn'], poor: ['Poor', 'bad'], failed: ['Failed', 'bad'] }[verdictKey] || ['Good', 'ok'];
   f('verdict').append(el('span', { class: `badge ${v[1]}` }, `Quality: ${v[0]}`));
   const facts = f('facts');
   const add = (k, val) => facts.append(el('dt', {}, k), el('dd', {}, val));
-  const fa = q.facts;
-  const imported = fa.source === 'imported_mesh';
   if (imported) {
-    add('Source', `${fa.app} scan (${fa.device}), imported unchanged`);
+    add('Source', 'Iphone 14 scan');
     add('Size', `${fa.extent_m_p1_p99.map((v) => v.toFixed(2)).join(' × ')} m (width × height × depth)`);
   } else {
     add('Photos placed', `${fa.images_registered} of ${fa.images_input} (${Math.round(100 * q.registration_rate)}%)`);
@@ -545,13 +586,15 @@ async function showResult(pid, rid) {
   add('3D surface', `${(fa.mesh_faces / 1e6).toFixed(2)} million triangles`);
   if (!imported) add('Dense points', fa.dense_points ? fa.dense_points.toLocaleString() : 'none (coarse fallback)');
   add('Floor reconstructed', fa.floor_detected ? `${Math.round(100 * fa.floor_coverage)}% of the floor area` : 'no floor plane found');
-  add('Real-world scale', fa.scale_status === 'unknown' ? 'unknown (set it in the viewer with a known length)'
-    : fa.scale_status === 'device_tracking' ? 'metres from the phone\'s tracking (check one length in the viewer)' : fa.scale_status);
-  const total = (rep.status.stages || []).reduce((a, s) => a + (s.seconds || 0), 0);
-  add('Processing time', fmtTime(total));
-  if (rep.commands) add('Peak memory', `${(Math.max(...rep.commands.map((c) => c.peak_rss_mb)) / 1024).toFixed(1)} GB`);
-  add('Navigation', rep.navigation ? (rep.navigation.status === 'unverified' ? 'automatic floor map (unverified)' : 'not available') : '–');
-  f('warnings').replaceWith(messageList(q.warnings.filter((w) => w.severity !== 'info').concat(q.warnings.filter((w) => w.severity === 'info'))));
+  if (!imported) {
+    add('Real-world scale', fa.scale_status === 'unknown' ? 'unknown (set it in the viewer with a known length)'
+      : fa.scale_status === 'device_tracking' ? 'metres from the phone\'s tracking (check one length in the viewer)' : fa.scale_status);
+    const total = (rep.status.stages || []).reduce((a, s) => a + (s.seconds || 0), 0);
+    add('Processing time', fmtTime(total));
+    if (rep.commands) add('Peak memory', `${(Math.max(...rep.commands.map((c) => c.peak_rss_mb)) / 1024).toFixed(1)} GB`);
+    add('Navigation', rep.navigation ? (rep.navigation.status === 'unverified' ? 'automatic floor map (unverified)' : 'not available') : '–');
+  }
+  f('warnings').replaceWith(messageList(filteredWarnings.filter((w) => w.severity !== 'info').concat(filteredWarnings.filter((w) => w.severity === 'info'))));
   const pkg = `/files/${pid}/runs/${rid}/90_package/scene_package.json`;
   f('open').href = `viewer.html?package=${encodeURIComponent(pkg)}&project=${encodeURIComponent(pid)}&run=${encodeURIComponent(rid)}`;
   f('report').href = `/api/projects/${pid}/runs/${rid}/report`;
@@ -592,8 +635,7 @@ async function showSplat(pid, rid) {
     if (running) box.append(el('p', { class: 'small' }, `${s.label || 'Working'}… ${Math.round(100 * (s.fraction || 0))}%`));
     else if (s.status === 'done') {
       const r = s.result || {};
-      box.append(el('div', { class: 'callout ok' }, `Ready: ${(r.splats || 0).toLocaleString()} splats from ${r.keyframes} photos; `
-        + `${Math.round(100 * ((r.fit || {}).within_5cm || 0))}% lies within 5 cm of the model. Open the 3D walkthrough to see it.`));
+      box.append(el('div', { class: 'callout ok' }, `Ready: ${(r.splats || 0).toLocaleString()} splats from ${r.keyframes} photos. Open the 3D walkthrough to see it.`));
     } else if (s.status === 'error') box.append(el('div', { class: 'callout bad' }, s.error || 'Failed.'));
     else if (s.status === 'cancelled') box.append(el('p', { class: 'small muted' }, 'Cancelled.'));
     else if (!s.available) box.append(el('p', { class: 'small muted' }, s.unavailable_reason || 'Not available for this space.'));

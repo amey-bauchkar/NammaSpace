@@ -7,7 +7,7 @@
 <title>Namma Space Capture</title>
 <link rel="icon" href="favicon.svg?v=4" type="image/svg+xml">
 <link rel="alternate icon" href="logo.png?v=4" type="image/png">
-<link rel="stylesheet" href="app.css?v=5">
+<link rel="stylesheet" href="app.css?v=6">
 <style>
   /* Neo-Brutalist Mobile Capture UI */
   html, body {
@@ -528,9 +528,9 @@
     <label for="title">Name of the space (optional)</label>
     <input id="title" type="text" maxlength="80" placeholder="e.g. Living room">
     <button class="pill-btn go" id="pair-btn">Continue</button>
-    <button class="pill-btn go alt" id="polycam-btn">Import a Polycam export</button>
+    <button class="pill-btn go alt" id="polycam-btn">Import 3D model / scan</button>
     <input type="file" id="polycam-files" accept=".zip,.glb,application/zip,model/gltf-binary" multiple hidden>
-    <p class="hint2" id="polycam-hint">In Polycam: Export → <b>GLTF</b> (and optionally <b>Images</b>) → Save to Files; then pick the file(s) here.</p>
+    <p class="hint2" id="polycam-hint">Export as <b>GLTF / GLB</b> (and optionally <b>Images</b>) → Save to Files; then pick the file(s) here.</p>
     <div class="msg" id="pair-msg" role="alert"></div>
   </div>
 </section>
@@ -584,6 +584,6 @@
   <div class="progress" style="width:240px;margin:16px auto"><div id="st-bar"></div></div>
   <p id="st-msg"></p>
 </section>
-<script type="module" src="js/capture.js"></script>
+<script type="module" src="js/capture.js?v=5"></script>
 </body>
 </html>

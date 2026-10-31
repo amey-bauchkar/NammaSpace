@@ -85,7 +85,7 @@ class JobManager:
         ok, why = available()
         s["available"] = ok and find_keyframes_zip(self.store.path(project_id)) is not None
         s["unavailable_reason"] = why or (None if s["available"] else
-                                          "No Polycam 'Images' export is kept with this space.")
+                                          "No photo keyframes export is kept with this space.")
         return s
 
     def start_splat(self, project_id, run_id):
