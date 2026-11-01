@@ -25,9 +25,10 @@ from namma.core import timefmt
 from namma.core.jsonio import write_json
 
 MAX_FILE_BYTES = 2 * 2**30
-MAX_FILES = 6
+MAX_FILES = 500
 STAGING_TTL_S = 6 * 3600
-ALLOWED_EXT = (".glb", ".zip")
+IMAGE_EXTS = (".jpg", ".jpeg", ".png")
+ALLOWED_EXT = (".glb", ".zip", ".jpg", ".jpeg", ".png")
 
 
 class BridgeError(Exception):
@@ -37,8 +38,10 @@ class BridgeError(Exception):
 
 
 def classify(path):
-    """-> ("mesh" | "raw", details). Raises BridgeError for anything else."""
+    """-> ("mesh" | "raw" | "photos", details). Raises BridgeError for anything else."""
     path = Path(path)
+    if path.suffix.lower() in IMAGE_EXTS:
+        return "photos", {"file": path.name, "count": 1}
     with open(path, "rb") as f:
         head = f.read(4)
     if head == b"glTF":
@@ -46,7 +49,7 @@ def classify(path):
     if not zipfile.is_zipfile(path):
         raise BridgeError(415, "POLYCAM-UNKNOWN", f"{path.name}: not a GLB or a zip (export GLTF or Images in Polycam)")
     with zipfile.ZipFile(path) as z:
-        names = [i.filename for i in z.infolist() if not i.is_dir()]
+        names = [i.filename for i in z.infolist() if not i.is_dir() and not Path(i.filename).name.startswith(".") and "__MACOSX" not in i.filename]
     glbs = [n for n in names if n.lower().endswith(".glb")]
     cams = [n for n in names if "/cameras/" in n and n.endswith(".json")]
     if len(glbs) == 1:
@@ -54,9 +57,12 @@ def classify(path):
     if cams:
         folders = Counter(n.rsplit("/", 2)[-2] for n in names if n.count("/") >= 2)
         return "raw", {"keyframes": len(cams), "folders": dict(folders)}
-    if names and all(n.lower().endswith((".gltf", ".bin", ".png", ".jpg", ".jpeg")) for n in names):
+    if any(n.lower().endswith(".gltf") for n in names):
         raise BridgeError(415, "POLYCAM-GLTF-FILES", f"{path.name}: a .gltf with separate files; choose GLTF/GLB export "
                                                      "so Polycam packs one .glb")
+    photos = [n for n in names if n.lower().endswith(IMAGE_EXTS)]
+    if photos:
+        return "photos", {"photos": len(photos), "zip": path.name}
     raise BridgeError(415, "POLYCAM-UNKNOWN", f"{path.name}: no .glb model and no Polycam keyframes inside")
 
 
@@ -100,7 +106,7 @@ class PolycamStaging:
         d = self._dir(iid)
         fname = safe_filename(name)
         if not fname.lower().endswith(ALLOWED_EXT):
-            raise BridgeError(415, "IMPORT-TYPE", f"{fname}: only .zip or .glb Polycam exports are accepted")
+            raise BridgeError(415, "IMPORT-TYPE", f"{fname}: only .zip, .glb, or photo files (.jpg, .jpeg, .png) are accepted")
         if not 0 < nbytes <= MAX_FILE_BYTES:
             raise BridgeError(413, "IMPORT-SIZE", f"{fname}: file must be 1 byte to {MAX_FILE_BYTES // 2**30} GB")
         if len([p for p in d.iterdir() if p.is_file() and not p.name.startswith(".")]) >= MAX_FILES:
@@ -129,27 +135,87 @@ class PolycamStaging:
         kinds = [(p, *classify(p)) for p in files]
         meshes = [k for k in kinds if k[1] == "mesh"]
         raws = [k for k in kinds if k[1] == "raw"]
-        if len(meshes) != 1:
-            raise BridgeError(400, "IMPORT-NEED-MESH", "Add exactly one GLTF/GLB export (the 3D model)"
-                              + ("; the Images export alone has no model." if raws and not meshes else "."))
-        raw_info = [raw_summary(p) for p, _, _ in raws]
-        device = next((r["device"] for r in raw_info if r["device"]), None) or "iPhone"
-        title = " ".join(str(title or "").split())[:80] or f"3D scan {time.strftime('%Y-%m-%d %H:%M')}"
-        try:
-            res = import_mesh(meshes[0][0], self.root.parent, title=title, app="3D Scan", device=device,
-                              source_note=f"3D scan ({device})",
-                              eye_height_m=eye_height_m, log=log)
-        except ImportError_ as e:
-            raise BridgeError(422, "IMPORT-MESH", str(e)) from e
-        pdir = Path(res["project_dir"])
-        for p, _, _ in raws:                                  # raw keyframes travel with the project (for later steps)
-            shutil.copy2(p, pdir / "capture" / "originals" / p.name)
-        write_json(pdir / "capture" / "polycam_import.json", {
-            "imported_at": timefmt.now_iso(), "mesh": {"file": meshes[0][0].name, **meshes[0][2]}, "raw": raw_info,
-            "device": device})
-        shutil.rmtree(d, ignore_errors=True)
-        return {"project_id": res["project_id"], "run_id": res["run_id"], "device": device, "raw": raw_info,
-                "facts": res["facts"], "seconds": res["seconds"]}
+        photos = [k for k in kinds if k[1] == "photos"]
+
+        # Case 1: Polycam / 3D scan with exactly one mesh
+        if len(meshes) == 1:
+            raw_info = [raw_summary(p) for p, _, _ in raws]
+            device = next((r["device"] for r in raw_info if r["device"]), None) or "iPhone"
+            title = " ".join(str(title or "").split())[:80] or f"3D scan {time.strftime('%Y-%m-%d %H:%M')}"
+            try:
+                res = import_mesh(meshes[0][0], self.root.parent, title=title, app="3D Scan", device=device,
+                                  source_note=f"3D scan ({device})",
+                                  eye_height_m=eye_height_m, log=log)
+            except ImportError_ as e:
+                raise BridgeError(422, "IMPORT-MESH", str(e)) from e
+            pdir = Path(res["project_dir"])
+            for p, _, _ in raws:                                  # raw keyframes travel with the project (for later steps)
+                shutil.copy2(p, pdir / "capture" / "originals" / p.name)
+            write_json(pdir / "capture" / "polycam_import.json", {
+                "imported_at": timefmt.now_iso(), "mesh": {"file": meshes[0][0].name, **meshes[0][2]}, "raw": raw_info,
+                "device": device})
+            shutil.rmtree(d, ignore_errors=True)
+            return {"project_id": res["project_id"], "run_id": res["run_id"], "device": device, "raw": raw_info,
+                    "facts": res["facts"], "seconds": res["seconds"]}
+
+        # Case 2: Incomplete Polycam raw export without mesh (historical behavior)
+        if not meshes and raws and not photos:
+            raise BridgeError(400, "IMPORT-NEED-MESH", "Add exactly one GLTF/GLB export (the 3D model); "
+                                                      "the Images export alone has no model.")
+
+        # Case 3: Raw photos reconstruction (Option A)
+        if not meshes and photos:
+            from namma.capture.ingest import ingest_capture
+            from namma.studio.projects import ProjectStore, safe_filename
+
+            title = " ".join(str(title or "").split())[:80] or f"Photo scan {time.strftime('%Y-%m-%d %H:%M')}"
+            store = ProjectStore(self.root.parent)
+            doc = store.create(title=title, notices=["Reconstructed from raw photos"])
+            pid = doc["project_id"]
+            pdir = store.path(pid)
+            orig_dir = pdir / "capture" / "originals"
+            orig_dir.mkdir(parents=True, exist_ok=True)
+
+            photo_count = 0
+            for p, _, _ in photos:
+                if p.suffix.lower() == ".zip":
+                    with zipfile.ZipFile(p) as z:
+                        for item in z.infolist():
+                            if item.is_dir() or "__MACOSX" in item.filename:
+                                continue
+                            leaf = Path(item.filename).name
+                            if leaf.startswith("."):
+                                continue
+                            if Path(leaf).suffix.lower() in IMAGE_EXTS:
+                                target_name = safe_filename(leaf)
+                                target = orig_dir / target_name
+                                idx = 1
+                                while target.exists():
+                                    target = orig_dir / f"{target.stem}_{idx}{target.suffix}"
+                                    idx += 1
+                                target.write_bytes(z.read(item.filename))
+                                photo_count += 1
+                elif p.suffix.lower() in IMAGE_EXTS:
+                    target_name = safe_filename(p.name)
+                    target = orig_dir / target_name
+                    idx = 1
+                    while target.exists():
+                        target = orig_dir / f"{target.stem}_{idx}{target.suffix}"
+                        idx += 1
+                    shutil.copy2(p, target)
+                    photo_count += 1
+
+            # Run preflight capture check so QA report is ready for the project page
+            try:
+                from namma.capture.ingest import ingest_capture
+                ingest_capture(pdir, max_frames=300, venue_label=title)
+            except Exception:
+                pass
+
+            shutil.rmtree(d, ignore_errors=True)
+            return {"project_id": pid, "title": title, "kind": "photos", "photos": photo_count}
+
+        raise BridgeError(400, "IMPORT-NEED-MESH", "Add exactly one GLTF/GLB export (the 3D model) or raw photos (.zip or JPEG/PNG).")
 
     def _sweep(self):
         """Remove abandoned upload sessions."""

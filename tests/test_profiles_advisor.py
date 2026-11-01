@@ -95,3 +95,22 @@ def test_recommendation_endpoint(server, tmp_path):  # noqa: F811
     assert st == 200 and body["profile"] == "preview" and set(body["estimates"]) == {"preview", "standard", "high"}
     st, h = req(port, "GET", "/api/health")
     assert "hardware" in h and "ram_budget_gb" in h["hardware"] and "high" in h["profiles"]
+
+
+def test_clamp_dense_resolution_adapts_to_available_disk():
+    from namma.studio.pipeline import clamp_dense_resolution
+
+    # Plenty of space: retains original resolution
+    res, info = clamp_dense_resolution(free_gb=100.0, n_images=180, max_resolution=3200)
+    assert res == 3200 and info is None
+
+    # Constrained disk (e.g. 45.2 GB with 180 images needing 48.3 GB): clamps to 2560
+    res, info = clamp_dense_resolution(free_gb=45.2, n_images=180, max_resolution=3200)
+    assert res == 2560
+    assert info["original_px"] == 3200 and info["clamped_px"] == 2560
+    assert info["clamped_need_gb"] < 45.2
+
+    # Lower disk (e.g. 25.0 GB): clamps to 1600
+    res, info = clamp_dense_resolution(free_gb=25.0, n_images=180, max_resolution=3200)
+    assert res == 1600
+    assert info["clamped_need_gb"] <= 15.0

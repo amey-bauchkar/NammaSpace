@@ -173,7 +173,11 @@ async function importPolycam(files) {
     }
     msg.textContent = 'Importing: finding the floor, start view and walkable area…';
     const r = await api(`/polycam/${iid}/import`, { method: 'POST', body: '{}' });
-    location.hash = `#/project/${r.project_id}/run/${r.run_id}`;
+    if (r.run_id) {
+      location.hash = `#/project/${r.project_id}/run/${r.run_id}`;
+    } else {
+      location.hash = `#/project/${r.project_id}`;
+    }
   } catch (e) {
     msg.className = 'small callout bad';
     msg.textContent = `Import failed: ${e.message}`;
@@ -614,15 +618,19 @@ async function showResult(pid, rid) {
       out.append(el('div', { class: 'callout bad' }, `Publishing failed: ${e.message}`));
     }
   };
-  if (imported) showSplat(pid, rid);
+  showSplat(pid, rid);
 }
 
-// photoreal view (Gaussian splat) of an imported Polycam scan: start, follow, cancel
+// photoreal view (Gaussian splat) of a 3D scan or photo reconstruction: start, follow, cancel
 async function showSplat(pid, rid) {
   const url = `/projects/${pid}/runs/${rid}/splat`;
   let timer = null;
   const paint = (s) => {
     if (!f('splat')) { clearInterval(timer); return false; }
+    if (!s.available && s.status === 'not_started') {
+      f('splat').hidden = true;
+      return false;
+    }
     f('splat').hidden = false;
     const running = ['running', 'starting'].includes(s.status);
     f('splat-barbox').hidden = !running;

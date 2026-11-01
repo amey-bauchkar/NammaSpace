@@ -168,7 +168,9 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--iters", type=int, default=7000)
     ap.add_argument("--max-side", type=int, default=1280)
-    ap.add_argument("--cap", type=int, default=1_000_000, help="maximum number of splats (GPU memory)")
+    ap.add_argument("--cap", type=int, default=500_000, help="maximum number of splats (GPU memory)")
+    ap.add_argument("--max-splat-scale", type=float, default=0.20,
+                    help="clamp each Gaussian axis to this many metres (0 = no limit)")
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--pose-opt", action="store_true", help="correct each camera's pose while training")
@@ -327,6 +329,9 @@ def main(argv=None):
             o.step(); o.zero_grad(set_to_none=True)
         sched.step()
         strategy.step_post_backward(params, opts, state, step, info, lr=sched.get_last_lr()[0])
+        if a.max_splat_scale > 0:
+            with torch.no_grad():
+                params["scales"].data.clamp_(max=math.log(a.max_splat_scale))
         if test and a.eval_every and (step + 1) % a.eval_every == 0 and step + 1 < a.iters:
             agg, _ = evaluate(params, test, dev, min(step // 1000, a.sh_degree), 0)
             print(f"eval step {step + 1} heldout colour PSNR {agg['colour']:.3f} {time.time() - t0:.0f}s", flush=True)
@@ -342,7 +347,8 @@ def main(argv=None):
     summary = {"photos": len(views), "iters": a.iters, "splats": len(params["means"]), "seconds": round(time.time() - t0, 1),
                "gpu_peak_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2), "max_side": a.max_side,
                "bytes": out_path.stat().st_size, "frame": "input cameras", "pose_opt": a.pose_opt,
-               "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0}
+               "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0,
+               "max_splat_scale": a.max_splat_scale}
     if a.pose_opt:
         dd = pose_d.detach()
         rot = torch.rad2deg(dd[:, :3].norm(dim=1))

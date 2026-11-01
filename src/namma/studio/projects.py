@@ -205,3 +205,15 @@ class ProjectStore:
         p = self._binned(name)
         shutil.rmtree(p)
         return name
+
+    def empty_trash(self):
+        """Permanently delete all binned projects in <root>/_trash/."""
+        trash_dir = self.root / "_trash"
+        count, total_bytes = 0, 0
+        if trash_dir.exists():
+            for d in list(trash_dir.iterdir()):
+                if d.is_dir():
+                    total_bytes += _tree_bytes(d)
+                    shutil.rmtree(d, ignore_errors=True)
+                    count += 1
+        return {"deleted": count, "freed_bytes": total_bytes, "freed_gb": round(total_bytes / 2**30, 2)}

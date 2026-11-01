@@ -446,10 +446,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def _upload(self, pid, name):
         fname = safe_filename(name)
         ext = Path(fname).suffix.lower()
-        if ext not in IMAGE_EXT | VIDEO_EXT | HEIC_EXT:
-            raise ApiError(415, "UPLOAD-TYPE", f"{fname}: only JPEG / PNG photos or MP4 / MOV video are accepted")
+        if ext not in IMAGE_EXT | VIDEO_EXT | HEIC_EXT and ext != ".zip":
+            raise ApiError(415, "UPLOAD-TYPE", f"{fname}: only JPEG / PNG photos, MP4 / MOV video, or ZIP archive are accepted")
         n = int(self.headers.get("Content-Length") or -1)
-        limit = MAX_VIDEO_BYTES if ext in VIDEO_EXT else MAX_IMAGE_BYTES
+        limit = MAX_VIDEO_BYTES if (ext in VIDEO_EXT or ext == ".zip") else MAX_IMAGE_BYTES
         if n <= 0:
             raise ApiError(411, "UPLOAD-LENGTH", "Content-Length is required")
         if n > limit:
@@ -473,6 +473,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
             raise ApiError(400, "UPLOAD-INCOMPLETE", f"{fname}: upload interrupted ({got} of {n} bytes)")
         final = dst_dir / fname
         tmp.replace(final)
+        if ext == ".zip":
+            import zipfile
+            from namma.studio.polycam_bridge import IMAGE_EXTS
+            extracted = 0
+            with zipfile.ZipFile(final) as z:
+                for item in z.infolist():
+                    if item.is_dir() or "__MACOSX" in item.filename:
+                        continue
+                    leaf = Path(item.filename).name
+                    if leaf.startswith("."):
+                        continue
+                    if Path(leaf).suffix.lower() in IMAGE_EXTS:
+                        target = dst_dir / safe_filename(leaf)
+                        idx = 1
+                        while target.exists():
+                            target = dst_dir / f"{target.stem}_{idx}{target.suffix}"
+                            idx += 1
+                        target.write_bytes(z.read(item.filename))
+                        extracted += 1
+            final.unlink(missing_ok=True)
+            self.studio.store.clear_capture(pid)
+            return {"file": fname, "bytes": n, "extracted_photos": extracted}
         self.studio.store.clear_capture(pid)
         return {"file": fname, "bytes": n}
 

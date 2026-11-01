@@ -71,7 +71,7 @@ def test_import_keeps_raw_and_names_the_device(exports, tmp_path):
     assert (p / "runs" / r["run_id"] / "90_package" / "scene_package.json").exists()
     assert not (tmp_path / "projects" / "_incoming" / iid).exists()        # staging cleaned
     notices = json.loads((p / "project.json").read_text())["notices"]
-    assert "Polycam (iPhone 14)" in notices[0]
+    assert "3D scan (iPhone 14)" in notices[0]
 
 
 def test_raw_only_or_bad_names_are_refused(exports, tmp_path):
@@ -121,3 +121,47 @@ def test_phone_import_needs_the_phones_own_session(exports, tmp_path, monkeypatc
         assert preq(port, "POST", f"/api/polycam/{iid}/import", {}, token=tok)[0] == 403                     # done: gone
     finally:
         httpd.shutdown()
+
+
+def test_raw_photos_zip_and_images_import(tmp_path):
+    from PIL import Image
+
+    # Create synthetic test photos
+    photos_dir = tmp_path / "raw_photos"
+    photos_dir.mkdir()
+    photo_files = []
+    for i in range(3):
+        p = photos_dir / f"photo_{i}.jpg"
+        im = Image.new("RGB", (64, 48), color=(i * 40, 100, 150))
+        im.save(p, "JPEG")
+        photo_files.append(p)
+
+    # 1. Test classify on standalone photo
+    kind, info = pb.classify(photo_files[0])
+    assert kind == "photos" and info["file"] == "photo_0.jpg"
+
+    # 2. Test classify on ZIP of photos
+    zip_path = tmp_path / "my_photos.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        for p in photo_files:
+            z.write(p, f"subfolder/{p.name}")
+        z.writestr("__MACOSX/._photo_0.jpg", b"junk")
+
+    kind, info = pb.classify(zip_path)
+    assert kind == "photos" and info["photos"] == 3
+
+    # 3. Test staging and finish with ZIP of photos
+    st = pb.PolycamStaging(tmp_path / "projects")
+    iid = stage(st, [zip_path])
+    res = st.finish(iid, title="My Photo Room")
+
+    assert res["kind"] == "photos"
+    assert res["photos"] == 3
+    assert res["project_id"].startswith("my-photo-room-")
+
+    p = tmp_path / "projects" / res["project_id"]
+    assert (p / "capture" / "originals" / "photo_0.jpg").exists()
+    assert (p / "capture" / "originals" / "photo_1.jpg").exists()
+    assert (p / "capture" / "originals" / "photo_2.jpg").exists()
+    assert not (tmp_path / "projects" / "_incoming" / iid).exists()
+

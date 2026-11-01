@@ -1,18 +1,189 @@
 # Namma Space — Master Context
 
-**Purpose:** handoff/context file for continuing the Namma Space repository work in Claude Code or another coding agent. This document combines the uploaded project-memory notes with the substantive findings, user decisions, implementation history, tests, measured runs, current state, and unresolved items from the Claude Code session transcript.
+**Purpose:** Master context and handoff file for technical advisory and continuing development of Namma Space. This document integrates the original architecture notes, decision history, hardware profiles, experimental findings, test results, and current operational status.
 
-**Source session:** `db3cb469-40bb-46e7-9ba9-8327c32c9db4.jsonl`  
-**Transcript span:** 2026-10-20 through 2026-10-26 (§0 added 2026-10-26; §1–§13 describe the state on 2026-10-21).  
-**Working repo at the time:** `C:\Users\Tanmay\OneDrive\Desktop\NammaSpace`  
-**Remote:** `https://github.com/amey-bauchkar/NammaSpace.git`  
-**Session state (2026-10-26):** most work is pushed to origin/main; recent viewer/trainer changes are uncommitted (see §0). The repo was in a OneDrive-synced folder. Do not assume the current machine or repo still has this exact working state without checking it.
+**Source session:** `db3cb469-40bb-46e7-9ba9-8327c32c9db4.jsonl` and subsequent iterations through `ccb8dd58-b087-46f2-ab92-fa4198ac3d27`  
+**Transcript span:** 2026-10-20 through 2026-11-01 (§0 updated 2026-11-01; §0.1 describes 2026-10-26; §1–§13 describe 2026-10-21).  
+**Working repo:** `C:\Users\Tanmay\OneDrive\Desktop\NammaSpace`  
+**Remote:** `https://github.com/amey-bauchkar/NammaSpace.git` (branch `main`)  
+**Session state (2026-11-01):** Clean working tree (at commit `4b84f60`), all recent features (Dual Splat Engine, Neo-Brutalism UI redesign, built-in demonstration projects, and Round 1 submission documents) are committed and pushed to `origin/main`.
 
-> This is the operational master context, not a byte-for-byte replay of every shell output. The original JSONL remains the exact source for individual tool calls and large intermediate outputs. Hidden/internal reasoning is intentionally not reproduced. The conclusions and user-facing decisions needed to continue the work are captured here.
+> This is the operational master context, not a byte-for-byte replay of every shell output. The original JSONL remains the exact source for individual tool calls and large intermediate outputs. Hidden/internal reasoning is intentionally not reproduced. The conclusions, architecture, and user-facing decisions needed to advise and continue the work are captured here.
 
 ---
 
-## 0. Update 2026-10-26 — read this first (supersedes §1 where they differ)
+## 0. Update 2026-11-01 — CURRENT STATE & ADVISOR HANDOFF (Read This First)
+
+**Round 1 completed (deadline was 2026-10-31); Round 2 preparation underway.**
+This section provides Claude (acting as Technical Advisor) with the immediate, authoritative snapshot of the project architecture, operational state, recent major developments, and open technical questions for next-phase planning.
+
+### Executive Summary
+
+Namma Space is a locally executed 3D reconstruction and browser walkthrough platform developed for the **Techfest IIT Bombay 2026–27** challenge (Team Triple Musketeer). It transforms consumer phone indoor captures (either a GLTF/GLB + keyframe images export from scanning apps like Polycam or raw photos/video) into a photoreal, walkable 3D scene that runs directly in any browser with zero installation or cloud reliance.
+
+The pipeline runs on consumer hardware:
+- Tested on: Intel Core 5 120U (16 GB RAM, integrated graphics, CPU fallback) and HP Victus (Intel i7-13620H, 16 GB RAM, NVIDIA RTX 4050 Laptop GPU 6 GB).
+- All heavy reconstruction, Gaussian splat training, and texture processing execute locally. No paid third-party APIs or cloud subscriptions are used.
+
+---
+
+### Git & Codebase State (2026-11-01)
+
+- **Branch:** `main` (synchronized with `origin/main` at commit `4b84f60`).
+- **Key Recent Commits:**
+  - `4b84f60` — Added built-in "Small Room" and "Large Room" example models for instant preview; generalized UI labels from "Polycam" to vendor-neutral "3D scan / GLTF import"; added project rename API (`PATCH`/`POST` `/api/projects/<id>/rename`).
+  - `08882e2` — Full Neo-Brutalist UI overhaul: high-contrast borders, tactile drop shadows, 60-30-10 palette (`--neo-dominant`, `--neo-surface`, `--neo-accent`), and Fira Sans typography.
+  - `8515fda`, `1c3c21f`, `c110d66` — Custom branding: phone frustum camera logo and vector favicon (`favicon.svg`, `logo.png`).
+  - `6b38a9c` — Dual Splat Engine: Small-Room baseline vs. Large-Space engine with auto-classification and manual override.
+  - `6c866c2` — Speed experiment default adoption + Round 1 submission artifact compilation (`submission_round1/`).
+  - `e65540b` — Photoreal training acceleration: 15k steps initialized from mesh vertices (2× faster, +0.7 dB PSNR).
+  - `164cd04` — Mini-map (`web/js/minimap.js`), enhanced measuring tool, trainer speed options.
+- **Test Suite Status:**
+  - Web tests: **33 / 33 passed** (`node --test web/tests/*.test.js`).
+  - Python tests: **353 passed, 4 failed (pre-existing baseline hash tests), 1 skipped** (`python -m pytest -q tests`).
+  - Note: The 4 failures in `tests/test_phase8_artifacts_preserved.py` are frozen historical artifact hashes established at repo inception; do not edit them.
+
+---
+
+### System Architecture & Pipeline Overview
+
+The codebase provides two primary paths for scene generation:
+
+```
+[Route A: Phone 3D Scan / GLTF + Keyframes (Primary)]
+  GLTF/GLB + Photos/Keyframes ZIP
+    │
+    ▼
+  Studio Ingestion (`src/namma/studio/polycam_bridge.py`)
+    │
+    ▼
+  Mesh Repair (`src/namma/studio/mesh_repair.py`)
+    ├─ Floor detection & horizontal levelling (RANSAC)
+    ├─ Ceiling plane synthesis (replaces missing LiDAR ceilings)
+    ├─ Floating debris & noise removal
+    └─ Texture gutter padding & hole closure
+    │
+    ▼
+  Navigation & Roaming Grid (`src/namma/nav/geometry.py`, `src/namma/studio/mesh_import.py`)
+    ├─ Clearance map generation (≥ 0.28 m clearance)
+    ├─ Doorway & obstacle boundary classification (IF-04)
+    └─ Eye-height walking surface definition
+    │
+    ▼
+  Dual Splat Engine (`src/namma/studio/splat.py`)
+    ├─ Auto-classification: small room vs large space
+    ├─ Pose refinement & alignment via COLMAP / ARKit
+    ├─ Depth-guided MCMC Gaussian Splat training (`gsplat 1.5.3`)
+    └─ SPZ v2 compression (149 MB PLY → 8.2 MB SPZ)
+    │
+    ▼
+  IF-13 Scene Package (`src/namma/studio/package.py`)
+    │
+    ▼
+  Web Walkthrough Viewer (`web/viewer.html` via Three.js + Spark)
+```
+
+```
+[Route B: Plain Photos / Video (Fallback)]
+  Photos / Video File
+    │
+    ▼
+  Capture Preflight Check (`src/namma/capture/checks.py`)
+    ├─ Laplacian blur detection, exposure check, duplicate rejection
+    └─ Video keyframe extraction (3 fps, sharper of pair via FFmpeg)
+    │
+    ▼
+  Structure from Motion (`src/namma/recon/pipeline.py`)
+    ├─ COLMAP SIFT feature extraction & matching (GPU-accelerated)
+    └─ Incremental camera pose estimation & undistortion
+    │
+    ▼
+  Dense Reconstruction & Meshing
+    ├─ OpenMVS `DensifyPointCloud` (GPU-accelerated depth maps)
+    └─ OpenMVS `ReconstructMesh` (watertight Poisson/Delaunay)
+    │
+    ▼
+  Multi-View Texture Blending (`src/namma/recon/blendtex.py`)
+    └─ CuPy CUDA texture projection & accumulation (8× speedup over CPU)
+```
+
+---
+
+### Dual Splat Engine Details
+
+Implemented in `src/namma/studio/splat.py`, with separate implementations in `splat_claude.py` and `splat_large.py`:
+
+| Parameter | Small-Room Baseline (`splat_claude.py`) | Large-Space Engine (`splat_large.py`) |
+|---|---|---|
+| **Dispatch Criteria** | Floor footprint $\le 20\text{ m}^2$, diagonal $\le 7.0\text{ m}$, photos $\le 250$ | Footprint $> 20\text{ m}^2$, or diagonal $> 7.0\text{ m}$, or photos $> 250$ |
+| **Trainer Script** | `scripts/splat/train_splat.py` | `scripts/splat/train_splat_large.py` |
+| **Max Splat Cap** | 300,000 Gaussians | 600,000 Gaussians |
+| **Max Splat Scale** | 0.50 m | 0.20 m |
+| **Aspect Ratio Clamp** | Default | Enforced $\le 10:1$ to prevent needle artifacts |
+| **Ceiling Handling** | Rely on repaired mesh ceiling plane | Synthesizes virtual ceiling points if LiDAR ceiling is missing |
+| **Pose Refinement** | COLMAP SIFT refinement | COLMAP with fallback to raw ARKit poses if COLMAP drops frames |
+| **Training Steps** | 15,000 steps (mesh initialized) | 15,000–20,000 steps (mesh initialized) |
+| **VRAM & Speed** | ~3.2 GB VRAM; ~19.6 min on RTX 4050 Laptop | ~4.8 GB VRAM; ~25–30 min on RTX 4050 Laptop |
+
+Override via `config.json` or `project.json`: `"splat_profile": "auto" | "claude" | "large"`.
+
+---
+
+### Key Viewer Features (`web/`)
+
+1. **Photoreal Splat Rendering:** Uses vendored Spark 2.4.0 integrated directly with Three.js r186. Renders at steady 144 fps on RTX 4050 laptop display.
+2. **Interactive Mini-map (`web/js/minimap.js`, Key: `N`):**
+   - 2D canvas top-down orthographic projection aligned with room walls.
+   - Live viewer position and orientation indicator ("you-are-here" frustum).
+   - Shows POI labels, planned walking routes, and active measurements.
+   - Click-to-teleport navigation.
+3. **3D Measuring Tool (`web/js/sceneViewer.js`, Key: `M`):**
+   - Live mouse raycast against underlying mesh and splats.
+   - Point-to-point chained distances with 3D $\Delta x, \Delta y, \Delta z$ coordinate readouts.
+   - `Shift` modifier for level (horizontal) and upright (vertical) snapping.
+   - Closed-polygon area computation (multi-point perimeter and enclosed $\text{m}^2$).
+   - Unit switching: Metric ($\text{m}, \text{cm}$) and Imperial ($\text{ft-in}$).
+   - Copy measurements to clipboard; undo/delete points.
+4. **First-Person Roaming (`web/js/walker.js`):**
+   - WASD / Arrow keys to walk, mouse look (pointer lock), Shift to sprint.
+   - Collision detection using IF-04 polygonal boundary model.
+   - Slides along walls naturally; prevents falling through floor or walking through solid obstacles.
+   - Jump through original camera capture positions using `[` and `]`.
+
+---
+
+### Round 1 Deliverables Summary (Completed)
+
+All submission files compiled in `submission_round1/`:
+- `1_Technical_Abstract.pdf`: 4-page paper with formal benchmarks on ETH3D, ARKitScenes, TUM RGB-D, and the team's real room (held-out PSNR 26.3 dB, 8.2 MB SPZ, 50k mesh triangles).
+- `2_Capture_SOP.pdf`: 2-page operational guide for scanning spaces.
+- `3_Master_Links.pdf`: Registry of live links (demo site, demo video, code repository).
+- Bundled demo in `demo/new-room/`: Static site deployment ready for GitHub Pages.
+
+---
+
+### Open Technical Topics for Claude Advisory (Round 2 & Beyond)
+
+When consulting Claude as a technical advisor, the primary agenda items are:
+
+1. **Navigation Graph & Advanced Roaming (Round 2 Core):**
+   - Upgrading the 2D roam grid (`roam_grid.json`) into a topological 3D waypoint navigation graph.
+   - Automated doorway detection and room-to-room traversal validation.
+   - Implementing dynamic A* / Dijkstra pathfinding with clearance-aware agent radii.
+2. **Mobile & Cross-Platform Splat Viewer:**
+   - Spark / WebGL splat performance on mobile devices (iPhone Safari / Android Chrome).
+   - Tile-based or chunked Gaussian splat streaming for multi-room apartments.
+   - WebGPU vs. WebGL shaders for lower thermals and higher battery life.
+3. **Automated Semantic Labeling & Room Intelligence:**
+   - Lightweight zero-shot object bounding (doors, windows, furniture, appliances).
+   - Automated 2D floor-plan generation (vector SVG/DXF export from wall RANSAC planes).
+4. **Scale Calibration & Sensor Fusion:**
+   - Aligning plain photo reconstructions (COLMAP) with sparse LiDAR/ARKit samples to resolve "scale unknown".
+   - Mitigating drift in large-space multi-room video captures.
+
+---
+
+## 0.1 Update 2026-10-26 — Prior Milestone (Historical Reference)
 
 **Round 1 deadline: 2026-10-31.** Polycam (GLTF + Images export, iPhone 14 LiDAR) is the PRIMARY capture route; the
 browser phone capture is secondary. The user wants the best model among the participants and reports results honestly.

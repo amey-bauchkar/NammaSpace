@@ -197,3 +197,49 @@ def test_classify_room_profile(tmp_path):
     assert prof_ov2 == "claude" and met_ov2["override"] is True
 
 
+def test_splat_from_recon_dispatch_and_availability(tmp_path, monkeypatch):
+    """Reconstructed photo runs (without Polycam) can generate a photoreal splat from COLMAP."""
+    from namma.core.jsonio import write_json
+    from namma.studio.jobs import JobManager
+    from namma.studio.projects import ProjectStore
+
+    store = ProjectStore(tmp_path / "projects")
+    doc = store.create(title="SfM Space")
+    pid = doc["project_id"]
+    rid = "run-20261102-120000"
+    rdir = store.path(pid) / "runs" / rid
+    rdir.mkdir(parents=True)
+    write_json(rdir / "config.json", {"config": {"profile": "standard"}})
+
+    jobs = JobManager(store)
+    # 1. Before reconstruction stages complete: splat is unavailable
+    st = jobs.splat_status(pid, rid)
+    assert not st["available"]
+
+    # 2. When 30_undistorted and 70_frame exist: splat becomes available
+    (rdir / "30_undistorted" / "images").mkdir(parents=True)
+    (rdir / "30_undistorted" / "images" / "im0.jpg").write_bytes(b"dummy")
+    (rdir / "70_frame").mkdir(parents=True)
+    write_json(rdir / "70_frame" / "frame.json", {
+        "T_model_from_sfm": np.eye(4).tolist(),
+        "eye_height_units": 1.6
+    })
+
+    # Mock sp.available() to (True, None) in case tools/splat-env is checked
+    monkeypatch.setattr(sp, "available", lambda: (True, None))
+    st2 = jobs.splat_status(pid, rid)
+    assert st2["available"] is True
+
+    # 3. Test make_photoreal dispatches to make_photoreal_from_recon on non-import profiles
+    called = []
+    def mock_recon(pdir, r_id, **kw):
+        called.append((pdir, r_id))
+        return {"package_id": "test_pkg", "splats": 1000}
+
+    monkeypatch.setattr(sp, "make_photoreal_from_recon", mock_recon)
+    res = sp.make_photoreal(store.path(pid), rid)
+    assert len(called) == 1 and called[0] == (store.path(pid), rid)
+    assert res["package_id"] == "test_pkg"
+
+
+

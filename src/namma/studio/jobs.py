@@ -83,9 +83,12 @@ class JobManager:
             s["error"] = "The photoreal training stopped unexpectedly; start it again."
         from namma.studio.splat import available, find_keyframes_zip
         ok, why = available()
-        s["available"] = ok and find_keyframes_zip(self.store.path(project_id)) is not None
+        run_d = self.store.run_dir(project_id, run_id)
+        has_kf = find_keyframes_zip(self.store.path(project_id)) is not None
+        has_sfm = (run_d / "30_undistorted" / "images").is_dir() and (run_d / "70_frame" / "frame.json").is_file()
+        s["available"] = ok and (has_kf or has_sfm)
         s["unavailable_reason"] = why or (None if s["available"] else
-                                          "No photo keyframes export is kept with this space.")
+                                          "No photo keyframes or reconstruction cameras available for this space.")
         return s
 
     def start_splat(self, project_id, run_id):

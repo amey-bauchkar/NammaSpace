@@ -17,12 +17,17 @@ kept with the project for later refinement). Save both to the Files app (or AirD
 | **Computer** | Studio home → **New space from Polycam** → drop the files (or choose them). The new space opens when the import is done. |
 | **Command line** | `python scripts/studio_cli.py import-mesh --title "Room" --from "GLTF polycam.zip" --device "iPhone 14"` |
 
-Files are recognised by content (`src/namma/studio/polycam_bridge.py`): a `.glb`, or a zip with one `.glb` = the model
-(required, exactly one); a zip with `keyframes/cameras/*.json` = the raw Images export (stored in the project's
-`capture/originals/`, summary in `capture/polycam_import.json`, device read from the photos' EXIF). A `.gltf` with
-separate files is refused with a hint to export GLTF/GLB. Uploads are streamed to disk (`projects/_incoming/`, removed
-after the import or after 6 h), ≤ 2 GB per file, ≤ 6 files. On the phone the uploads need the paired session and only
-the phone that started an import can add to it; on the computer the Studio's usual localhost + header rules apply.
+Files are recognised by content (`src/namma/studio/polycam_bridge.py`):
+- **3D Model**: a `.glb`, or a zip with one `.glb` = the model.
+- **Images export**: a zip with `keyframes/cameras/*.json` = the raw Images export (stored in the project's
+  `capture/originals/`, summary in `capture/polycam_import.json`, device read from the photos' EXIF).
+- **Raw Photos**: individual `.jpg`, `.jpeg`, `.png` files (up to 500 files) or a `.zip` containing photos.
+  When uploaded without a GLB mesh, Namma Space extracts them safely, performs preflight QA (`ingest_capture`),
+  and opens the project for local 3D reconstruction (Preview, Standard, or High).
+A `.gltf` with separate files is refused with a hint to export GLTF/GLB. Uploads are streamed to disk
+(`projects/_incoming/`, removed after the import or after 6 h), ≤ 2 GB per file, ≤ 500 files. On the phone the
+uploads need the paired session and only the phone that started an import can add to it; on the computer the
+Studio's usual localhost + header rules apply.
 
 Measured with the 2026-10-21 Polycam export (GLTF 1.4 MB + Images 15.4 MB): upload + recognition + import 1.3 s;
 device "iPhone 14" from the EXIF; 78 keyframes kept.
@@ -60,11 +65,15 @@ so the wall pieces carrying ceiling texture cannot be told apart); a window the 
 around it. A ceiling that needed no repair keeps its texture, and a model with nothing to repair is returned byte for
 byte. The unrepaired model is kept as `60_texture/lod0_unrepaired.glb`; `import_mesh(..., repair=False)` skips it.
 
-## Photoreal view (Gaussian splat) - from the Images export
+## Photoreal view (Gaussian splat)
 
-Import the **GLTF and the Images** export together. On the space's result card, **Make the photoreal view** trains a
-3D Gaussian splat of the room on this computer's GPU and lines it up with the model; the viewer then shows the
-photoreal room ("Show mesh" switches back). The mesh stays underneath for walking, labels, routes and measuring.
+On the space's result card, **Make the photoreal view** trains a 3D Gaussian splat of the room on this
+computer's GPU and lines it up with the model; the viewer then shows the photoreal room ("Show mesh" switches back).
+The mesh stays underneath for walking, labels, routes and measuring.
+
+### 1. From Polycam / 3D scan with Images export
+
+Import the **GLTF and the Images** export together:
 
 1. **Keyframes** (`keyframes_to_colmap`): Polycam's keyframe photos with the phone's own camera poses (ARKit:
    metres, +Y up) become PINHOLE cameras.
@@ -81,6 +90,15 @@ photoreal room ("Show mesh" switches back). The mesh stays underneath for walkin
    rigid ICP); refused below 30 % within 5 cm.
 6. **Package**: `appearance.splat` (IF-13 1.3.0). The viewer opens on the photoreal view ("Show mesh" switches;
    `?mesh` starts on the mesh and downloads the splat only on request).
+
+### 2. From Photo Reconstructions (COLMAP SfM)
+
+For spaces reconstructed from raw photos or video without phone sensor poses:
+1. **Poses & Images**: Uses COLMAP undistorted images and camera poses (`30_undistorted/`) converted to text format (`cameras.txt`, `images.txt`).
+2. **Scale Calibration**: Dynamically scales bounding criteria (`--max-splat-scale`) using the floor-calibrated eye height ratio ($\text{eye\_height\_units} / 1.6$) to accommodate SfM units.
+3. **Training**: Trains via `train_splat.py` using MCMC densification and per-camera pose refinement.
+4. **Alignment**: Since the mesh and splat share the SfM coordinate frame, the splat is placed in the viewer's world frame via $T_{\text{model\_from\_sfm}}$ from `70_frame/frame.json`.
+5. **Compression & Package**: Compressed to `.spz` and assembled into the IF-13 package (`appearance.splat`).
 
 ### How the recipe was chosen ("New room", 2026-10-25, 218 keyframes at 1024x768, RTX 4050 Laptop 6 GB)
 

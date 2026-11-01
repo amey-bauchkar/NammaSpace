@@ -216,8 +216,11 @@ def stage_sfm(ctx):
     rec, dev_features = gpu_then_cpu(ctx, "sfm", "feature extraction", extract, gpu, before_retry=fresh_db)
     recs = [rec]
     ctx.check_cancel()
-    mode = "sequential" if (ctx.facts.get("mode") == "video" or n > cfg["matching"]["exhaustive_max_images"]) \
-        else "exhaustive"
+    # For photo captures, exhaustive matching connects loops and turns across the room;
+    # sequential matching easily fragments unless the frames are from continuous video.
+    max_exhaustive = cfg["matching"]["exhaustive_max_images"] if ctx.facts.get("mode") == "video" \
+        else max(cfg["matching"]["exhaustive_max_images"], 400)
+    mode = "sequential" if n > max_exhaustive else "exhaustive"
     ctx.set_progress("sfm", f"Matching photos ({mode})", 0.0)
     match_gpu = gpu and dev_features == "gpu"
     mthreads = match_threads(n_features, gpu=match_gpu)
@@ -247,8 +250,19 @@ def stage_sfm(ctx):
             if e.record.get("status") == "cancelled":
                 raise Cancelled("cancelled by user") from e
             best = None
+        if best is not None and len(best[2]) >= max(3, n // 2):
+            # Trajectory sanity check: global rotation averaging can diverge on uncalibrated consumer photos,
+            # projecting cameras thousands of units away into wild disconnected clusters.
+            c_poses = np.array([best[2][k]["C"] for k in sorted(best[2])])
+            span = float(np.ptp(c_poses, axis=0).max())
+            diffs = np.linalg.norm(np.diff(c_poses, axis=0), axis=1)
+            max_jump = float(diffs.max()) if len(diffs) else 0.0
+            if span > 200.0 or max_jump > 50.0:
+                ctx.facts["mapper_fallback"] = f"global mapper trajectory exploded (span={span:.1f}, jump={max_jump:.1f})"
+                best = None
         if best is None or len(best[2]) < max(3, n // 2):
-            ctx.facts["mapper_fallback"] = f"global mapper placed {len(best[2]) if best else 0}/{n} frames"
+            if "mapper_fallback" not in ctx.facts:
+                ctx.facts["mapper_fallback"] = f"global mapper placed {len(best[2]) if best else 0}/{n} frames"
             for d in ("sparse", "sparse_txt"):
                 shutil.rmtree(out / d, ignore_errors=True)
             engine, best = "incremental", None
@@ -323,6 +337,8 @@ def sift_feature_budget(cfg, n_images):
     s = cfg["sift"]
     if s.get("max_features_large_set") and n_images >= s.get("large_set_min_images", 10 ** 9):
         return min(s["max_features"], s["max_features_large_set"])
+    if n_images > 150:
+        return min(s["max_features"], 4096)
     return s["max_features"]
 
 
@@ -429,18 +445,34 @@ def stage_dense(ctx):
         shutil.rmtree(out)
     out.mkdir(parents=True)
     T, d = ctx.cfg["timeouts_s"], ctx.cfg["dense"]
-    n_imgs = len(list((ctx.dir("undistort") / "images").glob("*")))
-    require_disk(ctx, "dense", dense_disk_need_gb(n_imgs, d["max_resolution"]))
+    undist_imgs = [p for p in (ctx.dir("undistort") / "images").glob("*") if p.is_file() and not p.name.startswith(".")]
+    n_imgs = len(undist_imgs)
+    # Cap target resolution to the actual photo size (an image cannot produce depth maps larger than itself)
+    longest_side = d["max_resolution"]
+    if undist_imgs:
+        try:
+            from PIL import Image
+            with Image.open(undist_imgs[0]) as im:
+                longest_side = max(im.size)
+        except Exception:
+            pass
+    target_res = min(d["max_resolution"], longest_side)
+    free_gb = shutil.disk_usage(ctx.run_dir).free / 2**30
+    max_res, clamped_info = clamp_dense_resolution(free_gb, n_imgs, target_res)
+    if clamped_info:
+        ctx.facts["dense_resolution_clamped_by_disk"] = clamped_info
+    require_disk(ctx, "dense", dense_disk_need_gb(n_imgs, max_res))
     openmvs.interface_colmap(ctx.tools, ctx.dir("undistort"), out / "scene.mvs", out, ctx.logs,
                              timeout_s=T["interface"], cancel_file=ctx.cancel_file)
     ctx.check_cancel()
     gpu = bool(getattr(ctx.tools, "densify_gpu", False))
     dev = "cpu"
+    num_views = min(d["number_views"], 4) if ctx.facts.get("mode") != "video" else d["number_views"]
 
     def densify(on_gpu):
         return openmvs.densify(ctx.tools, out / "scene.mvs", out / "scene_dense.mvs", out, ctx.logs,
-                               resolution_level=d["resolution_level"], max_resolution=d["max_resolution"],
-                               number_views=d["number_views"], threads=mvs_threads(), timeout_s=T["densify"],
+                               resolution_level=d["resolution_level"], max_resolution=max_res,
+                               number_views=num_views, threads=mvs_threads(), timeout_s=T["densify"],
                                cancel_file=ctx.cancel_file, progress=ctx.progress_cb("dense"), n_images=n_imgs,
                                exe=ctx.tools.densify_exe(on_gpu) if hasattr(ctx.tools, "densify_exe") else None,
                                cuda_device=hardware.resources().gpu_index if on_gpu else None)
@@ -469,6 +501,8 @@ def stage_dense(ctx):
         ctx.facts.update(dense_fallback=True, dense_fallback_reason=f"{e} (see logs/{e.record.get('log')})")
         result = {"dense": False, "fallback_reason": str(e)}
     result["compute"] = {"densify": dev, "fallbacks": [f for f in ctx.facts.get("gpu_fallbacks", []) if "dense" in f]}
+    if clamped_info:
+        result["resolution_clamped_by_disk"] = clamped_info
     write_json(out / "dense_summary.json", {**result, "dense_fallback": ctx.facts["dense_fallback"],
                                             "dense_fallback_reason": ctx.facts.get("dense_fallback_reason")})
     return result
@@ -478,6 +512,28 @@ def dense_disk_need_gb(n_images, max_resolution):
     """Free disk needed for dense + mesh + texture. Measured: 246-photo capture, 90 dense images at 1600 px wrote
     5.5 GB of depth maps (~61 MB per image); scales with the pixel count; +1.5 GB for mesh, texture, package."""
     return n_images * 0.065 * (max_resolution / 1600) ** 2 + 1.5
+
+
+def clamp_dense_resolution(free_gb, n_images, max_resolution, reserve_gb=10.0):
+    """Dynamically clamp max_resolution if free disk space cannot accommodate dense depth maps.
+    Returns (clamped_resolution, clamped_info_dict or None)."""
+    usable_gb = max(2.0, free_gb - reserve_gb)
+    need_gb = dense_disk_need_gb(n_images, max_resolution)
+    if need_gb <= usable_gb:
+        return max_resolution, None
+    for cand_res in (2560, 2048, 1600, 1280, 960):
+        if cand_res < max_resolution:
+            cand_gb = dense_disk_need_gb(n_images, cand_res)
+            if cand_gb <= usable_gb or cand_res == 960:
+                info = {
+                    "original_px": max_resolution,
+                    "clamped_px": cand_res,
+                    "original_need_gb": round(need_gb, 1),
+                    "clamped_need_gb": round(cand_gb, 1),
+                    "free_disk_gb": round(free_gb, 1),
+                }
+                return cand_res, info
+    return max_resolution, None
 
 
 def require_disk(ctx, stage, need_gb):
