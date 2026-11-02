@@ -15,8 +15,8 @@ import { levelStartTarget, Walker } from './walker.js';
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const pkgUrl = new URL(params.get('package') || 'data/scene_package.json', location.href).href;
-const studio = params.get('project') && params.get('run') ? { project: params.get('project'), run: params.get('run') } : null;
-const apiBase = studio ? `/api/projects/${encodeURIComponent(studio.project)}/runs/${encodeURIComponent(studio.run)}` : null;
+let studio = params.get('project') && params.get('run') ? { project: params.get('project'), run: params.get('run') } : null;
+let apiBase = studio ? `/api/projects/${encodeURIComponent(studio.project)}/runs/${encodeURIComponent(studio.run)}` : null;
 const forcedLod = params.has('lod') ? Number(params.get('lod')) : null;
 const T0 = performance.now();
 const AUTO_FULL_DETAIL_MAX_BYTES = 160 * 2 ** 20;
@@ -197,7 +197,34 @@ async function main() {
   let data;
   try {
     setLoading('Checking the scene package…', 0.02);
-    data = await loadScenePackage(pkgUrl, {});
+    let activePkgUrl = pkgUrl;
+    if (params.get('project') && !params.get('package')) {
+      try {
+        const projId = params.get('project');
+        const projRes = await fetch(`/api/projects/${encodeURIComponent(projId)}`, {
+          headers: { 'X-Namma-Studio': '1' }
+        });
+        if (projRes.ok) {
+          const projData = await projRes.json();
+          const runs = (projData.runs || []).filter((r) => r.status === 'succeeded' || r.status === 'done');
+          const lastRun = runs.length ? runs[runs.length - 1].run_id : (projData.runs && projData.runs[0] ? projData.runs[0].run_id : null);
+          if (lastRun) {
+            activePkgUrl = new URL(`/files/${encodeURIComponent(projId)}/runs/${encodeURIComponent(lastRun)}/90_package/scene_package.json`, location.href).href;
+            if (!studio) {
+              studio = { project: projId, run: lastRun };
+              apiBase = `/api/projects/${encodeURIComponent(studio.project)}/runs/${encodeURIComponent(studio.run)}`;
+              $('studio-link').hidden = false;
+              $('studio-link').href = `studio.html#/project/${encodeURIComponent(studio.project)}`;
+              $('studio-tools').hidden = false;
+              if ($('brand')) $('brand').href = 'studio.html#/';
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not auto-resolve project package URL:', err);
+      }
+    }
+    data = await loadScenePackage(activePkgUrl, {});
     state.timing.package_ms = Math.round(performance.now() - T0);
   } catch (e) {
     fatal(e.kind || 'error', 'The scene package could not be loaded or failed its integrity check.', e.message);
