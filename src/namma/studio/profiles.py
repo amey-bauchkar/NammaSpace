@@ -67,7 +67,7 @@ PROFILES = {
         "mvs_pixel_budget_mp": 1000,
         "dense_max_images": 180,
         "dense": {"resolution_level": 0, "max_resolution": 3200, "number_views": 6},
-        "mesh": {"target_faces": 5_000_000},
+        "mesh": {"target_faces": 5_000_000, "clean_edge_factor": 8.0},
         "textures": [{"lod": 0, "resolution_level": 0, "decimate": 1.0, "max_texture_size": 8192, "embed_max_side": 8192, "seam_leveling": False},
                      {"lod": 1, "resolution_level": 1, "decimate": 0.2, "max_texture_size": 4096, "embed_max_side": 4096, "seam_leveling": False}],
         "timeouts_s": {"features": 3600, "matching": 7200, "mapper": 7200, "undistort": 1800, "interface": 1800,

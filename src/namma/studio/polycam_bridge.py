@@ -180,6 +180,8 @@ class PolycamStaging:
             for p, _, _ in photos:
                 if p.suffix.lower() == ".zip":
                     with zipfile.ZipFile(p) as z:
+                        total_uncompressed = 0
+                        valid_items = []
                         for item in z.infolist():
                             if item.is_dir() or "__MACOSX" in item.filename:
                                 continue
@@ -187,14 +189,24 @@ class PolycamStaging:
                             if leaf.startswith("."):
                                 continue
                             if Path(leaf).suffix.lower() in IMAGE_EXTS:
-                                target_name = safe_filename(leaf)
-                                target = orig_dir / target_name
-                                idx = 1
-                                while target.exists():
-                                    target = orig_dir / f"{target.stem}_{idx}{target.suffix}"
-                                    idx += 1
-                                target.write_bytes(z.read(item.filename))
-                                photo_count += 1
+                                if item.file_size > 60 * 2**20:
+                                    raise BridgeError(413, "IMPORT-SIZE",
+                                                      f"{leaf}: uncompressed size ({item.file_size / 2**20:.1f} MB) exceeds limit")
+                                total_uncompressed += item.file_size
+                                if total_uncompressed > MAX_FILE_BYTES:
+                                    raise BridgeError(413, "IMPORT-SIZE", f"{p.name}: total uncompressed size exceeds limit")
+                                valid_items.append(item)
+                                if photo_count + len(valid_items) > 1000:
+                                    raise BridgeError(400, "IMPORT-FILES", "at most 1000 photos per import")
+                        for item in valid_items:
+                            target_name = safe_filename(Path(item.filename).name)
+                            target = orig_dir / target_name
+                            idx = 1
+                            while target.exists():
+                                target = orig_dir / f"{target.stem}_{idx}{target.suffix}"
+                                idx += 1
+                            target.write_bytes(z.read(item.filename))
+                            photo_count += 1
                 elif p.suffix.lower() in IMAGE_EXTS:
                     target_name = safe_filename(p.name)
                     target = orig_dir / target_name

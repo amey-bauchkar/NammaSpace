@@ -73,7 +73,9 @@ def vertex_targets(P, Nrm, views, zbuf_scale=0.5, depth_tol=0.02):
         vis[idx] = z[idx] <= zbuf[zi, zj] * (1 + depth_tol)
         ray = P[vis] - v["C"]
         cosang = np.abs(np.einsum("ij,ij->i", ray, Nrm[vis])) / (np.linalg.norm(ray, axis=1) + 1e-12)
-        wt = np.clip(cosang, 0, 1) ** 2
+        # Incidence angle falloff: taper views where incidence angle theta > 65 deg to 75 deg, zero weight if theta >= 75 deg
+        cos_fade = np.clip((cosang - 0.25881905) / (0.42261827 - 0.25881905), 0.0, 1.0)
+        wt = (np.clip(cosang, 0, 1) ** 2) * cos_fade
         col = v["img"][w[vis].astype(int), u[vis].astype(int)] * v["gain"]
         acc[vis] += col * wt[:, None]; wsum[vis] += wt
     return acc / np.maximum(wsum, 1e-9)[:, None], wsum

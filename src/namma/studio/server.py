@@ -289,7 +289,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
     # ------------------------------------------------------------------ plumbing
     def _host_ok(self):
         host = (self.headers.get("Host") or "").split(":")[0].lower()
-        return host in ("127.0.0.1", "localhost", "[::1]")
+        if host not in ("127.0.0.1", "localhost", "[::1]"):
+            return False
+        origin = self.headers.get("Origin")
+        if origin:
+            try:
+                parsed = urllib.parse.urlsplit(origin)
+                orig_host = (parsed.hostname or "").lower()
+                if orig_host not in ("127.0.0.1", "localhost", "::1"):
+                    return False
+            except Exception:
+                return False
+        return True
 
     def _send(self, status, body=b"", ctype="application/json; charset=utf-8", extra=None):
         # an unread request body would be read as the start of the next request on this keep-alive connection
@@ -359,7 +370,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self._segments = [urllib.parse.unquote(x) for x in url.path.split("/")]
         path = urllib.parse.unquote(url.path)
         query = urllib.parse.parse_qs(url.query)
-        if method in ("POST", "PUT", "DELETE") and self.headers.get("X-Namma-Studio") != "1" and path != "/__bench":
+        if method in ("POST", "PUT", "PATCH", "DELETE") and self.headers.get("X-Namma-Studio") != "1" and path != "/__bench":
             return self._error(403, "CSRF", "missing X-Namma-Studio header")
         try:
             if path.startswith("/api/"):
@@ -477,14 +488,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
             import zipfile
             from namma.studio.polycam_bridge import IMAGE_EXTS
             extracted = 0
-            with zipfile.ZipFile(final) as z:
-                for item in z.infolist():
-                    if item.is_dir() or "__MACOSX" in item.filename:
-                        continue
-                    leaf = Path(item.filename).name
-                    if leaf.startswith("."):
-                        continue
-                    if Path(leaf).suffix.lower() in IMAGE_EXTS:
+            total_uncompressed = 0
+            try:
+                with zipfile.ZipFile(final) as z:
+                    valid_items = []
+                    for item in z.infolist():
+                        if item.is_dir() or "__MACOSX" in item.filename:
+                            continue
+                        leaf = Path(item.filename).name
+                        if leaf.startswith("."):
+                            continue
+                        if Path(leaf).suffix.lower() in IMAGE_EXTS:
+                            if item.file_size > MAX_IMAGE_BYTES:
+                                raise ApiError(413, "UPLOAD-TOO-LARGE",
+                                               f"{leaf}: uncompressed size ({item.file_size / 2**20:.1f} MB) exceeds limit")
+                            total_uncompressed += item.file_size
+                            if total_uncompressed > limit:
+                                raise ApiError(413, "UPLOAD-TOO-LARGE", f"{fname}: total uncompressed size exceeds limit")
+                            valid_items.append(item)
+                            if len(valid_items) > 1000:
+                                raise ApiError(400, "UPLOAD-TOO-MANY-FILES", f"{fname}: archive contains more than 1000 images")
+                    for item in valid_items:
+                        leaf = Path(item.filename).name
                         target = dst_dir / safe_filename(leaf)
                         idx = 1
                         while target.exists():
@@ -492,7 +517,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                             idx += 1
                         target.write_bytes(z.read(item.filename))
                         extracted += 1
-            final.unlink(missing_ok=True)
+            finally:
+                final.unlink(missing_ok=True)
             self.studio.store.clear_capture(pid)
             return {"file": fname, "bytes": n, "extracted_photos": extracted}
         self.studio.store.clear_capture(pid)

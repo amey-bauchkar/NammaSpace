@@ -633,7 +633,7 @@ def stage_mesh(ctx):
                          "The capture did not give enough 3D detail; see the quality warnings and capture again.",
                          log=rec.get("log"))
     result = {"wall_s": rec["wall_s"]}
-    ef = ctx.cfg["mesh"].get("clean_edge_factor")
+    ef = ctx.cfg["mesh"].get("clean_edge_factor", 8.0)
     if ef:
         # remove gap-bridging faces and floating fragments (no photo supports them); see namma.recon.meshclean
         result["clean"] = meshclean.clean_mesh_file(raw, out / "mesh.ply", edge_factor=ef,
@@ -768,9 +768,11 @@ def stage_frame(ctx):
     if s["dense_fallback"]:
         pts, _, _, _ = colmap.read_points3d_txt(txt_dir / "points3D.txt")
         source = "sparse_points"
+        normals = None
     else:
         v = read_ply(ctx.dir("dense") / "scene_dense.ply")["vertex"]
         pts = np.column_stack([v["x"], v["y"], v["z"]]).astype(np.float64)
+        normals = np.column_stack([v["nx"], v["ny"], v["nz"]]).astype(np.float64) if "nx" in v else None
         source = "dense_points"
     names = sorted(imgs)
     centres = np.array([imgs[n]["C"] for n in names])
@@ -784,7 +786,7 @@ def stage_frame(ctx):
                                   "cameras spread out), so it cannot be shown as a model.",
                          "Typical for fast camera sweeps or turning on the spot. Capture again moving slowly along the "
                          "walls (photos work better than video), keeping the floor and furniture in view.")
-    T, meta = modelframe.model_frame(pts, centres, rots)
+    T, meta = modelframe.model_frame(pts, centres, rots, normals=normals)
     pm = modelframe.transform_points(T, pts)
     cm = modelframe.transform_points(T, centres)
     eye = meta["eye_height_units"]

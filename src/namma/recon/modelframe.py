@@ -111,19 +111,56 @@ def detect_floor(points, centres, rotations, seed=0, sample=200_000):
             "diagnostics": diag}
 
 
-def model_frame(points, centres, rotations, seed=0):
+def model_frame(points, centres, rotations, seed=0, normals=None):
     """Rigid 4x4 T (SfM -> model frame) and metadata."""
     fl = detect_floor(points, centres, rotations, seed)
     n, d = fl["plane"]
-    y = n / np.linalg.norm(n)
+    y_floor = n / np.linalg.norm(n)
+    d_floor = d
+    pts = np.asarray(points, float)
     cams = np.asarray(centres, float)
     c = cams.mean(0)
-    origin = c - (c @ y + d) * y
-    pts = np.asarray(points, float)
-    hts = pts @ y + d
+    eye_est = float(np.median(cams @ y_floor + d_floor))
+
+    # Refine Up vector to architectural plumb vertical if wall normals are available
+    y = y_floor
+    if normals is not None and len(normals) == len(pts) and eye_est > 0:
+        rng = np.random.default_rng(seed)
+        sample_size = min(len(pts), 150_000)
+        idx = rng.choice(len(pts), sample_size, replace=False)
+        p_sub = pts[idx]
+        n_sub = np.asarray(normals, float)[idx]
+        norm_len = np.linalg.norm(n_sub, axis=1, keepdims=True)
+        n_sub = n_sub / (norm_len + 1e-12)
+
+        h_sub = p_sub @ y_floor + d_floor
+        wall_mask = (h_sub > 0.25 * eye_est) & (h_sub < 1.75 * eye_est)
+        if np.count_nonzero(wall_mask) >= 500:
+            w_n = n_sub[wall_mask]
+            vert_mask = np.abs(w_n @ y_floor) < 0.25
+            if np.count_nonzero(vert_mask) >= 500:
+                v_n = w_n[vert_mask]
+                cov = v_n.T @ v_n / len(v_n)
+                w, vecs = np.linalg.eigh(cov)
+                plumb = vecs[:, 0]
+                if np.dot(plumb, y_floor) < 0:
+                    plumb = -plumb
+                tilt_deg = math.degrees(math.acos(min(1.0, max(-1.0, float(np.dot(plumb, y_floor))))))
+                if tilt_deg <= 5.0:
+                    y = plumb / np.linalg.norm(plumb)
+                    fl["diagnostics"]["plumb_refinement"] = {
+                        "source": "wall_normals_pca",
+                        "tilt_from_floor_deg": round(float(tilt_deg), 3)
+                    }
+
+    denom = float(np.dot(y, y_floor))
+    t = - (float(np.dot(c, y_floor)) + d_floor) / (denom if abs(denom) > 1e-6 else 1.0)
+    origin = c + t * y
+
+    hts = (pts - origin) @ y
     near_floor = pts[np.abs(hts) < 0.02 * scene_extent(pts)]
     base = near_floor if len(near_floor) >= 100 else pts
-    proj = base - np.outer(base @ y + d, y)
+    proj = base - np.outer((base - origin) @ y, y)
     w, v = np.linalg.eigh(np.cov((proj - origin).T))
     x = v[:, int(np.argmax(w))]
     x = x - (x @ y) * y
@@ -133,11 +170,11 @@ def model_frame(points, centres, rotations, seed=0):
     T = np.eye(4)
     T[:3, :3] = R
     T[:3, 3] = -R @ origin
-    cam_h = cams @ y + d
+    cam_h = (cams - origin) @ y
     eye = float(np.median(cam_h))
     # a real floor has (almost) nothing below it; a table top or shelf found as "floor" does (Phase 13: kicker 0 %,
     # TUM desk 20 %, ETH3D pipes 21 %)
-    below = float(np.mean((pts @ y + d) < -0.1 * eye)) if eye > 0 else 0.0
+    below = float(np.mean(hts < -0.1 * eye)) if eye > 0 else 0.0
     meta = {"floor_detected": fl["floor_detected"], "up_source": fl["up_source"],
             "below_floor_fraction": round(below, 4), "floor_suspect": bool(fl["floor_detected"] and below > 0.05),
             "eye_height_units": float(np.median(cam_h)),

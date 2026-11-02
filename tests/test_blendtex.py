@@ -85,3 +85,68 @@ def test_gpu_blend_matches_cpu_blend(tmp_path, monkeypatch):
     d = np.abs(out["gpu"] - out["cpu"])
     assert d.mean() < 0.5 and np.percentile(d, 99) <= 2, (d.mean(), d.max())
     assert out["cpu"].std() > 5                       # the photos' gradient really reached the texture
+
+
+def test_glancing_angle_and_coplanar_healing(tmp_path):
+    """Surfaces starved by glancing angles (>75 deg) or occlusion are healed from coplanar neighbors."""
+    import io
+    from PIL import Image
+    from namma.recon import blendtex
+    from namma.recon.glb import write_glb, read_glb
+
+    # Quad A (observed wall, x in [-1, 0]) and Quad B (starved jamb, x in [0, 0.5])
+    # Both are coplanar at z = 2.0 with normal [0, 0, 1]
+    P = np.array([
+        [-1.0, -1.0, 2.0], [0.0, -1.0, 2.0], [0.0, 1.0, 2.0], [-1.0, 1.0, 2.0], # Quad A
+        [0.0, -1.0, 2.0], [0.5, -1.0, 2.0], [0.5, 1.0, 2.0], [0.0, 1.0, 2.0],   # Quad B
+    ], np.float32)
+    UV = np.array([
+        [0.1, 0.9], [0.5, 0.9], [0.5, 0.1], [0.1, 0.1], # Quad A UV
+        [0.6, 0.9], [0.9, 0.9], [0.9, 0.1], [0.6, 0.1], # Quad B UV
+    ], np.float32)
+    F = np.array([[0, 1, 2], [0, 2, 3], [4, 5, 6], [4, 6, 7]], np.uint32)
+
+    # Initial texture with black noise on Quad B to simulate OpenMVS glancing artifact
+    img = Image.new("RGB", (128, 128), (200, 190, 185))
+    # Draw black band on Quad B UV
+    for y in range(int(128 * 0.1), int(128 * 0.9)):
+        for x in range(int(128 * 0.6), int(128 * 0.9)):
+            img.putpixel((x, y), (0, 0, 4))
+    png = io.BytesIO(); img.save(png, "PNG"); png_bytes = png.getvalue()
+
+    parts = [P.tobytes(), UV.tobytes(), F.tobytes(), png_bytes + b"\0" * (-len(png_bytes) % 4)]
+    off, views_ = 0, []
+    for p in parts:
+        views_.append({"buffer": 0, "byteOffset": off, "byteLength": len(p)}); off += len(p)
+    doc = {"asset": {"version": "2.0"}, "scene": 0, "scenes": [{"nodes": [0]}], "nodes": [{"mesh": 0}],
+           "meshes": [{"primitives": [{"attributes": {"POSITION": 0, "TEXCOORD_0": 1}, "indices": 2, "material": 0}]}],
+           "materials": [{"pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}], "textures": [{"source": 0}],
+           "images": [{"bufferView": 3, "mimeType": "image/png"}], "buffers": [{"byteLength": off}], "bufferViews": views_,
+           "accessors": [{"bufferView": 0, "componentType": 5126, "count": 8, "type": "VEC3"},
+                         {"bufferView": 1, "componentType": 5126, "count": 8, "type": "VEC2"},
+                         {"bufferView": 2, "componentType": 5125, "count": 12, "type": "SCALAR"}]}
+    src = tmp_path / "coplanar_test.glb"
+    write_glb(src, doc, b"".join(parts))
+
+    # Single frontal camera viewing Quad A (at x = -0.5, z = 0, looking directly at z = 2)
+    # Quad B is occluded or outside direct frontal views
+    cam_img = Image.new("RGB", (160, 120), (202, 192, 186))
+    cam_file = tmp_path / "front.png"
+    cam_img.save(cam_file)
+    R = np.eye(3); C = np.array([-0.5, 0.0, 0.0]); t = -R @ C
+    views = [{"path": cam_file, "R": R, "t": t, "C": C, "gain": np.ones(3, np.float32),
+              "cam": {"model": "PINHOLE", "width": 160, "height": 120, "params": [120.0, 120.0, 79.5, 59.5]}}]
+
+    dst = tmp_path / "coplanar_healed.glb"
+    blendtex.blend_texture_glb(src, dst, views, scale=1, max_side=128, log=lambda m: None)
+
+    doc_out, b_out = read_glb(dst)
+    bv = doc_out["bufferViews"][doc_out["images"][0]["bufferView"]]
+    tex_arr = np.asarray(Image.open(io.BytesIO(bytes(b_out)[bv["byteOffset"]: bv["byteOffset"] + bv["byteLength"]])), np.float32)
+
+    # Check Quad B UV region (x in 60%..90%, y in 20%..80%):
+    quad_b_crop = tex_arr[int(128 * 0.2): int(128 * 0.8), int(128 * 0.65): int(128 * 0.85)]
+    # Must NOT have black pixels (< 50) and must match Quad A off-white color (~200)
+    assert quad_b_crop.min() > 100, f"Found dark/black pixels in healed quad: min={quad_b_crop.min()}"
+    assert np.allclose(quad_b_crop.mean(axis=(0, 1)), [202, 192, 186], atol=15.0), f"Mean color mismatch: {quad_b_crop.mean(axis=(0, 1))}"
+

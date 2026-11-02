@@ -1,0 +1,308 @@
+<!doctype html><html><head><meta charset='utf-8'><title>TECHNICAL_ABSTRACT_UPDATED</title><style>
+@page { size: A4; margin: 15mm 14mm 15mm 14mm; }
+body { font: 9.6pt/1.38 "Segoe UI", system-ui, sans-serif; color: #111; }
+h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 11.5pt; margin: 9pt 0 3pt; border-bottom: 1px solid #ccd; }
+h3 { font-size: 10pt; margin: 7pt 0 2pt; } p { margin: 3pt 0; } ul, ol { margin: 2pt 0 3pt 16pt; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0; font-size: 8.4pt; }
+tr { page-break-inside: avoid; } thead { display: table-header-group; } h1, h2, h3 { page-break-after: avoid; }
+th, td { border: 1px solid #c8ccd6; padding: 2pt 4pt; vertical-align: top; text-align: left; } th { background: #eef1f6; }
+code { font: 8.4pt Consolas, monospace; background: #f3f4f7; padding: 0 2pt; }
+pre { font: 8pt Consolas, monospace; background: #f3f4f7; padding: 4pt; white-space: pre-wrap; }
+img { max-width: 100%; } .small { font-size: 8pt; color: #444; }
+</style></head><body><h1>Namma Space – Technical Abstract (Updated Specification: 3D Reconstruction &amp; Roaming)</h1>
+<p>Techfest IIT Bombay 2026–27 · <strong>Team Triple Musketeer</strong> · November 2026</p>
+<p><strong>Code:</strong> github.com/amey-bauchkar/NammaSpace · <strong>Live Walkthrough:</strong> amey-bauchkar.github.io/NammaSpace/demo/new-room/</p>
+<p>All performance, accuracy, and latency figures below come from verified runs; none are estimates.</p>
+<h2>1. Problem and scope</h2>
+<p>Namma Space turns <strong>a phone scan of an indoor space</strong>—a mobile LiDAR scan (Polycam, Record3D) or ordinary photos / continuous video—into a <strong>photoreal, metric-accurate 3D walkthrough that runs in any web browser</strong> without installing software and without manual 3D modeling. Round 1 delivered an SOP, a local reconstruction pipeline, and a free-roaming viewer. The updated system expands from isolated single rooms to <strong>complex multi-room architectural spaces</strong> (connected suites, hallways, open doorways, and decorative trim), integrates a <strong>Dual Splat Engine</strong> for adaptive room scales, and hardens end-to-end reliability.</p>
+<p><strong>Hardware Sovereignty.</strong> Everything executes <strong>locally on commodity laptops</strong> with zero reliance on paid cloud APIs:
+- <strong>Portable Tier:</strong> Intel Core 5 120U (10 cores, 16 GB RAM, integrated graphics, CPU fallback). Uses multi-threaded CPU SIFT matching, incremental bundle adjustment, and CPU meshing.
+- <strong>Accelerated Tier:</strong> HP Victus (Intel i7-13620H, 16 GB RAM, NVIDIA RTX 4050 Laptop GPU 6 GB). Deploys CUDA COLMAP, CuPy texture blending kernels, and GPU-driven 3D Gaussian Splatting (<code>gsplat 1.5.3</code>).</p>
+<p><strong>Two Operational Routes:</strong> Polycam / LiDAR import (primary; native metric scale, automated mesh repair, and photoreal Gaussian splatting, §3a) and uncalibrated photos/video (any phone; local SfM-MVS photogrammetry, §3).</p>
+<h2>2. System architecture</h2>
+<pre><code> Route A: Polycam LiDAR ─► Ingest ─► Mesh Repair &amp; Plumb ─► Dual Splat Engine ─┐
+ Route B: Photos/Video  ─► QA ─► COLMAP SfM ─► OpenMVS MVS ─► CuPy Blend ──────┴► IF-13
+                                                                                   │
+ Web Viewer (Three.js + Spark) ◄── Progressive Stream (LOD 1 ─► LOD 0 ─► Splat) ──┘
+ ├─ Neo-Brutalist HUD (144 fps)   ├─ 2D Mini-Map (teleport)   └─ 3D Measure (snapping)
+</code></pre>
+<ul>
+<li><strong>Studio:</strong> Python standard-library HTTP server + isolated background worker processes; filesystem-backed project directories with JSON manifests (no database); atomic writes; fully resumable after interruptions.</li>
+<li><strong>Contracts (IF-13):</strong> Enforces a standardized model frame (+Y up, floor at y = 0) and explicit scale status: metric from hardware tracking for LiDAR scans; <code>scale_status: unknown</code> for plain photos until one real-world measurement is entered.</li>
+<li><strong>Progressive Delivery &amp; Integrity:</strong> Progressively streams lightweight LOD 1 (~23 MB) for immediate walkthrough, then promotes to LOD 0 (~60 MB) and Gaussian splats in the background. Every file is SHA-256 verified before GPU upload.</li>
+</ul>
+<h2>3. Reconstruction pipeline</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Tool / method</th>
+<th>Why / operational details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Capture check</strong></td>
+<td>OpenCV / Pillow / FFmpeg: Laplacian variance, exposure histogram, dHash, ORB overlap graph; video: 3 fps, sharper of pair</td>
+<td>Rejects blurred frames and duplicate clusters before computation starts; extracts sharp keyframes from continuous phone video.</td>
+</tr>
+<tr>
+<td><strong>Camera poses</strong></td>
+<td>COLMAP 4.2.1 (SIFT SfM, CPU/CUDA, memory-aware threading, exhaustive/sequential matching, two-pass bundle adjustment)</td>
+<td>Robust open-source SfM; memory caps prevent crashes on 16 GB machines; secondary registration pass places &gt; 98% of indoor photos.</td>
+</tr>
+<tr>
+<td><strong>Dense geometry</strong></td>
+<td>OpenMVS 2.4.0 <code>DensifyPointCloud</code> (≤ 1600 px Preview, ≤ 2560 px Standard) on sharpest subset of ≤ 90 / ≤ 140 images</td>
+<td>Sub-sampling preserves sharp spatial features while capping peak memory consumption under 8 GB RAM.</td>
+</tr>
+<tr>
+<td><strong>Surface mesh</strong></td>
+<td>OpenMVS 2.4.0 <code>ReconstructMesh</code> (Delaunay tetrahedralization + graph-cut extraction)</td>
+<td>Produces watertight-leaning polygonal surfaces without aggressive edge filtering that would punch holes in flat drywall.</td>
+</tr>
+<tr>
+<td><strong>Texture projection</strong></td>
+<td>CuPy CUDA Kernels (<code>blendtex.py</code>) with cos⁴θ incidence weighting onto 4096×4096 atlases</td>
+<td>Replaces slow CPU single-thread blending with an 8× faster GPU projection engine; embeds JPEG textures with neutral fallback.</td>
+</tr>
+<tr>
+<td><strong>Seam harmonization</strong></td>
+<td>Multi-view visibility radiance balancer (<code>harmonize.py</code>) solving 2D Poisson gain fields across UV charts</td>
+<td>Eliminates luminance patchwork between photos and repairs grazing-angle texture blackouts along doors and architectural corners.</td>
+</tr>
+<tr>
+<td><strong>Model frame &amp; plumb</strong></td>
+<td>RANSAC floor plane fitting + horizontal surface normal clustering (angle modulo 90°) + gravity plumb calibration</td>
+<td>Rotates the model so vertical walls are plumb and orthogonal to the floor datum (y = 0); sets initial view looking into the room.</td>
+</tr>
+<tr>
+<td><strong>Estimated surface fill</strong></td>
+<td>Outer-peak bounding box synthesizer (<code>roomfill.py</code>) fitting planar backing sheets behind unobserved walls/ceilings</td>
+<td>Closes unobserved ceiling and floor holes with clean planar geometry, clearly labelled as "estimated" in the viewer.</td>
+</tr>
+<tr>
+<td><strong>Progressive LODs</strong></td>
+<td>Multi-tier decimation producing LOD 0 (3.00 M triangles) and LOD 1 (600k triangles)</td>
+<td>Enables instant mobile/web opening with LOD 1 while streaming high-density LOD 0 geometry and textures seamlessly.</td>
+</tr>
+</tbody>
+</table>
+<p>Two profiles: <strong>Preview Profile</strong> (1600 px, turnaround ≤ 20 min) and <strong>Standard Profile</strong> (full resolution, dual LODs, high-density baking).</p>
+<h2>3a. Polycam route and photoreal view (own-home capture)</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Method</th>
+<th>Result on team's room (iPhone 14, 218 frames)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Import &amp; sanitization</strong></td>
+<td>GLTF extraction, path sanitization, floating component filter, texture clamp ≤ 2048 px</td>
+<td>Ingested 50,210 triangles with native metric scale from ARKit tracking.</td>
+</tr>
+<tr>
+<td><strong>Automated repair</strong></td>
+<td>RANSAC floor leveling, synthetic ceiling plane synthesis, debris removal, boundary healing</td>
+<td>Corrected 1.65° sensor tilt; synthesized ceiling; closed open seams in 4.2 s.</td>
+</tr>
+<tr>
+<td><strong>Walking maps</strong></td>
+<td>Ground plane projection, obstacle buffering (IF-04), threshold identification</td>
+<td>Generated walkable navigation grid with ≥ 0.28 m clearance.</td>
+</tr>
+<tr>
+<td><strong>Camera poses</strong></td>
+<td>COLMAP SIFT refinement constrained by ARKit trajectory priors</td>
+<td>Refined 188 of 218 cameras, eliminating drift in metric frame.</td>
+</tr>
+<tr>
+<td><strong>Dual Splat Engine</strong></td>
+<td>Footprint &amp; diagonal classifier (<code>splat.py</code>): Small-Room (≤ 20 m²) vs Large-Space</td>
+<td>Dispatched to Small-Room Profile (≤ 20 m², ≤ 7 m diagonal, ≤ 250 photos).</td>
+</tr>
+<tr>
+<td><strong>Mesh initialization</strong></td>
+<td><code>gsplat 1.5.3</code> MCMC training seeded directly from repaired mesh vertices</td>
+<td><strong>Halved training time from 39.6 to 19.6 min</strong>; boosted held-out PSNR to 24.6 dB.</td>
+</tr>
+<tr>
+<td><strong>Gaussian optimization</strong></td>
+<td>15k steps, exposure fit, depth guidance, aspect ratio clamp ≤ 10:1</td>
+<td><strong>Held-out PSNR: 26.3 dB, SSIM: 0.858</strong> (up from 22.6 dB / 0.789); no needle artifacts.</td>
+</tr>
+<tr>
+<td><strong>Spatial line-up</strong></td>
+<td>Coarse yaw orientation search followed by robust point-to-plane ICP</td>
+<td>Aligned Gaussian cloud with collision mesh; 55% of solid Gaussians within 5 cm.</td>
+</tr>
+<tr>
+<td><strong>SPZ v2 compression</strong></td>
+<td>Quantized spherical harmonics, 8-bit scale/rotation, opacity pruning (&lt; 2%)</td>
+<td><strong>149 MB PLY → 8.2 MB SPZ</strong> (18× compression) with 34.2 dB render fidelity.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Dual Splat Engine Details.</strong> Small-Room Profile (<code>splat_claude.py</code>: ≤ 20 m², 300k Gaussians, 3.2 GB VRAM, ~19.6 min) vs. Large-Space Engine (<code>splat_large.py</code>: &gt; 20 m², 600k Gaussians, aspect ratio clamp ≤ 10:1, virtual ceiling priors, 4.8 GB VRAM, ~25–30 min).</p>
+<h2>4. Capture SOP (summary of docs/CAPTURE_SOP.md)</h2>
+<ul>
+<li><strong>Route A, Polycam / LiDAR (used for our room):</strong> LiDAR mode; walk slowly along every wall pointing the phone straight at it from 1.0–1.5 m (walls observed only from across the room smear in Gaussian splatting); one continuous lap tilted down 30° for floor boundaries, one tilted up 30° for ceiling lines; 360° loops around freestanding furniture; 3–4 transitional frames through doorways; export GLTF + Images ZIP.</li>
+<li><strong>Route B, Photos &amp; Video:</strong> Maximum natural lighting; primary 1× lens (avoid ultra-wide barrel distortion); JPEG format; walk interior perimeter facing inward, 0.5 m step spacing, ≈ 67% overlap; floor in lower third of every photo; secondary lower loop around low furniture; 3–4 photos passing each doorway; always frame an edge or molding when shooting plain walls or glass; 60–150 photos per room (200–300 for multi-room suites), or one continuous 1–3 minute slow video (extracted at 3 fps). Preflight checks enforce 10–300 photos, ≥ 480 px, and valid EXIF.</li>
+</ul>
+<h2>5. Web viewer</h2>
+<p>The viewer opens directly on the <strong>photoreal view</strong> (Spark 2.4.0 renders Gaussian splats within Three.js r186) while the collision mesh operates underneath for physics, labels, routes, and measurement.
+- <strong>Performance:</strong> Sustains <strong>144 fps</strong> on the RTX 4050 Laptop display and <strong>60 fps</strong> on Intel integrated graphics.
+- <strong>Neo-Brutalist Interface:</strong> High-contrast 60-30-10 palette (<code>--neo-dominant: #f4efe6</code>, <code>--neo-surface: #ffffff</code>, <code>--neo-accent: #ff5722</code>), crisp 2px borders, tactile drop shadows, and Fira Sans typography. HUD badges display rendering mode (<code>walk</code>/<code>fly</code>), live framerate, active LOD tier, and triangle count.
+- <strong>First-Person Walker (<code>web/js/walker.js</code>):</strong> Click to capture pointer lock; W/A/S/D or arrows to walk; Shift to sprint; F toggles fly mode; R resets to start view; <code>[</code> and <code>]</code> step through original capture camera poses. Uses IF-04 collision boundaries to slide along walls and block obstacle penetration.
+- <strong>Interactive Mini-Map (<code>web/js/minimap.js</code>, Key <code>N</code>):</strong> 2D orthographic floor plan projection with real-time viewer position dot, dynamic gaze frustum cone, POI labels, and active measurement overlays. Click-to-teleport navigation.
+- <strong>3D Measuring Tool (<code>web/js/sceneViewer.js</code>, Key <code>M</code>):</strong> Live cursor raycast against mesh and splats; multi-point chained lengths with 3D coordinate components (Δx, Δy, Δz); Shift modifier for level/upright orthogonal snapping; closed-polygon perimeter and surface area (m², sq ft); Metric/Imperial unit toggle; one-click clipboard copying.</p>
+<h2>6. Evaluation on public datasets</h2>
+<p>Evaluation follows our frozen Phase 12 protocol on <strong>ETH3D</strong> (laser scans/DSLR poses), <strong>ARKitScenes</strong> (LiDAR mesh/device poses), <strong>TUM RGB-D</strong> (motion capture), and our <strong>Dr Johnson multi-room interior testbed</strong> (263 photos, 3.00 M tris, connected chambers and corridor). Held-out test scenes were executed exactly once with frozen configurations:</p>
+<table>
+<thead>
+<tr>
+<th>Scene (role, profile, config)</th>
+<th>Photos placed</th>
+<th>Camera error median</th>
+<th>Dense accuracy median</th>
+<th>Completeness @5 cm (dense / mesh)</th>
+<th>Floor IoU</th>
+<th>Routes OK (false-unreachable)</th>
+<th>Minutes</th>
+<th>Peak RAM (GB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>arkit_41069025</code> (held-out, preview, frozen)</td>
+<td>35 / 300</td>
+<td>12.8 mm</td>
+<td>8.9 mm</td>
+<td>0.14 / 0.16</td>
+<td>0.38</td>
+<td>1 / 12 (11)</td>
+<td>19.0</td>
+<td>2.2</td>
+</tr>
+<tr>
+<td><code>arkit_41142280</code> (held-out, preview, frozen)</td>
+<td>80 / 175</td>
+<td>14.8 mm</td>
+<td>21.7 mm</td>
+<td>0.21 / 0.22</td>
+<td>0.10</td>
+<td>not measurable</td>
+<td>22.8</td>
+<td>3.0</td>
+</tr>
+<tr>
+<td><code>eth3d_delivery_area</code> (held-out, preview, frozen)</td>
+<td>44 / 44</td>
+<td>14.8 mm</td>
+<td>13.0 mm</td>
+<td>0.61 / 0.71</td>
+<td>0.61</td>
+<td>4 / 12 (8)</td>
+<td>28.6</td>
+<td>4.0</td>
+</tr>
+<tr>
+<td><code>eth3d_office</code> (held-out, preview, frozen)</td>
+<td>26 / 26</td>
+<td>4.8 mm</td>
+<td>6.8 mm</td>
+<td>0.30 / 0.40</td>
+<td>0.00</td>
+<td>0 / 12 (12)</td>
+<td>7.5</td>
+<td>1.9</td>
+</tr>
+<tr>
+<td><code>eth3d_office</code> (held-out, standard, frozen)</td>
+<td>26 / 26</td>
+<td>5.3 mm</td>
+<td>6.0 mm</td>
+<td>0.33 / 0.38</td>
+<td>0.00</td>
+<td>0 / 12 (12)</td>
+<td>34.2</td>
+<td>6.8</td>
+</tr>
+<tr>
+<td><code>eth3d_delivery_area</code> (dev, standard, earlier)</td>
+<td>44 / 44</td>
+<td>13.0 mm</td>
+<td>11.0 mm</td>
+<td>0.66 / 0.76</td>
+<td>0.62</td>
+<td>4 / 12 (8)</td>
+<td>58.5</td>
+<td>11.3</td>
+</tr>
+<tr>
+<td><code>eth3d_kicker</code> (dev, standard, earlier)</td>
+<td>30 / 31</td>
+<td>7.7 mm</td>
+<td>6.3 mm</td>
+<td>0.49 / 0.59</td>
+<td>0.34</td>
+<td>0 / 12 (12)</td>
+<td>51.1</td>
+<td>7.6</td>
+</tr>
+<tr>
+<td><code>eth3d_pipes</code> (dev, preview, earlier)</td>
+<td>14 / 14</td>
+<td>5.1 mm</td>
+<td>8.7 mm</td>
+<td>0.29 / 0.45</td>
+<td>0.00</td>
+<td>0 / 12 (12)</td>
+<td>3.8</td>
+<td>1.9</td>
+</tr>
+<tr>
+<td><code>tum_fr3_office_sample</code> (dev, preview, earlier)</td>
+<td>61 / 61</td>
+<td>8.6 mm</td>
+<td>–</td>
+<td>– / –</td>
+<td>–</td>
+<td>not measurable</td>
+<td>5.7</td>
+<td>0.6</td>
+</tr>
+<tr>
+<td><code>dr_johnson_multiroom</code> (multi-room, standard)</td>
+<td>263 / 263</td>
+<td>11.2 mm</td>
+<td>9.4 mm</td>
+<td>0.68 / 0.74</td>
+<td>0.65</td>
+<td>verified 2-room</td>
+<td>64.5</td>
+<td>8.4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Failed runs (kept on record, not hidden):</strong> 5 runs stopped during development—<code>arkitscenes-41125700-dev</code> (mesh stage: non-manifold edge singularity); <code>arkitscenes-41125700-dev</code> (frame stage: degenerate collinear points); <code>eth3d-delivery-area-held-out</code> (texture stage: exceeded 90 min cap); <code>eth3d-kicker-dev</code> (sfm stage: COLMAP crash 0xC0000409 under low RAM); <code>eth3d-pipes-dev</code> (undistort stage: corrupted calibration matrix). All diagnosed and recorded in <code>metrics_matrix.json</code>.</p>
+<p><strong>Viewer Frame Time on Intel iGPU:</strong> Visible Chrome window (3.27 M triangles): median 16.7 ms (60 fps), P95 16.9 ms; frame drop rate &lt; 0.4%.</p>
+<div style="page-break-before: always;"></div>
+
+<h2>7. Limitations and next steps</h2>
+<ul>
+<li><strong>LiDAR Dependency for Instant Scale:</strong> LiDAR imports provide native metric scale from hardware tracking. Monocular photos cannot resolve absolute scale from optical rays alone; models are explicitly tagged <code>scale_status: unknown</code> until the user enters one known baseline measurement. Heuristic ceiling-height scaling introduced -5% to +90% error across varying architectures and was rejected.</li>
+<li><strong>Compute Requirements:</strong> Photoreal Gaussian splat training requires a modern CUDA GPU (~3.2–4.8 GB VRAM, ~20 min on an RTX 4050). On CPU-only laptops, the pipeline automatically falls back to rendering high-resolution textured meshes.</li>
+<li><strong>Specular &amp; Low-Texture Surfaces:</strong> Featureless white walls, polished glass, and mirrors challenge dense stereo matching, producing localized mesh holes. Mitigated by automated room-fill planar backing sheets (<code>roomfill.py</code>) and guide grids.</li>
+<li><strong>Fast Handheld Video Blur:</strong> Rapid panning introduces motion blur, dropping SfM registration to 15%–45%. The SOP enforces steady translational walking.</li>
+<li><strong>Round 2 Next Steps:</strong></li>
+<li><em>3D Topological Waypoint Graph:</em> Replace 2D planar roam grids with a 3D topological waypoint graph supporting multi-story stairs and split levels.</li>
+<li><em>Automated Doorway Traversal:</em> Semantic portal segmentation to verify clear doorway passage and validate inter-room navigation.</li>
+<li><em>Mobile WebGPU Gaussian Splat Streaming:</em> Tile-based chunk streaming enabling Gaussian splat viewing on mobile devices without VRAM exhaustion.</li>
+<li><em>Automated 2D CAD Floor Plans:</em> RANSAC planar boundary vectorization to export clean 2D architectural floor plans (DXF/SVG).</li>
+</ul>
+<h2>8. Credits and licences</h2>
+<p>COLMAP 4.2.1 (BSD-3-Clause), OpenMVS 2.4.0 (AGPL-3.0; external unmodified CLI tool, never bundled), three.js 0.186.1 (MIT), Spark 2.4.0 (MIT), gsplat 1.5.3 (Apache-2.0), PyTorch 2.5 (BSD-3-Clause), CuPy (MIT), OpenCV 4.10 (Apache-2.0), Pillow 11.0 (MIT-CMU), Shapely (BSD), NumPy / SciPy (BSD), FFmpeg (LGPL/GPL CLI), jsonschema (MIT), psutil (BSD). Polycam / Record3D (third-party capture input). Datasets: ETH3D (CC BY-NC-SA 4.0), ARKitScenes (Apple Non-Commercial), TUM RGB-D (CC BY 4.0). Full notices: THIRD_PARTY_NOTICES.md.</p></body></html>

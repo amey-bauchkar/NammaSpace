@@ -24,9 +24,93 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps
 from scipy import ndimage
+from scipy.spatial import cKDTree
 
 from namma.recon.glb import read_glb, write_glb
 from namma.recon.harmonize import _accessor, _buffers
+
+COS_MAX_ANGLE = float(np.cos(np.radians(75.0)))   # ~0.25881905: glancing-angle cutoff (incidence <= 75 deg)
+COS_FADE_ANGLE = float(np.cos(np.radians(65.0)))  # ~0.42261827: smooth falloff onset
+
+
+def heal_coplanar_texels(X, N, col, is_valid, global_ref=None, max_search_r=0.40, chunk_size=100_000):
+    """Interpolate starved texels from neighboring coplanar surfaces in 3D.
+
+    For surfaces with low ray-camera incidence angles (theta > 75 deg), near-zero coverage,
+    or OpenMVS dark shadow/specular artifacts, this finds neighboring reliably observed surfaces
+    in 3D, filters for coplanarity (aligned normals and small plane offset), and computes a distance-weighted
+    radiance blend.
+    """
+    starved_idx = np.nonzero(~is_valid)[0]
+    if len(starved_idx) == 0:
+        return col
+
+    if global_ref is not None:
+        ref_X, ref_N, ref_col = global_ref
+    else:
+        valid_idx = np.nonzero(is_valid)[0]
+        if len(valid_idx) == 0:
+            return col
+        stride = max(1, len(valid_idx) // 50000)
+        sub_valid = valid_idx[::stride]
+        ref_X = X[sub_valid]
+        ref_N = N[sub_valid]
+        ref_col = col[sub_valid]
+
+    if len(ref_X) == 0:
+        return col
+
+    tree = cKDTree(ref_X)
+    s_X = X[starved_idx]
+    s_N = N[starved_idx]
+    n_starved = len(starved_idx)
+
+    healed_col = col.copy()
+    K = min(10, len(ref_X))
+
+    for start in range(0, n_starved, chunk_size):
+        end = min(n_starved, start + chunk_size)
+        cur_X = s_X[start:end]
+        cur_N = s_N[start:end]
+        cur_s_idx = starved_idx[start:end]
+
+        dists, idxs = tree.query(cur_X, k=K, distance_upper_bound=max_search_r)
+        valid_mask = idxs < len(ref_X)
+        safe_idxs = np.where(valid_mask, idxs, 0)
+
+        cand_X = ref_X[safe_idxs]
+        cand_N = ref_N[safe_idxs]
+        cand_C = ref_col[safe_idxs]
+
+        # Coplanarity: aligned normals (|N_cand . N_cur| >= 0.707) AND plane offset <= 4 cm
+        norm_dot = np.abs(np.einsum("ski,si->sk", cand_N, cur_N))
+        plane_dist = np.abs(np.einsum("ski,si->sk", cand_X - cur_X[:, None, :], cur_N))
+        coplanar = valid_mask & (norm_dot >= 0.707) & (plane_dist <= 0.04)
+
+        has_coplanar = coplanar.any(axis=1)
+        use_mask = np.where(has_coplanar[:, None], coplanar, valid_mask)
+        weights = np.where(use_mask, 1.0 / np.maximum(dists, 0.005), 0.0)
+        w_sum = weights.sum(axis=1, keepdims=True)
+        has_any = (w_sum > 0).ravel()
+
+        cur_healed = np.zeros((len(cur_X), 3), np.float32)
+        safe_w_sum = np.where(has_any[:, None], w_sum, 1.0)
+        cur_healed[has_any] = (cand_C * weights[:, :, None]).sum(axis=1)[has_any] / safe_w_sum[has_any]
+
+        # For points beyond max_search_r with no neighbor: nearest valid reference
+        if not has_any.all():
+            missing = np.nonzero(~has_any)[0]
+            _, n1 = tree.query(cur_X[missing], k=1)
+            cur_healed[missing] = ref_col[n1]
+
+        # Add subtle micro-texture grain (sigma = 1.5/255) to avoid flat plastic appearance
+        rng = np.random.default_rng(42 + start)
+        grain = rng.normal(0, 1.5 / 255.0, cur_healed.shape).astype(np.float32)
+        cur_healed = np.clip(cur_healed + grain, 0.0, 1.0)
+
+        healed_col[cur_s_idx] = cur_healed
+
+    return healed_col
 
 
 def rasterize_atlas(uv, faces, W, H):
@@ -121,22 +205,34 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
     allP = np.vstack(allP).astype(np.float32)
     stats = {"photos": len(views), "scale": scale}
     buf0 = bytearray(bufs[0])
+    # Phase 1: Blend views per atlas, filter glancing angles (theta > 75 deg), and collect clean reference radiance
+    atlas_data = []
+    global_ref_X, global_ref_N, global_ref_C = [], [], []
+
     for t, parts in per_tex.items():
-        bv = doc["bufferViews"][doc["images"][t]["bufferView"]]
-        raw = bufs[bv.get("buffer", 0)][bv.get("byteOffset", 0): bv.get("byteOffset", 0) + bv["byteLength"]]
-        A0 = Image.open(io.BytesIO(raw)).convert("RGB")
+        img_info = doc["images"][t]
+        if "bufferView" in img_info:
+            bv = doc["bufferViews"][img_info["bufferView"]]
+            raw = bufs[bv.get("buffer", 0)][bv.get("byteOffset", 0): bv.get("byteOffset", 0) + bv["byteLength"]]
+            A0 = Image.open(io.BytesIO(raw)).convert("RGB")
+        elif "uri" in img_info:
+            uri_path = (Path(src).parent / img_info["uri"]).resolve()
+            A0 = Image.open(uri_path).convert("RGB")
+        else:
+            raise ValueError(f"Image {t} has neither bufferView nor uri")
         sc = max(1, min(scale, max_side // max(A0.size)))         # never beyond max_side (browser GPU memory)
         W, H = A0.size[0] * sc, A0.size[1] * sc
         out = np.asarray(A0.resize((W, H), Image.LANCZOS) if sc != 1 else A0, np.float32) / 255
         X, N, yy, xx = _texels(parts, W, H)
         acc = np.zeros((len(yy), 3), np.float32)
         wsum = np.zeros(len(yy), np.float32)
+        max_cos = np.zeros(len(yy), np.float32)
         log(f"atlas {t}: {W}x{H}, {len(yy) / 1e6:.1f} M texels")
         gpu = _gpu_blend_ok()
         if gpu:
             try:
-                acc, wsum, n_used = _blend_views_gpu(X, N, allP, views, power=power, depth_tol=depth_tol,
-                                                     edge_frac=edge_frac, zbuf_px=zbuf_px, log=log, label=f"atlas {t}")
+                acc, wsum, max_cos, n_used = _blend_views_gpu(X, N, allP, views, power=power, depth_tol=depth_tol,
+                                                             edge_frac=edge_frac, zbuf_px=zbuf_px, log=log, label=f"atlas {t}")
                 stats["device"] = "gpu"
             except Exception as e:                     # noqa: BLE001 - any CUDA / memory problem: CPU path below
                 log(f"  GPU blend failed ({e.__class__.__name__}: {e}); blending on the CPU")
@@ -144,6 +240,7 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
                 gpu = False
                 acc[:] = 0
                 wsum[:] = 0
+                max_cos[:] = 0
         if not gpu:
             stats["device"] = "cpu"
         n_used = n_used if gpu else 0
@@ -181,39 +278,87 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
                 margin = edge_frac * min(Wi, Hi)
                 uu, ww = u[idx], w[idx]
                 edge = np.clip(np.minimum.reduce([uu, ww, Wi - 1 - uu, Hi - 1 - ww]) / margin, 0, 1)
-                wt = (cos ** power) / (dist * dist) * edge
+                cos_fade = np.clip((cos - COS_MAX_ANGLE) / (COS_FADE_ANGLE - COS_MAX_ANGLE), 0.0, 1.0)
+                wt = (cos ** power) / (dist * dist) * edge * cos_fade
                 u0, w0 = np.floor(uu).astype(int), np.floor(ww).astype(int)
                 fu, fw = (uu - u0)[:, None], (ww - w0)[:, None]
                 c = (img[w0, u0] * (1 - fu) * (1 - fw) + img[w0, u0 + 1] * fu * (1 - fw)
                      + img[w0 + 1, u0] * (1 - fu) * fw + img[w0 + 1, u0 + 1] * fu * fw) * (v["gain"] / 255.0)
                 acc[idx] += (c * wt[:, None]).astype(np.float32)
                 wsum[idx] += wt.astype(np.float32)
+                np.maximum.at(max_cos, idx, cos.astype(np.float32))
             if (k_view + 1) % 25 == 0:
                 log(f"  atlas {t}: {k_view + 1}/{len(views)} photos blended")
-        seen = wsum > 0
-        col = out[yy, xx]
+
+        seen = (wsum > 1e-4) & (max_cos >= COS_MAX_ANGLE)
+        col = out[yy, xx].copy()
         col[seen] = acc[seen] / wsum[seen, None]
+        col = np.clip(col, 0, 1)
+
+        # Valid direct radiance:
+        # Rejects glancing starvation, dark shadow artifacts, and specular blowouts
+        is_valid = seen & (col.mean(axis=1) >= 0.35) & (col.min(axis=1) >= 0.20) & (col.max(axis=1) < 0.98)
+        valid_idx = np.nonzero(is_valid)[0]
+        if len(valid_idx) > 0:
+            stride = max(1, len(valid_idx) // 30000)
+            global_ref_X.append(X[valid_idx[::stride]])
+            global_ref_N.append(N[valid_idx[::stride]])
+            global_ref_C.append(col[valid_idx[::stride]])
+
+        atlas_data.append({
+            "t": t, "W": W, "H": H, "out": out,
+            "X": X, "N": N, "yy": yy, "xx": xx,
+            "col": col, "is_valid": is_valid, "seen": seen, "n_used": n_used, "gpu": gpu
+        })
+
+    global_ref = None
+    if global_ref_X:
+        global_ref = (np.vstack(global_ref_X), np.vstack(global_ref_N), np.vstack(global_ref_C))
+
+    # Phase 2: Heal starved / glancing-angle surfaces from coplanar neighbors and inpaint gutters
+    for ad in atlas_data:
+        t = ad["t"]
+        W, H = ad["W"], ad["H"]
+        X, N = ad["X"], ad["N"]
+        yy, xx = ad["yy"], ad["xx"]
+        col = ad["col"]
+        is_valid = ad["is_valid"]
+        out = ad["out"]
+        gpu = ad["gpu"]
+
+        # Coplanar healing of starved texels
+        col = heal_coplanar_texels(X, N, col, is_valid, global_ref=global_ref, max_search_r=0.40)
         out[yy, xx] = np.clip(col, 0, 1)
-        mask = np.zeros((H, W), bool)
-        mask[yy, xx] = True
-        del X, N, acc, wsum, col
-        # gutter: extend texel colours outward so texture filtering / mipmaps do not pull in stale colours
-        iy = ix = None
-        if gpu:
-            try:                                       # 8192^2 feature transform: ~10 s on the CPU
-                import cupy as cp
-                from cupyx.scipy import ndimage as cnd
-                _, ind = cnd.distance_transform_edt(cp.asarray(~mask), return_distances=True, return_indices=True)
-                iy, ix = cp.asnumpy(ind[0]), cp.asnumpy(ind[1])
-                del ind
-                cp.get_default_memory_pool().free_all_blocks()
-            except Exception:                          # noqa: BLE001 - CPU below
-                iy = ix = None
-        if iy is None:
-            _, (iy, ix) = ndimage.distance_transform_edt(~mask, return_indices=True)
-        near = ndimage.binary_dilation(mask, iterations=2 * sc) & ~mask
-        out[near] = out[iy[near], ix[near]]
-        del iy, ix, near
+
+        # Full background gutter fill: extend valid surface texels outward so mipmaps never pull black/stale borders
+        surface_mask_np = np.zeros((H, W), bool)
+        surface_mask_np[yy, xx] = True
+        del X, N, col
+
+        if surface_mask_np.any():
+            inpainted = False
+            if gpu:
+                try:
+                    import cupy as cp
+                    from cupyx.scipy import ndimage as cnd
+                    surf_gpu = cp.asarray(surface_mask_np)
+                    _, ind = cnd.distance_transform_edt(~surf_gpu, return_distances=True, return_indices=True)
+                    out_gpu = cp.asarray(out)
+                    unseen = ~surf_gpu
+                    out_gpu[unseen] = out_gpu[ind[0][unseen], ind[1][unseen]]
+                    out = cp.asnumpy(out_gpu)
+                    del surf_gpu, ind, out_gpu
+                    cp.get_default_memory_pool().free_all_blocks()
+                    inpainted = True
+                except Exception as e:                 # noqa: BLE001 - CPU fallback
+                    log(f"  GPU inpaint fallback to CPU ({e.__class__.__name__}: {e})")
+            if not inpainted:
+                _, (iy, ix) = ndimage.distance_transform_edt(~surface_mask_np, return_indices=True)
+                unseen = ~surface_mask_np
+                out[unseen] = out[iy[unseen], ix[unseen]]
+                del iy, ix
+        del surface_mask_np
+
         bio = io.BytesIO()
         Image.fromarray((out * 255 + 0.5).astype(np.uint8)).save(bio, "JPEG", quality=92, optimize=True)
         data = bio.getvalue()
@@ -222,9 +367,9 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         doc["bufferViews"].append({"buffer": 0, "byteOffset": len(buf0), "byteLength": len(data)})
         buf0 += data
         doc["images"][t] = {"bufferView": len(doc["bufferViews"]) - 1, "mimeType": "image/jpeg", "name": f"texture_{t}"}
-        stats[f"atlas_{t}_texels_blended"] = float(seen.mean())
+        stats[f"atlas_{t}_texels_blended"] = float(ad["seen"].mean())
         stats[f"atlas_{t}_size"] = [W, H]
-        stats["photos_used"] = n_used
+        stats["photos_used"] = ad["n_used"]
     doc["buffers"][0]["byteLength"] = len(buf0) + (-len(buf0) % 4)
     doc.setdefault("asset", {})["generator"] = doc["asset"].get("generator", "") + " + multi-view blended texture (namma.recon.blendtex)"
     write_glb(dst, doc, bytes(buf0))
@@ -284,7 +429,8 @@ def blend_points(X, N, views, mesh_vertices, *, power=4, depth_tol=0.015, edge_f
         cos = np.abs(np.einsum("ij,ij->i", ray, N[idx])) / dist
         uu, ww = u[idx], w[idx]
         edge = np.clip(np.minimum.reduce([uu, ww, Wi - 1 - uu, Hi - 1 - ww]) / (edge_frac * min(Wi, Hi)), 0, 1)
-        wt = (cos ** power) / (dist * dist) * edge
+        cos_fade = np.clip((cos - COS_MAX_ANGLE) / (COS_FADE_ANGLE - COS_MAX_ANGLE), 0.0, 1.0)
+        wt = (cos ** power) / (dist * dist) * edge * cos_fade
         c = img[ww.astype(int), uu.astype(int)] * (v["gain"] / 255.0)
         acc[idx] += (c * wt[:, None]).astype(np.float32); wsum[idx] += wt; nv[idx] += 1
     out = np.where(wsum[:, None] > 0, acc / np.maximum(wsum, 1e-12)[:, None], 0.0)
@@ -303,13 +449,12 @@ def _gpu_blend_ok():
 
 
 def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px, log, label, batch=4_000_000):
-    """Same weighted mean as the CPU loop, on the GPU. -> (acc float32 (n,3), wsum float32 (n,), photos used).
+    """Same weighted mean as the CPU loop, on the GPU. -> (acc float32 (n,3), wsum float32 (n,), max_cos float32 (n,), photos used).
     The next photo is decoded on a CPU thread while the GPU works on the current one."""
     import queue
     import threading
 
     import cupy as cp
-    import cupyx
     from cupyx.scipy import ndimage as cnd
     n = len(X)
     Xg = cp.asarray(X, cp.float32)
@@ -317,6 +462,7 @@ def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px,
     Pg = cp.asarray(allP, cp.float32)
     acc = cp.zeros((n, 3), cp.float32)
     wsum = cp.zeros(n, cp.float32)
+    max_cos = cp.zeros(n, cp.float32)
     q = queue.Queue(maxsize=2)
 
     def producer():
@@ -353,7 +499,7 @@ def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px,
         u, w, z = project(Pg)
         ok = (z > 1e-6) & (u >= 0) & (u < Wi) & (w >= 0) & (w < Hi)
         zb = cp.full((int(Hi * zsc) + 1, int(Wi * zsc) + 1), cp.inf, cp.float32)
-        cupyx.scatter_min(zb, ((w[ok] * zsc).astype(cp.int32), (u[ok] * zsc).astype(cp.int32)), z[ok])
+        cp.minimum.at(zb, ((w[ok] * zsc).astype(cp.int32), (u[ok] * zsc).astype(cp.int32)), z[ok])
         zb = cnd.minimum_filter(zb, size=3)
         margin = edge_frac * min(Wi, Hi)
         for s0 in range(0, n, batch):
@@ -372,7 +518,8 @@ def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px,
             cos = cp.abs((ray * Ng[sl][idx]).sum(1)) / dist
             uu, ww = u[idx], w[idx]
             edge = cp.clip(cp.minimum(cp.minimum(uu, ww), cp.minimum(Wi - 1 - uu, Hi - 1 - ww)) / margin, 0, 1)
-            wt = (cos ** power) / (dist * dist) * edge
+            cos_fade = cp.clip((cos - COS_MAX_ANGLE) / (COS_FADE_ANGLE - COS_MAX_ANGLE), 0.0, 1.0)
+            wt = (cos ** power) / (dist * dist) * edge * cos_fade
             u0, w0 = cp.floor(uu).astype(cp.int32), cp.floor(ww).astype(cp.int32)
             fu, fw = (uu - u0)[:, None], (ww - w0)[:, None]
             c = (img[w0, u0] * (1 - fu) * (1 - fw) + img[w0, u0 + 1] * fu * (1 - fw)
@@ -380,9 +527,10 @@ def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px,
             gidx = idx + s0
             acc[gidx] += c * wt[:, None]                 # idx unique within a view: plain fancy-index add is exact
             wsum[gidx] += wt
+            cp.maximum.at(max_cos, gidx, cos)
         if used % 25 == 0:
             log(f"  {label}: {used}/{len(views)} photos blended")
-    out = cp.asnumpy(acc), cp.asnumpy(wsum), used
-    del Xg, Ng, Pg, acc, wsum
+    out = cp.asnumpy(acc), cp.asnumpy(wsum), cp.asnumpy(max_cos), used
+    del Xg, Ng, Pg, acc, wsum, max_cos
     cp.get_default_memory_pool().free_all_blocks()
     return out

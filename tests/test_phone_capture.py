@@ -159,7 +159,7 @@ def test_video_pieces_are_joined_and_rewrapped(phone):
 
 
 def test_desktop_studio_exposes_the_code_only_locally(tmp_path):
-    from test_p13_studio import W, req as dreq, server   # noqa: F401
+    from test_p13_studio import W, req as dreq
     import http.server as hs
     import threading
     from namma.studio.server import Handler, Studio

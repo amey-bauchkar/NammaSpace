@@ -83,3 +83,66 @@ def test_zip_with_a_huge_unpacked_model_is_refused(tmp_path, monkeypatch):
         zf.writestr("model.glb", b"glTF" + b"\x00" * 50_000)              # compresses to almost nothing
     with pytest.raises(mesh_import.ImportError_, match="unpacked"):
         mesh_import.read_glb_bytes(z)
+
+
+def test_patch_needs_csrf_header(server):  # noqa: F811
+    port, studio = server
+    pid = studio.store.create("Original Title")["project_id"]
+    # PATCH without header should be rejected with CSRF 403
+    st, body = req(port, "PATCH", f"/api/projects/{pid}", {"title": "New Title"})
+    assert st == 403 and body["error"] == "CSRF"
+    assert studio.store.get(pid)["title"] == "Original Title"
+
+    # PATCH with X-Namma-Studio header succeeds
+    st, body = req(port, "PATCH", f"/api/projects/{pid}", {"title": "New Title"}, W)
+    assert st == 200 and body["title"] == "New Title"
+    assert studio.store.get(pid)["title"] == "New Title"
+
+
+def test_origin_header_validation(server):  # noqa: F811
+    port, _ = server
+    # External malicious origin rejected with 403 HOST
+    st, body = req(port, "GET", "/api/health", headers={"Origin": "http://evil.com"})
+    assert st == 403 and body["error"] == "HOST"
+
+    # Local origin permitted
+    st, body = req(port, "GET", "/api/health", headers={"Origin": f"http://127.0.0.1:{port}"})
+    assert st == 200 and body["ok"]
+
+
+def test_zip_upload_with_huge_uncompressed_image_is_refused(server, tmp_path, monkeypatch):  # noqa: F811
+    from namma.studio import server as srv_mod
+    monkeypatch.setattr(srv_mod, "MAX_IMAGE_BYTES", 1000)
+    port, studio = server
+    pid = studio.store.create("ZipSec")["project_id"]
+
+    import io
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("bomb.jpg", b"0" * 20_000)
+    zip_bytes = buf.getvalue()
+
+    st, body = req(port, "PUT", f"/api/projects/{pid}/uploads/archive.zip", zip_bytes,
+                   headers={**W, "Content-Type": "application/zip"})
+    assert st == 413 and body["error"] == "UPLOAD-TOO-LARGE"
+    assert not any(studio.store.originals(pid).iterdir())
+
+
+def test_polycam_bridge_zip_bomb_refused(tmp_path):
+    from namma.studio.polycam_bridge import BridgeError, PolycamStaging
+    staging = PolycamStaging(tmp_path / "projects")
+    iid = staging.start()
+
+    import io
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        # A 65MB uncompressed image inside zip
+        zf.writestr("huge.jpg", b"\x00" * (65 * 1024 * 1024))
+    zip_bytes = buf.getvalue()
+
+    staging.save(iid, "photos.zip", io.BytesIO(zip_bytes), len(zip_bytes))
+    with pytest.raises(BridgeError) as exc_info:
+        staging.finish(iid, title="Bomb Test")
+    assert exc_info.value.code == "IMPORT-SIZE"
+    assert exc_info.value.status == 413
+

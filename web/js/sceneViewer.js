@@ -407,11 +407,13 @@ async function loadEstimated(ctx) {
     if (old) old.dispose();
   });
   group.add(gltf.scene);
+  group.visible = false;
   ctx.app.scene.add(group);
   ctx.estimated = group;
-  window.__nammaScene.estimatedShown = true;
+  window.__nammaScene.estimatedShown = false;
   const btn = $('estimated-toggle');
   btn.hidden = false;
+  btn.textContent = 'Show estimated surfaces';
   btn.onclick = () => {
     group.visible = !group.visible;
     window.__nammaScene.estimatedShown = group.visible;
