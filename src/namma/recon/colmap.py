@@ -58,6 +58,20 @@ def match_features(tools, db, log_dir, *, mode, overlap=15, guided=True, timeout
                     on_line=_progress_cb(progress, "Matching photos"))
 
 
+def match_transitive(tools, db, log_dir, *, timeout_s, cancel_file=None, progress=None,
+                     use_gpu=False, gpu_index=0, num_iterations=1, batch_size=1000):
+    """Transitive matching to expand feature correspondences and close trajectory loops."""
+    gpu = int(bool(use_gpu))
+    argv = [tools.colmap, "transitive_matcher", "--database_path", db,
+            "--FeatureMatching.use_gpu", gpu,
+            "--TransitiveMatching.batch_size", batch_size,
+            "--TransitiveMatching.num_iterations", num_iterations]
+    if use_gpu:
+        argv += ["--FeatureMatching.gpu_index", gpu_index]
+    return run_step("colmap_transitive_matcher", argv, log_dir, timeout_s=timeout_s, cancel_file=cancel_file,
+                    on_line=_progress_cb(progress, "Connecting loops (transitive)"))
+
+
 def map_sparse(tools, db, image_dir, out_dir, log_dir, *, timeout_s, cancel_file=None, progress=None,
                abs_pose_min_inliers=30):
     Path(out_dir).mkdir(parents=True, exist_ok=True)
@@ -80,12 +94,13 @@ GLOBAL_PHASES = (("rotation averaging", "running rotation averaging"), ("tracks"
 
 
 def map_global(tools, db, image_dir, out_dir, log_dir, *, timeout_s, cancel_file=None, progress=None,
-               use_gpu=True, gpu_index=0):
+               use_gpu=True, gpu_index=0, max_rotation_error_deg=15):
     """COLMAP 4 global SfM (GLOMAP). Measured on the HP Victus (300 video frames, iPhone 14): 93 s vs 635 s for the
     incremental mapper, one model with 281 frames (incremental: 201 + a separate 37), 0.82 px vs 0.66 px reprojection."""
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     argv = [tools.colmap, "global_mapper", "--database_path", db, "--image_path", image_dir, "--output_path", out_dir,
-            "--GlobalMapper.gp_use_gpu", int(use_gpu), "--GlobalMapper.ba_ceres_use_gpu", int(use_gpu)]
+            "--GlobalMapper.gp_use_gpu", int(use_gpu), "--GlobalMapper.ba_ceres_use_gpu", int(use_gpu),
+            "--GlobalMapper.ra_max_rotation_error_deg", max_rotation_error_deg]
     state = {"i": 0}
 
     def cb(line):
@@ -96,6 +111,26 @@ def map_global(tools, db, image_dir, out_dir, log_dir, *, timeout_s, cancel_file
                 if progress is not None:
                     progress(f"Placing cameras ({GLOBAL_PHASES[i][0]})", i / len(GLOBAL_PHASES))
     return run_step("colmap_global_mapper", argv, log_dir, timeout_s=timeout_s, cancel_file=cancel_file, on_line=cb)
+
+
+def merge_models(tools, model_path1, model_path2, output_path, log_dir, *, max_reproj_error=64, timeout_s=600):
+    """Merge two reconstruction sub-models sharing registered cameras or common 3D points."""
+    Path(output_path).mkdir(parents=True, exist_ok=True)
+    return run_step("colmap_model_merger", [tools.colmap, "model_merger",
+                                            "--input_path1", str(model_path1),
+                                            "--input_path2", str(model_path2),
+                                            "--output_path", str(output_path),
+                                            "--max_reproj_error", max_reproj_error],
+                    log_dir, timeout_s=timeout_s)
+
+
+def bundle_adjust(tools, model_dir, out_dir, log_dir, *, timeout_s=600, cancel_file=None):
+    """Refine camera poses and 3D points using global bundle adjustment."""
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    return run_step("colmap_bundle_adjuster", [tools.colmap, "bundle_adjuster",
+                                               "--input_path", str(model_dir),
+                                               "--output_path", str(out_dir)],
+                    log_dir, timeout_s=timeout_s, cancel_file=cancel_file)
 
 
 def register_remaining(tools, db, model_dir, out_dir, log_dir, *, timeout_s, cancel_file=None,

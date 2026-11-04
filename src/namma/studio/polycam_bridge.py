@@ -182,6 +182,8 @@ class PolycamStaging:
                     with zipfile.ZipFile(p) as z:
                         total_uncompressed = 0
                         valid_items = []
+                        has_kf_imgs = any(i.filename.startswith("keyframes/images/") and Path(i.filename).suffix.lower() in IMAGE_EXTS
+                                          for i in z.infolist())
                         for item in z.infolist():
                             if item.is_dir() or "__MACOSX" in item.filename:
                                 continue
@@ -189,6 +191,10 @@ class PolycamStaging:
                             if leaf.startswith("."):
                                 continue
                             if Path(leaf).suffix.lower() in IMAGE_EXTS:
+                                if has_kf_imgs and not item.filename.startswith("keyframes/images/"):
+                                    continue
+                                if not has_kf_imgs and any(bad in item.filename.lower() for bad in ("depth", "segmentation", "mask", "confidence")):
+                                    continue
                                 if item.file_size > 60 * 2**20:
                                     raise BridgeError(413, "IMPORT-SIZE",
                                                       f"{leaf}: uncompressed size ({item.file_size / 2**20:.1f} MB) exceeds limit")

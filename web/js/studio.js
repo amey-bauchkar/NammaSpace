@@ -318,6 +318,9 @@ async function project(pid) {
   f('est-preview').textContent = estimate(nImages, 'preview');
   f('est-standard').textContent = estimate(nImages, 'standard');
   f('est-high').textContent = estimate(nImages, 'high');
+  document.querySelectorAll('input[name=profile]').forEach(rb => {
+    rb.addEventListener('change', () => { window._userSelectedProfile = true; });
+  });
   if (chk.report) showAdvice(pid);
   $('#run-btn').onclick = async () => {
     const profile = $('input[name=profile]:checked').value;
@@ -464,8 +467,10 @@ async function showAdvice(pid) {
     box.innerHTML = '';
     box.append(el('strong', {}, `Suggested: ${r.profile[0].toUpperCase()}${r.profile.slice(1)}. `), r.reasons.join(' '));
     for (const w of r.warnings) box.append(el('div', { class: 'small muted' }, `⚠ ${w}`));
-    const radio = $(`input[name=profile][value=${r.profile}]`);
-    if (radio) radio.checked = true;
+    if (!window._userSelectedProfile) {
+      const radio = $(`input[name=profile][value=${r.profile}]`);
+      if (radio) radio.checked = true;
+    }
   } catch { box.hidden = true; }
 }
 
@@ -495,7 +500,7 @@ function showCheck(pid, s) {
     }
     box.append(grid);
   }
-  $('#run-btn').disabled = !ready;
+  $('#run-btn').disabled = !ready || (st.inputs_accepted || 0) < 2;
 }
 
 // ------------------------------------------------------------------ run

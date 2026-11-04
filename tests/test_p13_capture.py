@@ -134,10 +134,65 @@ def test_ingest_blocks_too_few_heic_and_mixed(tmp_path):
 
 
 def test_unsupported_files_are_ignored_with_a_warning(tmp_path):
-    d = make_project(tmp_path, scene_crops(12), extra=[("notes.txt", b"hello")])
+    d = make_project(tmp_path, scene_crops(12), extra=[("notes.txt", b"hello"), (".gitkeep", b"")])
     rep = ingest_capture(d)
     assert rep["status"] == "ready"
-    assert any(w["code"] == "CAP-UNSUPPORTED" for w in rep["warnings"])
+    warn_msgs = [w["message"] for w in rep["warnings"] if w["code"] == "CAP-UNSUPPORTED"]
+    assert any("notes.txt" in m for m in warn_msgs)
+    assert not any(".gitkeep" in m for m in warn_msgs)
+
+    # If only unsupported files exist without photos or video, capture must be blocked
+    d_unsupported_only = make_project(tmp_path / "only_unsupported", [], extra=[(".gitkeep", b""), ("notes.txt", b"hello")])
+    rep_blocked = ingest_capture(d_unsupported_only)
+    assert rep_blocked["status"] == "blocked"
+    assert any(e["code"] == "CAP-EMPTY" for e in rep_blocked["errors"])
+
+
+def test_polycam_import_archives_and_zip_extraction(tmp_path):
+    import io
+    import json
+    import zipfile
+
+    # Build a project with a zip archive containing keyframe camera photos and depth maps
+    d = tmp_path / "polycam_proj"
+    orig = d / "capture" / "originals"
+    orig.mkdir(parents=True)
+    (d / "project.json").write_text('{"project_id": "polycam_proj", "title": "Polycam Room", "runs": []}', encoding="utf-8")
+
+    # Create dummy photo bytes
+    crops = scene_crops(12)
+    enc_photos = []
+    for im in crops:
+        _, enc = cv2.imencode(".jpg", im)
+        enc_photos.append(enc.tobytes())
+
+    # Build keyframes zip
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w") as z:
+        for i, photo_bytes in enumerate(enc_photos):
+            z.writestr(f"keyframes/images/frame_{i:04d}.jpg", photo_bytes)
+            z.writestr(f"keyframes/depth/depth_{i:04d}.png", b"dummy_depth_map_data")
+            z.writestr(f"keyframes/cameras/frame_{i:04d}.json", b"{}")
+    (orig / "keyframes.zip").write_bytes(zip_buf.getvalue())
+    (orig / "mesh.zip").write_bytes(b"dummy_mesh_zip")
+    (orig / ".gitkeep").write_bytes(b"")
+
+    # Register in polycam_import.json
+    (d / "capture" / "polycam_import.json").write_text(json.dumps({
+        "imported_at": "2026-11-04T12:00:00",
+        "mesh": {"file": "mesh.zip"},
+        "raw": [{"file": "keyframes.zip"}]
+    }), encoding="utf-8")
+
+    rep = ingest_capture(d)
+    assert rep["status"] == "ready", rep["errors"]
+    assert rep["stats"]["inputs_accepted"] == 12
+    # Ensure neither .gitkeep, mesh.zip, nor keyframes.zip produced CAP-UNSUPPORTED warnings
+    unsupported = [w for w in rep["warnings"] if w["code"] == "CAP-UNSUPPORTED"]
+    assert len(unsupported) == 0, unsupported
+    # Ensure depth maps were NOT extracted
+    extracted_depth = list(orig.glob("*depth*"))
+    assert len(extracted_depth) == 0
 
 
 @pytest.mark.skipif(FFMPEG is None, reason="ffmpeg not installed")

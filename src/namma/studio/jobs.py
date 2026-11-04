@@ -138,8 +138,9 @@ class JobManager:
     def start_run(self, project_id, profile):
         d = self.store.path(project_id)
         rep = d / "capture" / "capture_report.json"
-        if not rep.exists() or load_strict(rep)["status"] != "ready":
-            raise JobError("CAPTURE-NOT-READY", "Check the capture first; it must have no blocking problems.", 400)
+        rep_doc = load_strict(rep) if rep.exists() else None
+        if not rep_doc or rep_doc.get("status") != "ready" or rep_doc.get("stats", {}).get("inputs_accepted", 0) < 2:
+            raise JobError("CAPTURE-NOT-READY", "Check the capture first; it must have usable photos or video frames.", 400)
         act = self.active()
         if act:
             raise JobError("JOB-BUSY", f"Another reconstruction is running ({act[0]}). This laptop runs one at a time "

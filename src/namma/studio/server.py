@@ -492,6 +492,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             try:
                 with zipfile.ZipFile(final) as z:
                     valid_items = []
+                    has_kf_imgs = any(i.filename.startswith("keyframes/images/") and Path(i.filename).suffix.lower() in IMAGE_EXTS
+                                      for i in z.infolist())
                     for item in z.infolist():
                         if item.is_dir() or "__MACOSX" in item.filename:
                             continue
@@ -499,6 +501,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         if leaf.startswith("."):
                             continue
                         if Path(leaf).suffix.lower() in IMAGE_EXTS:
+                            if has_kf_imgs and not item.filename.startswith("keyframes/images/"):
+                                continue
+                            if not has_kf_imgs and any(bad in item.filename.lower() for bad in ("depth", "segmentation", "mask", "confidence")):
+                                continue
                             if item.file_size > MAX_IMAGE_BYTES:
                                 raise ApiError(413, "UPLOAD-TOO-LARGE",
                                                f"{leaf}: uncompressed size ({item.file_size / 2**20:.1f} MB) exceeds limit")

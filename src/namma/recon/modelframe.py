@@ -17,8 +17,8 @@ import math
 import numpy as np
 from scipy import ndimage
 
-UP_PRIOR_MIN_CONFIDENCE = 0.5      # |mean image-up vector|; 1 = all cameras perfectly upright
-FLOOR_MAX_TILT_DEG = 25.0
+UP_PRIOR_MIN_CONFIDENCE = 0.25      # |mean image-up vector|; 1 = all cameras perfectly upright
+FLOOR_MAX_TILT_DEG = 30.0
 
 
 def camera_axes(R):
@@ -90,9 +90,13 @@ def detect_floor(points, centres, rotations, seed=0, sample=200_000):
         above = float(np.mean(h > 0))
         med = float(np.median(h))
         iqr = float(np.percentile(h, 75) - np.percentile(h, 25))
-        if above >= 0.9 and med > 0 and iqr / med <= 0.5 and cnt >= 0.02 * len(pts):
-            candidates.append({"n": n, "d": d, "inliers": cnt, "median_height": med, "rel_iqr": iqr / med,
-                               "tilt_deg": math.degrees(math.acos(min(1.0, abs(float(n @ prior)))))})
+        tilt = math.degrees(math.acos(min(1.0, abs(float(n @ prior)))))
+        if tilt > FLOOR_MAX_TILT_DEG:
+            remaining = remaining[np.abs(remaining @ n + d) >= 2 * tol]
+            continue
+        if above >= 0.70 and med > 0 and cnt >= 0.02 * len(pts):
+            candidates.append({"n": n, "d": d, "inliers": cnt, "median_height": med, "rel_iqr": (iqr / med if med > 0 else 0.0),
+                               "tilt_deg": tilt})
         remaining = remaining[np.abs(remaining @ n + d) >= 2 * tol]
     diag = {"up_prior": prior.tolist(), "up_prior_confidence": round(conf, 3), "ransac_tol_units": tol,
             "scene_extent_units": extent, "floor_candidates": len(candidates)}
@@ -176,7 +180,7 @@ def model_frame(points, centres, rotations, seed=0, normals=None):
     # TUM desk 20 %, ETH3D pipes 21 %)
     below = float(np.mean(hts < -0.1 * eye)) if eye > 0 else 0.0
     meta = {"floor_detected": fl["floor_detected"], "up_source": fl["up_source"],
-            "below_floor_fraction": round(below, 4), "floor_suspect": bool(fl["floor_detected"] and below > 0.05),
+            "below_floor_fraction": round(below, 4), "floor_suspect": bool(fl["floor_detected"] and below > 0.15),
             "eye_height_units": float(np.median(cam_h)),
             "camera_height_p10_p90_units": [float(np.percentile(cam_h, 10)), float(np.percentile(cam_h, 90))],
             "diagnostics": fl["diagnostics"]}

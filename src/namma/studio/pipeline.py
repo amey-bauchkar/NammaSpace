@@ -146,6 +146,9 @@ def stage_prepare(ctx):
                          "Open the capture check results.")
     max_px = ctx.cfg["work_max_px"]
     inputs = [ctx.project_dir / p for p in man["inputs"]]
+    if not inputs:
+        raise StageError("prepare", "No photos or video frames found to reconstruct.",
+                         "Upload photos or a video in the capture section first.")
     records, dims, cams = [], set(), set()
     cb = ctx.progress_cb("prepare")
     for i, src in enumerate(inputs):
@@ -198,6 +201,8 @@ def stage_sfm(ctx):
     gpu_index = hardware.resources().gpu_index
     threads = sift_threads(cfg["sift"]["max_image_px"], gpu=gpu)
     n_features = sift_feature_budget(cfg, n)
+    if gpu:
+        n_features = max(n_features, cfg["sift"].get("max_features", 8192))
     model = cfg["camera_model_single"] if meta["single_camera"] else cfg["camera_model_mixed"]
     cb = ctx.progress_cb("sfm")
 
@@ -221,6 +226,9 @@ def stage_sfm(ctx):
     max_exhaustive = cfg["matching"]["exhaustive_max_images"] if ctx.facts.get("mode") == "video" \
         else max(cfg["matching"]["exhaustive_max_images"], 400)
     mode = "sequential" if n > max_exhaustive else "exhaustive"
+    overlap = cfg["matching"]["sequential_overlap"]
+    if mode == "sequential" and n > 250:
+        overlap = max(overlap, 25)
     ctx.set_progress("sfm", f"Matching photos ({mode})", 0.0)
     match_gpu = gpu and dev_features == "gpu"
     mthreads = match_threads(n_features, gpu=match_gpu)
@@ -229,7 +237,7 @@ def stage_sfm(ctx):
         rec, dev_matching = gpu_then_cpu(
             ctx, "sfm", "feature matching",
             lambda on_gpu: colmap.match_features(ctx.tools, db, ctx.logs, mode=mode,
-                                                 overlap=cfg["matching"]["sequential_overlap"],
+                                                 overlap=overlap,
                                                  guided=cfg["matching"]["guided"], timeout_s=T["matching"],
                                                  cancel_file=ctx.cancel_file, progress=cb,
                                                  threads=mthreads if on_gpu == match_gpu else match_threads(n_features),
@@ -237,14 +245,27 @@ def stage_sfm(ctx):
             match_gpu)
         recs.append(rec)
     ctx.check_cancel()
+    if mode == "sequential" and match_gpu:
+        try:
+            ctx.set_progress("sfm", "Connecting loops (transitive)", 0.0)
+            rec = colmap.match_transitive(ctx.tools, db, ctx.logs, timeout_s=T["matching"],
+                                          cancel_file=ctx.cancel_file, progress=cb,
+                                          use_gpu=match_gpu, gpu_index=gpu_index, num_iterations=1)
+            recs.append(rec)
+        except Exception:
+            pass
+    ctx.check_cancel()
     ctx.set_progress("sfm", "Placing cameras", 0.0)
     engine = cfg["mapper"].get("engine", "incremental")
+    if gpu and n >= 60 and engine != "incremental_forced":
+        engine = "global"
     best = None
     if engine == "global":
         # global SfM is ~7x faster; keep it only if it placed at least half the frames, else the incremental mapper
         try:
             recs.append(colmap.map_global(ctx.tools, db, img_dir, out / "sparse", ctx.logs, timeout_s=T["mapper"],
-                                          cancel_file=ctx.cancel_file, progress=cb, use_gpu=gpu, gpu_index=gpu_index))
+                                          cancel_file=ctx.cancel_file, progress=cb, use_gpu=gpu, gpu_index=gpu_index,
+                                          max_rotation_error_deg=15))
             best = colmap.best_model(ctx.tools, out / "sparse", out / "sparse_txt", ctx.logs)
         except StepFailed as e:
             if e.record.get("status") == "cancelled":
@@ -257,7 +278,9 @@ def stage_sfm(ctx):
             span = float(np.ptp(c_poses, axis=0).max())
             diffs = np.linalg.norm(np.diff(c_poses, axis=0), axis=1)
             max_jump = float(diffs.max()) if len(diffs) else 0.0
-            if span > 200.0 or max_jump > 50.0:
+            median_jump = float(np.median(diffs)) if len(diffs) else 1.0
+            jump_limit = max(150.0, 50.0 * median_jump)
+            if span > 5000.0 or max_jump > jump_limit:
                 ctx.facts["mapper_fallback"] = f"global mapper trajectory exploded (span={span:.1f}, jump={max_jump:.1f})"
                 best = None
         if best is None or len(best[2]) < max(3, n // 2):
@@ -276,6 +299,32 @@ def stage_sfm(ctx):
                          "Capture again with more overlap (each spot in 3+ photos).")
     model_dir, txt_dir, imgs, model_scores = best
     others = [p for p in (out / "sparse_txt").iterdir() if p.is_dir() and p != txt_dir]
+    # Attempt to merge any separate sub-models into the primary model
+    if others:
+        merge_idx = 0
+        current_model = model_dir
+        for other_txt in sorted(others, key=lambda p: len(colmap.read_images_txt(p / "images.txt")), reverse=True):
+            other_bin = out / "sparse" / other_txt.name
+            if not (other_bin / "images.bin").exists():
+                continue
+            merged_out = out / f"merged_{merge_idx}"
+            try:
+                colmap.merge_models(ctx.tools, current_model, other_bin, merged_out, ctx.logs)
+                colmap.to_text(ctx.tools, merged_out, out / f"merged_{merge_idx}_txt", ctx.logs,
+                               step=f"colmap_model_converter_merged_{merge_idx}")
+                m_imgs = colmap.read_images_txt(out / f"merged_{merge_idx}_txt" / "images.txt")
+                if len(m_imgs) > len(imgs):
+                    ba_out = out / f"merged_{merge_idx}_ba"
+                    colmap.bundle_adjust(ctx.tools, merged_out, ba_out, ctx.logs, timeout_s=T["mapper"], cancel_file=ctx.cancel_file)
+                    colmap.to_text(ctx.tools, ba_out, out / f"merged_{merge_idx}_ba_txt", ctx.logs,
+                                   step=f"colmap_model_converter_merged_{merge_idx}_ba")
+                    model_dir = ba_out
+                    txt_dir = out / f"merged_{merge_idx}_ba_txt"
+                    imgs = colmap.read_images_txt(txt_dir / "images.txt")
+                    current_model = ba_out
+                    merge_idx += 1
+            except StepFailed:
+                pass
     # images that ended up ONLY in a separate (smaller) model: the capture split into groups
     other_images = len({nm for p in others for nm in colmap.read_images_txt(p / "images.txt")} - set(imgs))
     rescue = {"attempted": False}
@@ -296,6 +345,8 @@ def stage_sfm(ctx):
             if e.record.get("status") == "cancelled":
                 raise Cancelled("cancelled by user") from e
             rescue["error"] = str(e)
+    # Recompute any unmerged separate model images
+    other_images = len({nm for p in others for nm in colmap.read_images_txt(p / "images.txt")} - set(imgs))
     xyz, rgb, err, track = colmap.read_points3d_txt(txt_dir / "points3D.txt")
     kp = colmap.keypoint_counts(db)
     names = [r["name"] for r in meta["images"]]
@@ -803,7 +854,11 @@ def stage_frame(ctx):
                          "This happens when the phone turns on the spot instead of moving. Capture again WALKING slowly "
                          "around the room along the walls, so every spot is seen from several positions.")
     roam_cfg = ctx.cfg["roam"]
-    grid, gstats, masks = modelframe.roam_grid(pm, cm, eye, cells_per_eye=roam_cfg["cells_per_eye"],
+    p1_pts, p99_pts = np.percentile(pm, [0.5, 99.5], axis=0)
+    margin = 2.0 * eye
+    valid_cam = np.all(cm >= p1_pts - margin, axis=1) & np.all(cm <= p99_pts + margin, axis=1)
+    cm_roam = cm[valid_cam] if np.any(valid_cam) else cm
+    grid, gstats, masks = modelframe.roam_grid(pm, cm_roam, eye, cells_per_eye=roam_cfg["cells_per_eye"],
                                                band=tuple(roam_cfg["band"]), min_pts=roam_cfg["min_pts"],
                                                min_obstacle_eye=roam_cfg.get("min_obstacle_eye", 0.12))
     np.save(out / "points_model_sample.npy", pm[np.random.default_rng(0).choice(len(pm), min(len(pm), 400_000),
@@ -887,7 +942,21 @@ def choose_start(cameras, pts, eye):
     """Capture viewpoint that overlooks most of the scene: near-horizontal, farthest median view depth."""
     best, best_score = None, -1.0
     sample = pts[:: max(1, len(pts) // 50_000)]
-    for c in cameras:
+    p1, p99 = np.percentile(pts, [1, 99], axis=0)
+    box_min = p1 - 0.5 * eye
+    box_max = p99 + 0.5 * eye
+
+    # Candidate viewpoints must be inside the scene boundaries, with sufficient triangulated points,
+    # standing at normal eye height above the floor plane.
+    cands = [c for c in cameras if c.get("n_triangulated", 0) >= 20 and
+             np.all(np.array(c["position"]) >= box_min) and
+             np.all(np.array(c["position"]) <= box_max) and
+             (0.2 * eye <= c["position"][1] <= 2.2 * eye)]
+    if not cands:
+        cands = [c for c in cameras if np.all(np.array(c["position"]) >= box_min) and
+                 np.all(np.array(c["position"]) <= box_max)] or cameras
+
+    for c in cands:
         f = np.array(c["forward"])
         if abs(f[1]) > 0.6:          # looking steeply up / down
             continue
@@ -901,7 +970,7 @@ def choose_start(cameras, pts, eye):
         if score > best_score:
             best, best_score = c, score
     if best is None:
-        best = cameras[0]
+        best = cands[0]
     pos = np.array(best["position"])
     fwd = np.array(best["forward"])
     return {"camera": best["name"], "position": pos.round(5).tolist(), "target": (pos + fwd * eye).round(5).tolist()}

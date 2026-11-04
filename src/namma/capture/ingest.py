@@ -11,9 +11,12 @@ Outputs:  <project>/capture/frames/      (video only: deterministic frame select
 Blocking errors stop processing; warnings never do.
 """
 import hashlib
+import json
+import re
 import shutil
 import subprocess
 import time
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -107,8 +110,60 @@ def ingest_capture(project_dir, *, max_frames=300, frame_max_side=1920, venue_la
     cap = project_dir / "capture"
     originals = cap / "originals"
     t0 = time.perf_counter()
-    files = sorted(p for p in originals.iterdir() if p.is_file()) if originals.exists() else []
+    files = sorted(p for p in originals.iterdir() if p.is_file() and not p.name.startswith(".")) if originals.exists() else []
     errors, warnings, entries = [], [], []
+
+    # Known archives from Polycam import (e.g. Shraddha_all_rooms.zip, Shraddha_all_rooms_images.zip)
+    known_archives = set()
+    polycam_json = cap / "polycam_import.json"
+    if polycam_json.exists():
+        try:
+            pdoc = json.loads(polycam_json.read_text(encoding="utf-8"))
+            if isinstance(pdoc, dict):
+                m_file = (pdoc.get("mesh") or {}).get("file")
+                if m_file:
+                    known_archives.add(m_file)
+                for r in pdoc.get("raw") or []:
+                    if isinstance(r, dict) and r.get("file"):
+                        known_archives.add(r["file"])
+        except Exception:
+            pass
+
+    # If no loose photos or videos exist, unpack camera photos from zip archives
+    IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
+    has_media = any(p.suffix.lower() in IMAGE_EXTS or kind_of(p.name) == "video" for p in files)
+    if not has_media and originals.exists():
+        for zp in files:
+            if zp.suffix.lower() == ".zip":
+                try:
+                    with zipfile.ZipFile(zp) as z:
+                        namelist = [n for n in z.namelist() if not n.startswith("__MACOSX") and not Path(n).name.startswith(".")]
+                        # Priority 1: Polycam keyframe camera images (keyframes/images/*.jpg)
+                        kf_imgs = [n for n in namelist if n.startswith("keyframes/images/") and Path(n).suffix.lower() in IMAGE_EXTS]
+                        if kf_imgs:
+                            for kf in kf_imgs:
+                                leaf = Path(kf).name
+                                clean_leaf = re.sub(r"[^A-Za-z0-9._-]+", "_", leaf).strip("._") or "photo.jpg"
+                                target = originals / clean_leaf
+                                if not target.exists():
+                                    target.write_bytes(z.read(kf))
+                        else:
+                            # Priority 2: Generic zip with photos, excluding depth/mask/confidence/segmentation maps
+                            norm_imgs = [n for n in namelist if not z.getinfo(n).is_dir()
+                                         and Path(n).suffix.lower() in IMAGE_EXTS
+                                         and not any(bad in n.lower() for bad in ("depth", "segmentation", "mask", "confidence"))]
+                            if norm_imgs and len(norm_imgs) <= 1000:
+                                for ni in norm_imgs:
+                                    leaf = Path(ni).name
+                                    clean_leaf = re.sub(r"[^A-Za-z0-9._-]+", "_", leaf).strip("._") or "photo.jpg"
+                                    target = originals / clean_leaf
+                                    if not target.exists():
+                                        target.write_bytes(z.read(ni))
+                except Exception:
+                    pass
+        # Refresh files list after unpacking
+        files = sorted(p for p in originals.iterdir() if p.is_file() and not p.name.startswith(".")) if originals.exists() else []
+
     kinds = {}
     for f in files:
         kinds.setdefault(kind_of(f.name), []).append(f)
@@ -120,6 +175,9 @@ def ingest_capture(project_dir, *, max_frames=300, frame_max_side=1920, venue_la
         errors.append(_msg("CAP-HEIC", "error", f"{len(kinds['heic'])} HEIC photos cannot be read. On the iPhone set "
                            "Settings > Camera > Formats > Most Compatible (JPEG) and capture again, or export as JPEG."))
     for f in kinds.get("unsupported", []):
+        if f.name in known_archives or f.suffix.lower() == ".zip":
+            entries.append({"file": f.name, "kind": "archive", "decision": "archived", "reason": "ARCHIVE_STORED"})
+            continue
         entries.append({"file": f.name, "kind": "unsupported", "decision": "excluded", "reason": "UNSUPPORTED_TYPE"})
         warnings.append(_msg("CAP-UNSUPPORTED", "warning", f"{f.name} is not a photo or video and was ignored."))
     images, videos = kinds.get("image", []), kinds.get("video", [])
@@ -204,7 +262,9 @@ def ingest_capture(project_dir, *, max_frames=300, frame_max_side=1920, venue_la
         entries.append(e)
 
     stats = {"mode": mode, "files_uploaded": len(files), "inputs_accepted": len(inputs)}
-    if mode and not errors:
+    if not mode and not errors:
+        errors.append(_msg("CAP-EMPTY", "error", "No photos or video files were found for reconstruction."))
+    elif mode and not errors:
         if len(inputs) < MIN_IMAGES:
             errors.append(_msg("CAP-TOO-FEW", "error", f"Only {len(inputs)} usable photos; at least {MIN_IMAGES} are "
                                f"needed and {RECOMMENDED_IMAGES}+ are recommended for a room."))
