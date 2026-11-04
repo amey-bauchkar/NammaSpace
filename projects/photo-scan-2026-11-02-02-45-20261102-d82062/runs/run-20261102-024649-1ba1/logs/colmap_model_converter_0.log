@@ -1,0 +1,2 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe model_converter --input_path C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\20_sfm\sparse\0 --output_path C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\20_sfm\sparse_txt\0 --output_type TXT
+

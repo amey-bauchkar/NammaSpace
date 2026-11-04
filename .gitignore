@@ -10,10 +10,23 @@ tools/
 projects/*
 !projects/small-room-20261026-dd673e/
 !projects/large-room-20261030-880c8c/
+!projects/photo-scan-2026-11-02-02-45-20261102-d82062/
 
-# Exclude large intermediate training data (>100MB COLMAP/PLY) and raw phone upload archives
-projects/*/capture/originals/*.zip
+# Exclude heavy intermediate reconstruction stages and test directories
+projects/photo-scan-*/test_*/
+projects/*/runs/*/10_images/
+projects/*/runs/*/20_sfm/
+projects/*/runs/*/30_undistorted/
+projects/*/runs/*/40_dense/
+projects/*/runs/*/50_mesh/
 projects/*/runs/*/65_splat/
+projects/*/runs/*/60_texture/*_openmvs*
+projects/*/runs/*/60_texture/*.orig_bak
+projects/*/capture/originals/*.jpg
+projects/*/capture/originals/*.jpeg
+projects/*/capture/originals/*.png
+projects/*/capture/originals/*.zip
+projects/*/capture/thumbs/
 projects/*/published/*.zip
 
 # evaluation runs and large generated artifacts (summaries are kept under docs/ and phase13_artifacts/results/)

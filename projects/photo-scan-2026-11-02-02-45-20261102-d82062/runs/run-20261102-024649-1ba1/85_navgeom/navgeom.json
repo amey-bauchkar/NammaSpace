@@ -1,0 +1,21 @@
+{
+ "status": "unverified",
+ "scale_basis": "assumed_capture_height",
+ "metres_per_unit": 0.9331207465493303,
+ "relative_uncertainty": 0.25,
+ "diagnostics": {
+  "grid": {
+   "res_m": 0.1,
+   "x0": -6.4,
+   "z0": -4.3,
+   "width": 136,
+   "height": 92
+  },
+  "points_used": 400000,
+  "floor_cells": 4933,
+  "obstacle_cells": 1436,
+  "obstacles": 18,
+  "walkable_area_m2": 49.33
+ },
+ "if04_errors": []
+}

@@ -1,0 +1,60 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe global_mapper --database_path C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\20_sfm\database.db --image_path C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\10_images --output_path C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\20_sfm\sparse --GlobalMapper.gp_use_gpu 1 --GlobalMapper.ba_ceres_use_gpu 1
+
+I20261102 02:49:06.371255  5892 database_cache.cc:82] Loading rigs...
+I20261102 02:49:06.372221  5892 database_cache.cc:92]  1 in 0.001s
+I20261102 02:49:06.372255  5892 database_cache.cc:100] Loading cameras...
+I20261102 02:49:06.372292  5892 database_cache.cc:118]  1 in 0.000s
+I20261102 02:49:06.372302  5892 database_cache.cc:126] Loading frames...
+I20261102 02:49:06.372576  5892 database_cache.cc:136]  263 in 0.000s
+I20261102 02:49:06.372586  5892 database_cache.cc:144] Loading matches...
+I20261102 02:49:06.376070  5892 database_cache.cc:163]  620 in 0.003s
+I20261102 02:49:06.376109  5892 database_cache.cc:171] Loading images...
+I20261102 02:49:06.439307  5892 database_cache.cc:268]  263 in 0.063s (connected 263, loaded 263)
+I20261102 02:49:06.439404  5892 database_cache.cc:282] Loading pose priors...
+I20261102 02:49:06.439434  5892 database_cache.cc:290]  0 in 0.000s
+I20261102 02:49:06.439441  5892 database_cache.cc:298] Building correspondence graph...
+I20261102 02:49:06.492725  5892 database_cache.cc:327]  in 0.053s (ignored 0)
+I20261102 02:49:06.492846  5892 two_view_geometry.cc:1834] Decomposing relative poses...
+I20261102 02:49:06.707825  5892 two_view_geometry.cc:1936] Decomposed 620 relative poses (0 failed) in 0.215s
+W20261102 02:49:06.710319  5892 global_pipeline.cc:62] Less than 50% of cameras have prior focal lengths. The global mapper depends on reasonably good focal length priors to perform well. Consider running 'colmap view_graph_calibrator' before 'colmap global_mapper' or providing camera calibrations manually.
+I20261102 02:49:06.730244  5892 pose_graph.cc:51] Loaded 620 edges into pose graph
+I20261102 02:49:06.785124  5892 rotation_averaging.cc:274] Marked 250 image pairs as invalid with relative rotation error > 10 degrees
+I20261102 02:49:06.788982  5892 global_pipeline.cc:302] Found 1 connected component(s) after rotation filtering
+I20261102 02:49:06.789029  5892 global_pipeline.cc:322] === Reconstructing component 1 / 1 with 263 images ===
+I20261102 02:49:06.912003  5892 pose_graph.cc:51] Loaded 620 edges into pose graph
+I20261102 02:49:06.912060  5892 global_mapper.cc:553] === Running rotation averaging ===
+I20261102 02:49:06.937090  5892 rotation_averaging.cc:274] Marked 250 image pairs as invalid with relative rotation error > 10 degrees
+I20261102 02:49:06.948468  5892 rotation_averaging.cc:274] Marked 0 image pairs as invalid with relative rotation error > 10 degrees
+I20261102 02:49:06.948619  5892 global_mapper.cc:559] Rotation averaging done in 0.036555 seconds
+I20261102 02:49:06.948639  5892 global_mapper.cc:565] === Running track establishment ===
+I20261102 02:49:07.018725  5892 global_mapper.cc:206] Established 85551 tracks from 195014 observations
+I20261102 02:49:07.066059  5892 global_mapper.cc:261] Kept 14799 tracks, discarded 10 due to inconsistency
+I20261102 02:49:07.071872  5892 global_mapper.cc:302] Before filtering: 14799, after filtering: 14799
+I20261102 02:49:07.084607  5892 global_mapper.cc:569] Track establishment done in 0.135976 seconds
+I20261102 02:49:07.084669  5892 global_mapper.cc:575] === Running global positioning ===
+I20261102 02:49:07.086488  5892 global_positioning.cc:39] Setting up the global positioner problem
+W20261102 02:49:07.175481  5892 global_positioning.cc:375] Requested to use GPU for bundle adjustment, but Ceres was compiled without CUDA support. Falling back to CPU-based dense solvers.
+W20261102 02:49:07.175560  5892 global_positioning.cc:394] Requested to use GPU for bundle adjustment, but Ceres was compiled without cuDSS support. Falling back to CPU-based sparse solvers.
+I20261102 02:49:07.175573  5892 global_positioning.cc:59] Solving the global positioner problem
+I20261102 02:49:11.838284  5892 global_positioning.cc:70] Ceres Solver Report: Iterations: 77, Initial cost: 3.530364e+05, Final cost: 1.997589e+00, Termination: CONVERGENCE
+I20261102 02:49:11.935575  5892 global_mapper.cc:584] Global positioning done in 4.85091 seconds
+I20261102 02:49:11.938594  5892 global_mapper.cc:596] === Running iterative bundle adjustment ===
+W20261102 02:49:12.018509  5892 bundle_adjustment_ceres.cc:162] Requested to use GPU for bundle adjustment, but Ceres was compiled without CUDA support. Falling back to CPU-based dense solvers.
+W20261102 02:49:12.018744  5892 bundle_adjustment_ceres.cc:181] Requested to use GPU for bundle adjustment, but Ceres was compiled without cuDSS support. Falling back to CPU-based sparse solvers.
+I20261102 02:49:13.482000  5892 global_mapper.cc:391] Global bundle adjustment iteration 1 / 3, fixed-rotation stage finished
+I20261102 02:49:18.225895  5892 global_mapper.cc:401] Global bundle adjustment iteration 1 / 3 finished
+I20261102 02:49:18.234105  5892 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261102 02:49:20.069446  5892 global_mapper.cc:391] Global bundle adjustment iteration 2 / 3, fixed-rotation stage finished
+I20261102 02:49:21.506960  5892 global_mapper.cc:401] Global bundle adjustment iteration 2 / 3 finished
+I20261102 02:49:21.512221  5892 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261102 02:49:22.433172  5892 global_mapper.cc:391] Global bundle adjustment iteration 3 / 3, fixed-rotation stage finished
+I20261102 02:49:27.003189  5892 global_mapper.cc:401] Global bundle adjustment iteration 3 / 3 finished
+I20261102 02:49:27.012090  5892 global_mapper.cc:424] Filtering tracks by reprojection ...
+I20261102 02:49:27.042549  5892 global_mapper.cc:449] Filtering tracks by reprojection ...
+I20261102 02:49:27.064222  5892 global_mapper.cc:608] Iterative bundle adjustment done in 15.1256 seconds
+I20261102 02:49:27.064285  5892 global_mapper.cc:614] === Running iterative retriangulation and refinement ===
+I20261102 02:49:34.062713  5892 global_mapper.cc:623] Iterative retriangulation and refinement done in 6.99844 seconds
+I20261102 02:49:34.079481  5892 global_pipeline.cc:183] Reconstruction done in 27.1674 seconds
+I20261102 02:49:34.099518  5892 global_pipeline.cc:254] Extracting colors ...
+I20261102 02:49:34.425827  5892 global_pipeline.cc:260] Kept 1 reconstruction(s), discarded 0 with fewer than 3 registered frames, and failed to reconstruct 0
+W20261102 02:49:34.425897  5892 global_pipeline.cc:62] Less than 50% of cameras have prior focal lengths. The global mapper depends on reasonably good focal length priors to perform well. Consider running 'colmap view_graph_calibrator' before 'colmap global_mapper' or providing camera calibrations manually.

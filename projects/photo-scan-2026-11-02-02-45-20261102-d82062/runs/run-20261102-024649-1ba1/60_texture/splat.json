@@ -1,0 +1,65 @@
+{
+ "file": "splat.spz",
+ "T_mesh_from_splat": [
+  [
+   1.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  [
+   0.0,
+   1.0,
+   0.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   1.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "splats": 174315,
+ "compression": {
+  "splats_in": 300000,
+  "splats_out": 174315,
+  "removed_low_opacity": 125685,
+  "removed_outside": 0,
+  "sh_degree": 3,
+  "bytes": 3235048
+ },
+ "fit": {
+  "within_5cm": 1.0,
+  "median_cm": 0.0
+ },
+ "created_at": "2026-11-02T05:11:17+05:30",
+ "poses": "COLMAP SfM",
+ "method": "3D Gaussian splat (gsplat 1.5.3, MCMC, 10000 steps) from 263 photos, camera poses from COLMAP SfM; aligned with reconstruction frame",
+ "training": {
+  "photos": 263,
+  "iters": 10000,
+  "splats": 300000,
+  "seconds": 394.3,
+  "gpu_peak_gb": 1.05,
+  "max_side": 1024,
+  "bytes": 74401531,
+  "frame": "input cameras",
+  "pose_opt": true,
+  "appearance": true,
+  "depth_weight": 0,
+  "max_splat_scale": 0.2143345335955692,
+  "pose_correction": {
+   "rot_deg_median": 0.086,
+   "rot_deg_max": 0.271,
+   "shift_median": 0.0033,
+   "shift_max": 0.0166
+  }
+ }
+}

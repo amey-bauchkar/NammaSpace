@@ -1,0 +1,3698 @@
+{
+ "contract": "IF-01",
+ "contract_version": "1.1.0",
+ "run_id": "photo-scan-2026-11-02-02-45-20261102-d82062",
+ "venue_label": "Photo scan 2026-11-02 02:45",
+ "created_at": "2026-11-02T02:46:32+05:30",
+ "files": [
+  {
+   "path": "capture/originals/IMG_6292.jpg",
+   "sha256": "3b9aae68c29fb2fcb528fe554fa6ecb2f64a091af84875473c1f0d46cc518d43",
+   "bytes": 603709,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6293.jpg",
+   "sha256": "278a543e1755beab9cef1ac708c587ffef12f5cc418db7afea91f52205157cca",
+   "bytes": 622185,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6294.jpg",
+   "sha256": "6eebf75ec00db31ef8f7235585d1bbd51b2fdff393fb145ac6138a01a5873230",
+   "bytes": 878659,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6295.jpg",
+   "sha256": "e01634577778c4a16486e9e37942f9d63d192a2ed90054d35b0691a92ce74275",
+   "bytes": 601942,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6296.jpg",
+   "sha256": "9cc123c2675da06ddcef522a177e27cb65e42dee896a80869ac0a7de3cd94f9b",
+   "bytes": 706351,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6298.jpg",
+   "sha256": "b9cb493d3a95a8ceeaec7d5a9de7ba64408472857a7321c083ec38d52806ef73",
+   "bytes": 843530,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6299.jpg",
+   "sha256": "aaf7b7b6ae1390441bdc245ba00b507bea460db60fb5b40172b8e786e6b83482",
+   "bytes": 590955,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6300.jpg",
+   "sha256": "ab2d87ad1aeef1892915fd3ef376cc72a198f60d5184275ffa80f7f1911a6a3b",
+   "bytes": 691922,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6301.jpg",
+   "sha256": "b9e30f7d6767869c7d7f55569686ad1a6bc2d7835a76adee5ae8a9f2c92fe8cf",
+   "bytes": 802625,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6302.jpg",
+   "sha256": "b6ccea586484793088727131e13415450cb808a37d80295a2af99ca9f6959f86",
+   "bytes": 688432,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6304.jpg",
+   "sha256": "3803cd4bb335b3412e8cfd0aa8748c2de46860dc82dd1e726207e688887cfb14",
+   "bytes": 825202,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6306.jpg",
+   "sha256": "db7122ec280b7128c0f67cc2c8eb90eb8234eac394a7c88ff0500245c8450984",
+   "bytes": 896872,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6307.jpg",
+   "sha256": "eeb21c5fe5c7dc1c93a56e7e0f6edb2f82d3b94eb483778fc2f734cd4efaba90",
+   "bytes": 637755,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6310.jpg",
+   "sha256": "58581545bd18f2135f588ba5efd186e5ee5f8d783d93a51628d8fce1a849112e",
+   "bytes": 624178,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6311.jpg",
+   "sha256": "409e306656737814151517074169ef2f869c2fe5b02ecb48360faa29955ba6cf",
+   "bytes": 621013,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6312.jpg",
+   "sha256": "1f0ff20bec43a48d8476a00e9ba90237a603f33444c40c4b282c28aa7c9e9b08",
+   "bytes": 749460,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6313.jpg",
+   "sha256": "374c6588624dbc8cc3e45f1bf31eaf3583c64fc312b8c570c66177f6d714ecbe",
+   "bytes": 607913,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6314.jpg",
+   "sha256": "3936f96595018273cc6b6319969720c489e2681992b6727dba4432f54623306e",
+   "bytes": 642879,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6315.jpg",
+   "sha256": "ac1faeb83c428d163f6d962a0052af0982769c6a52631e0e4839659d40bd37b6",
+   "bytes": 777001,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6317.jpg",
+   "sha256": "8a39a7c3f3974cbdb4881caca5998f79ed4e63728e1714a33de020ac7f9be886",
+   "bytes": 650325,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6318.jpg",
+   "sha256": "79dc457a7ff0025725643fc76561a0f5b78800e700e4452ebf319b28af7d533a",
+   "bytes": 688324,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6319.jpg",
+   "sha256": "467e29d4081584f30cdaddf7cf825f331a0e8f8f2725b6f150f9f8e2b46c0401",
+   "bytes": 617086,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6320.jpg",
+   "sha256": "431526caf7ac0b69feca466e4c87087d3ee00917dacf9f725ed86eda1fe4dfea",
+   "bytes": 741879,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6321.jpg",
+   "sha256": "83cf49820c27c5a64467756e85fcfba2b74de352a4b1e3c56036cb5ab5dfe48e",
+   "bytes": 812048,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6322.jpg",
+   "sha256": "e8a18f602a426c00c986f552e40bb4a7314538c309f41c35876b0d6091c21da8",
+   "bytes": 577486,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6323.jpg",
+   "sha256": "b4bdfa0f36fa9dfc1b265aa88d02ac0e7318805814c20f9bd8abef552a5e1a89",
+   "bytes": 633868,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6324.jpg",
+   "sha256": "a3bc7638d2e027fcb34061516cd34da72f92e30b056bc3684a4ff6f701d5d70b",
+   "bytes": 772201,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6325.jpg",
+   "sha256": "50b9a03aadd6d694fc17c753c3fa1d1b510420c6226a77ccb74be5e2a4d95388",
+   "bytes": 546857,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6326.jpg",
+   "sha256": "233596391c4130d9a5a5722977438b4ff00e44cae6fe88d606a57396788b9ca4",
+   "bytes": 570090,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6329.jpg",
+   "sha256": "68ea81bbed728060be932a461c4a88fe79925240f2a3dee289588a959bc6e4bf",
+   "bytes": 540713,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6330.jpg",
+   "sha256": "9d666f73823240ca79675120e52f7fb0c8f3127759cf3ecbf9e828558e391bcc",
+   "bytes": 615347,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6331.jpg",
+   "sha256": "f0ef5e957f62041df58c8395159812a7897f3044c37468847beb8fc8091681de",
+   "bytes": 572770,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6332.jpg",
+   "sha256": "1c3e241d3ecca7cee79e4437ae5f271088bffc28d9077cabfce934107d999416",
+   "bytes": 576433,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6333.jpg",
+   "sha256": "37cefd71eddb5e1cfb1b428dc9a088f6e41280fbebc4fcbf9389204807fcf4bb",
+   "bytes": 664769,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6334.jpg",
+   "sha256": "6ff4e2608386dc62c5ad13ee5cf07810508ed1b5bb72430794d612771a5991cc",
+   "bytes": 577579,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6335.jpg",
+   "sha256": "92b0912f74b208186e35843fd95e55fddcb6efa1ccc8362cda2fd118fcebfa75",
+   "bytes": 588936,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6336.jpg",
+   "sha256": "ebe3656e9aa76f0c1645ae6c6d70bd3a56ebd132ffb62bb5940f84b437349698",
+   "bytes": 721642,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6337.jpg",
+   "sha256": "85db4194c692376f28c69e0e6306656d68e197490f693b920dc91ba588c7be96",
+   "bytes": 606081,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6338.jpg",
+   "sha256": "8d56d46a310f239c67b5fd26f63fba997d064608ac8f017c243de3bd574ccb9f",
+   "bytes": 616360,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6339.jpg",
+   "sha256": "5b1b712f51cd81ad6df43118a53a13038935f8b32042651b27787a67db883d02",
+   "bytes": 684873,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6340.jpg",
+   "sha256": "239b1846b6c92c51515bb3deeaf092c2146bbc96fb67686d475c3bb266748b85",
+   "bytes": 617649,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6341.jpg",
+   "sha256": "6fc42ee90d0c9b6bd1d023b7645650b8f23ef042773dc89f1feee6e755da0049",
+   "bytes": 624406,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6342.jpg",
+   "sha256": "892f185582ebddea4f1d0cf0d6224ac102593d071cd865dea89bfb1d5254016b",
+   "bytes": 681930,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6343.jpg",
+   "sha256": "42712aa4a65869faef2cbbdf3c5646076b96331aee4509540b8dfa83c233a7c7",
+   "bytes": 624201,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6344.jpg",
+   "sha256": "0c62a16a820ba025b776247f791a67f24066c5d1fb64a90626f2714ff328dace",
+   "bytes": 643885,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6346.jpg",
+   "sha256": "c5eeded0dd09892c75e1fd8cb9768f16e1a23aafe1fc0fbc91ca14bcb001759f",
+   "bytes": 641816,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6347.jpg",
+   "sha256": "25cfdce6b5c15dc5974a121aba909ddefe64678f976b3b40cea11d052897d34c",
+   "bytes": 643310,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6348.jpg",
+   "sha256": "ca9514d3f9b8161d5d79a9765b56e34f08b8ef5ee84d22cab32730392dab5f78",
+   "bytes": 685313,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6349.jpg",
+   "sha256": "bae939a2713285121de43377086448db742b755242a70908d07dfc675a573a64",
+   "bytes": 628181,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6350.jpg",
+   "sha256": "2aa34f4cdeaa0379d9c7458799f8f012463e864063aedefb274bc98f74d75606",
+   "bytes": 636653,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6351.jpg",
+   "sha256": "fdb946ade9f9104339b2a8c4ae74c74810a8e73fa7e3dc4f5fc3222407629ee0",
+   "bytes": 661337,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6352.jpg",
+   "sha256": "5590594c7667c4a9153083c90b581e50243c768347985efe806dba1ee1b17239",
+   "bytes": 624320,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6353.jpg",
+   "sha256": "a22c89c385100c88f08096399ec1665e249c3aa71315f9bacd9b6c0fea2c5c3e",
+   "bytes": 648306,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6355.jpg",
+   "sha256": "4e0c93c6af5915fb534164bfd50ce0384c94e1c937a644fdd3f338d0d467b015",
+   "bytes": 593604,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6356.jpg",
+   "sha256": "71b9f1c8f99d36e5d980272dfbfa99d8d6bf2d995ce3046bde6ce1358e026573",
+   "bytes": 650732,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6357.jpg",
+   "sha256": "6d5c7459dc93a7d8bb563d14e0a43eda010e839b9186580f50fa2f8e79f0286e",
+   "bytes": 600613,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6358.jpg",
+   "sha256": "3f74460ef9b22525ce8fb1157b9f91ca5241b593a2e04b8bab3f23d259acabe4",
+   "bytes": 612752,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6359.jpg",
+   "sha256": "50b27780ad3bfa108475dcb09b979cb3ca4ad9dc0078f888b3d633eee264c390",
+   "bytes": 726947,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6360.jpg",
+   "sha256": "1b4eb332710b6fc48a40ece22c3765d12fc47401c53b847725f5aba0784e4213",
+   "bytes": 612505,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6361.jpg",
+   "sha256": "2bf5c0958c849353f3c2fc07be1e0d3cfc3a8211d02510bd3dc36eead201a1c1",
+   "bytes": 650247,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6362.jpg",
+   "sha256": "fcd2f10bc77e9cf7d2d14443c792c84a861e7983711e64c9d9b49f274213d278",
+   "bytes": 675633,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6363.jpg",
+   "sha256": "08e5109b9d62a88e676fbf0cfa3e2f1b74985fc2c50050cdc45431205cd5d419",
+   "bytes": 560443,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6364.jpg",
+   "sha256": "d1570b0eaca7aee0207415e04dd1002895e720210f784abf0b07e4407689b453",
+   "bytes": 599945,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6365.jpg",
+   "sha256": "cde56f121feb4a240a5166c2ab1c42deeabdda04e59e5619681e1922bd3fe4da",
+   "bytes": 783553,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6366.jpg",
+   "sha256": "e159f79c1c75f6111f532d8337fb769429b4b3265f215fffc7d7690f912d8506",
+   "bytes": 520542,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6367.jpg",
+   "sha256": "244196878af33cbb1f0978479827436904f1044aade859897de1f9c80a6b5569",
+   "bytes": 541279,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6368.jpg",
+   "sha256": "4ba71482e18383757f732fe518c95e0cea31b839c38fbeef23db4bbf105716ce",
+   "bytes": 700698,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6369.jpg",
+   "sha256": "a56873889482176470fb4d8a8e7ce8aa46510017bd688651d2d70fe4aaa91b1c",
+   "bytes": 537504,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6370.jpg",
+   "sha256": "459cd298abb2a65aa3382d691a32becb16dbbb3acd755905c55b7d01b9556352",
+   "bytes": 555504,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6371.jpg",
+   "sha256": "0a42fe6f3b573bb9c3dc16cc62e27e3261ff870b87521f388f63b2723b6733ec",
+   "bytes": 738567,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6372.jpg",
+   "sha256": "1bc395d2b7ec428303ca3c3a6c24acbeab704c768af7020098d053a99bb6923c",
+   "bytes": 561022,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6373.jpg",
+   "sha256": "30583d44420a5ab8a45dad6a6c2f8eb355ccfb0866a1245af19a7ec169f8250f",
+   "bytes": 665944,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6374.jpg",
+   "sha256": "e8bb85288ac2f2aa4fb48b5bc9d83c4048895c40e8d3325ecab210ac3f80d039",
+   "bytes": 803471,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6375.jpg",
+   "sha256": "a208247d6cb541fc3809de41b4607ea2018e8e4e1b5a58243174f4667a2b61d3",
+   "bytes": 638753,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6376.jpg",
+   "sha256": "eb69f522073932f1510b8234f930ce0e24f0d1b40353bd1ba97a189fcf19788e",
+   "bytes": 746495,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6377.jpg",
+   "sha256": "021ea41c3e90ea24efe22afb28a11e8e8f9ab01e3da68ffcca8f085f94dc404a",
+   "bytes": 628286,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6378.jpg",
+   "sha256": "f71258aafdfaa91c34063a583ee6225bb5f11e02bf231d92706714ffdaa5862a",
+   "bytes": 746318,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6379.jpg",
+   "sha256": "a9c743e16e5acd94ce9a68e7d4ade1c189d53743da59eb45f52770923092f6e5",
+   "bytes": 623321,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6380.jpg",
+   "sha256": "c1c09b4baec5e8a1652023bfe8e5a0456df1abd3746d699c4cbe8a288d1bbd5a",
+   "bytes": 680092,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6381.jpg",
+   "sha256": "0af7556cd2b407869f4d911f80838289169f2a4114df723dc92da2a568300e6c",
+   "bytes": 647125,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6382.jpg",
+   "sha256": "86fededc6aabaafbff757fe0257081aa2f0ef08e7a5e5c3b834f6d5933c746ff",
+   "bytes": 688238,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6383.jpg",
+   "sha256": "b218a913910b7a825b3c16d0cc77f8da1c73ecfee026c15607686c8e8edb281f",
+   "bytes": 686832,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6384.jpg",
+   "sha256": "34929a6b8f392878808b0208eaf902858ce6ca1937389b1709b8c4a7282791d9",
+   "bytes": 776070,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6385.jpg",
+   "sha256": "b19789d2761c83a6bbdec163465ed6e6e79b608a8dbbccb799dc61d984ae9ca2",
+   "bytes": 694401,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6386.jpg",
+   "sha256": "8a95f6d714c8ff109e0dbf2ee4a055acce0999143ad33ccc6b1496b172a272a3",
+   "bytes": 762820,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6387.jpg",
+   "sha256": "4b495888399dbca666843341d0c7a9c618489c68531918a68997bfe4f37ece6a",
+   "bytes": 586648,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6388.jpg",
+   "sha256": "19302dda2cf8f98e1b353b3f6da3b7c448043fd4b089b4e16411b602d9418503",
+   "bytes": 607415,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6390.jpg",
+   "sha256": "74115eb38ca7e2f23702b3222b3766c3614f91edc48330db787561b8914c6f0e",
+   "bytes": 572661,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6392.jpg",
+   "sha256": "f361f0d206aac68bc57875b409370e708b185d17562214ffd07dd03020a17353",
+   "bytes": 563841,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6393.jpg",
+   "sha256": "f3cb5e6609eb2c52d462390c6e65d8584ecd4edbe5878fef0812347d19d1d25d",
+   "bytes": 633649,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6394.jpg",
+   "sha256": "e8875c6b217228fb0b21224cd8f4c24470a35b26b822f72325a340ff32d376d9",
+   "bytes": 612509,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6395.jpg",
+   "sha256": "15d68262b2867f4c6c8f689c0e61ce89df930e43d0e0dd54118668df3cff2792",
+   "bytes": 620893,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6396.jpg",
+   "sha256": "373ce35c167fa97202becad2dfadae11d8ca14dac81d62a8c8cf2f935763d276",
+   "bytes": 654475,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6397.jpg",
+   "sha256": "71fa3632eee2b4079e900df394b409bd907ca7ddeb7df588d9e5f8ec36d4bee7",
+   "bytes": 597023,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6398.jpg",
+   "sha256": "56d833d87157d7eae518a1244d7ea416ebc507b9a4cdf6381c3630db45d9955a",
+   "bytes": 571664,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6399.jpg",
+   "sha256": "90be2692f6c94f63a239a9625a11bf6139fa5eda72dd2b48dda945b33ed36b8a",
+   "bytes": 641381,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6401.jpg",
+   "sha256": "b52650e0af28eda89e8e23468f1b92887335624ab7f8e010fa82bcf5a6d1bd08",
+   "bytes": 616033,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6402.jpg",
+   "sha256": "c101eedb25eadbf6459c87762c42d5681f55fab3c471dc597846f70ddb3bc515",
+   "bytes": 710883,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6403.jpg",
+   "sha256": "44f0ef08d74019d5c2afec3f31a6d85077700fc19b5835c675d7fb5fcbb29973",
+   "bytes": 653908,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6404.jpg",
+   "sha256": "3c7ebce73269e3cbeb40963f31faaaee41017af388b7043aa54c5f5a5e9e6b91",
+   "bytes": 557847,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6405.jpg",
+   "sha256": "a98979bca7f999251b55e9a8e97ca782e9fa29fdcf1e8bd9f8bacd5ed603c291",
+   "bytes": 642380,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6406.jpg",
+   "sha256": "bdd1a887b215c445924f7aafc56e4552e6d5d19e444a61ef8090f2aa83ebd731",
+   "bytes": 759334,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6408.jpg",
+   "sha256": "ef9fef4c7aa3b678f839e5de3cd028d5332197b1daedfe41c093df2d4e3e4068",
+   "bytes": 534436,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6409.jpg",
+   "sha256": "6c3087ec7316b7d212b20d566721490df1595e00944041eb19dc228359ba77b5",
+   "bytes": 549305,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6410.jpg",
+   "sha256": "1b5a10727bc12ee99e6f5769f2d94ae7243640ac216e47ef9daa67aa2f5a93d3",
+   "bytes": 577475,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6411.jpg",
+   "sha256": "bb2739d7d33b19c7b55b2629ed39664e94f14263129f68fdc329f37b2b33bc0d",
+   "bytes": 547215,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6412.jpg",
+   "sha256": "5710403f35daea17700d6c12db5ab1a7a43e3d95d7168db1378e9a23eee59e42",
+   "bytes": 532176,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6413.jpg",
+   "sha256": "90f6c4bdc6d417ed9a6a641b185e228545a3e092f80fd5664d848306b29a91a3",
+   "bytes": 553578,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6414.jpg",
+   "sha256": "f571c7b392ebe0ef1e70fe685ade9bb35c9eec6f944b683a18f26e9c49046c45",
+   "bytes": 575745,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6415.jpg",
+   "sha256": "90a7e693fa8dcf7de700eb014d7f55cf291b66d864d64e81c60e11cfa1d03342",
+   "bytes": 569856,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6417.jpg",
+   "sha256": "24bc4f05278cb9915d63b13905e13a199b2a309db9911f7b8486780ddbe320c2",
+   "bytes": 599720,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6420.jpg",
+   "sha256": "58f6752a24f54fad3dd84d58bdb75e514608962fc76e1b93675f62e6c16a85ee",
+   "bytes": 525917,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6421.jpg",
+   "sha256": "04a844324af45aa7ba4fb9d8f504e574103c4bdcf362ef2bb3f0223a13030c60",
+   "bytes": 620288,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6422.jpg",
+   "sha256": "961b7f5a4c55a9ce6aa72fb57883d5c96d68c888492c2d5304b295fe3343cb74",
+   "bytes": 661423,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6423.jpg",
+   "sha256": "e70abb6f34e5f2e5d484a108edc49195079c2b94a22d69a530535b7013e05ea9",
+   "bytes": 607958,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6428.jpg",
+   "sha256": "78c1e7b34de708a3eb4f3b0aa03f4430e0bd18c44c11f3046b44a9cc0a545bfb",
+   "bytes": 617094,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6429.jpg",
+   "sha256": "765e7f0f89cb2216cdd00c680e9b3650cf6b05787d49498bb181f0da3cee221e",
+   "bytes": 596467,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6430.jpg",
+   "sha256": "df27c3e69218819d62a588371821813107b119433ac5984b4f290b20977f37df",
+   "bytes": 599521,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6431.jpg",
+   "sha256": "20ab1df37a48a46e121819fe3202c838e8ffae19e58055492d2776320c6d85ca",
+   "bytes": 607511,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6433.jpg",
+   "sha256": "8d987d0eaf94b46a19cfd5879ac0006e3c0d75389e130419084391c6eef1d52c",
+   "bytes": 610461,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6434.jpg",
+   "sha256": "22b597510d540242be56993cbc3170db9b9b5d27003c47c49133f7201b39400f",
+   "bytes": 594933,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6435.jpg",
+   "sha256": "d6748018194812f80e3c0c7e89874e87bca077cdd8cdc271edbaf67ff65cd61d",
+   "bytes": 608413,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6436.jpg",
+   "sha256": "f9df05b0cd736f43afdfb95cd3d714b61c412468dbdf0d61ad2cc07126b4b67b",
+   "bytes": 561845,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6437.jpg",
+   "sha256": "13c61838c768822c36e564b6b50bae9e7bf793ee77ba459e6cff01333ba6af96",
+   "bytes": 579211,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6438.jpg",
+   "sha256": "13bebb3671a0bc2fe5252f7663f907b91ff68a4cb98f8cd928b26ca3ccb565d8",
+   "bytes": 571417,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6439.jpg",
+   "sha256": "c297fd7f06ae7d8981b0a60b5663e1343767b03b4ac84c0f61791afaa41117e0",
+   "bytes": 582473,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6440.jpg",
+   "sha256": "52d698cf11f9d3241b86057eece9936b56a791ab96b729d5823b9aafaa8c14a9",
+   "bytes": 583324,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6441.jpg",
+   "sha256": "928f0935a58472d2b8627d83ff7b7242e8ddcc05c220961b7fd424acf8d7a75d",
+   "bytes": 607413,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6442.jpg",
+   "sha256": "be7b95999e0f13c0a16f737f5a574dcc5d10ea07d181cc859f3f4e90a40d4770",
+   "bytes": 584678,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6443.jpg",
+   "sha256": "c27c59a4a3b8fe7fbd5842fb362d1ec2bd0d0fd21e4d2e62aa1c63131b7a2bb2",
+   "bytes": 614724,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6444.jpg",
+   "sha256": "38fd8bda00d7e184643e8b011df04ea40b1659db9a813bfe919bfb80f3b5d286",
+   "bytes": 635123,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6445.jpg",
+   "sha256": "d506777431b4e1a9a424e35d1d4f58c7dcdff1c738c11016cdf22d51f7012f6c",
+   "bytes": 695028,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6446.jpg",
+   "sha256": "2267f4298a96a4407d1d0c4616961781d0348edab249973f990d28510d3e1758",
+   "bytes": 678085,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6447.jpg",
+   "sha256": "56860f5b3391900c4193b9b8efa452f06e16d1c43a2f1f679198ba42d4f86d98",
+   "bytes": 681723,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6448.jpg",
+   "sha256": "adc8a86c360a586c557c5281b6f0eb2df450f507db1f5b060d12d2bb4ea11d90",
+   "bytes": 625423,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6449.jpg",
+   "sha256": "3260a12ed93f0891600f0a9452a346be2af05fcfdaeb8fdc053fd37fee05038d",
+   "bytes": 641620,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6450.jpg",
+   "sha256": "29a6bec91b0f65aac6da09909079d27850bf763b9e548b54183a7a74e131058c",
+   "bytes": 603360,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6451.jpg",
+   "sha256": "1556154685b77b06f8cc410c8f47598cb3856f69dd20860167527e0afdc28265",
+   "bytes": 583505,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6452.jpg",
+   "sha256": "43b36204c3c5abb58d3e09bcb9e8549009146a1c89ad9773077a8f409ed87d20",
+   "bytes": 654221,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6453.jpg",
+   "sha256": "71516f9a51ea3cb638f7cb494cf26a4587dcb3b9f74adf6dc86c6e1232030cf5",
+   "bytes": 596847,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6454.jpg",
+   "sha256": "a128a1223e10ab0bfd120f98433b158ec0a529ee26d2d89c629785782ae450f7",
+   "bytes": 509968,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6456.jpg",
+   "sha256": "243e82faffcd15b7572e2a0dbabbb83965c9293f9becaf3991ffc68ed6e3cd99",
+   "bytes": 670726,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6457.jpg",
+   "sha256": "139e05793cf106928f4e67763ad264584cbdde39fc0d8822459cc8567f72369a",
+   "bytes": 601135,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6458.jpg",
+   "sha256": "6f9fbc5d473f1f5c0a368b16bc0ae871fd921f8b5bb36c49e96e90b7c7b060c9",
+   "bytes": 623336,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6459.jpg",
+   "sha256": "de2d470811d3132854be7b0074a770845075da1476ea755213693f52f0f15d14",
+   "bytes": 588262,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6460.jpg",
+   "sha256": "5072c8b4b9c752c69f2bc636f7e9cfbeb2717f4d8fac1c657643b1f57fbfbff4",
+   "bytes": 592247,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6461.jpg",
+   "sha256": "d53912703b468b2fb2c00f9b348f2bd61fedd2277dbaf323b110bb3d4ba69d21",
+   "bytes": 573567,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6462.jpg",
+   "sha256": "28e701259074b99a4875983f52fa78380b99d4fe60d34be25d2c6a6c60dd9b56",
+   "bytes": 582789,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6464.jpg",
+   "sha256": "0ad3f5ee4cb2a6eceac5373d9f8c43052d99fdafc0c7cbb478eeb273a0c558cd",
+   "bytes": 578319,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6465.jpg",
+   "sha256": "9ff6be424c9c5ad724f5753ab2faf5b7e887b6c70d1d2875d49c19d0de935c11",
+   "bytes": 571977,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6466.jpg",
+   "sha256": "f0478839e4e0bc9ed4295474851931cb18b6a70ef06b3a74d3872ac0568e72b7",
+   "bytes": 567821,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6468.jpg",
+   "sha256": "5bb33f77f3fb42a72b98a5ffc1f779df10f1d63b0beacc869de89c5618821ef6",
+   "bytes": 587699,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6471.jpg",
+   "sha256": "811388bc6148f1232a8ec000bfe6fd3c495af69a900749645159988c21b63484",
+   "bytes": 631803,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6472.jpg",
+   "sha256": "4601047f104d85fb6cde9a9b6e01d3e0f422c47f7aa9091f3f8b384a6c094bf9",
+   "bytes": 644506,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6475.jpg",
+   "sha256": "79d5a92e350db6b41c2e1af9de0888692bf40d32dabb66cc4277283ff1fd0742",
+   "bytes": 597840,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6476.jpg",
+   "sha256": "6f238e457599a0615daedeb5e0674776034449fdb62fb051c36b680ad69dc503",
+   "bytes": 479536,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6477.jpg",
+   "sha256": "0eca64e2a6b05b0a77102ba8376762580c5e7c7da2b0801447399908503379db",
+   "bytes": 582422,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6479.jpg",
+   "sha256": "9facaeb3aa4e1a2b1b1986810358a55dcb6e7437bbdd874775d767889277f8f5",
+   "bytes": 611346,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6481.jpg",
+   "sha256": "8b26f760cd0168cd707a870c6be31067589063a54390a9d83ba0e276d85a7d8b",
+   "bytes": 580573,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6482.jpg",
+   "sha256": "4fd71a9c37a061b25c17acc646e1ebbd28b50d37df7dfcb3a114416d2c8cf604",
+   "bytes": 633722,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6483.jpg",
+   "sha256": "f779da85698f9fd62275a3df1e001016b7549a689f3d6c34cfd71f50df4ddaf6",
+   "bytes": 598626,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6484.jpg",
+   "sha256": "2703d955397a7531d20aba99c886db6151b78d3358a5ebbfd212fdc0b5db8ad7",
+   "bytes": 616441,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6485.jpg",
+   "sha256": "60206c311b39650f80d5115d7f3c8317876db8d2095146283328dd19bbcd4bac",
+   "bytes": 613117,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6486.jpg",
+   "sha256": "5ca0aa9ff5006e43929daacee70bd8aafcc943315b5580178a540492209fa846",
+   "bytes": 593405,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6487.jpg",
+   "sha256": "317659d320399684bc280117928af0e9a14da41e10b55632ef9aa26de2f466d4",
+   "bytes": 630850,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6488.jpg",
+   "sha256": "f72e76dc0cef9ecdc8e2d49c509753d1d27fee492bc07e8c468a16c9ff691268",
+   "bytes": 627940,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6489.jpg",
+   "sha256": "f995d33828e46ac03fe847d78c701cfb2fd4cbdad9f5989a942e0470cb9c252d",
+   "bytes": 649105,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6490.jpg",
+   "sha256": "778db71cb5a5dbca647ee23703534ad18e76cfc0ae7956126e2634d3b1aa1d17",
+   "bytes": 633490,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6491.jpg",
+   "sha256": "b866cc9eaf1c37056ac7709950fe3e41b28b57e2ffab2aeba09f25d14fcdc1d4",
+   "bytes": 643188,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6492.jpg",
+   "sha256": "5a56722d5f695140522084769b01cc45f6f872f4b24c55cf6f687b2bd6a26015",
+   "bytes": 655484,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6493.jpg",
+   "sha256": "1b825db4b7a1f4d996e81f6cd5ef7d69b5e8191b6638c0ffa789e5eabb9249ca",
+   "bytes": 667072,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6494.jpg",
+   "sha256": "055590d10337dde8b50cbf9d079aad8c4a7280c9b41071aa561b4ee14076beb0",
+   "bytes": 644186,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6495.jpg",
+   "sha256": "6aae2e1a6511d20edcc7aa855b550010d820079860b46e81ca1cff7711fb022a",
+   "bytes": 638799,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6496.jpg",
+   "sha256": "e0c44d92dc896be7d26f77ebc9f89ff8c7e4ce216ef1df895490507ffa3d8b37",
+   "bytes": 662969,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6498.jpg",
+   "sha256": "2ffaa6b17e55da0712ce7026157df1517d131e32030cfe2f4f0d43084f3d07ab",
+   "bytes": 633219,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6499.jpg",
+   "sha256": "a193dad979bccd8f0467216ef36237b5646a68e9dd73390bfd6988456ea04338",
+   "bytes": 641366,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6500.jpg",
+   "sha256": "bf648ad0a8a9506cad25da5d369a7d91d97e81ca461421a7fb16c8140952e632",
+   "bytes": 696923,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6501.jpg",
+   "sha256": "ea67820e0eed967a5782b700b00fbbf236681734f9b87078616f0ded748eb8ff",
+   "bytes": 672460,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6502.jpg",
+   "sha256": "1dde92b8c07cad4ca52d7c51f49913a8e721c7e585a96abf86b87e25e33d2a5c",
+   "bytes": 615508,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6503.jpg",
+   "sha256": "b30e6bbc14be19587911e83854a40602ebb4da7ae00b1e9c75eb954fedd4d1ab",
+   "bytes": 581356,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6504.jpg",
+   "sha256": "a13fd5e0deb25845b65822391c8f3006e7f57143cc4403c315fa7cdc4f9175d4",
+   "bytes": 625960,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6505.jpg",
+   "sha256": "e61e5d4ae5d36b4020030978735de99cae85b452337c2657c8a0385201fa3611",
+   "bytes": 577605,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6506.jpg",
+   "sha256": "7bc4aad2547be050e073a7610647b9922cf7deeeeca43875656d7e676b22b4da",
+   "bytes": 640548,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6507.jpg",
+   "sha256": "4f5ea2205d3717d29e8dcc966096d5c2e7bd28d7ae6c31b135c3a6a64fbef124",
+   "bytes": 647975,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6508.jpg",
+   "sha256": "319f98d79e458e3c8a14946bbcef1600246227d9d09f5398048f7968af7639c7",
+   "bytes": 627129,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6509.jpg",
+   "sha256": "d1613b313e81957b66f306451d86305ff70d329811a94d958c01240be49d6698",
+   "bytes": 673655,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6510.jpg",
+   "sha256": "169cda8f9f1b179bcf5d4c79745e5cbc10feae2404321b0dec49a639626628c7",
+   "bytes": 674637,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6511.jpg",
+   "sha256": "61eb358e2263b8f16b28afbfc66c4a3cc7ee5c00f6f2e3ab3bd2579d88a14caf",
+   "bytes": 650765,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6512.jpg",
+   "sha256": "00bdf9a3e6e278f72d62dea9d922f35eb6e520a3b8e5f58a9f526224eeb2524d",
+   "bytes": 718342,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6513.jpg",
+   "sha256": "70402fdf5c19355b1587dc60d2c01ca8d692da88e8b28a8c738c51e52deb2288",
+   "bytes": 689095,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6514.jpg",
+   "sha256": "a295254317f2bc0eabb8650d7ea1e293dccd0e10dd021d8c1ad9b0ca776772a3",
+   "bytes": 620102,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6515.jpg",
+   "sha256": "6c9be7be422c816233fadb265d1fb014c37cbc4997e0d495658f1ae65f28bca5",
+   "bytes": 593729,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6516.jpg",
+   "sha256": "4eebd5b6f05bf7702cbb55187e27837f58d50f3f7c3cf7013275265fccea21d5",
+   "bytes": 592791,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6517.jpg",
+   "sha256": "256bb4f2272e1724da37faeffc370ca5f69c5cf5a0c5476725c435e01b93cbb6",
+   "bytes": 632501,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6518.jpg",
+   "sha256": "1b40c2cc20533636a10db3048bcd905c72c68168967e64ce536a49ce5b01716a",
+   "bytes": 617747,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6520.jpg",
+   "sha256": "a0f8f30e4e978c97fd0a200e7c58f2cff3dfe95dab9af12e84d3e0b243ce09db",
+   "bytes": 652086,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6521.jpg",
+   "sha256": "a6274911109c94411c9edeee34dad717f86f4f9d36609031aa6516d16048311a",
+   "bytes": 648100,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6522.jpg",
+   "sha256": "181497a101ec2d5b78e74f0dcdad5289242575d662f77edd6bd563981f7f9308",
+   "bytes": 609090,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6523.jpg",
+   "sha256": "462571609dab87c56aed8cbce5c9ae9652d5eae4b8c75af3b598a4e052e69cfc",
+   "bytes": 596743,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6524.jpg",
+   "sha256": "4fa1b1340a4b31c6a50ac006e6dc6eb530f9b2ce6549b0bd7794b4e3998863dc",
+   "bytes": 626586,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6525.jpg",
+   "sha256": "91627377038288073b8b0f5d45503e4bd7370544da54798b8038a8f57fc12f9a",
+   "bytes": 613550,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6526.jpg",
+   "sha256": "c35c13bafedff0df1e6efd226fdcbc918ae459d9fc54250b22a9587bd44f4691",
+   "bytes": 668518,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6527.jpg",
+   "sha256": "a6947f4bc7ea6c59fb46940c06b698f7c9aab44631dbeb398ab92334a0de9cbb",
+   "bytes": 601862,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6528.jpg",
+   "sha256": "98000005f25d1fabd7d56f6bb07ced2640a56f8a76201a2c88db9fd630ffc177",
+   "bytes": 607366,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6529.jpg",
+   "sha256": "cb9c784e411dcae6f25d1e9f43981b2c9c8a25a09d42c79cea9127b5caccd48f",
+   "bytes": 599301,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6530.jpg",
+   "sha256": "ce59fc8fea375c236d99ab5c8af50405f07981d2beafa2ee61db2822569c22dc",
+   "bytes": 588510,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6531.jpg",
+   "sha256": "2090826514ac451cb565da9bf384b652e1b2398d7ccaf5ad58a547fde7e1f754",
+   "bytes": 578379,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6533.jpg",
+   "sha256": "9832325286b28a5e5fb5212b12346c53a737129a2b8a40a09a14d5a80384912a",
+   "bytes": 599965,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6534.jpg",
+   "sha256": "b7bbba3542d86a64afb437088f9176140b698738ca1e93b30217c86710fc864f",
+   "bytes": 635300,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6535.jpg",
+   "sha256": "01e4b39817f6ca3f97970e0236037076edf38229d0b2b3165de52439867f98dd",
+   "bytes": 590539,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6536.jpg",
+   "sha256": "cbf3ffc935caca7417b9e7c5c09d5bfe51f1768ced926f31447765c4c13c4c36",
+   "bytes": 596108,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6537.jpg",
+   "sha256": "9f119ae08b04bef1cf7b25d38d3d969b62ad330edd30e29b66c7254a1f154131",
+   "bytes": 624893,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6538.jpg",
+   "sha256": "54742068ef61b356d29b5ef2d88ba4056775755d796726a33ff37e7fce80fa38",
+   "bytes": 649214,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6540.jpg",
+   "sha256": "27754755b1ba1ace7656ae72f7c6ea73a686f166f209f0645d72e2b44070930a",
+   "bytes": 613686,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6541.jpg",
+   "sha256": "394ab557dd87e5b26e0b3bb7cfd841f5e13e986b1927410646dccc1cdd80ed33",
+   "bytes": 595446,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6542.jpg",
+   "sha256": "7e23e9748d9961ce834942529538a9ba28c3eb2ebede9a37f73fd8da60d162dd",
+   "bytes": 573220,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6543.jpg",
+   "sha256": "4e34af35c20ca539b4b840fa76857df5fbf1afa5187442f1e4b98d1e44b09f1b",
+   "bytes": 609573,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6544.jpg",
+   "sha256": "1c33475fa81f766aa710f364802b5fcbe88dd75761f567b529d0843a8a8bd5db",
+   "bytes": 661805,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6546.jpg",
+   "sha256": "8b7f7d4932c75255e8e6123c5421326f925d59c5e54cc7d1e7f50ca51cc34e9f",
+   "bytes": 576185,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6547.jpg",
+   "sha256": "0e524e7a0606c5a23831f69b0fa0fa26b614ec0b519004da7a8096800d6eeecc",
+   "bytes": 590631,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6548.jpg",
+   "sha256": "9f34093c0fd00e7f54d80067c89f08139fa4bfacbdebc0e34f1726e77c462e75",
+   "bytes": 645279,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6549.jpg",
+   "sha256": "9b8085b3223a532ac7819d9610e4d24c4886488dbc25f25f06c91e3086624632",
+   "bytes": 746423,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6550.jpg",
+   "sha256": "030675337d972bc61ac929c15b1903d21d3371ebb716d521f92740ea43f71912",
+   "bytes": 710726,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6551.jpg",
+   "sha256": "ce874703de6b6af33e123a4e014cf63c43d22fceeadc8f98449031e51b928d3e",
+   "bytes": 703863,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6552.jpg",
+   "sha256": "9f41fadaf1204dae54705000d71c21cbfea639900be40ff2058e32ae33953667",
+   "bytes": 646486,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6553.jpg",
+   "sha256": "395d8e1875a27f6bb5b29087ba7b9472e6e2d9018ecacf06f37989227d9998fb",
+   "bytes": 702894,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6554.jpg",
+   "sha256": "d8759f2f847cde8c69a8f099a41bc709575d20d56635ddc5719cf112e3f06603",
+   "bytes": 650284,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6555.jpg",
+   "sha256": "c96935841d026fe094366217fd0491ca06229e67aad3a40d14a8be9f7b7c1b6b",
+   "bytes": 702941,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6556.jpg",
+   "sha256": "4f57a1ec15e77743647a02cad74bbe4628d2d728504502b8f2af83f819ced7b4",
+   "bytes": 634942,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6557.jpg",
+   "sha256": "fb402378691a65a64975e4777301db6d2adb41bc365a918ded5ea20e76dfa388",
+   "bytes": 595186,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6558.jpg",
+   "sha256": "f38fb1c44dfa607d38f98a9a5087fecda309324dc9ec89d4728b8f766ef22e50",
+   "bytes": 595784,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6559.jpg",
+   "sha256": "922268a59723907c6b5508efb8038ecceb1e5e7459b5ef915bb4de5dbf11aa00",
+   "bytes": 590241,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6560.jpg",
+   "sha256": "1cb0e713140dc62fc24806385b8bcc2a0dfd24665e10160c28a21cd1a867f72b",
+   "bytes": 627861,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6561.jpg",
+   "sha256": "3132d0ce6aa67e1daae93bd32e436ad2caa0a13a710cf63f48e05e0f94b989dd",
+   "bytes": 596745,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6562.jpg",
+   "sha256": "62127d985076dfadb794962e26468eaa4f794847358fed5c75d1189db19195f9",
+   "bytes": 621196,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6563.jpg",
+   "sha256": "4ae52ee26de688e00814e8022ee8847ad3f91df1e5aeb868bfc745c41f2cf371",
+   "bytes": 594670,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6564.jpg",
+   "sha256": "6dc984e2cbbff2cfbda2447f238e245afa037a5a52c64f3e27c709a883e534d5",
+   "bytes": 571193,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6565.jpg",
+   "sha256": "37a16f757067e85fb77fa2f64e907fd7f5d28df9545a00727271a13e11e22812",
+   "bytes": 570472,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6566.jpg",
+   "sha256": "8131ba4068c18532ff431188b71219bcfed100a0ad5b33ad37912315026bde4c",
+   "bytes": 568387,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6567.jpg",
+   "sha256": "22fa6c4b7ed28b96f7ce620566c3c65fa8c717179e613f1103573934318a77db",
+   "bytes": 591262,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6569.jpg",
+   "sha256": "e2ca45a91af7ca58d4d7177ac7b5d10421cc5ed4d5558bfb9f6a9102ecb7183c",
+   "bytes": 585844,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6570.jpg",
+   "sha256": "2997657730325d994ef01e2887fe75a212a7fe775750263eaa97b1806fcf0c4b",
+   "bytes": 590036,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6571.jpg",
+   "sha256": "3f4acd523ba6c4ee2e04cae452dc7998f7d3d83a111c705a4bc697198104efd8",
+   "bytes": 603028,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6572.jpg",
+   "sha256": "03dfdb1566f2920791b6ab68ed96d1b0866d3da09cf99f249d712b50b848c4d9",
+   "bytes": 676584,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6573.jpg",
+   "sha256": "73bb1ac156c28d70b2e526d865b4d314407f57aeea239e38c3d0cf8b0102cb85",
+   "bytes": 729862,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6575.jpg",
+   "sha256": "2a616c0ffd1a642c285a15825865b73bdb88a60559bb6cc2936423d47774ac52",
+   "bytes": 794762,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6576.jpg",
+   "sha256": "d4e4910f94de6667a30880901b4a2bf1f96076909bfeb78259096541fc428e7d",
+   "bytes": 865680,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6577.jpg",
+   "sha256": "cce68bc11942db7f09e4aa356cac2fbb6d983c885ff4f9b450bdbade9191525f",
+   "bytes": 766980,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6578.jpg",
+   "sha256": "8ee0715927215f872a76d3f11f9d372c8c1592418b9b0ba1f724153dcd616cc7",
+   "bytes": 772199,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6579.jpg",
+   "sha256": "70a1b9e06beffcfdf2d3190c21b9b87af6ccde133e06c361eea98c277aec70ae",
+   "bytes": 766374,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6580.jpg",
+   "sha256": "2f78ed4225146701309e5469200dd7e3424064d16d35fea909f56064c2cd7362",
+   "bytes": 718570,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6581.jpg",
+   "sha256": "e1f76ad0fad97677f9da6f578a09aa9a5c76a51e2eba1408076a4e35ac44e1d8",
+   "bytes": 660783,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6583.jpg",
+   "sha256": "3b2e0dfc154b90a27f165d3eff4a0071975f4bcf791a5166e1fcd7b75a0617f3",
+   "bytes": 727958,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6584.jpg",
+   "sha256": "14bc593dccb3528f28e9b3b3c6b6a538ef1b47145515c48e5754c1b85a25e9e0",
+   "bytes": 687742,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6586.jpg",
+   "sha256": "e33da0f8ab710987d1493647d02eda47328ae2c305eb7abefeb94d0f17a471f1",
+   "bytes": 637713,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6588.jpg",
+   "sha256": "d715bf41119fdf7cb28687c21e948968cd9f2ced517956d1b511237d582f4db9",
+   "bytes": 676212,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6589.jpg",
+   "sha256": "c96d94db38e69ec234789b9a180d672028770f411ad47a123ebef476d4df863b",
+   "bytes": 680430,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6590.jpg",
+   "sha256": "446dd91be4eb3a75f68e9686d73a7546e9b33314108a6d9ca164cf01311d73d2",
+   "bytes": 684653,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6591.jpg",
+   "sha256": "49be9959ce7b2e36a421cdaef350bca88894ed58b69493a1d4249892329dbbd9",
+   "bytes": 662000,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6592.jpg",
+   "sha256": "38227a071c3021b5adc80f92169ffc1904f0a3df3abeb7f49b612e2739db3f4f",
+   "bytes": 746968,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6596.jpg",
+   "sha256": "cc7624aa1673f0a43811dc40191293572ea60e3c9b9c3d7166726c9fb23beff4",
+   "bytes": 661142,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6597.jpg",
+   "sha256": "c77c52d8c4eaa97e9fafc10fd5395ee6a6c00aaa48b02f88b3f6d77970f878fb",
+   "bytes": 621839,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  },
+  {
+   "path": "capture/originals/IMG_6598.jpg",
+   "sha256": "c4ab0e432bc150feca101bcacec95de79861f62c43a4a6ef9f5ddc24688b7161",
+   "bytes": 650009,
+   "region_id": "R1",
+   "kind": "image_set",
+   "device": "unknown",
+   "duration_s": null,
+   "issues": [
+    "CAP-LOW-RES",
+    "CAP-ISOLATED",
+    "CAP-GROUPS"
+   ]
+  }
+ ],
+ "regions": [
+  {
+   "region_id": "R1",
+   "status": "captured",
+   "note": "single-region Studio capture"
+  }
+ ]
+}

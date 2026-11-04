@@ -1,0 +1,9 @@
+{
+ "status": "done",
+ "pid": 13908,
+ "started_at": "2026-11-02T02:46:18+05:30",
+ "label": "Checking that photos overlap",
+ "fraction": 1,
+ "result": "ready",
+ "ended_at": "2026-11-02T02:46:32+05:30"
+}

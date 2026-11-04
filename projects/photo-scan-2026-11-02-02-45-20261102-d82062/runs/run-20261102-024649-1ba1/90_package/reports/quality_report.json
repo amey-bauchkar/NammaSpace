@@ -1,0 +1,59 @@
+{
+ "verdict": "usable_with_warnings",
+ "warnings": [
+  {
+   "code": "SPARSE-WEAK",
+   "severity": "warning",
+   "message": "Few 3D points were found per photo; the geometry may be unreliable.",
+   "value": 222.6,
+   "threshold": 300
+  },
+  {
+   "code": "SCALE-UNKNOWN",
+   "severity": "info",
+   "message": "Real-world size is unknown: photos alone do not fix scale. The model is shown in its own units. Add a known measurement to enable metric distances."
+  },
+  {
+   "code": "DOORWAYS-NOT-EVALUATED",
+   "severity": "info",
+   "message": "Doorways are not detected automatically; check them visually."
+  }
+ ],
+ "facts": {
+  "images_input": 263,
+  "images_registered": 263,
+  "unregistered": [],
+  "other_models": 0,
+  "sparse_points": 58532,
+  "mean_reprojection_px": 0.62,
+  "sift_max_features": 8192,
+  "mean_track_length": 4.1,
+  "low_texture_images": [],
+  "dense_fallback": false,
+  "dense_fallback_reason": null,
+  "floor_detected": true,
+  "floor_coverage": 0.8537,
+  "floor_suspect": false,
+  "below_floor_fraction": 0.0,
+  "mesh_vertices": 1499039,
+  "mesh_faces": 2997988,
+  "mesh_components": 24,
+  "mesh_largest_component_share": 0.9967,
+  "mesh_tiny_components": 23,
+  "dense_points": 4702228,
+  "scale_status": "unknown"
+ },
+ "thresholds": {
+  "registration_ok": 1.0,
+  "registration_poor": 0.6,
+  "low_texture_keypoints": 1500,
+  "low_texture_fraction": 0.25,
+  "points_per_image_min": 300,
+  "reprojection_px_max": 1.5,
+  "floor_coverage_min": 0.5,
+  "largest_component_min": 0.8,
+  "floater_component_max_share": 0.005
+ },
+ "registration_rate": 1.0,
+ "created_at": "2026-11-02T05:02:59+05:30"
+}

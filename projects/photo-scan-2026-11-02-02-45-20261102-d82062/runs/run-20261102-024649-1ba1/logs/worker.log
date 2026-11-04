@@ -1,0 +1,13 @@
+{
+ "status": "failed",
+ "error": {
+  "stage": "dense",
+  "message": "Not enough free disk space: about 48.3 GB is needed for this step, 45.2 GB is free on this drive.",
+  "hint": "Free some space (delete old projects or empty the Recycle Bin), then press Resume.",
+  "log": null
+ }
+}
+{
+ "status": "succeeded",
+ "error": null
+}

@@ -1,0 +1,18 @@
+{
+ "schema": "namma-capture-manifest/1",
+ "project_dir": "large-room-20261030-880c8c",
+ "created_at": "2026-11-04T15:38:32+05:30",
+ "mode": null,
+ "files": [
+  {
+   "file": ".gitkeep",
+   "kind": "unsupported",
+   "decision": "excluded",
+   "reason": "UNSUPPORTED_TYPE"
+  }
+ ],
+ "inputs": [],
+ "per_input": [],
+ "video": null,
+ "frames": null
+}

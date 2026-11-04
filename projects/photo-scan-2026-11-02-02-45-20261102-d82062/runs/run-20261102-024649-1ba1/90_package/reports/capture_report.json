@@ -1,0 +1,121 @@
+{
+ "status": "ready",
+ "mode": "photos",
+ "errors": [],
+ "warnings": [
+  {
+   "code": "CAP-LOW-RES",
+   "severity": "warning",
+   "message": "263 photos are low resolution (short side under 1000 px); fine detail and texture sharpness will be limited.",
+   "images": [
+    "IMG_6292.jpg",
+    "IMG_6293.jpg",
+    "IMG_6294.jpg",
+    "IMG_6295.jpg",
+    "IMG_6296.jpg",
+    "IMG_6298.jpg",
+    "IMG_6299.jpg",
+    "IMG_6300.jpg",
+    "IMG_6301.jpg",
+    "IMG_6302.jpg",
+    "IMG_6304.jpg",
+    "IMG_6306.jpg",
+    "IMG_6307.jpg",
+    "IMG_6310.jpg",
+    "IMG_6311.jpg",
+    "IMG_6312.jpg",
+    "IMG_6313.jpg",
+    "IMG_6314.jpg",
+    "IMG_6315.jpg",
+    "IMG_6317.jpg",
+    "IMG_6318.jpg",
+    "IMG_6319.jpg",
+    "IMG_6320.jpg",
+    "IMG_6321.jpg",
+    "IMG_6322.jpg",
+    "IMG_6323.jpg",
+    "IMG_6324.jpg",
+    "IMG_6325.jpg",
+    "IMG_6326.jpg",
+    "IMG_6329.jpg"
+   ]
+  },
+  {
+   "code": "CAP-ISOLATED",
+   "severity": "warning",
+   "message": "36 images share few matching details with the others in this quick check and might not be placed. The check is cautious (on test rooms it also flagged photos that were placed): after processing, look at 'Photos placed' and re-shoot around the missing ones.",
+   "images": [
+    "IMG_6312.jpg",
+    "IMG_6324.jpg",
+    "IMG_6329.jpg",
+    "IMG_6336.jpg",
+    "IMG_6339.jpg",
+    "IMG_6362.jpg",
+    "IMG_6376.jpg",
+    "IMG_6380.jpg",
+    "IMG_6384.jpg",
+    "IMG_6386.jpg",
+    "IMG_6390.jpg",
+    "IMG_6392.jpg",
+    "IMG_6408.jpg",
+    "IMG_6431.jpg",
+    "IMG_6444.jpg",
+    "IMG_6448.jpg",
+    "IMG_6449.jpg",
+    "IMG_6450.jpg",
+    "IMG_6454.jpg",
+    "IMG_6458.jpg",
+    "IMG_6485.jpg",
+    "IMG_6486.jpg",
+    "IMG_6492.jpg",
+    "IMG_6493.jpg",
+    "IMG_6496.jpg",
+    "IMG_6498.jpg",
+    "IMG_6546.jpg",
+    "IMG_6547.jpg",
+    "IMG_6549.jpg",
+    "IMG_6550.jpg"
+   ]
+  },
+  {
+   "code": "CAP-GROUPS",
+   "severity": "warning",
+   "message": "In this quick check the images form 25 groups that do not overlap. If the final model is split or photos are missing, take extra photos while walking between those areas so they connect.",
+   "group_sizes": [
+    142,
+    13,
+    11,
+    6,
+    5,
+    4,
+    4,
+    3,
+    3,
+    3
+   ]
+  }
+ ],
+ "stats": {
+  "mode": "photos",
+  "files_uploaded": 263,
+  "inputs_accepted": 263,
+  "flags": {
+   "sharpness_median": 62.0,
+   "blur_threshold": 25.0
+  },
+  "blurry": 6,
+  "too_dark": 10,
+  "too_bright": 0,
+  "low_detail": 1,
+  "near_duplicate_pairs": 0,
+  "overlap": {
+   "pairs_tested": 2834,
+   "verified_pairs": 312,
+   "isolated": 36,
+   "groups": 25,
+   "largest_group": 142
+  }
+ },
+ "seconds": 14.1,
+ "created_at": "2026-11-02T02:46:32+05:30"
+}

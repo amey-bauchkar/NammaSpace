@@ -1,0 +1,108 @@
+{
+ "stage": "texture",
+ "config_sha256": "fd99bea0a021e370eaef694bcce18439f82ad8ac66d85d6027c8c68d8c31f7b6",
+ "at": "2026-11-02T03:31:00+05:30",
+ "result": {
+  "lods": [
+   {
+    "lod": 0,
+    "file": "lod0.glb",
+    "bytes": 48191200,
+    "wall_s": 97.33,
+    "triangles": 1372908,
+    "textures": [
+     {
+      "source": "lod0_openmvs_0.png",
+      "source_size": [
+       8192,
+       8192
+      ],
+      "size": [
+       8192,
+       8192
+      ],
+      "jpeg_bytes": 7083727
+     }
+    ],
+    "harmonize": {
+     "status": "ok",
+     "method": "multi-view blend",
+     "exposure": {
+      "photos": 263,
+      "points": 14967,
+      "observations": 53669,
+      "inliers": 52589,
+      "log_spread_before": 0.034473925828933716,
+      "log_spread_after": 0.03340228524403477,
+      "gain_min": 0.5,
+      "gain_max": 1.43228315646237
+     },
+     "photos": 263,
+     "scale": 2,
+     "device": "gpu",
+     "atlas_0_texels_blended": 1.0,
+     "atlas_0_size": [
+      8192,
+      8192
+     ],
+     "photos_used": 263
+    }
+   },
+   {
+    "lod": 1,
+    "file": "lod1.glb",
+    "bytes": 16192700,
+    "wall_s": 27.71,
+    "triangles": 274554,
+    "textures": [
+     {
+      "source": "lod1_openmvs_0.png",
+      "source_size": [
+       4096,
+       4096
+      ],
+      "size": [
+       4096,
+       4096
+      ],
+      "jpeg_bytes": 2226045
+     }
+    ],
+    "harmonize": {
+     "status": "ok",
+     "method": "multi-view blend",
+     "exposure": {
+      "photos": 263,
+      "points": 14967,
+      "observations": 53669,
+      "inliers": 52589,
+      "log_spread_before": 0.034473925828933716,
+      "log_spread_after": 0.03340228524403477,
+      "gain_min": 0.5,
+      "gain_max": 1.43228315646237
+     },
+     "photos": 263,
+     "scale": 2,
+     "device": "gpu",
+     "atlas_0_texels_blended": 1.0,
+     "atlas_0_size": [
+      8192,
+      8192
+     ],
+     "photos_used": 263
+    }
+   }
+  ],
+  "exposure": {
+   "status": "ok",
+   "photos": 180,
+   "points": 11383,
+   "observations": 33601,
+   "inliers": 32904,
+   "log_spread_before": 0.03581482172012329,
+   "log_spread_after": 0.03540817588927042,
+   "gain_min": 0.5,
+   "gain_max": 1.4338930601467028
+  }
+ }
+}

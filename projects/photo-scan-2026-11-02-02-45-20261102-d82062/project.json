@@ -1,0 +1,16 @@
+{
+ "project_id": "photo-scan-2026-11-02-02-45-20261102-d82062",
+ "title": "Dr Johnson",
+ "created_at": "2026-11-02T02:45:41+05:30",
+ "notices": [
+  "Reconstructed from raw photos"
+ ],
+ "runs": [
+  {
+   "run_id": "run-20261102-024649-1ba1",
+   "profile": "high",
+   "created_at": "2026-11-02T02:46:49+05:30",
+   "config_sha256": "fd99bea0a021e370eaef694bcce18439f82ad8ac66d85d6027c8c68d8c31f7b6"
+  }
+ ]
+}

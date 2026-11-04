@@ -1,0 +1,16 @@
+{
+ "lods": [
+  {
+   "lod": 0,
+   "file": "lod0.glb",
+   "bytes": 134026288,
+   "triangles": 2997988
+  },
+  {
+   "lod": 1,
+   "file": "lod1.glb",
+   "bytes": 28110768,
+   "triangles": 599565
+  }
+ ]
+}

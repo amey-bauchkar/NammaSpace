@@ -1,0 +1,200 @@
+{
+ "contract": "IF-13",
+ "contract_version": "1.3.0",
+ "package_id": "pkg-photo-scan-2026-11-02-02-45-20261102-d82062-run-20261102-024649-1ba1",
+ "project": {
+  "project_id": "photo-scan-2026-11-02-02-45-20261102-d82062",
+  "title": "Dr Johnson"
+ },
+ "run_id": "run-20261102-024649-1ba1",
+ "created_at": "2026-11-03T04:53:08+05:30",
+ "model_frame": {
+  "frame_id": "model:run-20261102-024649-1ba1",
+  "units": "model",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "floor_detected": true,
+  "up_source": "floor_plane",
+  "datum": "origin on the floor plane below the centroid of the capture cameras; +X along the principal horizontal axis of the floor; units = reconstruction units"
+ },
+ "scale": {
+  "status": "unknown",
+  "metres_per_unit": null,
+  "relative_uncertainty": null,
+  "method": "photos only: scale not observable",
+  "evaluation_only": false
+ },
+ "appearance": {
+  "representation": "textured_mesh",
+  "to_model": {
+   "matrix_row_major": [
+    -0.11154428124836742,
+    0.291782069407313,
+    -0.9499584713518644,
+    -0.0793843891310101,
+    -0.01177807078014738,
+    -0.9562449726761677,
+    -0.29233000065038345,
+    1.5856880594282197,
+    -0.9936896650209677,
+    -0.02141906169609894,
+    0.11010028804038507,
+    0.019635670148926705,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "method": "rigid SfM -> model frame (floor plane / camera orientation), see 70_frame/frame.json"
+  },
+  "lods": [
+   {
+    "lod": 0,
+    "path": "scene/lod0.glb",
+    "format": "glb",
+    "bytes": 134026288,
+    "sha256": "c16abf2ed534fb8d90581faffefb6dc911a4a827bbc85ff64c56c0c80bfd413d",
+    "faces": 2997988
+   },
+   {
+    "lod": 1,
+    "path": "scene/lod1.glb",
+    "format": "glb",
+    "bytes": 28110768,
+    "sha256": "a6af83874452354283408ed75fa7b17fa52841e2c9880765b097c72fc9ab7bf6",
+    "faces": 599565
+   }
+  ],
+  "splat": {
+   "path": "scene/splat.spz",
+   "format": "spz",
+   "bytes": 3235048,
+   "sha256": "3c82b83eba885ff148c686698e42f592e2bea29d33d7f239a6bcf3f167815452",
+   "splats": 174315,
+   "method": "3D Gaussian splat (gsplat 1.5.3, MCMC, 10000 steps) from 263 photos, camera poses from COLMAP SfM; aligned with reconstruction frame",
+   "to_model": {
+    "matrix_row_major": [
+     -0.11154428124836742,
+     0.291782069407313,
+     -0.9499584713518644,
+     -0.0793843891310101,
+     -0.01177807078014738,
+     -0.9562449726761677,
+     -0.29233000065038345,
+     1.5856880594282197,
+     -0.9936896650209677,
+     -0.02141906169609894,
+     0.11010028804038507,
+     0.019635670148926705,
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
+    "fit": {
+     "within_5cm": 1.0,
+     "median_cm": 0.0
+    }
+   }
+  }
+ },
+ "eye_height_units": 1.7205890750315,
+ "bounds": {
+  "min": [
+   -6.207012172986438,
+   -0.03441169862079775,
+   -2.976952507723412
+  ],
+  "max": [
+   7.206181603108465,
+   3.224347197714423,
+   2.9755108788578686
+  ]
+ },
+ "start_view": {
+  "position": [
+   -5.01553,
+   1.60897,
+   -0.66447
+  ],
+  "target": [
+   -3.36027,
+   1.22653,
+   -0.93699
+  ],
+  "source": "capture camera IMG_6350.jpg"
+ },
+ "cameras": "views/cameras.json",
+ "roam": "nav/roam_grid.json",
+ "navigation": {
+  "status": "unverified",
+  "geometry": "nav/geometry.if04.json",
+  "scale_basis": "assumed_capture_height",
+  "metres_per_unit": 0.9331207465493303,
+  "note": "Automatic floor / obstacle map from the reconstruction. NOT verified: unobserved floor is treated as blocked, missing obstacles cannot be detected without a reference, and the scale is ASSUMED from a typical phone height."
+ },
+ "pois": "poi/pois.json",
+ "quality": {
+  "verdict": "usable_with_warnings",
+  "report": "reports/quality_report.json",
+  "capture_report": "reports/capture_report.json",
+  "warnings": [
+   "SPARSE-WEAK",
+   "SCALE-UNKNOWN",
+   "DOORWAYS-NOT-EVALUATED"
+  ]
+ },
+ "notices": [
+  "Reconstructed from raw photos",
+  "Scale unknown: photos alone do not fix real-world size. Distances are in model units.",
+  "Reconstruction quality: usable with warnings (1 warnings)."
+ ],
+ "files": [
+  {
+   "path": "nav/geometry.if04.json",
+   "sha256": "13a8b9203bd336987f4021c550cc4fac49158c9411e5b065227b8584a4cf79c2",
+   "bytes": 37879
+  },
+  {
+   "path": "nav/roam_grid.json",
+   "sha256": "a8bc8cfd0a65b0f86c61176e8046572938172cb44d551016b683ee3ec36dde0f",
+   "bytes": 6341
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+   "bytes": 3
+  },
+  {
+   "path": "reports/capture_report.json",
+   "sha256": "825020628bce7b6205a4e76b7cea050f4adb3456c5482585679ae4755f5c021e",
+   "bytes": 2650
+  },
+  {
+   "path": "reports/quality_report.json",
+   "sha256": "a7aff7df77ba4c6982837517e046302998538d8e29d8846321320b980fd3b5a8",
+   "bytes": 1614
+  },
+  {
+   "path": "scene/lod0.glb",
+   "sha256": "c16abf2ed534fb8d90581faffefb6dc911a4a827bbc85ff64c56c0c80bfd413d",
+   "bytes": 134026288
+  },
+  {
+   "path": "scene/lod1.glb",
+   "sha256": "a6af83874452354283408ed75fa7b17fa52841e2c9880765b097c72fc9ab7bf6",
+   "bytes": 28110768
+  },
+  {
+   "path": "scene/splat.spz",
+   "sha256": "3c82b83eba885ff148c686698e42f592e2bea29d33d7f239a6bcf3f167815452",
+   "bytes": 3235048
+  },
+  {
+   "path": "views/cameras.json",
+   "sha256": "6aa9077d500c11abb2e03672e9b76d2e671bae0fa45f758ec2d39eba74c79546",
+   "bytes": 68965
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\splat-env\Scripts\python.exe -u -W ignore C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\scripts\splat\train_splat.py --model projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\30_undistorted\sparse --images projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\30_undistorted\images --out projects\photo-scan-2026-11-02-02-45-20261102-d82062\runs\run-20261102-024649-1ba1\65_splat\room.ply --iters 10000 --max-side 1024 --cap 300000 --max-splat-scale 0.2143345335955692 --pose-opt --appearance
+
+263 training photos 1024x673 (0 outlying cameras dropped), 65210 start points, scene scale 5.93
+step 1/10000 loss 0.2310 psnr 14.84 splats 65210 size p50/p99/max 0.021/0.214/0.21 gpu 1.03 GB 15s
+step 251/10000 loss 0.1290 psnr 17.78 splats 65210 size p50/p99/max 0.021/0.198/0.21 gpu 1.03 GB 22s
+step 501/10000 loss 0.1250 psnr 22.83 splats 65210 size p50/p99/max 0.022/0.202/0.21 gpu 1.03 GB 28s
+step 751/10000 loss 0.1273 psnr 18.67 splats 71893 size p50/p99/max 0.026/0.204/0.21 gpu 1.03 GB 34s
+step 1001/10000 loss 0.0495 psnr 27.60 splats 83224 size p50/p99/max 0.031/0.202/0.21 gpu 1.03 GB 41s
+step 1251/10000 loss 0.0847 psnr 22.87 splats 91754 size p50/p99/max 0.033/0.208/0.21 gpu 1.03 GB 48s
+step 1501/10000 loss 0.0745 psnr 23.80 splats 106215 size p50/p99/max 0.038/0.206/0.21 gpu 1.03 GB 55s
+step 1751/10000 loss 0.1117 psnr 24.41 splats 117101 size p50/p99/max 0.039/0.210/0.21 gpu 1.03 GB 62s
+step 2001/10000 loss 0.0831 psnr 26.21 splats 135558 size p50/p99/max 0.045/0.206/0.21 gpu 1.03 GB 70s
+step 2251/10000 loss 0.0658 psnr 24.08 splats 149451 size p50/p99/max 0.046/0.207/0.21 gpu 1.03 GB 78s
+step 2501/10000 loss 0.0641 psnr 26.67 splats 173007 size p50/p99/max 0.051/0.204/0.21 gpu 1.03 GB 87s
+step 2751/10000 loss 0.0808 psnr 25.87 splats 190739 size p50/p99/max 0.050/0.206/0.21 gpu 1.03 GB 95s
+step 3001/10000 loss 0.1305 psnr 24.57 splats 220802 size p50/p99/max 0.055/0.203/0.21 gpu 1.03 GB 105s
+step 3251/10000 loss 0.0664 psnr 23.93 splats 243434 size p50/p99/max 0.054/0.206/0.21 gpu 1.03 GB 115s
+step 3501/10000 loss 0.1113 psnr 25.18 splats 281804 size p50/p99/max 0.059/0.203/0.21 gpu 1.03 GB 125s
+step 3751/10000 loss 0.0730 psnr 26.00 splats 300000 size p50/p99/max 0.057/0.205/0.21 gpu 1.05 GB 136s
+step 4001/10000 loss 0.0751 psnr 25.46 splats 300000 size p50/p99/max 0.061/0.202/0.21 gpu 1.05 GB 147s
+step 4251/10000 loss 0.0656 psnr 24.87 splats 300000 size p50/p99/max 0.058/0.204/0.21 gpu 1.05 GB 158s
+step 4501/10000 loss 0.0668 psnr 25.85 splats 300000 size p50/p99/max 0.061/0.201/0.21 gpu 1.05 GB 168s
+step 4751/10000 loss 0.0586 psnr 24.08 splats 300000 size p50/p99/max 0.059/0.202/0.21 gpu 1.05 GB 178s
+step 5001/10000 loss 0.0594 psnr 24.62 splats 300000 size p50/p99/max 0.061/0.200/0.21 gpu 1.05 GB 188s
+step 5251/10000 loss 0.0500 psnr 28.07 splats 300000 size p50/p99/max 0.059/0.202/0.21 gpu 1.05 GB 198s
+step 5501/10000 loss 0.0653 psnr 26.51 splats 300000 size p50/p99/max 0.061/0.201/0.21 gpu 1.05 GB 208s
+step 5751/10000 loss 0.0561 psnr 25.88 splats 300000 size p50/p99/max 0.059/0.202/0.21 gpu 1.05 GB 219s
+step 6001/10000 loss 0.0405 psnr 28.76 splats 300000 size p50/p99/max 0.061/0.200/0.21 gpu 1.05 GB 230s
+step 6251/10000 loss 0.0561 psnr 25.34 splats 300000 size p50/p99/max 0.059/0.201/0.21 gpu 1.05 GB 240s
+step 6501/10000 loss 0.0539 psnr 27.18 splats 300000 size p50/p99/max 0.060/0.200/0.21 gpu 1.05 GB 250s
+step 6751/10000 loss 0.0852 psnr 26.87 splats 300000 size p50/p99/max 0.057/0.201/0.21 gpu 1.05 GB 260s
+step 7001/10000 loss 0.0500 psnr 27.13 splats 300000 size p50/p99/max 0.059/0.199/0.21 gpu 1.05 GB 270s
+step 7251/10000 loss 0.0579 psnr 26.76 splats 300000 size p50/p99/max 0.057/0.201/0.21 gpu 1.05 GB 280s
+step 7501/10000 loss 0.0670 psnr 24.54 splats 300000 size p50/p99/max 0.058/0.200/0.21 gpu 1.05 GB 290s
+step 7751/10000 loss 0.0715 psnr 27.53 splats 300000 size p50/p99/max 0.057/0.201/0.21 gpu 1.05 GB 301s
+step 8001/10000 loss 0.0503 psnr 26.72 splats 300000 size p50/p99/max 0.057/0.201/0.21 gpu 1.05 GB 311s
+step 8251/10000 loss 0.0691 psnr 25.37 splats 300000 size p50/p99/max 0.056/0.200/0.21 gpu 1.05 GB 322s
+step 8501/10000 loss 0.0445 psnr 26.64 splats 300000 size p50/p99/max 0.055/0.200/0.21 gpu 1.05 GB 332s
+step 8751/10000 loss 0.0585 psnr 26.93 splats 300000 size p50/p99/max 0.054/0.199/0.21 gpu 1.05 GB 343s
+step 9001/10000 loss 0.0453 psnr 29.42 splats 300000 size p50/p99/max 0.053/0.200/0.21 gpu 1.05 GB 353s
+step 9251/10000 loss 0.0421 psnr 29.95 splats 300000 size p50/p99/max 0.052/0.200/0.21 gpu 1.05 GB 363s
+step 9501/10000 loss 0.0517 psnr 28.15 splats 300000 size p50/p99/max 0.052/0.201/0.21 gpu 1.05 GB 374s
+step 9751/10000 loss 0.0618 psnr 27.55 splats 300000 size p50/p99/max 0.051/0.201/0.21 gpu 1.05 GB 384s
+step 10000/10000 loss 0.0455 psnr 27.88 splats 300000 size p50/p99/max 0.050/0.201/0.21 gpu 1.05 GB 394s
+done {"photos": 263, "iters": 10000, "splats": 300000, "seconds": 394.3, "gpu_peak_gb": 1.05, "max_side": 1024, "bytes": 74401531, "frame": "input cameras", "pose_opt": true, "appearance": true, "depth_weight": 0, "max_splat_scale": 0.2143345335955692, "pose_correction": {"rot_deg_median": 0.086, "rot_deg_max": 0.271, "shift_median": 0.0033, "shift_max": 0.0166}}

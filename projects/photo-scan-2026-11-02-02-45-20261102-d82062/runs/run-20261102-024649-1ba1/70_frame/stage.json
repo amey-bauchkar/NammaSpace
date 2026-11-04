@@ -1,0 +1,15 @@
+{
+ "stage": "frame",
+ "config_sha256": "fd99bea0a021e370eaef694bcce18439f82ad8ac66d85d6027c8c68d8c31f7b6",
+ "at": "2026-11-02T03:31:04+05:30",
+ "result": {
+  "floor_detected": true,
+  "eye_height_units": 2.5744253949725557,
+  "floor_coverage": 0.5242414426087896,
+  "estimated_surfaces": {
+   "status": "skipped",
+   "reason": "the points do not look like one box-shaped room",
+   "triangles": null
+  }
+ }
+}
