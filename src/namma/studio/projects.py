@@ -135,7 +135,9 @@ class ProjectStore:
         return sorted(out, key=lambda p: p["created_at"], reverse=True)
 
     def originals(self, project_id):
-        return self.path(project_id) / "capture" / "originals"
+        d = self.path(project_id) / "capture" / "originals"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
 
     def clear_capture(self, project_id):
         cap = self.path(project_id) / "capture"

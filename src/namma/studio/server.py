@@ -595,7 +595,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 doc = st.store.rename(pid, new_title)
                 return self._json(200, st.project_summary(doc))
             if rest == ["uploads"] and method == "GET":
-                files = sorted(p for p in st.store.originals(pid).iterdir() if p.is_file() and not p.name.startswith("."))
+                orig = st.store.originals(pid)
+                files = sorted(p for p in orig.iterdir() if p.is_file() and not p.name.startswith(".")) if orig.exists() else []
                 return self._json(200, {"files": [{"name": p.name, "bytes": p.stat().st_size} for p in files]})
             if len(rest) == 2 and rest[0] == "uploads":
                 if method == "PUT":
