@@ -322,7 +322,8 @@ def ingest_capture(project_dir, *, max_frames=300, frame_max_side=1920, venue_la
         if len(comps) > 1:
             warnings.append(_msg("CAP-GROUPS", "warning", f"In this quick check the images form {len(comps)} groups "
                                  "that do not overlap. If the final model is split or photos are missing, take extra photos "
-                                 "while walking between those areas so they connect.",
+                                 "while walking between those areas in both directions, including overlapping views "
+                                 "on each side of doorways, so they connect.",
                                  group_sizes=[len(c) for c in comps][:10]))
         if mode == "photos" and len(neardup) / n > 0.2:
             warnings.append(_msg("CAP-NEAR-DUP", "warning", f"{len(neardup)} photo pairs are almost identical; move a "

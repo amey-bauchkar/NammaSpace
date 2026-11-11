@@ -327,7 +327,14 @@ async function main() {
   if (data.splat) {
     // shown by default (held-out photos: 26.3 dB, SSIM 0.86 on "New room"); ?mesh starts on the mesh and downloads
     // the splat (~150 MB) only when asked for
-    const go = () => loadSplat(ctx).catch((e) => { state.errors.push({ kind: 'splat', message: e.message }); toast(`Photoreal view not available: ${e.message}`); });
+    const go = () => loadSplat(ctx).catch((e) => {
+      state.errors.push({ kind: 'splat', message: e.message });
+      const button = $('splat-toggle');
+      button.disabled = false;
+      button.textContent = 'Retry photoreal view';
+      button.onclick = go;
+      toast(`Photoreal view not available; mesh remains visible: ${e.message}`);
+    });
     if (!params.has('mesh')) go();
     else {
       $('splat-toggle').hidden = false;
@@ -509,7 +516,7 @@ function renderAbout(pkg, quality) {
     : suspect ? 'uncertain (may be a table or desk top)' : 'detected');
   if (quality) {
     const f = quality.facts;
-    if (f.source === 'imported_mesh') add('Source', 'Iphone 14 scan');
+    if (f.source === 'imported_mesh') add('Source', 'Imported 3D model');
     else add('Photos placed', `${f.images_registered} of ${f.images_input}`);
     add('Surface', `${(f.mesh_faces / 1e6).toFixed(2)} M triangles`);
     const filteredWarnings = (quality.warnings || []).filter((w) =>
@@ -520,9 +527,9 @@ function renderAbout(pkg, quality) {
     );
     const b = $('quality-badge');
     b.hidden = false;
-    const verdictKey = (f.source === 'imported_mesh' && filteredWarnings.length === 0) ? 'good' : quality.verdict;
-    b.textContent = { good: 'Quality: good', usable_with_warnings: 'Quality: usable, with warnings', poor: 'Quality: poor', failed: 'Quality: failed' }[verdictKey] || 'Quality: good';
-    b.className = `badge ${{ good: 'ok', usable_with_warnings: 'warn', poor: 'bad', failed: 'bad' }[verdictKey] || 'ok'}`;
+    const verdictKey = quality.verdict;
+    b.textContent = { good: 'Checks: good', usable_with_warnings: 'Checks: warnings', poor: 'Checks: poor', failed: 'Checks: failed' }[verdictKey] || 'Checks: unavailable';
+    b.className = `badge ${{ good: 'ok', usable_with_warnings: 'warn', poor: 'bad', failed: 'bad' }[verdictKey] || 'warn'}`;
     const ul = $('warnings');
     ul.innerHTML = '';
     for (const w of filteredWarnings) {
@@ -533,6 +540,7 @@ function renderAbout(pkg, quality) {
     $('quality-details').hidden = filteredWarnings.length === 0;
   }
   add('Navigation', { unavailable: 'not available', unverified: 'unverified (automatic)', accepted: 'verified' }[pkg.navigation.status]);
+  add('Coverage', 'Completeness and per-surface confidence have not been measured; missing areas may not be visible.');
   add('Floor guide', 'faint grid = floor area the photos did not reconstruct (a guide, not a scan)');
   const nl = $('notices');
   nl.innerHTML = '';

@@ -4,17 +4,17 @@ Techfest IIT Bombay 2026–27 · **Team Triple Musketeer** · November 2026
 
 **Code:** github.com/amey-bauchkar/NammaSpace · **Live Walkthrough:** amey-bauchkar.github.io/NammaSpace/demo/new-room/
 
-All performance, accuracy, and latency figures below come from verified runs; none are estimates.
+This draft contains historical results and requires an evidence audit before submission. Scene-specific measurements do not establish performance on other spaces.
 
 ## 1. Problem and scope
 
-Namma Space turns **a phone scan of an indoor space**—a mobile LiDAR scan (Polycam, Record3D) or ordinary photos / continuous video—into a **photoreal, metric-accurate 3D walkthrough that runs in any web browser** without installing software and without manual 3D modeling. Round 1 delivered an SOP, a local reconstruction pipeline, and a free-roaming viewer. The updated system expands from isolated single rooms to **complex multi-room architectural spaces** (connected suites, hallways, open doorways, and decorative trim), integrates a **Dual Splat Engine** for adaptive room scales, and hardens end-to-end reliability.
+Namma Space turns an imported phone scan or ordinary photos and video into a browser-based 3D walkthrough. Reconstruction can be incomplete, and metric accuracy requires independent validation. The viewer reports scale status and labels estimated surfaces. Multi-room quality and navigation require scene-specific validation.
 
 **Hardware Sovereignty.** Everything executes **locally on commodity laptops** with zero reliance on paid cloud APIs:
 - **Portable Tier:** Intel Core 5 120U (10 cores, 16 GB RAM, integrated graphics, CPU fallback). Uses multi-threaded CPU SIFT matching, incremental bundle adjustment, and CPU meshing.
 - **Accelerated Tier:** HP Victus (Intel i7-13620H, 16 GB RAM, NVIDIA RTX 4050 Laptop GPU 6 GB). Deploys CUDA COLMAP, CuPy texture blending kernels, and GPU-driven 3D Gaussian Splatting (`gsplat 1.5.3`).
 
-**Two Operational Routes:** Polycam / LiDAR import (primary; native metric scale, automated mesh repair, and photoreal Gaussian splatting, §3a) and uncalibrated photos/video (any phone; local SfM-MVS photogrammetry, §3).
+**Two Operational Routes:** imported models, including Polycam exports, and uncalibrated photos/video processed locally with SfM-MVS. Device-tracking scale is an estimate unless independently verified; a Polycam import does not by itself establish that LiDAR was used.
 
 ## 2. System architecture
 
@@ -118,7 +118,7 @@ The viewer opens directly on the **photoreal view** (Spark 2.4.0 renders Gaussia
 
 ## 6. Evaluation on public datasets
 
-Evaluation follows our frozen Phase 12 protocol on **ETH3D** (laser scans/DSLR poses), **ARKitScenes** (LiDAR mesh/device poses), **TUM RGB-D** (motion capture), and our **Dr Johnson multi-room interior testbed** (263 photos, 3.00 M tris, connected chambers and corridor). Held-out test scenes were executed exactly once with frozen configurations:
+The following historical public-dataset results are documented in `docs/PHASE13_REPORT.md`. The Dr Johnson capture is not included in this reference-geometry table: its registration count alone does not establish accuracy, completeness or verified routes. Held-out test scenes were executed exactly once with frozen configurations:
 
 | Scene (role, profile, config) | Photos placed | Camera error median | Dense accuracy median | Completeness @5 cm (dense / mesh) | Floor IoU | Routes OK (false-unreachable) | Minutes | Peak RAM (GB) |
 |---|---|---|---|---|---|---|---|---|
@@ -131,7 +131,6 @@ Evaluation follows our frozen Phase 12 protocol on **ETH3D** (laser scans/DSLR p
 | `eth3d_kicker` (dev, standard, earlier) | 30 / 31 | 7.7 mm | 6.3 mm | 0.49 / 0.59 | 0.34 | 0 / 12 (12) | 51.1 | 7.6 |
 | `eth3d_pipes` (dev, preview, earlier) | 14 / 14 | 5.1 mm | 8.7 mm | 0.29 / 0.45 | 0.00 | 0 / 12 (12) | 3.8 | 1.9 |
 | `tum_fr3_office_sample` (dev, preview, earlier) | 61 / 61 | 8.6 mm | – | – / – | – | not measurable | 5.7 | 0.6 |
-| `dr_johnson_multiroom` (multi-room, standard) | 263 / 263 | 11.2 mm | 9.4 mm | 0.68 / 0.74 | 0.65 | verified 2-room | 64.5 | 8.4 |
 
 **Failed runs (kept on record, not hidden):** 5 runs stopped during development—`arkitscenes-41125700-dev` (mesh stage: non-manifold edge singularity); `arkitscenes-41125700-dev` (frame stage: degenerate collinear points); `eth3d-delivery-area-held-out` (texture stage: exceeded 90 min cap); `eth3d-kicker-dev` (sfm stage: COLMAP crash 0xC0000409 under low RAM); `eth3d-pipes-dev` (undistort stage: corrupted calibration matrix). All diagnosed and recorded in `metrics_matrix.json`.
 
@@ -139,7 +138,7 @@ Evaluation follows our frozen Phase 12 protocol on **ETH3D** (laser scans/DSLR p
 
 ## 7. Limitations and next steps
 
-- **LiDAR Dependency for Instant Scale:** LiDAR imports provide native metric scale from hardware tracking. Monocular photos cannot resolve absolute scale from optical rays alone; models are explicitly tagged `scale_status: unknown` until the user enters one known baseline measurement. Heuristic ceiling-height scaling introduced $-5\%$ to $+90\%$ error across varying architectures and was rejected.
+- **Scale:** Some imported models carry device-tracking scale, which is not independently verified. Monocular photos cannot resolve absolute scale from optical rays alone; models remain `scale_status: unknown` until calibrated. Heuristic ceiling-height scaling introduced $-5\%$ to $+90\%$ error across varying architectures and was rejected.
 - **Compute Requirements:** Photoreal Gaussian splat training requires a modern CUDA GPU (~3.2–4.8 GB VRAM, ~20 min on an RTX 4050). On CPU-only laptops, the pipeline automatically falls back to rendering high-resolution textured meshes.
 - **Specular & Low-Texture Surfaces:** Featureless white walls, polished glass, and mirrors challenge dense stereo matching, producing localized mesh holes. Mitigated by automated room-fill planar backing sheets (`roomfill.py`) and guide grids.
 - **Fast Handheld Video Blur:** Rapid panning introduces motion blur, dropping SfM registration to $15\%–45\%$. The SOP enforces steady translational walking.
