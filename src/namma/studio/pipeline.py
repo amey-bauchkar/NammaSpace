@@ -920,9 +920,12 @@ def _estimated_surfaces(ctx, v, T, eye, meta, txt_dir, out):
                 cams = colmap.read_cameras_txt(txt_dir / "cameras.txt")
                 if (ctx.cfg.get("blend") or {}).get("enabled"):
                     gains, _ = exposure.estimate_gains(exposure.read_observations(txt_dir / "images.txt"), ctx.dir("prepare"), sorted(imgs))
-                    mesh_v = read_ply(ctx.dir("mesh") / "mesh.ply")["vertex"]
-                    sampler = roomfill.BlendSampler(blendtex.make_views(imgs, cams, ctx.dir("prepare"), gains),
-                                                    np.column_stack([mesh_v["x"], mesh_v["y"], mesh_v["z"]]), T)
+                    mesh_ply = read_ply(ctx.dir("mesh") / "mesh.ply")
+                    mesh_v = mesh_ply["vertex"]
+                    mesh_p = np.column_stack([mesh_v["x"], mesh_v["y"], mesh_v["z"]])
+                    if len(mesh_ply.get("faces", ())):          # large triangles must hide what is behind them
+                        mesh_p = blendtex.occluder_points(mesh_p, mesh_ply["faces"])
+                    sampler = roomfill.BlendSampler(blendtex.make_views(imgs, cams, ctx.dir("prepare"), gains), mesh_p, T)
                 else:
                     sampler = roomfill.PhotoSampler(imgs, cams, ctx.dir("prepare"), T)
                 V, Cc, F, planes = roomfill.build_fill(P, C, box, N=N, photo_sampler=sampler, cell_eye=cfg["cell_eye"],

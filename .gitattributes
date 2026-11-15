@@ -1,1 +1,4 @@
 projects/photo-scan-*/**/*.glb filter=lfs diff=lfs merge=lfs -text
+
+# frozen evidence: byte-exact on every platform (hashes in tests/test_phase8_artifacts_preserved.py)
+phase8_artifacts/** -text

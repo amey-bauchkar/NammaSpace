@@ -162,3 +162,30 @@ def test_a_slightly_tilted_export_still_has_walkable_floor(tmp_path):
     geom, _ = load_geometry(run / "85_navgeom" / "geometry.if04.json")
     free = np.asarray(build_navlayer(geom, "F0", res=0.05, agent_radius_m=0.25, enforce_resolution=False).free)
     assert free.sum() * 0.05 ** 2 > 8                                                        # m2 of clear floor
+
+
+def test_package_carries_a_route_grid_for_in_browser_paths(tmp_path):
+    """Round 2: a published static site plans walking paths in the browser (web/js/routePlan.js), so the package
+    must carry the SAME conservative navigation layer the Studio planner uses, in model units."""
+    import json as _json
+    from namma.contracts.semantic import validate_document
+    from namma.core.issues import errors_only
+    from namma.geometry.model import load_geometry
+    from namma.navigation.grid import build_navlayer
+    box_room(tmp_path / "room.glb", size=(5.0, 2.8, 4.0), table=True)
+    r = mesh_import.import_mesh(tmp_path / "room.glb", tmp_path / "projects", title="Route grid", source_note="",
+                                log=None, repair=False)
+    run = Path(r["project_dir"]) / "runs" / r["run_id"]
+    pkg = _json.loads((run / "90_package" / "scene_package.json").read_text(encoding="utf-8"))
+    nav = pkg["navigation"]
+    assert nav["status"] == "unverified" and nav["route_grid"] == "nav/route_grid.json"
+    assert "nav/route_grid.json" in {f["path"] for f in pkg["files"]}
+    assert not errors_only(validate_document(pkg, "IF-13", base_dir=run / "90_package", verify_files=True))
+    g = _json.loads((run / "90_package" / "nav" / "route_grid.json").read_text(encoding="utf-8"))
+    geom, _ = load_geometry(run / "85_navgeom" / "geometry.if04.json")
+    layer = build_navlayer(geom, "F0", res=0.05, agent_radius_m=0.25, enforce_resolution=False)
+    assert (g["width"], g["height"]) == (layer.width, layer.height) and all(sum(row) == g["width"] for row in g["rows"])
+    allowed = sum(sum(row[1::2]) for row in g["rows"])                    # runs alternate not-allowed / allowed
+    assert allowed == int(np.asarray(layer.free).sum()) > 0
+    mpu = nav["metres_per_unit"]
+    assert abs(g["cell"] * mpu - 0.05) < 1e-9 and abs(g["origin_xz"][0] * mpu - layer.origin[0]) < 1e-9

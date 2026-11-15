@@ -161,3 +161,16 @@ All-zero SHA-256 values in the examples are **placeholders**. A test confirms th
 - Compatibility: no field changed meaning or became required; all 1.0-1.2 packages validate. Source:
   `architecture/contracts.py` -> regenerated `architecture/schemas/IF-13.schema.json` only; all 50 contract examples
   behave as before.
+
+## IF-13 `navigation.route_grid` (additive, optional; Round 2)
+
+- `navigation.route_grid` (optional): path to `nav/route_grid.json` - the conservative navigation layer (a cell is
+  free only if it is fully on reconstructed floor and at least the agent radius from every reconstructed obstacle) in
+  MODEL units and the roam-grid run-length format (`origin_xz`, `cell`, `width`, `height`, `rows`), plus
+  `resolution_m`, `agent_radius_m`, `navlayer_id`.
+- Producer: `namma.studio.package._route_grid` (same `build_navlayer` call as `namma.studio.routing`); written only
+  when navigation geometry exists; an export problem never fails packaging. `contract_version` is unchanged.
+- Consumer: `web/js/scenePackage.js` (listed-in-`files[]` check, SHA-256 verified fetch) and `web/js/routePlan.js`
+  (A*, no corner cutting, goal snap <= 1 m, start never moved silently) so a PUBLISHED static site can plan walking
+  paths without a server. The Studio keeps using the Python planner + independent validator.
+- Compatibility: packages without the field load as before (the path button stays hidden on static sites).

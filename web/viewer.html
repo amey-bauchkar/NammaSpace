@@ -6,7 +6,7 @@
 <title>Namma Space 3D Walkthrough</title>
 <link rel="icon" href="favicon.svg?v=4" type="image/svg+xml">
 <link rel="alternate icon" href="logo.png?v=4" type="image/png">
-<link rel="stylesheet" href="app.css?v=6">
+<link rel="stylesheet" href="app.css?v=7">
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
@@ -102,6 +102,7 @@
         <input id="search" type="search" placeholder="Search places, e.g. table" autocomplete="off" aria-label="Search places">
         <button type="submit" id="search-btn">Search</button>
       </form>
+      <div class="row place-cats" id="place-cats" role="group" aria-label="Filter places by category" hidden></div>
       <p class="small muted" id="search-msg" aria-live="polite"></p>
       <ul class="list" id="results"></ul>
       <div id="poi-card" hidden>

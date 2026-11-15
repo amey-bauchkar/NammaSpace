@@ -45,6 +45,10 @@ test_output/
 /Iphone 14 Lidar/
 /Record3d EXR JPG ,n.r3d/
 
+# the team's own room / hall photos and their working reports (private: photos of a home)
+/own_capture/
+/hall/
+
 # machine-specific resource limits (template: config/resources.example.json)
 config/resources.json
 # self-signed TLS certificate + key for the phone capture listener (made on each machine)

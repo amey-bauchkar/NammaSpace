@@ -1,7 +1,22 @@
 # Namma Space
 
-**Photos or a video of a room → a photo-textured 3D model you can walk through in the browser.**
-Techfest IIT Bombay 2026–27, *Namma Space* challenge – Round 1 (3D reconstruction and roaming).
+**Photos or a video of a room → a photo-textured 3D model you can walk through in the browser, with labelled
+places, search and walking paths.**
+Techfest IIT Bombay 2026–27, *Namma Space* challenge – Round 1 (3D reconstruction and roaming) and
+Round 2 (points of interest and navigation).
+
+## Round 2: places, search and navigation
+
+| Feature | What it does | Where |
+|---|---|---|
+| **Place labels (POIs)** | Click any point of the model in the Studio and name it; an optional category and other names are stored with its 3D position and published in the scene package | `src/namma/studio/` (labels), `poi/pois.json` in the package |
+| **Search** | Results update as you type; whole-word, prefix and one-typo matches ("tabel" finds "table"); category buttons narrow the list; with nothing typed every place is listed | [web/js/search.js](web/js/search.js), reference [src/namma/poi/search.py](src/namma/poi/search.py), parity-tested |
+| **Go there** | Smooth camera move to a standing spot on walkable floor with a clear view of the place | [web/js/sceneViewer.js](web/js/sceneViewer.js) |
+| **Walking path** | A* on a conservative floor grid (0.05 m cells; a cell is free only on reconstructed floor with body clearance from every reconstructed obstacle); no corner cutting; paths prefer the middle of corridors and doorways; drawn on the floor with direction arrows and on the mini-map, with the distance | Studio: [src/namma/navigation/](src/namma/navigation/) plus an independent validator. Published site: [web/js/routePlan.js](web/js/routePlan.js), in the browser, no server |
+| **Walk me there** | Moves the camera along the path at walking pace, shows the distance left and announces arrival; any movement key takes control back | [web/js/sceneViewer.js](web/js/sceneViewer.js) |
+
+Paths work on the published static site: the package carries the navigation grid (`nav/route_grid.json`,
+hash-verified like every other file). Checklist for the submission: [docs/ROUND2_CHECKLIST.md](docs/ROUND2_CHECKLIST.md).
 
 Everything runs on an ordinary laptop: the team's reference machine is an Intel Core 5 120U with 16 GB RAM,
 integrated graphics and **no GPU compute / no CUDA**. No cloud service, no paid API. On a laptop with an NVIDIA GPU
@@ -44,7 +59,8 @@ photos / video ─► capture check ─► COLMAP (camera poses, CPU) ─► Ope
 
 - Real-world **scale is never invented**: photos do not fix it, so the model is labelled "scale unknown"
   until a user enters one known length in the viewer.
-- Walking paths are shown only as **unverified** guidance unless the floor geometry is verified (ARCH-030).
+- Walking paths avoid every obstacle that was reconstructed; their detail text says they are **unverified**
+  unless the floor geometry is verified (ARCH-030), because an object missing from the scan cannot be ruled out.
 - Architecture: [architecture/NAMMA_SPACE_ARCHITECTURE.md](architecture/NAMMA_SPACE_ARCHITECTURE.md) §14 and the
   decision register [architecture/NAMMA_SPACE_ADR_REGISTER.md](architecture/NAMMA_SPACE_ADR_REGISTER.md).
 
@@ -93,5 +109,6 @@ capture check enforces its limits and explains every warning.
 | `web/` | `studio.html`, `viewer.html` (+ the Phase 11 release viewer `index.html`), vendored three.js |
 | `scripts/` | CLI (`studio_cli.py`), setup, datasets, evaluation, browser tests, regression |
 | `samples/tum_fr3_office/` | Redistributable sample data (CC BY 4.0) |
-| `tests/`, `web/tests/` | Python and Node test suites |
+| `src/namma/navigation/`, `src/namma/poi/` | Navigation grid, A* planner, independent route validator; place search (reference) |
+| `tests/`, `web/tests/` | Python and Node test suites (run on every push: [.github/workflows/ci.yml](.github/workflows/ci.yml)) |
 | `architecture/` | Contracts IF-01..IF-13 (schemas, examples), architecture, decisions |

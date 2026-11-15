@@ -668,6 +668,10 @@
       "null"
      ]
     },
+    "route_grid": {
+     "type": "string",
+     "description": "additive, optional: path to the conservative, agent-inflated walkable grid in model units (roam-grid format) for in-browser path planning on published sites."
+    },
     "note": {
      "type": "string"
     }

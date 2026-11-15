@@ -187,6 +187,12 @@ def main(argv=None):
     ap.add_argument("--eval-every", type=int, default=0, help="quick held-out score (colour fit) every N steps")
     ap.add_argument("--walls", help="walls.json (flat room walls in this frame): splats near a wall are kept flat on it")
     ap.add_argument("--wall-weight", type=float, default=0.05)
+    ap.add_argument("--init-scale-max-mult", type=float, default=0,
+                    help="large spaces: cap each starting splat size at this multiple of the median start size "
+                         "(0 = off). Sparse regions otherwise start as huge blobs that blur the surface")
+    ap.add_argument("--means-lr-scene-cap", type=float, default=0,
+                    help="large spaces: scene scale used for the position learning rate and MCMC noise is capped at "
+                         "this value (0 = off), so a hall is refined as finely as a room")
     a = ap.parse_args(argv)
     torch.manual_seed(a.seed); random.seed(a.seed); np.random.seed(a.seed)
     dev = "cuda"
@@ -215,7 +221,8 @@ def main(argv=None):
         dep = None
         if a.depth_dir and (Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").exists():
             dep = torch.from_numpy(np.load(Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").astype(np.float32))
-        views.append({"img": torch.from_numpy(np.asarray(pic)).to(dev), "K": torch.from_numpy(K), "viewmat": torch.from_numpy(V),
+        # pinned CPU memory: 250 photos at 1024 px are ~0.6 GB, which on a 6 GB card is taken from the splats
+        views.append({"img": torch.from_numpy(np.array(pic)).pin_memory(), "K": torch.from_numpy(K), "viewmat": torch.from_numpy(V),
                       "name": im["name"], "depth": dep})
     if len(views) < 3:
         raise SystemExit("fewer than 3 photos with cameras")
@@ -255,6 +262,10 @@ def main(argv=None):
     ch = max(256, min(4096, int(3e8 // len(pts))))      # rows per chunk: <= ~1.2 GB of distances
     knn = torch.cat([torch.cdist(pts[i:i + ch], pts).topk(4, largest=False).values[:, 1:].mean(1)
                      for i in range(0, len(pts), ch)])
+    if a.init_scale_max_mult > 0:
+        cap_size = a.init_scale_max_mult * knn.median()
+        print(f"start sizes capped at {float(cap_size):.4f} ({int((knn > cap_size).sum())} of {len(knn)} were larger)", flush=True)
+        knn = knn.clamp(max=cap_size)
     n = len(pts)
     params = torch.nn.ParameterDict({
         "means": torch.nn.Parameter(pts.clone()),
@@ -264,7 +275,8 @@ def main(argv=None):
         "sh0": torch.nn.Parameter(((torch.from_numpy(rgb).to(dev) - 0.5) / C0)[:, None, :]),
         "shN": torch.nn.Parameter(torch.zeros(n, (a.sh_degree + 1) ** 2 - 1, 3, device=dev)),
     })
-    lrs = {"means": 1.6e-4 * scene_scale, "scales": 5e-3, "quats": 1e-3, "opacities": 5e-2, "sh0": 2.5e-3,
+    lr_scale = min(scene_scale, a.means_lr_scene_cap) if a.means_lr_scene_cap > 0 else scene_scale
+    lrs = {"means": 1.6e-4 * lr_scale, "scales": 5e-3, "quats": 1e-3, "opacities": 5e-2, "sh0": 2.5e-3,
            "shN": 2.5e-3 / 20}
     opts = {k: torch.optim.Adam([{"params": params[k], "lr": lr, "name": k}], eps=1e-15) for k, lr in lrs.items()}
     sched = torch.optim.lr_scheduler.ExponentialLR(opts["means"], gamma=0.01 ** (1.0 / a.iters))
@@ -311,7 +323,7 @@ def main(argv=None):
             order = random.sample(range(len(views)), len(views))
         vi = order.pop()
         v = views[vi]
-        gt = v["img"].float()[None] / 255.0
+        gt = v["img"].to(dev, non_blocking=True).float()[None] / 255.0
         K = v["K"].to(dev)
         if step < a.half_res_until * a.iters:                    # early steps: coarse shape at a quarter of the pixels
             gt = Fn.avg_pool2d(gt.permute(0, 3, 1, 2), 2).permute(0, 2, 3, 1)
@@ -347,15 +359,21 @@ def main(argv=None):
                 g["lr"] = cur_pose_lr
         for o in list(opts.values()) + extra:
             o.step(); o.zero_grad(set_to_none=True)
+        if a.appearance:
+            # The loss only sees (splat colour) x (photo gain) + offset: one common gain / offset can move freely
+            # between the splat and ALL photos, and the viewer renders the splat without any correction. Keep the
+            # corrections zero-mean over the photos, so the saved colours are those of the average exposure.
+            with torch.no_grad():
+                app -= app.mean(0, keepdim=True)
         sched.step()
         strategy.step_post_backward(params, opts, state, step, info, lr=sched.get_last_lr()[0])
         with torch.no_grad():
             max_s = params["scales"].data.max(dim=1, keepdim=True).values
             # Prevent needle/shard artifacts while allowing natural planar wall splats (up to 30:1)
             params["scales"].data.clamp_(min=max_s - math.log(30.0))
-            # Bound maximum scale to prevent giant floaters (max 0.20m), without artificially blurring fine details
-            max_s_log = math.log(a.max_splat_scale) if a.max_splat_scale > 0 else math.log(0.20)
-            params["scales"].data.clamp_(max=max_s_log)
+            # Bound maximum scale to prevent giant floaters, without artificially blurring fine details
+            if a.max_splat_scale > 0:
+                params["scales"].data.clamp_(max=math.log(a.max_splat_scale))
         if test and a.eval_every and (step + 1) % a.eval_every == 0 and step + 1 < a.iters:
             agg, _ = evaluate(params, test, dev, min(step // 1000, a.sh_degree), 0)
             print(f"eval step {step + 1} heldout colour PSNR {agg['colour']:.3f} {time.time() - t0:.0f}s", flush=True)
@@ -372,7 +390,13 @@ def main(argv=None):
                "gpu_peak_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2), "max_side": a.max_side,
                "bytes": out_path.stat().st_size, "frame": "input cameras", "pose_opt": a.pose_opt,
                "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0,
-               "max_splat_scale": a.max_splat_scale}
+               "max_splat_scale": a.max_splat_scale, "scene_scale": round(scene_scale, 3),
+               "means_lr_scene_scale": round(lr_scale, 3), "init_scale_max_mult": a.init_scale_max_mult}
+    if a.appearance:
+        ad = app.detach()
+        summary["appearance"] = {"log_gain_abs_max": round(float(ad[:, :3].abs().max()), 4),
+                                 "offset_abs_max": round(float(ad[:, 3:].abs().max()), 4),
+                                 "mean_abs": round(float(ad.mean(0).abs().max()), 6)}
     if a.pose_opt:
         dd = pose_d.detach()
         rot = torch.rad2deg(dd[:, :3].norm(dim=1))

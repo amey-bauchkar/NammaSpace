@@ -595,6 +595,11 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
                                                                "reference_alignment", "assumed_capture_height",
                                                                "device_tracking"]},
                                       "metres_per_unit": {"type": ["number", "null"]},
+                                      "route_grid": {"type": "string",
+                                                     "description": "additive, optional: path to the conservative, "
+                                                                    "agent-inflated walkable grid in model units "
+                                                                    "(roam-grid format) for in-browser path planning "
+                                                                    "on published sites."},
                                       "note": {"type": "string"}}, "additionalProperties": False},
         "pois": {"type": "string", "description": "Path to a JSON array of studio POI records ($defs.studio_poi)."},
         "quality": {"type": "object", "required": ["verdict", "report"],

@@ -283,15 +283,38 @@ def _ceiling_surface_points(glb, n_points=25_000, seed=0):
     return P_ceil, C_ceil
 
 
-def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, samples=3_000_000):
-    """Depth of the Polycam mesh seen from every training camera (z-buffer of ~3 M surface samples at `scale` of the
-    photo size) -> out/<photo stem>.npy (float16 metres, 0 = no mesh). Checked on "New room": within 2-6 % of the
-    phone's own depth maps on most keyframes. -> number of maps."""
+DEPTH_SAMPLES_PER_M2 = 40_000        # point spacing 5 mm: about one sample per depth pixel 1 m from the camera
+MAX_DEPTH_SAMPLES = 8_000_000        # ~200 MB of points; bounds time and memory on the 16 GB laptop
+DEPTH_LEAK_TOLERANCE = 0.08          # a pixel this much farther than its nearest neighbour pixel is not trusted
+ALIGN_SAMPLES_PER_M2 = 10_000        # mesh samples 1 cm apart for the line-up, whatever the size of the space
+
+
+def drop_see_through_depth(D, tolerance=DEPTH_LEAK_TOLERANCE):
+    """Depth map (0 = nothing) from a z-buffer of surface POINTS -> the same with unreliable pixels set to 0.
+    Points do not cover a near surface completely: through the gaps a pixel takes the depth of whatever lies behind
+    (the far wall seen "through" a table top). As a training guide that pulls splats off the near surface and leaves
+    holes and floaters. A pixel clearly farther than the nearest of its 8 neighbours is therefore dropped: either a
+    gap, or the far side of a real depth edge, where the quarter-size map is not a safe guide either."""
+    from scipy.ndimage import minimum_filter
+    far = np.where(D > 0, D, np.inf)
+    near = minimum_filter(far, size=3, mode="nearest")
+    out = D.copy()
+    out[(D > 0) & (far > near * (1.0 + tolerance))] = 0
+    return out
+
+
+def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, samples=3_000_000,
+                    samples_per_m2=DEPTH_SAMPLES_PER_M2):
+    """Depth of the Polycam mesh seen from every training camera (z-buffer of surface samples at `scale` of the
+    photo size) -> out/<photo stem>.npy (float16 metres, 0 = no mesh or not reliable). The number of samples follows
+    the mesh area (at least `samples`), so a hall is covered as densely as a room. Checked on "New room" (before the
+    density and see-through changes): within 2-6 % of the phone's own depth maps on most keyframes. -> number of maps."""
     from namma.studio import mesh_import as mi
+    from namma.studio.splat_align import surface_sample_count
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     V, F, _ = mi.mesh_triangles(glb)
-    P, _, _ = mi.sample_surface(V, F, samples, seed=0)
+    P, _, _ = mi.sample_surface(V, F, surface_sample_count(V, F, samples, samples_per_m2, MAX_DEPTH_SAMPLES), seed=0)
     P_ceil, _ = _ceiling_surface_points(glb, 100_000, seed=0)
     if P_ceil is not None:
         P = np.concatenate([P, P_ceil])
@@ -316,13 +339,16 @@ def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, sampl
         Xc = P @ R.T + np.array([float(v) for v in p[5:8]])
         ok = Xc[:, 2] > 0.05
         zc = Xc[ok, 2]
-        u = ((Xc[ok, 0] / zc * fx + cx) * (w / W)).astype(np.int64)
-        v = ((Xc[ok, 1] / zc * fy + cy) * (h / H)).astype(np.int64)
+        # floor, not truncation: int() rounds towards zero and folded points just outside the left / top edge
+        # (pixel -0.9 .. 0) into the first column / row
+        u = np.floor((Xc[ok, 0] / zc * fx + cx) * (w / W)).astype(np.int64)
+        v = np.floor((Xc[ok, 1] / zc * fy + cy) * (h / H)).astype(np.int64)
         inb = (u >= 0) & (u < w) & (v >= 0) & (v < h)
         D = np.full(h * w, np.inf)
         np.minimum.at(D, v[inb] * w + u[inb], zc[inb])
         D[~np.isfinite(D)] = 0
-        np.save(out / f"{Path(' '.join(p[9:])).stem}.npy", D.reshape(h, w).astype(np.float16))
+        D = drop_see_through_depth(D.reshape(h, w))
+        np.save(out / f"{Path(' '.join(p[9:])).stem}.npy", D.astype(np.float16))
         n += 1
     return n
 
@@ -374,6 +400,28 @@ def mesh_points(glb, n, seed=0):
 
 
 MESH_INIT_POINTS = 200_000
+
+
+# Large spaces (many photos over a big floor): the fixed splat budget is spread thin, so splats grow to fill the gaps
+# and fine texture blurs. Without more GPU memory the budget cannot rise; what can be done on the 6 GB card:
+#   - enough steps that every photo is seen about as often as in a small room (>= LARGE_STEPS_PER_PHOTO each);
+#   - start sizes capped so sparse regions do not begin as huge blobs;
+#   - position learning rate / MCMC noise as for a room, not scaled up with the hall's size.
+# NOT YET SCORED on held-out photos (needs GPU runs, see docs/LARGE_SPACE_BASELINE.md): thresholds are engineering
+# choices; small captures (<= LARGE_MIN_PHOTOS photos) train exactly as before.
+LARGE_MIN_PHOTOS = 150
+LARGE_STEPS_PER_PHOTO = 100
+LARGE_MAX_ITERS = 40_000
+LARGE_INIT_SCALE_MAX_MULT = 3.0
+LARGE_MEANS_LR_SCENE_CAP_M = 3.0
+
+
+def training_plan(n_photos, iters):
+    """(iters, extra trainer arguments) for a capture of n_photos keyframes."""
+    if n_photos <= LARGE_MIN_PHOTOS:
+        return iters, []
+    steps = min(LARGE_MAX_ITERS, max(iters, LARGE_STEPS_PER_PHOTO * n_photos))
+    return steps, ["--init-scale-max-mult", LARGE_INIT_SCALE_MAX_MULT, "--means-lr-scene-cap", LARGE_MEANS_LR_SCENE_CAP_M]
 
 
 def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4050_SAFE_CAP, depth_weight=0.1,
@@ -441,7 +489,7 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
                                     "--max-side", max_side, "--cap", 200_000,
                                     "--max-splat-scale", MAX_SPLAT_SCALE_M], logs, timeout_s=1800,
                  cancel_file=cancel_file)
-        T0, fit0 = align_splat_to_mesh(pre, glb)
+        T0, fit0 = align_splat_to_mesh(pre, glb, samples_per_m2=ALIGN_SAMPLES_PER_M2)
         if fit0["within_5cm"] >= MIN_PRETRAIN_WITHIN_5CM and fit0.get("tilt_deg", 0.0) <= MAX_PRETRAIN_TILT_DEG:
             mesh_depth_maps(model, glb, T0, work / "depth")
             depth_args = ["--depth-dir", work / "depth", "--depth-weight", depth_weight]
@@ -457,6 +505,7 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
     label = f"Training the photoreal view ({kf['keyframes']} photos)"
     progress(label, 0.15)
     ply = work / "room.ply"
+    iters, large_args = training_plan(kf["keyframes"], iters)
 
     def on_line(line):
         m = re.match(r"step (\d+)/(\d+)", line)
@@ -466,13 +515,13 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
         run_step("splat_train", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", model,
                                  "--images", work / "input" / "images", "--out", ply, "--iters", iters,
                                  "--max-side", max_side, "--cap", cap, "--max-splat-scale", MAX_SPLAT_SCALE_M,
-                                 "--pose-opt", "--appearance", *depth_args],
+                                 "--pose-opt", "--appearance", *depth_args, *large_args],
                  logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
     except StepFailed as e:
         raise SplatError(str(e)) from e
     # 4. line-up of the trained splat (pose correction may have moved it slightly) and packaging
     progress("Lining it up with the 3D model", 0.93)
-    T, fit = align_splat_to_mesh(ply, glb, init_T=T0)
+    T, fit = align_splat_to_mesh(ply, glb, init_T=T0, samples_per_m2=ALIGN_SAMPLES_PER_M2)
     write_json(work / "align.json", {"T_mesh_from_splat": T.tolist(), "fit": fit, "pre_fit": fit0})
     if fit["within_5cm"] < MIN_WITHIN_5CM:
         raise SplatError(f"the photoreal view could not be lined up with the model (only {fit['within_5cm']:.0%} "

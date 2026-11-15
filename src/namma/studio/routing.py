@@ -109,7 +109,7 @@ def _route(run_dir, start_model_xz, goal_model_xyz, cfg_nav, request_id):
                    message="Independent check passed against verified geometry.")
         return out
     out.update(status="unverified", polyline_model=poly, length_m=round(length, 3),
-               title=f"Unverified walking path – {approx}{length:.1f} m",
+               title=f"Walking path – {approx}{length:.1f} m",
                message="This path avoids every obstacle that was reconstructed and stays on reconstructed floor "
                        f"(minimum clearance {approx}{c['min_clearance_m']:.2f} m). It is NOT verified: objects missing "
                        "from the reconstruction cannot be ruled out"

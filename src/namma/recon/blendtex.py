@@ -189,6 +189,30 @@ def _texels(parts, W, H):
     return np.vstack(pts), np.vstack(nrm), np.concatenate(ys), np.concatenate(xs)
 
 
+OCCLUDER_SAMPLES_PER_M2 = 10_000     # 1 cm spacing
+MAX_OCCLUDER_SAMPLES = 3_000_000
+ZBUF_FILTER = 5                      # buffer pixels: closes gaps between 1 cm samples down to ~0.7 m from the camera
+
+
+def occluder_points(P, F, per_m2=OCCLUDER_SAMPLES_PER_M2, limit=MAX_OCCLUDER_SAMPLES, seed=0):
+    """Points that stand for the surface in the visibility z-buffer: the vertices plus samples spread over the
+    triangles by area. Vertices alone do not hide anything inside a large triangle (a flat wall of a phone scan can be
+    a handful of triangles metres across): texels behind such a wall then pass the visibility test and take colour
+    from photos that never saw them."""
+    P = np.asarray(P, np.float64)
+    tri = P[np.asarray(F)]
+    area = np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1) / 2
+    total = float(area.sum())
+    n = int(min(limit, per_m2 * total))
+    if n <= 0 or total <= 0:
+        return P.astype(np.float32)
+    rng = np.random.default_rng(seed)
+    pick = rng.choice(len(tri), n, p=area / total)
+    r1, r2 = np.sqrt(rng.random(n)), rng.random(n)
+    S = tri[pick, 0] * (1 - r1)[:, None] + tri[pick, 1] * (r1 * (1 - r2))[:, None] + tri[pick, 2] * (r1 * r2)[:, None]
+    return np.vstack([P, S]).astype(np.float32)
+
+
 def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.05, scale=1, max_side=8192,
                       zbuf_px=400, log=print):
     doc, binary = read_glb(src)
@@ -201,7 +225,7 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         F = _accessor(doc, bufs, prim["indices"]).reshape(-1, 3).astype(np.int64)
         tex = doc["textures"][doc["materials"][prim["material"]]["pbrMetallicRoughness"]["baseColorTexture"]["index"]]["source"]
         per_tex.setdefault(tex, []).append((P, UV, F))
-        allP.append(P)
+        allP.append(occluder_points(P, F))
     allP = np.vstack(allP).astype(np.float32)
     stats = {"photos": len(views), "scale": scale}
     buf0 = bytearray(bufs[0])
@@ -266,7 +290,7 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
             ok = (z > 1e-6) & (u >= 0) & (u < Wi) & (w >= 0) & (w < Hi)
             zb = np.full((int(Hi * zsc) + 1, int(Wi * zsc) + 1), np.inf, np.float32)
             np.minimum.at(zb, ((w[ok] * zsc).astype(int), (u[ok] * zsc).astype(int)), z[ok])
-            zb = ndimage.minimum_filter(zb, size=3)
+            zb = ndimage.minimum_filter(zb, size=ZBUF_FILTER)
             u, w, z = project(X)
             ok = (z > 1e-6) & (u >= 0) & (u < Wi - 1) & (w >= 0) & (w < Hi - 1)
             idx = np.nonzero(ok)[0]
@@ -416,7 +440,7 @@ def blend_points(X, N, views, mesh_vertices, *, power=4, depth_tol=0.015, edge_f
         ok = (z > 1e-6) & (u >= 0) & (u < Wi) & (w >= 0) & (w < Hi)
         zb = np.full((int(Hi * zsc) + 1, int(Wi * zsc) + 1), np.inf, np.float32)
         np.minimum.at(zb, ((w[ok] * zsc).astype(int), (u[ok] * zsc).astype(int)), z[ok])
-        zb = ndimage.minimum_filter(zb, size=3)
+        zb = ndimage.minimum_filter(zb, size=ZBUF_FILTER)
         u, w, z = project(X)
         ok = (z > 1e-6) & (u >= 0) & (u < Wi - 1) & (w >= 0) & (w < Hi - 1)
         idx = np.nonzero(ok)[0]
@@ -500,7 +524,7 @@ def _blend_views_gpu(X, N, allP, views, *, power, depth_tol, edge_frac, zbuf_px,
         ok = (z > 1e-6) & (u >= 0) & (u < Wi) & (w >= 0) & (w < Hi)
         zb = cp.full((int(Hi * zsc) + 1, int(Wi * zsc) + 1), cp.inf, cp.float32)
         cp.minimum.at(zb, ((w[ok] * zsc).astype(cp.int32), (u[ok] * zsc).astype(cp.int32)), z[ok])
-        zb = cnd.minimum_filter(zb, size=3)
+        zb = cnd.minimum_filter(zb, size=ZBUF_FILTER)
         margin = edge_frac * min(Wi, Hi)
         for s0 in range(0, n, batch):
             sl = slice(s0, min(n, s0 + batch))

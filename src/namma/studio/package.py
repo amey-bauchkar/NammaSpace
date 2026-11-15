@@ -29,6 +29,34 @@ class PackageError(RuntimeError):
     pass
 
 
+def _route_grid(ctx, out, metres_per_unit):
+    """nav/route_grid.json: the conservative navigation layer (floor fully reconstructed, obstacles inflated by the
+    agent radius) in MODEL units and the roam-grid run-length format, so a published static site can plan walking
+    paths in the browser (web/js/routePlan.js) with the same grid the Studio planner uses. Returns the package path,
+    or None - an export problem must never fail packaging (the Studio still routes on the server)."""
+    try:
+        from namma.geometry.model import load_geometry
+        from namma.navigation.grid import build_navlayer, encode_rle
+        cfg = ctx.cfg["nav"]
+        geometry, _ = load_geometry(out / "nav" / "geometry.if04.json")
+        if geometry is None or not metres_per_unit:
+            return None
+        layer = build_navlayer(geometry, "F0", res=cfg["res_m"], agent_radius_m=cfg["agent_radius_m"],
+                               enforce_resolution=False)
+        if not layer.free.any():
+            return None
+        write_json(out / "nav" / "route_grid.json", {
+            "origin_xz": [layer.origin[0] / metres_per_unit, layer.origin[1] / metres_per_unit],
+            "cell": layer.res / metres_per_unit, "width": layer.width, "height": layer.height,
+            "encoding": "rle_rows_v1", "value": "allowed", "rows": encode_rle(layer.free),
+            "resolution_m": layer.res, "agent_radius_m": layer.agent_radius_m, "navlayer_id": layer.navlayer_id,
+            "note": "configuration space: a free cell is fully on reconstructed floor and at least the agent radius "
+                    "from every reconstructed obstacle"})
+        return "nav/route_grid.json"
+    except Exception:                      # noqa: BLE001 - optional export
+        return None
+
+
 def build_scene_package(ctx, out):
     out = Path(out)
     if out.exists():
@@ -79,6 +107,9 @@ def build_scene_package(ctx, out):
                            "treated as blocked, missing obstacles cannot be detected without a reference, and "
                            + ("the scale is ASSUMED from a typical phone height." if ng["scale_basis"] == "assumed_capture_height"
                               else f"the scale comes from {ng['scale_basis']}.")}
+            rg = _route_grid(ctx, out, ng["metres_per_unit"])
+            if rg:
+                nav["route_grid"] = rg
         else:
             nav["note"] = f"Navigation geometry unavailable: {ng.get('reason', 'no walkable floor extracted')}."
     (out / "poi").mkdir()

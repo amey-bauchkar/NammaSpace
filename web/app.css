@@ -185,3 +185,26 @@ ol.sop li strong {
     display: grid;
   }
 }
+
+/* Places: category filter buttons and the as-you-type result list */
+.place-cats {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.place-cats[hidden] {
+  display: none;
+}
+
+.place-cats button {
+  padding: 4px 10px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+#results {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0 4px 4px 0;
+}

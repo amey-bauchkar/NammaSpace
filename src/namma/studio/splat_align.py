@@ -63,13 +63,29 @@ def align_splat_to_mesh(ply_path, glb, *, init_T=None, min_opacity=0.05, **kw):
     return T, {"solid_splats": int(solid.sum()), **stats}
 
 
-def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, max_points=40_000, seed=0):
+MAX_ALIGN_SAMPLES = 4_000_000
+
+
+def surface_sample_count(V, F, samples, samples_per_m2=0, limit=MAX_ALIGN_SAMPLES):
+    """Number of mesh surface samples: `samples`, raised to samples_per_m2 x area (at most `limit`).
+    The fit and its "within 2 / 5 cm" figures measure the distance to the nearest SAMPLE: with a fixed count the
+    spacing grows with the space (200 k over a 300 m2 hall = 4 cm apart), which inflates every distance, blunts the
+    ICP and can fail the line-up gate for a splat that is in fact well placed."""
+    if not samples_per_m2:
+        return int(samples)
+    tri = np.asarray(V, np.float64)[np.asarray(F)]
+    area = float(np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1).sum() / 2)
+    return int(min(limit, max(samples, samples_per_m2 * area)))
+
+
+def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, samples_per_m2=0, max_points=40_000, seed=0):
     """Surface points (splat or triangulated photo points) -> (4x4 points frame -> mesh frame, fit stats)."""
     P = np.asarray(P, np.float64)
     rng = np.random.default_rng(seed)
     if len(P) > max_points:
         P = P[rng.choice(len(P), max_points, replace=False)]
     V, F, _ = mi.mesh_triangles(glb)
+    samples = surface_sample_count(V, F, samples, samples_per_m2)
     Q, _, _ = mi.sample_surface(V, F, samples)
     tree = cKDTree(Q)
 
@@ -96,7 +112,7 @@ def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, max_points=40_
     T = np.eye(4)
     T[:3, :3], T[:3, 3] = Rf, tf
     # second-best turn far from the best: how unambiguous the answer is
-    stats = {"used": int(len(P)),
+    stats = {"used": int(len(P)), "mesh_samples": int(samples),
              "yaw_deg": round(float(np.degrees(np.arctan2(Rf[0, 2], Rf[0, 0]))), 2),
              "tilt_deg": round(float(np.degrees(np.arccos(np.clip(Rf[1, 1], -1, 1)))), 2),
              "within_2cm": round(float((dd < 0.02).mean()), 3), "within_5cm": round(float((dd < 0.05).mean()), 3),

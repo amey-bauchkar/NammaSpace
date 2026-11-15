@@ -243,3 +243,65 @@ def test_splat_from_recon_dispatch_and_availability(tmp_path, monkeypatch):
 
 
 
+
+
+def test_large_capture_training_plan_leaves_rooms_unchanged():
+    """Large spaces train longer with capped start sizes and a room-sized position learning rate; a normal room's
+    recipe (scored on held-out photos) must not change."""
+    from namma.studio import splat_large as sl
+    assert sl.training_plan(80, 20000) == (20000, [])
+    assert sl.training_plan(sl.LARGE_MIN_PHOTOS, 20000) == (20000, [])
+    iters, extra = sl.training_plan(300, 20000)
+    assert iters == 30000 and extra[0] == "--init-scale-max-mult" and extra[2] == "--means-lr-scene-cap"
+    assert sl.training_plan(900, 20000)[0] == sl.LARGE_MAX_ITERS            # bounded: fits the 3 h time limit
+    assert sl.training_plan(160, 20000)[0] == 20000                         # never fewer steps than asked for
+    trainer = (sl.TRAINER).read_text(encoding="utf-8")
+    assert all(flag in trainer for flag in extra[::2])                       # the trainer knows every flag passed
+
+
+def test_depth_guide_drops_pixels_that_see_through_a_near_surface(tmp_path):
+    """A z-buffer of surface points leaks: through gaps in a near surface a pixel takes the far wall's depth."""
+    from namma.studio import splat_large as sl
+    D = np.full((12, 16), 1.0, np.float32)                   # a near surface 1 m away ...
+    D[3, 4] = D[7, 9] = 3.0                                  # ... with two gaps showing the wall 3 m behind
+    D[0:2, :] = 0                                            # and nothing at the top
+    out = sl.drop_see_through_depth(D)
+    assert out[3, 4] == 0 and out[7, 9] == 0                 # leaks are not used as a guide
+    keep = np.ones_like(D, bool); keep[3, 4] = keep[7, 9] = False
+    assert np.array_equal(out[keep], D[keep])                # everything else untouched (incl. "nothing")
+    # a smooth slanted surface (floor seen at a low angle, 3 % per pixel) is kept
+    ramp = (1.03 ** np.arange(16, dtype=np.float32))[None, :].repeat(12, 0)
+    assert np.array_equal(sl.drop_see_through_depth(ramp), ramp)
+    # a real depth edge: the near side is kept, only the first far pixels next to it are dropped
+    edge = np.full((12, 16), 4.0, np.float32); edge[:, :8] = 1.5
+    e = sl.drop_see_through_depth(edge)
+    assert (e[:, :8] == 1.5).all() and (e[:, 8] == 0).all() and (e[:, 9:] == 4.0).all()
+
+
+def test_large_depth_guide_matches_the_wall_and_edge_pixels_are_not_folded(tmp_path):
+    from namma.studio import splat_large as sl
+    box_room(tmp_path / "room.glb", size=(4.0, 2.7, 3.2), offset=(-2.0, -0.0, -1.6), table=False)
+    R = np.diag([1.0, -1.0, -1.0])
+    t = -R @ np.array([0.0, 1.0, 0.0])
+    model = tmp_path / "sparse"
+    model.mkdir()
+    (model / "cameras.txt").write_text("1 PINHOLE 64 48 40 40 32 24\n")
+    q = sp._rot_to_quat(R)
+    (model / "images.txt").write_text(f"1 {' '.join(map(str, q))} {' '.join(map(str, t))} 1 cam.jpg\n\n")
+    n = sl.mesh_depth_maps(model, (tmp_path / "room.glb").read_bytes(), np.eye(4), tmp_path / "depth",
+                           scale=0.5, samples=400_000, samples_per_m2=0)
+    assert n == 1
+    D = np.load(tmp_path / "depth" / "cam.npy").astype(np.float32)
+    assert D.shape == (24, 32) and abs(float(np.median(D[10:14, 14:18])) - 1.6) < 0.03
+    assert (D[8:16, 8:24] > 0).mean() > 0.98                 # the wall straight ahead is still fully guided
+
+
+def test_line_up_sample_count_follows_the_mesh_area():
+    from namma.studio.splat_align import MAX_ALIGN_SAMPLES, surface_sample_count
+    def floor(side):                                         # a square floor of side x side metres (2 triangles)
+        V = np.array([[0, 0, 0], [side, 0, 0], [side, 0, side], [0, 0, side]], float)
+        return V, np.array([[0, 1, 2], [0, 2, 3]])
+    assert surface_sample_count(*floor(4.0), 200_000) == 200_000                       # default: unchanged
+    assert surface_sample_count(*floor(4.0), 200_000, 10_000) == 200_000               # 16 m2: the floor value
+    assert surface_sample_count(*floor(15.0), 200_000, 10_000) == 2_250_000            # 225 m2 hall: 1 cm spacing
+    assert surface_sample_count(*floor(40.0), 200_000, 10_000) == MAX_ALIGN_SAMPLES    # bounded

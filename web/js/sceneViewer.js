@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createMinimap } from './minimap.js';
 import { canOccupyGrid, decodeRoamGrid, isAllowed } from './roam.js';
+import { planRoute, pointAlong, polylineLength, remainingFrom } from './routePlan.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
 import { levelStartTarget, Walker } from './walker.js';
@@ -652,7 +653,10 @@ function selectPoi(ctx, id) {
   $('poi-title').textContent = p.name;
   $('poi-meta').textContent = [p.category, (p.aliases || []).join(', ')].filter(Boolean).join(' · ') || 'Place label';
   $('route-status').hidden = true;
-  $('poi-route').hidden = !studio || ctx.pkg.navigation.status === 'unavailable';
+  // Studio: routes from the server (planner + independent validator). Published site: planned in the browser on the
+  // package's conservative route grid, when the package has one.
+  $('poi-route').hidden = ctx.pkg.navigation.status === 'unavailable' || !(studio || routeGridOf(ctx));
+  stopGuidance(ctx);
   ctx.app.routeGroup.clear();
   if (ctx.app.minimap) { ctx.app.minimap.setRoute(null); ctx.app.minimap.setSelected(p.poi_id); }
 }
@@ -734,16 +738,47 @@ function routeStart(ctx) {
   return best ? [best, true] : [[p.x, p.z], false];
 }
 
+/** Places panel: results update as the visitor types; category buttons (built from the categories the labels
+ * actually use) narrow the list; with nothing typed every place in the chosen category is listed. The camera moves
+ * only on an explicit action - pressing Enter / Search with exactly one match, or clicking a result. */
 function wirePlaces(ctx) {
-  const run = () => {
+  const norm = (s) => (s || '').trim().toLowerCase();
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  let cat = '';                                             // '' = all categories
+  const catsBox = $('place-cats');
+  const drawCats = () => {
+    const names = new Map();                                // normalised -> first spelling seen
+    for (const p of ctx.pois) if (norm(p.category) && !names.has(norm(p.category))) names.set(norm(p.category), p.category.trim());
+    if (cat && !names.has(cat)) cat = '';
+    catsBox.innerHTML = '';
+    catsBox.hidden = names.size === 0;
+    for (const [key, label] of [['', 'All'], ...[...names].sort((a, b) => cmp(a[0], b[0]))]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.dataset.cat = key;
+      b.className = key === cat ? '' : 'secondary';
+      b.setAttribute('aria-pressed', String(key === cat));
+      b.onclick = () => { cat = key; drawCats(); run(false); };
+      catsBox.appendChild(b);
+    }
+  };
+  const run = (jump) => {
     const q = $('search').value;
-    const res = search(ctx.pois.map(asSearchable), q);
+    const pool = ctx.pois.filter((p) => !cat || norm(p.category) === cat);
+    const res = search(pool.map(asSearchable), q);
+    const browsing = res.status === 'empty_query';
+    const hits = browsing ? pool.map((p) => ({ poi_id: p.poi_id, display_name: p.name }))
+      .sort((a, b) => cmp(a.display_name.toLowerCase(), b.display_name.toLowerCase()) || cmp(a.poi_id, b.poi_id)) : res.hits;
+    const where = cat ? ` in "${cat}"` : '';
+    const empty = studio ? 'No places labelled yet – use "Add a place label".' : 'No places are labelled in this model.';
+    $('search-msg').textContent = {
+      empty_query: !ctx.pois.length ? empty : `${hits.length} place${hits.length === 1 ? '' : 's'}${where} – type to search, or choose one:`,
+      not_found: `No place${where} matches "${q}".`, ambiguous: `${hits.length} matches${where} – choose one:`,
+      unique: `1 match${where}${jump ? '' : ' – press Enter to go there'}` }[res.status];
     const list = $('results');
     list.innerHTML = '';
-    const msg = { empty_query: ctx.pois.length ? 'Type a name to search.' : 'No places are labelled yet.',
-      not_found: `No place matches "${q}".`, ambiguous: `${res.hits.length} matches – choose one:`, unique: '1 match' }[res.status];
-    $('search-msg').textContent = msg;
-    for (const h of res.hits) {
+    for (const h of hits) {
       const li = document.createElement('li');
       const b = document.createElement('button');
       b.type = 'button';
@@ -752,15 +787,17 @@ function wirePlaces(ctx) {
       li.appendChild(b);
       list.appendChild(li);
     }
-    if (res.status === 'unique') { selectPoi(ctx, res.hits[0].poi_id); goToSelected(ctx); }
-    state.lastSearch = res;
+    if (jump && res.status === 'unique') { selectPoi(ctx, res.hits[0].poi_id); goToSelected(ctx); }
+    state.lastSearch = { ...res, category: cat, listed: hits.length };
     return res;
   };
-  $('search-form').addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  $('search-form').addEventListener('submit', (e) => { e.preventDefault(); run(true); });
+  $('search').addEventListener('input', () => run(false));
   $('poi-jump').onclick = () => goToSelected(ctx);
   $('poi-route').onclick = () => requestRoute(ctx);
-  ctx.search = run;
-  if (!ctx.pois.length) $('search-msg').textContent = studio ? 'No places labelled yet – use "Add a place label".' : 'No places are labelled in this model.';
+  ctx.search = () => run(true);
+  ctx.refreshPlaces = () => { drawCats(); run(false); };
+  ctx.refreshPlaces();
 }
 
 async function goToSelected(ctx) {
@@ -775,14 +812,56 @@ async function goToSelected(ctx) {
   state.lastJump = { poi_id: ctx.selected.poi_id, position: pos, on_floor: onFloor };
 }
 
+/** The package's route grid, decoded once (null when the package has none or it is unreadable). */
+function routeGridOf(ctx) {
+  if (ctx.routeGrid === undefined) {
+    ctx.routeGrid = null;
+    if (ctx.data.routeGrid) {
+      try { ctx.routeGrid = decodeRoamGrid(ctx.data.routeGrid); } catch (e) { state.errors.push({ kind: 'route_grid', message: e.message }); }
+    }
+  }
+  return ctx.routeGrid;
+}
+
+/** Walking path planned in the browser (published sites). Same display contract as the Studio's /route reply.
+ * Always "unverified": the floor / obstacle map is automatic and the independent validator runs only in the Studio. */
+function localRoute(ctx, start) {
+  const g = routeGridOf(ctx), nav = ctx.pkg.navigation, mpu = nav.metres_per_unit || null;
+  const metres = (u) => (mpu ? `${nav.scale_basis === 'assumed_capture_height' ? '≈ ' : ''}${(u * mpu).toFixed(1)} m` : `${u.toFixed(1)} model units`);
+  const oneMetre = mpu ? 1 / mpu : 0.7 * ctx.eye;              // goal snap / start move limit: 1 m (policy), in model units
+  const p = ctx.selected.position;
+  // comfort: paths are pushed away from obstacles nearer than 0.5 m beyond body clearance (corridor centring)
+  const r = planRoute(g, start, [p[0], p[2]], { maxGoalSnap: oneMetre, maxStartMove: oneMetre, comfort: 0.5 * oneMetre });
+  const out = { status: r.status, polyline_model: [], planner: 'browser', scale_basis: nav.scale_basis };
+  if (r.status === 'start_blocked') {
+    return { ...out, title: 'Your position is not on confirmed open floor',
+      message: 'Paths start only from floor that was reconstructed and is clear of obstacles. Walk to an open area (or jump to a photo viewpoint) and try again.' };
+  }
+  if (r.status === 'goal_not_snappable') {
+    return { ...out, title: 'No reachable floor next to this place', message: 'There is no reconstructed open floor within 1 m of the label.' };
+  }
+  if (r.status === 'unreachable') {
+    return { ...out, title: 'Destination unreachable on the reconstructed floor',
+      message: 'The reconstructed open floor does not connect your position to this place. Parts of the floor may simply be missing from the reconstruction.' };
+  }
+  return { ...out, status: 'unverified', polyline_model: r.polyline, length_units: r.length,
+    title: `Walking path – ${metres(r.length)}`,      // status stays 'unverified'; the caveat is in the detail text
+    message: 'This path stays on reconstructed floor and keeps body clearance from every obstacle that was reconstructed. '
+      + 'It is NOT verified: objects missing from the reconstruction cannot be ruled out'
+      + (nav.scale_basis === 'assumed_capture_height' ? ', and the scale is assumed from a typical phone height.' : '.')
+      + (r.startMoved > 0.01 ? ` (Started from the nearest clear floor, ${metres(r.startMoved)} from where you stand.)` : '') };
+}
+
 async function requestRoute(ctx) {
   const box = $('route-status');
   box.hidden = false;
   box.dataset.state = 'pending';
   box.textContent = 'Computing a walking path…';
+  stopGuidance(ctx);
   const [start, moved] = routeStart(ctx);
   try {
-    const r = await api('/route', { method: 'POST', body: JSON.stringify({ start, poi_id: ctx.selected.poi_id }) });
+    const r = studio ? await api('/route', { method: 'POST', body: JSON.stringify({ start, poi_id: ctx.selected.poi_id }) })
+      : localRoute(ctx, start);
     r.start_moved = moved;
     state.lastRoute = r;
     box.dataset.state = r.status;
@@ -794,7 +873,10 @@ async function requestRoute(ctx) {
     det.textContent = r.message + (moved ? ' (Starting from the nearest clear floor.)' : '');
     box.append(strong, det);
     ctx.app.routeGroup.clear();
-    if (r.polyline_model && r.polyline_model.length > 1) drawRoute(ctx, r.polyline_model, r.status);
+    if (r.polyline_model && r.polyline_model.length > 1) {
+      drawRoute(ctx, r.polyline_model, r.status);
+      startGuidance(ctx, r.polyline_model, box);
+    }
   } catch (e) {
     box.dataset.state = 'error';
     box.textContent = `Route request failed: ${e.message}`;
@@ -811,7 +893,100 @@ function drawRoute(ctx, poly, status) {
   line.computeLineDistances();
   line.renderOrder = 8;
   ctx.app.routeGroup.add(line);
+  // direction chevrons on the floor every ~0.6 eye heights, and a pin at the destination
+  const total = polylineLength(poly), stepLen = 0.6 * ctx.eye;
+  const chevron = new THREE.Shape();
+  const s = 0.09 * ctx.eye;
+  chevron.moveTo(0, s); chevron.lineTo(s * 0.8, -s * 0.6); chevron.lineTo(0, -s * 0.15); chevron.lineTo(-s * 0.8, -s * 0.6); chevron.closePath();
+  const geo = new THREE.ShapeGeometry(chevron);
+  geo.rotateX(-Math.PI / 2);                              // flat on the floor, tip towards -Z
+  const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, side: THREE.DoubleSide });
+  for (let d = stepLen * 0.5; d < total - stepLen * 0.25; d += stepLen) {
+    const { point, heading } = pointAlong(poly, d);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(point[0], y, point[1]);
+    m.rotation.y = Math.atan2(-heading[0], -heading[1]);
+    m.renderOrder = 8;
+    ctx.app.routeGroup.add(m);
+  }
+  const end = poly[poly.length - 1];
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.02 * ctx.eye, 0.02 * ctx.eye, 0.9 * ctx.eye, 10),
+    new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.9 }));
+  pin.position.set(end[0], 0.45 * ctx.eye, end[1]);
+  pin.renderOrder = 8;
+  ctx.app.routeGroup.add(pin);
   if (ctx.app.minimap) ctx.app.minimap.setRoute(poly);
+}
+
+/** Guidance along a drawn path: live distance remaining while the visitor walks, arrival notice, and an optional
+ * "Walk me there" that moves the camera along the path at walking pace (any movement key takes control back). */
+function startGuidance(ctx, poly, box) {
+  const nav = ctx.pkg.navigation, mpu = nav.metres_per_unit || null;
+  const fmt = (u) => (mpu ? `${(u * mpu).toFixed(1)} m` : `${u.toFixed(1)} units`);
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.style.marginTop = '8px';
+  const follow = document.createElement('button');
+  follow.type = 'button';
+  follow.id = 'route-follow';
+  follow.textContent = 'Walk me there';
+  const left = document.createElement('span');
+  left.className = 'small';
+  left.id = 'route-remaining';
+  row.append(follow, left);
+  box.append(row);
+  const total = polylineLength(poly);
+  const g = { poly, total, arrived: false, following: false, timer: 0 };
+  ctx.guidance = g;
+  const refresh = () => {
+    const p = ctx.app.camera.position;
+    const { remaining, offPath } = remainingFrom(poly, p.x, p.z);
+    const end = poly[poly.length - 1];
+    if (!g.arrived && Math.hypot(end[0] - p.x, end[1] - p.z) < 0.35 * ctx.eye) {
+      g.arrived = true;
+      left.textContent = `You have arrived at ${ctx.selected ? ctx.selected.name : 'the destination'}.`;
+      toast(left.textContent);
+    } else if (!g.arrived) {
+      left.textContent = offPath > 1.2 * ctx.eye ? `${fmt(remaining)} left – you are off the path (press the path button to re-plan)` : `${fmt(remaining)} left`;
+    }
+    state.lastGuidance = { remaining, offPath, arrived: g.arrived, following: g.following };
+  };
+  g.timer = setInterval(refresh, 250);
+  refresh();
+  follow.onclick = () => {
+    if (g.following) { g.following = false; ctx.app.tween = null; follow.textContent = 'Walk me there'; return; }
+    const p = ctx.app.camera.position;
+    let d = total - remainingFrom(poly, p.x, p.z).remaining;          // start from the nearest point on the path
+    const speed = 1.1 * ctx.eye;                                       // about a comfortable walking pace
+    let prev = performance.now();
+    g.following = true;
+    follow.textContent = 'Stop';
+    ctx.walker.setMode('walk');
+    ctx.app.tween = (now) => {
+      const dt = Math.min(0.1, Math.max(0, (now - prev) / 1000));
+      prev = now;
+      const moving = ['forward', 'back', 'left', 'right'].some((k) => ctx.walker.has(k));
+      d = Math.min(total, d + speed * dt);
+      const { point } = pointAlong(poly, d), ahead = pointAlong(poly, Math.min(total, d + 0.8 * ctx.eye)).point;
+      ctx.app.camera.position.set(point[0], ctx.eye, point[1]);
+      if (Math.hypot(ahead[0] - point[0], ahead[1] - point[1]) > 1e-6) {
+        let dy = Math.atan2(-(ahead[0] - point[0]), -(ahead[1] - point[1])) - ctx.walker.yaw;
+        dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+        ctx.walker.yaw += dy * Math.min(1, 4 * dt);                     // turn smoothly into each corner
+        ctx.walker.pitch += (0 - ctx.walker.pitch) * Math.min(1, 3 * dt);
+      }
+      ctx.walker.apply();
+      if (d >= total || moving) { ctx.app.tween = null; g.following = false; follow.textContent = 'Walk me there'; }
+    };
+  };
+}
+
+function stopGuidance(ctx) {
+  const g = ctx.guidance;
+  if (!g) return;
+  clearInterval(g.timer);
+  if (g.following) ctx.app.tween = null;
+  ctx.guidance = null;
 }
 
 // ------------------------------------------------------------------ mini-map
@@ -1134,6 +1309,7 @@ function wireStudioTools(ctx) {
       const r = await api('/pois', { method: 'POST', body: JSON.stringify(body) });
       ctx.pois = r.pois;
       renderPois(ctx);
+      if (ctx.refreshPlaces) ctx.refreshPlaces();     // list + category buttons follow label edits
       $('poi-form').hidden = true;
       $('tool-msg').textContent = `Saved "${body.name}".`;
       toast(`Label saved: ${body.name}`);
