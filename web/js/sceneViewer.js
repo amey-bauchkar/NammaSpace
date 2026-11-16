@@ -9,6 +9,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createMinimap } from './minimap.js';
 import { canOccupyGrid, decodeRoamGrid, isAllowed } from './roam.js';
 import { planRoute, pointAlong, polylineLength, remainingFrom } from './routePlan.js';
+import { arUnavailableReason, startArWalk, startChoices } from './arNav.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
 import { levelStartTarget, Walker } from './walker.js';
@@ -288,6 +289,7 @@ async function main() {
   // ---- render loop
   let last = performance.now(), fpsAcc = 0, fpsN = 0;
   const tick = (now) => {
+    if (app.paused) { last = now; app.raf = requestAnimationFrame(tick); return; }      // AR Walk is showing
     const dt = Math.min(0.1, (now - last) / 1000);
     app.frameTimes.push(now - last);
     if (app.frameTimes.length > 600) app.frameTimes.shift();
@@ -657,6 +659,7 @@ function selectPoi(ctx, id) {
   // package's conservative route grid, when the package has one.
   $('poi-route').hidden = ctx.pkg.navigation.status === 'unavailable' || !(studio || routeGridOf(ctx));
   stopGuidance(ctx);
+  $('poi-ar').hidden = true;                             // shown once a path is drawn
   ctx.app.routeGroup.clear();
   if (ctx.app.minimap) { ctx.app.minimap.setRoute(null); ctx.app.minimap.setSelected(p.poi_id); }
 }
@@ -795,9 +798,29 @@ function wirePlaces(ctx) {
   $('search').addEventListener('input', () => run(false));
   $('poi-jump').onclick = () => goToSelected(ctx);
   $('poi-route').onclick = () => requestRoute(ctx);
+  $('poi-ar').onclick = () => openArWalk(ctx);
   ctx.search = () => run(true);
   ctx.refreshPlaces = () => { drawCats(); run(false); };
   ctx.refreshPlaces();
+}
+
+/** AR Walk on the drawn path (web/js/arNav.js). Called straight from the tap: iOS asks for sensor access only then. */
+function openArWalk(ctx) {
+  const r = state.lastRoute;
+  const why = arUnavailableReason();
+  const nav = ctx.pkg.navigation;
+  const mpu = nav.metres_per_unit || 1.6 / ctx.eye;                 // unknown scale: a typical standing eye height
+  const poly = r && r.polyline_model;
+  ctx.app.paused = true;                                            // the 3D view stops drawing while AR runs
+  const resume = () => { ctx.app.paused = false; state.lastAr = window.__nammaAr || null; };
+  if (why || !poly) {
+    startArWalk({ poly, mpu, onExit: resume });                     // shows the explanation and comes back
+    return;
+  }
+  startArWalk({ poly, mpu, scaleAssumed: !nav.metres_per_unit || nav.scale_basis === 'assumed_capture_height',
+    destName: ctx.selected ? ctx.selected.name : 'the destination',
+    starts: startChoices(poly, ctx.pois.filter((p) => !ctx.selected || p.poi_id !== ctx.selected.poi_id), mpu),
+    onExit: resume });
 }
 
 async function goToSelected(ctx) {
@@ -876,6 +899,7 @@ async function requestRoute(ctx) {
     if (r.polyline_model && r.polyline_model.length > 1) {
       drawRoute(ctx, r.polyline_model, r.status);
       startGuidance(ctx, r.polyline_model, box);
+      $('poi-ar').hidden = false;
     }
   } catch (e) {
     box.dataset.state = 'error';

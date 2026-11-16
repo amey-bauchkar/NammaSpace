@@ -208,3 +208,128 @@ ol.sop li strong {
   overflow-y: auto;
   padding: 0 4px 4px 0;
 }
+
+/* AR Walk: camera picture full screen, path canvas on top, Neo-Brutalist banner and controls */
+.ar-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #000;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.ar-layer[hidden], .ar-hud[hidden], .ar-setup[hidden] {
+  display: none;
+}
+
+#ar-video, .ar-canvas-host, .ar-canvas-host canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#ar-video {
+  object-fit: cover;
+}
+
+#ar-modal {
+  z-index: 110;
+}
+
+body.ar-on {
+  overflow: hidden;
+}
+
+.ar-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: max(14px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom));
+}
+
+.ar-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--neo-secondary);
+  color: var(--neo-dominant);
+  border: var(--neo-border-thick);
+  border-radius: var(--neo-radius-md);
+  box-shadow: var(--neo-shadow-md);
+  padding: 12px 16px;
+  font-family: var(--font-display);
+}
+
+.ar-hud[data-state="turn"] .ar-banner { background: var(--neo-accent); }
+.ar-hud[data-state="off"] .ar-banner { background: var(--neo-extra); }
+.ar-hud[data-state="arrived"] .ar-banner { background: var(--neo-status-ok-bg); }
+
+.ar-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+  background: var(--neo-dominant);
+  color: var(--neo-secondary);
+  border-radius: var(--neo-radius-sm);
+}
+
+.ar-text {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.ar-remaining {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.ar-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  pointer-events: auto;
+}
+
+.ar-controls button {
+  min-height: 48px;
+  min-width: 96px;
+}
+
+.ar-setup {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--neo-accent);
+  color: var(--neo-dominant);
+  border: var(--neo-border-thick);
+  border-radius: var(--neo-radius-md);
+  box-shadow: var(--neo-shadow-md);
+  padding: 18px;
+}
+
+.ar-setup select {
+  width: 100%;
+  min-height: 44px;
+}
+
+.ar-setup ol {
+  padding-left: 20px;
+  margin: 10px 0;
+}

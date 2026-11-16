@@ -6,7 +6,7 @@
 <title>Namma Space 3D Walkthrough</title>
 <link rel="icon" href="favicon.svg?v=4" type="image/svg+xml">
 <link rel="alternate icon" href="logo.png?v=4" type="image/png">
-<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="app.css?v=8">
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
@@ -108,7 +108,7 @@
       <div id="poi-card" hidden>
         <h3 id="poi-title"></h3>
         <p class="small muted" id="poi-meta"></p>
-        <div class="row"><button type="button" id="poi-jump">Go there</button><button type="button" class="secondary" id="poi-route" hidden>Show walking path</button></div>
+        <div class="row"><button type="button" id="poi-jump">Go there</button><button type="button" class="secondary" id="poi-route" hidden>Show walking path</button><button type="button" class="secondary" id="poi-ar" hidden title="Follow the path through your phone's camera">AR Walk</button></div>
         <div class="status-box" id="route-status" hidden></div>
       </div>
     </section>
@@ -155,6 +155,37 @@
     </section>
   </aside>
 </main>
-<script type="module" src="js/sceneViewer.js?v=5"></script>
+<!-- AR Walk (web/js/arNav.js): camera picture + path arrows, turn-by-turn banner -->
+<div class="ar-layer" id="ar-layer" hidden>
+  <video id="ar-video" playsinline muted autoplay></video>
+  <div class="ar-canvas-host" id="ar-canvas-host"></div>
+  <div class="ar-hud" id="ar-hud" hidden data-state="go" role="status" aria-live="polite">
+    <div class="ar-banner"><span class="ar-icon" id="ar-icon" aria-hidden="true">↑</span>
+      <div><div class="ar-text" id="ar-text">Walk straight</div><div class="ar-remaining" id="ar-remaining"></div></div></div>
+    <div class="ar-controls">
+      <button type="button" class="secondary" id="ar-realign" title="Face along the path, then tap">Re-align</button>
+      <button type="button" class="secondary" id="ar-step" title="Advance one stride (no step sensor / simulation)">Step</button>
+      <button type="button" id="ar-exit">Exit AR</button>
+    </div>
+  </div>
+  <form class="card ar-setup" id="ar-setup" hidden onsubmit="return false">
+    <h3 style="margin-top:0">AR Walk to <span id="ar-dest"></span></h3>
+    <label for="ar-start">I am at</label>
+    <select id="ar-start"></select>
+    <ol class="small">
+      <li>Stand at that spot.</li>
+      <li>Hold the phone upright and face the way the path leaves it (the first arrows).</li>
+      <li>Tap Start, then walk at a normal pace with the phone in front of you.</li>
+    </ol>
+    <p class="small muted" id="ar-scale-note" hidden>This model's scale is assumed from a typical phone height, so distances are approximate.</p>
+    <p class="small muted">Position comes from counting your steps: if the arrows drift, face along the path and tap Re-align.</p>
+    <div class="row"><button type="button" id="ar-go">Start</button><button type="button" class="secondary" id="ar-setup-exit">Back to 3D</button></div>
+  </form>
+</div>
+<div class="modal" id="ar-modal" hidden role="dialog" aria-labelledby="ar-modal-title">
+  <div class="card"><h3 id="ar-modal-title" style="margin-top:0"></h3><p id="ar-modal-text"></p>
+    <div class="row"><button type="button" id="ar-modal-ok">OK</button></div></div>
+</div>
+<script type="module" src="js/sceneViewer.js?v=6"></script>
 </body>
 </html>
