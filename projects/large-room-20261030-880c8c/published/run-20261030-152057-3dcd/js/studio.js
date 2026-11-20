@@ -173,7 +173,11 @@ async function importPolycam(files) {
     }
     msg.textContent = 'Importing: finding the floor, start view and walkable area…';
     const r = await api(`/polycam/${iid}/import`, { method: 'POST', body: '{}' });
-    location.hash = `#/project/${r.project_id}/run/${r.run_id}`;
+    if (r.run_id) {
+      location.hash = `#/project/${r.project_id}/run/${r.run_id}`;
+    } else {
+      location.hash = `#/project/${r.project_id}`;
+    }
   } catch (e) {
     msg.className = 'small callout bad';
     msg.textContent = `Import failed: ${e.message}`;
@@ -314,6 +318,9 @@ async function project(pid) {
   f('est-preview').textContent = estimate(nImages, 'preview');
   f('est-standard').textContent = estimate(nImages, 'standard');
   f('est-high').textContent = estimate(nImages, 'high');
+  document.querySelectorAll('input[name=profile]').forEach(rb => {
+    rb.addEventListener('change', () => { window._userSelectedProfile = true; });
+  });
   if (chk.report) showAdvice(pid);
   $('#run-btn').onclick = async () => {
     const profile = $('input[name=profile]:checked').value;
@@ -460,8 +467,10 @@ async function showAdvice(pid) {
     box.innerHTML = '';
     box.append(el('strong', {}, `Suggested: ${r.profile[0].toUpperCase()}${r.profile.slice(1)}. `), r.reasons.join(' '));
     for (const w of r.warnings) box.append(el('div', { class: 'small muted' }, `⚠ ${w}`));
-    const radio = $(`input[name=profile][value=${r.profile}]`);
-    if (radio) radio.checked = true;
+    if (!window._userSelectedProfile) {
+      const radio = $(`input[name=profile][value=${r.profile}]`);
+      if (radio) radio.checked = true;
+    }
   } catch { box.hidden = true; }
 }
 
@@ -491,7 +500,7 @@ function showCheck(pid, s) {
     }
     box.append(grid);
   }
-  $('#run-btn').disabled = !ready;
+  $('#run-btn').disabled = !ready || (st.inputs_accepted || 0) < 2;
 }
 
 // ------------------------------------------------------------------ run
@@ -614,15 +623,19 @@ async function showResult(pid, rid) {
       out.append(el('div', { class: 'callout bad' }, `Publishing failed: ${e.message}`));
     }
   };
-  if (imported) showSplat(pid, rid);
+  showSplat(pid, rid);
 }
 
-// photoreal view (Gaussian splat) of an imported Polycam scan: start, follow, cancel
+// photoreal view (Gaussian splat) of a 3D scan or photo reconstruction: start, follow, cancel
 async function showSplat(pid, rid) {
   const url = `/projects/${pid}/runs/${rid}/splat`;
   let timer = null;
   const paint = (s) => {
     if (!f('splat')) { clearInterval(timer); return false; }
+    if (!s.available && s.status === 'not_started') {
+      f('splat').hidden = true;
+      return false;
+    }
     f('splat').hidden = false;
     const running = ['running', 'starting'].includes(s.status);
     f('splat-barbox').hidden = !running;

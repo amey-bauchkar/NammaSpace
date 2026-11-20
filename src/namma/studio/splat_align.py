@@ -37,7 +37,9 @@ def _icp(X, Q, tree, iters, keep, yaw_only, radius):
         ok = np.isfinite(dd)
         if ok.sum() < 50:
             break
-        ok &= dd <= np.percentile(dd[ok], keep)
+        if keep is not None:                      # trimmed: worst pairs dropped. keep=None: distance (radius) only -
+            ok &= dd <= np.percentile(dd[ok], keep)   # trimming can drop exactly the minority of points (an end wall)
+                                                      # that pins a slide along the main walls
         a, b = X[ok], Q[nn[ok]]
         ma, mb = a.mean(0), b.mean(0)
         H = (a - ma).T @ (b - mb)
@@ -48,6 +50,18 @@ def _icp(X, Q, tree, iters, keep, yaw_only, radius):
             R = Vt.T @ np.diag([1, 1, np.sign(np.linalg.det(Vt.T @ U.T))]) @ U.T
         t = mb - ma @ R.T
         X = X @ R.T + t
+        R_tot, t_tot = R @ R_tot, R @ t_tot + t
+    return X, R_tot, t_tot
+
+
+def _refine(X, Q, tree, robust):
+    """Final rigid ICP: as before (trimmed to the best 70 %, 20 cm), or robust: every pair within a shrinking radius
+    (30 -> 10 -> 5 cm), so a minority of constraining surface is never discarded."""
+    if not robust:
+        return _icp(X, Q, tree, 40, 70, False, 0.2)
+    R_tot, t_tot = np.eye(3), np.zeros(3)
+    for radius, iters in ((0.3, 15), (0.1, 15), (0.05, 15)):
+        X, R, t = _icp(X, Q, tree, iters, None, False, radius)
         R_tot, t_tot = R @ R_tot, R @ t_tot + t
     return X, R_tot, t_tot
 
@@ -78,7 +92,8 @@ def surface_sample_count(V, F, samples, samples_per_m2=0, limit=MAX_ALIGN_SAMPLE
     return int(min(limit, max(samples, samples_per_m2 * area)))
 
 
-def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, samples_per_m2=0, max_points=40_000, seed=0):
+def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, samples_per_m2=0, max_points=40_000, seed=0,
+                         robust=False):
     """Surface points (splat or triangulated photo points) -> (4x4 points frame -> mesh frame, fit stats)."""
     P = np.asarray(P, np.float64)
     rng = np.random.default_rng(seed)
@@ -93,7 +108,7 @@ def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, samples_per_m2
         init_T = np.asarray(init_T, float)
         R0 = init_T[:3, :3]
         t0 = init_T[:3, 3]
-        X, R2, t2 = _icp(P @ R0.T + t0, Q, tree, 40, 70, False, 0.2)
+        X, R2, t2 = _refine(P @ R0.T + t0, Q, tree, robust)
         Rf, tf = R2 @ R0, R2 @ t0 + t2
     else:
         def yaw_fit(Ps, deg):
@@ -106,7 +121,7 @@ def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, samples_per_m2
         sub = P[rng.choice(len(P), min(len(P), 5000), replace=False)]
         coarse = sorted((yaw_fit(sub, deg) for deg in np.arange(0, 360, 2.0)), key=lambda b: -b[0])
         _, deg, Rb, tb = max((yaw_fit(P, c[1]) for c in coarse[:3]), key=lambda b: b[0])
-        X, R2, t2 = _icp(P @ Rb.T + tb, Q, tree, 40, 70, False, 0.2)
+        X, R2, t2 = _refine(P @ Rb.T + tb, Q, tree, robust)
         Rf, tf = R2 @ Rb, R2 @ tb + t2
     dd = tree.query(X, workers=-1)[0]
     T = np.eye(4)

@@ -575,7 +575,10 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
                                                                "method": {"type": "string"},
                                                                "fit": {"type": "object"}},
                                                            "additionalProperties": False},
-                                              "method": {"type": "string"}},
+                                              "method": {"type": "string"},
+                                              # additive, optional (2026-11-17): false = viewers start on the mesh
+                                              # and show the splat only on request (a splat known to be poor)
+                                              "shown_by_default": {"type": "boolean"}},
                                "additionalProperties": False}},
                        "additionalProperties": False},
         "eye_height_units": {"type": "number", "exclusiveMinimum": 0,
@@ -605,7 +608,16 @@ SCHEMAS["IF-13"] = schema("Studio scene package (scale-free model frame)", "IF-1
         "quality": {"type": "object", "required": ["verdict", "report"],
                     "properties": {"verdict": {"enum": ["good", "usable_with_warnings", "poor", "failed"]},
                                    "report": {"type": "string"}, "capture_report": {"type": ["string", "null"]},
-                                   "warnings": {"type": "array", "items": {"type": "string"}}},
+                                   "warnings": {"type": "array", "items": {"type": "string"}},
+                                   # additive, optional (2026-11-17): surfaces SYNTHESISED by the pipeline, e.g. flat
+                                   # caps over marked mirrors; absent when nothing was inferred
+                                   "inferred": {"type": "object", "required": ["mirror_regions", "inferred_area_m2"],
+                                                "properties": {"mirror_regions": {"type": "integer", "minimum": 0},
+                                                               "inferred_area_m2": {"type": "number", "minimum": 0},
+                                                               "removed_area_m2": {"type": "number", "minimum": 0},
+                                                               "splats_excluded": {"type": ["integer", "null"], "minimum": 0},
+                                                               "note": {"type": "string"}},
+                                                "additionalProperties": False}},
                     "additionalProperties": False},
         "notices": {"type": "array", "items": {"type": "string"}},
         "files": {"type": "array", "minItems": 1, "items": {

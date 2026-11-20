@@ -205,7 +205,7 @@ def _polys(geom):
 
 def extract_if04(points_site, *, geometry_id, run_id, frame, provenance, res=0.05, floor_tol=0.05,
                  floor_min_pts=1, obstacle_min_pts=3, min_region_m2=1.0, min_obstacle_cells=2,
-                 extent=None, fill_enclosed_floor=False):
+                 extent=None, fill_enclosed_floor=False, seed_xz=None):
     """Return (IF-04 document, diagnostics) from points already in the site frame (+Y up, floor y=0)."""
     p = np.asarray(points_site, float)
     if extent is None:
@@ -233,6 +233,20 @@ def extract_if04(points_site, *, geometry_id, run_id, frame, provenance, res=0.0
         # ASSUMED floor. This trades missing floor for the risk of walking through unseen obstacles.
         floor = ndimage.binary_fill_holes(floor | obstacle) & ~obstacle | floor
     floor = remove_diagonal_pinches(floor, "cut")
+    seed_dropped = None
+    if seed_xz is not None:
+        # only floor reachable from the seed without crossing an obstacle cell (used when marked mirrors are applied:
+        # reflected floor behind the glass is not reachable). Default (None): unchanged.
+        sr = int(math.floor((seed_xz[1] - z0) / res))
+        sc = int(math.floor((seed_xz[0] - x0) / res))
+        reach, _ = ndimage.label(floor & ~obstacle)
+        rr, cc = np.nonzero(reach)
+        if len(rr):
+            k = int(np.argmin((rr - sr) ** 2 + (cc - sc) ** 2))          # the free floor nearest to the seed
+            if (rr[k] - sr) ** 2 + (cc[k] - sc) ** 2 <= (1.0 / res) ** 2:  # within 1 m, else leave the floor as it is
+                kept = floor & (reach == reach[rr[k], cc[k]])
+                seed_dropped = float((floor & ~obstacle & ~kept).sum()) * res * res
+                floor = kept
     lab, n = ndimage.label(floor)
     keep = np.zeros_like(floor)
     min_cells = min_region_m2 / (res * res)
@@ -282,5 +296,6 @@ def extract_if04(points_site, *, geometry_id, run_id, frame, provenance, res=0.0
            "floors": [floor_doc], "obstacles": obs_docs, "doorways": [], "provenance": dict(provenance)}
     diag = {"grid": {"res_m": res, "x0": x0, "z0": z0, "width": w, "height": h},
             "points_used": int(ok.sum()), "floor_cells": int(keep.sum()), "obstacle_cells": int(obstacle.sum()),
-            "obstacles": len(obs_docs), "walkable_area_m2": round(walk_geom.area, 3)}
+            "obstacles": len(obs_docs), "walkable_area_m2": round(walk_geom.area, 3),
+            **({"seed_dropped_m2": round(seed_dropped, 3)} if seed_dropped is not None else {})}
     return doc, diag

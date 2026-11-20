@@ -319,6 +319,24 @@ def make_photoreal_from_recon(project_dir, run_id, *, iters=None, max_side=1024,
     }
 
 
+SPLAT_NOTE_CODES = ("SPLAT-TRAINER-FORCED", "SPLAT-MIRRORS-NOT-MASKED")
+
+
+def _quality_note(project_dir, run_id, note):
+    """Put (or clear) the trainer-choice note in the run's quality report (the package is rebuilt by the engine)."""
+    q = Path(project_dir) / "runs" / run_id / "80_quality" / "quality_report.json"
+    if not q.exists():
+        return
+    doc = load_strict(q)
+    old = doc.get("warnings", [])
+    new = [w for w in old if w.get("code") not in SPLAT_NOTE_CODES]
+    if note:
+        new.append({"code": note[0], "severity": "info", "message": note[1]})
+    if new != old:
+        doc["warnings"] = new
+        write_json(q, doc)
+
+
 def make_photoreal(project_dir, run_id, *, iters=None, max_side=1024, cap=None, depth_weight=0.1,
                    timeout_s=3 * 3600, progress=None, cancel_file=None, **kw):
     """Studio worker task 'splat': dispatches to Claude's small-room engine, the large-space engine,
@@ -342,6 +360,25 @@ def make_photoreal(project_dir, run_id, *, iters=None, max_side=1024, cap=None, 
         )
 
     profile, metrics = classify_room_profile(project_dir, run_id, cfg=cfg)
+    # marked mirrors need pixel masks, which only the large-space trainer supports: switch to it (logged, reported in
+    # the quality report; splat_options.mirrors_force_large = false keeps the small-room trainer, mirrors then NOT
+    # masked in the photoreal view)
+    from namma.studio.splat_large import splat_options
+    mp = Path(project_dir) / "mirrors.json"
+    has_mirrors = mp.exists() and any(r.get("run_id") in (None, run_id) for r in load_strict(mp))
+    note = None
+    if profile == "claude" and has_mirrors:
+        if splat_options(Path(project_dir) / "runs" / run_id, project_dir)["mirrors_force_large"]:
+            profile = "large"
+            metrics = {**metrics, "reason": "marked mirrors need the large-space trainer (pixel masks)", "forced_by_mirrors": True}
+            note = ("SPLAT-TRAINER-FORCED", "Marked mirrors: the photoreal view is trained with the large-space trainer "
+                    "(it can leave the mirror's pixels out). Turn off with splat_options.mirrors_force_large = false.")
+        else:
+            note = ("SPLAT-MIRRORS-NOT-MASKED", "Marked mirrors are NOT left out of the photoreal view: the small-room "
+                    "trainer was kept (splat_options.mirrors_force_large = false), so the reflected room may show.")
+    _quality_note(project_dir, run_id, note)
+    if note:
+        progress(note[1], 0.01)
     progress(f"Photoreal profile: {profile.upper()} ({metrics['reason']})", 0.01)
 
     kwargs = {

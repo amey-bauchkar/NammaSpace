@@ -15,6 +15,18 @@
    "code": "NO-PHOTO-VIEWPOINTS",
    "severity": "info",
    "message": "The export has no photo positions, so 'jump to photo viewpoint' is unavailable."
+  },
+  {
+   "code": "LARGE-OPEN-AREAS",
+   "severity": "info",
+   "cause": "capture",
+   "message": "11 large opening(s) in the scan (largest outline 41.5 m) are left open, not invented. Recapture: walk slowly along that wall / floor area and point the phone at it from 1-2 m."
+  },
+  {
+   "code": "MIRROR-SUSPECTED",
+   "severity": "info",
+   "cause": "capture",
+   "message": "2 area(s) of surface lie behind a wall - a mirror (reflected room) or a real window / door. If it is a mirror, mark it in the viewer ('Mark a mirror') and apply: nothing is changed automatically."
   }
  ],
  "facts": {
@@ -54,7 +66,102 @@
   "scale_status": "device_tracking",
   "fragments_removed": 178,
   "fragments_removed_area_m2": 4.042,
-  "lods": 2
+  "lods": 2,
+  "model_health": {
+   "mesh": {
+    "triangles": 180768,
+    "degenerate_faces": 2,
+    "non_manifold_edges": 80,
+    "boundary_edges": 4650,
+    "flipped_edge_share": 0.0028,
+    "holes": 42,
+    "largest_hole_perimeter_m": 41.5,
+    "large_holes": 11,
+    "hole_perimeter_total_m": 291.596,
+    "open_boundary_m": 4.134
+   },
+   "texture": {
+    "texels_per_m": 303.2,
+    "texels_per_m_p10": 105.4,
+    "textured_area_m2": 176.88
+   },
+   "mirror_suggestions": [
+    {
+     "kind": "suggestion",
+     "wall_offset_m": -5.681,
+     "behind_m_min": 0.15,
+     "area_m2": 4.13,
+     "width_m": 0.9,
+     "height_m": 2.6,
+     "centre": [
+      -5.279,
+      1.33,
+      -0.523
+     ],
+     "corners": [
+      [
+       -5.2691,
+       0.0271,
+       -0.0812
+      ],
+      [
+       -5.2868,
+       0.0327,
+       -0.981
+      ],
+      [
+       -5.2898,
+       2.6326,
+       -0.9647
+      ],
+      [
+       -5.272,
+       2.627,
+       -0.0649
+      ]
+     ],
+     "note": "surface behind this wall: a mirror, or a real window / door / alcove - check it"
+    },
+    {
+     "kind": "suggestion",
+     "wall_offset_m": 3.738,
+     "behind_m_min": 0.15,
+     "area_m2": 0.82,
+     "width_m": 1.1,
+     "height_m": 0.8,
+     "centre": [
+      4.1,
+      0.869,
+      5.503
+     ],
+     "corners": [
+      [
+       3.5504,
+       0.4684,
+       5.5099
+      ],
+      [
+       4.6502,
+       0.4697,
+       5.4905
+      ],
+      [
+       4.6493,
+       1.2697,
+       5.4955
+      ],
+      [
+       3.5495,
+       1.2684,
+       5.5149
+      ]
+     ],
+     "note": "surface behind this wall: a mirror, or a real window / door / alcove - check it"
+    }
+   ],
+   "geometry_behind_mirrors_m2": 0.0,
+   "geometry_behind_wall_m2": 0.0
+  }
  },
  "thresholds": {},
  "created_at": "2026-10-30T15:20:57+05:30"

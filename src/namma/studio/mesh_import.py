@@ -103,10 +103,16 @@ def _node_matrix(n):
     return T
 
 
-def mesh_triangles(glb):
+INFERRED_MATERIALS = ("namma-hole-fill", "namma-inferred-mirror")   # surfaces the pipeline ADDED (not scanned)
+
+
+def mesh_triangles(glb, *, scanned_only=False):
     """World-space triangles of every mesh in the default scene (node transforms applied, as a viewer shows them).
+    scanned_only: leave out the surfaces the repair / mirror caps added (hole fills, backing sheets, caps) - for the
+    walking maps, which must never treat unscanned floor as walkable (ARCH-030).
     -> (vertices (N,3), faces (M,3), stats)."""
     doc, binary = _parse_glb(glb)
+    mats = doc.get("materials", [])
     Vs, Fs, base = [], [], 0
     scene = doc.get("scenes", [{}])[doc.get("scene", 0)]
 
@@ -117,6 +123,8 @@ def mesh_triangles(glb):
         if "mesh" in n:
             for p in doc["meshes"][n["mesh"]]["primitives"]:
                 if p.get("mode", 4) != 4:
+                    continue
+                if scanned_only and "material" in p and p["material"] < len(mats)                         and mats[p["material"]].get("name") in INFERRED_MATERIALS:
                     continue
                 V = _accessor(doc, binary, p["attributes"]["POSITION"]).astype(np.float64)
                 F = (_accessor(doc, binary, p["indices"]).reshape(-1, 3).astype(np.int64) if "indices" in p
@@ -268,6 +276,70 @@ def choose_start(pm, eye, res):
 
 
 # ------------------------------------------------------------------------------------------------- import
+def health_report(glb, T, *, before_glb=None, floor_tilt_deg=None):
+    """Model health facts + mirror SUGGESTIONS (model frame) + info-level guidance for the quality report.
+    Measured only: the verdict does not depend on it. Never raises (a failed check is reported as such)."""
+    from namma.studio import model_health as mh
+    from namma.studio.mirrors import suggest_mirrors
+    out, warnings = {}, []
+    try:
+        V, F, _ = mesh_triangles(glb)
+        h = mh.mesh_health(V, F)
+        h0 = None
+        if before_glb is not None:
+            V0, F0, _ = mesh_triangles(before_glb)
+            h0 = mh.mesh_health(V0, F0)
+            out["mesh_before_repair"] = h0
+        out["mesh"] = h
+        out["texture"] = mh.texture_density(glb)
+        if floor_tilt_deg is not None:
+            out["floor_tilt_deg"] = floor_tilt_deg
+        warnings += mh.guidance(h, h0)
+        T = np.asarray(T, float)
+        sug = []
+        for s in suggest_mirrors(V, F):
+            c = np.asarray(s["corners"], float) @ T[:3, :3].T + T[:3, 3]
+            sug.append({**s, "corners": np.round(c, 4).tolist(), "centre": np.round(c.mean(0), 3).tolist()})
+        out["mirror_suggestions"] = sug
+        if sug:
+            warnings.append({"code": "MIRROR-SUSPECTED", "severity": "info", "cause": "capture",
+                             "message": f"{len(sug)} area(s) of surface lie behind a wall - a mirror (reflected "
+                                        "room) or a real window / door. If it is a mirror, mark it in the viewer "
+                                        "('Mark a mirror') and apply: nothing is changed automatically."})
+    except Exception as e:                                        # noqa: BLE001 - health is informative only
+        out["error"] = f"{e.__class__.__name__}: {e}"
+    return out, warnings
+
+
+def write_navgeom(nd, pn, *, run_id, app, units_m, pipeline_version, seed_xz=None):
+    """Automatic, UNVERIFIED navigation geometry (IF-04) from floor-relative surface points -> nd/geometry.if04.json
+    and nd/navgeom.json. Used by import_mesh and again when mirror regions are applied (namma.studio.mirrors)."""
+    from namma.contracts.semantic import validate_document
+    from namma.core.issues import errors_only
+    from namma.recon.floorplan import extract_if04
+    nav_cfg = {"res_m": 0.05, "floor_tol_m": 0.05, "obstacle_min_pts": 3}
+    prov = {"origin": "automatic", "method": f"namma.recon.floorplan.extract_if04 on the surface of a {app} mesh; "
+            "scale basis device_tracking (1 m per unit)", "tool": "namma-studio", "tool_version": pipeline_version,
+            "author_role": "SCRIPT", "created_at": timefmt.now_iso(),
+            "note": "UNVERIFIED automatic geometry (ARCH-030): unobserved floor is not walkable"}
+    frame_doc = {"frame_id": f"site:{run_id}", "units": "m", "handedness": "right", "up_axis": "+Y",
+                 "datum": f"model frame of run {run_id} (metres from {app}); origin on the floor"}
+    try:
+        doc, diag = extract_if04(pn, geometry_id=f"geom-{run_id}", run_id=run_id, frame=frame_doc, provenance=prov,
+                                 res=nav_cfg["res_m"], floor_tol=nav_cfg["floor_tol_m"], obstacle_min_pts=nav_cfg["obstacle_min_pts"],
+                                 seed_xz=seed_xz)
+        write_json(nd / "geometry.if04.json", doc)
+        errs = errors_only(validate_document(doc, "IF-04"))
+        status = "unverified" if not errs and doc["floors"][0]["walkable_regions"] else "unavailable"
+        write_json(nd / "navgeom.json", {"status": status, "scale_basis": "device_tracking", "metres_per_unit": units_m,
+                                         "relative_uncertainty": None, "diagnostics": diag,
+                                         "if04_errors": [e.message for e in errs][:5],
+                                         "note": "Routes on this geometry are never shown as validated (ARCH-030)."})
+    except Exception as e:                                        # noqa: BLE001 - navigation is optional
+        write_json(nd / "navgeom.json", {"status": "unavailable", "reason": f"{e.__class__.__name__}: {e}"})
+
+
+
 def import_mesh(source, projects_root, *, title, source_note, app="Polycam", device="iPhone",
                 eye_height_m=DEFAULT_EYE_HEIGHT_M, units_m=1.0, samples=600_000, log=print, repair=True):
     """Create a Studio project + run from a finished mesh. Returns {"project_dir", "run_id", "package", ...}."""
@@ -304,7 +376,15 @@ def import_mesh(source, projects_root, *, title, source_note, app="Polycam", dev
     floor_mask = (np.abs(P @ up - floor_h) < 0.03) & (np.abs(N @ up) > 0.9)
     T = model_transform(P, up, floor_h, floor_mask)
     pm = modelframe.transform_points(T, P)
-    pn, fdiag["nav_floor_tilt_deg"] = floor_relative(pm, N @ T[:3, :3].T)   # walking maps: heights above the floor
+    if repair_stats.get("applied"):
+        # walking maps from SCANNED surface only: the repair's backing sheets span the whole outline of the floor
+        # (a whole flat: also between and around rooms) and would make unscanned floor walkable
+        Vs_, Fs_, _ = mesh_triangles(glb, scanned_only=True)
+        Ps_, Ns_, _ = sample_surface(Vs_ * units_m, Fs_, samples)
+        pm_nav, nm_nav = modelframe.transform_points(T, Ps_), Ns_ @ T[:3, :3].T
+    else:
+        pm_nav, nm_nav = pm, N @ T[:3, :3].T
+    pn, fdiag["nav_floor_tilt_deg"] = floor_relative(pm_nav, nm_nav)   # walking maps: heights above the floor
     eye = float(eye_height_m)
     res = eye / 32
     start_xz, look, sdiag = choose_start(pn, eye, res)
@@ -400,36 +480,19 @@ def import_mesh(source, projects_root, *, title, source_note, app="Polycam", dev
              "floor_detected": floor_detected, "floor_coverage": round(floor_cov, 4),
              "scale_status": "device_tracking", "fragments_removed": frag["removed_pieces"],
              "fragments_removed_area_m2": frag["removed_area"], "lods": len(lods)}
+    health, hw = health_report(glb, T, before_glb=unrepaired if repair_stats.get("applied") else None,
+                               floor_tilt_deg=fdiag.get("nav_floor_tilt_deg"))
+    facts["model_health"] = health
+    warnings += hw
     verdict = "usable_with_warnings"
     qd = ctx.dir("quality")
     qd.mkdir(parents=True)
     write_json(qd / "quality_report.json", {"verdict": verdict, "warnings": warnings, "facts": facts, "thresholds": {},
                                              "created_at": timefmt.now_iso()})
     # 85_navgeom: unverified candidate, metric basis from the device
-    from namma.contracts.semantic import validate_document
-    from namma.core.issues import errors_only
-    from namma.recon.floorplan import extract_if04
     nd = ctx.dir("navgeom")
     nd.mkdir(parents=True)
-    nav_cfg = {"res_m": 0.05, "floor_tol_m": 0.05, "obstacle_min_pts": 3}
-    prov = {"origin": "automatic", "method": f"namma.recon.floorplan.extract_if04 on the surface of a {app} mesh; "
-            "scale basis device_tracking (1 m per unit)", "tool": "namma-studio", "tool_version": cfg["pipeline_version"],
-            "author_role": "SCRIPT", "created_at": timefmt.now_iso(),
-            "note": "UNVERIFIED automatic geometry (ARCH-030): unobserved floor is not walkable"}
-    frame_doc = {"frame_id": f"site:{run_id}", "units": "m", "handedness": "right", "up_axis": "+Y",
-                 "datum": f"model frame of run {run_id} (metres from {app}); origin on the floor"}
-    try:
-        doc, diag = extract_if04(pn, geometry_id=f"geom-{run_id}", run_id=run_id, frame=frame_doc, provenance=prov,
-                                 res=nav_cfg["res_m"], floor_tol=nav_cfg["floor_tol_m"], obstacle_min_pts=nav_cfg["obstacle_min_pts"])
-        write_json(nd / "geometry.if04.json", doc)
-        errs = errors_only(validate_document(doc, "IF-04"))
-        status = "unverified" if not errs and doc["floors"][0]["walkable_regions"] else "unavailable"
-        write_json(nd / "navgeom.json", {"status": status, "scale_basis": "device_tracking", "metres_per_unit": units_m,
-                                         "relative_uncertainty": None, "diagnostics": diag,
-                                         "if04_errors": [e.message for e in errs][:5],
-                                         "note": "Routes on this geometry are never shown as validated (ARCH-030)."})
-    except Exception as e:                                        # noqa: BLE001 - navigation is optional
-        write_json(nd / "navgeom.json", {"status": "unavailable", "reason": f"{e.__class__.__name__}: {e}"})
+    write_navgeom(nd, pn, run_id=run_id, app=app, units_m=units_m, pipeline_version=cfg["pipeline_version"])
 
     # run status (as the Studio shows it) + package through the normal, validating builder
     stages = [{"name": n, "label": lbl, "status": "done"} for n, lbl in

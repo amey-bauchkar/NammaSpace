@@ -43,8 +43,9 @@
     },
     {
       "name": "namma-studio",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "py",
       "runtimeArgs": [
+        "-3.14",
         "scripts/start_studio.py",
         "--port",
         "8780",
@@ -130,6 +131,19 @@
         "8794"
       ],
       "port": 8794
+    },
+    {
+      "name": "large-room-before",
+      "runtimeExecutable": "py",
+      "runtimeArgs": [
+        "-3.14",
+        "scripts/serve.py",
+        "--dir",
+        "projects/large-room-20261030-880c8c/published/run-20261030-152057-3dcd",
+        "--port",
+        "8795"
+      ],
+      "port": 8795
     }
   ]
 }

@@ -333,3 +333,8 @@ body.ar-on {
   padding-left: 20px;
   margin: 10px 0;
 }
+
+/* AR Walk without a camera (simulation): a neutral background instead of the picture */
+.ar-layer.ar-nocam {
+  background: radial-gradient(circle at 50% 30%, #2a3d6e 0%, #101c3d 70%);
+}

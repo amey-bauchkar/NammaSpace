@@ -576,6 +576,9 @@
       },
       "method": {
        "type": "string"
+      },
+      "shown_by_default": {
+       "type": "boolean"
       }
      },
      "additionalProperties": false
@@ -711,6 +714,38 @@
      "items": {
       "type": "string"
      }
+    },
+    "inferred": {
+     "type": "object",
+     "required": [
+      "mirror_regions",
+      "inferred_area_m2"
+     ],
+     "properties": {
+      "mirror_regions": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "inferred_area_m2": {
+       "type": "number",
+       "minimum": 0
+      },
+      "removed_area_m2": {
+       "type": "number",
+       "minimum": 0
+      },
+      "splats_excluded": {
+       "type": [
+        "integer",
+        "null"
+       ],
+       "minimum": 0
+      },
+      "note": {
+       "type": "string"
+      }
+     },
+     "additionalProperties": false
     }
    },
    "additionalProperties": false

@@ -183,7 +183,9 @@ def test_package_carries_a_route_grid_for_in_browser_paths(tmp_path):
     assert not errors_only(validate_document(pkg, "IF-13", base_dir=run / "90_package", verify_files=True))
     g = _json.loads((run / "90_package" / "nav" / "route_grid.json").read_text(encoding="utf-8"))
     geom, _ = load_geometry(run / "85_navgeom" / "geometry.if04.json")
-    layer = build_navlayer(geom, "F0", res=0.05, agent_radius_m=0.25, enforce_resolution=False)
+    # exported at the minimum body radius (narrow doorways); the preferred radius travels with it (routing.py)
+    assert g["agent_radius_m"] == 0.18 and g["preferred_radius_m"] == 0.25
+    layer = build_navlayer(geom, "F0", res=0.05, agent_radius_m=0.18, enforce_resolution=False)
     assert (g["width"], g["height"]) == (layer.width, layer.height) and all(sum(row) == g["width"] for row in g["rows"])
     allowed = sum(sum(row[1::2]) for row in g["rows"])                    # runs alternate not-allowed / allowed
     assert allowed == int(np.asarray(layer.free).sum()) > 0

@@ -141,18 +141,20 @@ def evaluate(params, views, dev, sh_degree, pose_steps):
         gt = v["img"].to(dev).float()[None] / 255.0
         H, W = gt.shape[1:3]
         K, V = v["K"].to(dev), v["viewmat"].to(dev)
+        km = v["mask"].to(dev).float()[None, ..., None] if v.get("mask") is not None else None
+        fix = (lambda o: o * km + gt * (1 - km)) if km is not None else (lambda o: o)    # mirror pixels not scored
         with torch.no_grad():
-            out = render(params, V, K, W, H, sh_degree)[0]
-            r = {"name": v["name"], "raw": psnr_of(out, gt), "colour": psnr_of(colour_fit(out, gt), gt)}
+            out = fix(render(params, V, K, W, H, sh_degree)[0])
+            r = {"name": v["name"], "raw": psnr_of(out, gt), "colour": psnr_of(fix(colour_fit(out, gt)), gt)}
         if pose_steps:
             d = torch.zeros(1, 6, device=dev, requires_grad=True)
             opt = torch.optim.Adam([d], lr=1e-3)
             for _ in range(pose_steps):
-                o = render(params, se3_exp(d)[0] @ V, K, W, H, sh_degree)[0]
+                o = fix(render(params, se3_exp(d)[0] @ V, K, W, H, sh_degree)[0])
                 loss = (o - gt).abs().mean()
                 opt.zero_grad(); loss.backward(); opt.step()
             with torch.no_grad():
-                o = colour_fit(render(params, se3_exp(d)[0] @ V, K, W, H, sh_degree)[0], gt)
+                o = fix(colour_fit(render(params, se3_exp(d)[0] @ V, K, W, H, sh_degree)[0], gt))
                 r["pose_colour"] = psnr_of(o, gt)
                 r["ssim"] = float(ssim(o.permute(0, 3, 1, 2), gt.permute(0, 3, 1, 2)))
         res.append(r)
@@ -193,6 +195,12 @@ def main(argv=None):
     ap.add_argument("--means-lr-scene-cap", type=float, default=0,
                     help="large spaces: scene scale used for the position learning rate and MCMC noise is capped at "
                          "this value (0 = off), so a hall is refined as finely as a room")
+    ap.add_argument("--mask-dir", help="per-photo masks <photo stem>.png (0 = ignore, e.g. a mirror: its reflection is "
+                                       "not fitted; 255 = train). Photos without a mask file use every pixel")
+    ap.add_argument("--late-max-side", type=int, default=0,
+                    help="photos are loaded at this size and the last steps (from --late-from) train at it; earlier "
+                         "steps use --max-side (0 = off). More detail late, at the cost of GPU memory")
+    ap.add_argument("--late-from", type=float, default=0.85)
     a = ap.parse_args(argv)
     torch.manual_seed(a.seed); random.seed(a.seed); np.random.seed(a.seed)
     dev = "cuda"
@@ -212,20 +220,27 @@ def main(argv=None):
             continue
         w, h, fx, fy, cx, cy = cams[im["cam"]]
         pic = Image.open(f).convert("RGB")
-        k = min(1.0, a.max_side / max(pic.size))
+        k = min(1.0, max(a.max_side, a.late_max_side) / max(pic.size))
         if k < 1:
             pic = pic.resize((round(pic.size[0] * k), round(pic.size[1] * k)), Image.LANCZOS)
         kx, ky = pic.size[0] / w, pic.size[1] / h
         K = np.array([[fx * kx, 0, cx * kx], [0, fy * ky, cy * ky], [0, 0, 1]], np.float32)
         V = np.eye(4, dtype=np.float32); V[:3, :3] = im["R"]; V[:3, 3] = im["t"]
+        msk = None
+        if a.mask_dir and (Path(a.mask_dir) / f"{Path(im['name']).stem}.png").exists():
+            mk = Image.open(Path(a.mask_dir) / f"{Path(im['name']).stem}.png").convert("L").resize(pic.size, Image.NEAREST)
+            msk = torch.from_numpy(np.array(mk) > 127)
         dep = None
         if a.depth_dir and (Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").exists():
             dep = torch.from_numpy(np.load(Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").astype(np.float32))
         # pinned CPU memory: 250 photos at 1024 px are ~0.6 GB, which on a 6 GB card is taken from the splats
         views.append({"img": torch.from_numpy(np.array(pic)).pin_memory(), "K": torch.from_numpy(K), "viewmat": torch.from_numpy(V),
-                      "name": im["name"], "depth": dep})
+                      "name": im["name"], "depth": dep, "mask": msk})
     if len(views) < 3:
         raise SystemExit("fewer than 3 photos with cameras")
+    n_masked = sum(v["mask"] is not None for v in views)
+    if a.mask_dir:
+        print(f"{n_masked} photos with a mask (pixels excluded from the photo and depth loss)", flush=True)
     views.sort(key=lambda v: v["name"])
     centres = np.array([-(v["viewmat"][:3, :3].numpy().T @ v["viewmat"][:3, 3].numpy()) for v in views])
     # a few cameras placed absurdly far away (a weak reconstruction: 1,800 units for a 20-unit room) must neither
@@ -325,10 +340,18 @@ def main(argv=None):
         v = views[vi]
         gt = v["img"].to(dev, non_blocking=True).float()[None] / 255.0
         K = v["K"].to(dev)
+        if a.late_max_side and step < a.late_from * a.iters and max(gt.shape[1:3]) > a.max_side:
+            kk = a.max_side / max(gt.shape[1:3])                 # before the late phase: the usual --max-side
+            size = (max(1, round(gt.shape[1] * kk)), max(1, round(gt.shape[2] * kk)))
+            gt = Fn.interpolate(gt.permute(0, 3, 1, 2), size=size, mode="area").permute(0, 2, 3, 1)
+            K = K * torch.tensor([[size[1] / v["img"].shape[1]], [size[0] / v["img"].shape[0]], [1.0]], device=dev)
         if step < a.half_res_until * a.iters:                    # early steps: coarse shape at a quarter of the pixels
             gt = Fn.avg_pool2d(gt.permute(0, 3, 1, 2), 2).permute(0, 2, 3, 1)
             K = K * torch.tensor([[0.5], [0.5], [1.0]], device=dev)
         H, W = gt.shape[1:3]
+        keep_px = None
+        if v["mask"] is not None:                                # mirror pixels: no loss, no gradient
+            keep_px = Fn.interpolate(v["mask"].to(dev).float()[None, None], size=(H, W), mode="nearest")[0, 0]
         V = v["viewmat"].to(dev)
         if a.pose_opt:
             V = se3_exp(pose_d[vi:vi + 1])[0] @ V
@@ -339,6 +362,11 @@ def main(argv=None):
             out, rd = out[..., :3], out[..., 3]
         if a.appearance:
             out = out * torch.exp(app[vi, :3]) + app[vi, 3:]
+        if keep_px is not None:
+            # the photo replaces the render where it is masked: L1 and SSIM see no difference there, so nothing is
+            # fitted to the reflection (gradients there are zero)
+            km = keep_px[None, ..., None]
+            out = out * km + gt * (1 - km)
         strategy.step_pre_backward(params, opts, state, step, info)
         l1 = (out - gt).abs().mean()
         loss = 0.8 * l1 + 0.2 * (1 - ssim(out.permute(0, 3, 1, 2), gt.permute(0, 3, 1, 2)))
@@ -347,6 +375,8 @@ def main(argv=None):
             md = v["depth"].to(dev)
             rdd = Fn.interpolate(rd[:, None], size=md.shape, mode="area")[0, 0]
             m = md > 0.1
+            if keep_px is not None:
+                m = m & (Fn.interpolate(keep_px[None, None], size=md.shape, mode="nearest")[0, 0] > 0.5)
             if m.any():
                 cur_dw = a.depth_weight if step < int(a.iters * 0.5) else max(0.02, a.depth_weight * (1.0 - (step - 0.5 * a.iters) / (0.4 * a.iters)))
                 loss = loss + cur_dw * ((rdd[m] - md[m]).abs() / md[m]).mean()
@@ -391,7 +421,8 @@ def main(argv=None):
                "bytes": out_path.stat().st_size, "frame": "input cameras", "pose_opt": a.pose_opt,
                "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0,
                "max_splat_scale": a.max_splat_scale, "scene_scale": round(scene_scale, 3),
-               "means_lr_scene_scale": round(lr_scale, 3), "init_scale_max_mult": a.init_scale_max_mult}
+               "means_lr_scene_scale": round(lr_scale, 3), "init_scale_max_mult": a.init_scale_max_mult,
+               "masked_photos": n_masked, "late_max_side": a.late_max_side}
     if a.appearance:
         ad = app.detach()
         summary["appearance"] = {"log_gain_abs_max": round(float(ad[:, :3].abs().max()), 4),

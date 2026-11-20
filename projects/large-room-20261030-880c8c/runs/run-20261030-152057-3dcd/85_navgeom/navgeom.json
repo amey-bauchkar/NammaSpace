@@ -6,16 +6,16 @@
  "diagnostics": {
   "grid": {
    "res_m": 0.05,
-   "x0": -5.550000000000001,
+   "x0": -5.5,
    "z0": -3.0,
-   "width": 236,
+   "width": 225,
    "height": 187
   },
   "points_used": 600000,
-  "floor_cells": 10554,
-  "obstacle_cells": 7760,
-  "obstacles": 14,
-  "walkable_area_m2": 26.385
+  "floor_cells": 10708,
+  "obstacle_cells": 7634,
+  "obstacles": 15,
+  "walkable_area_m2": 26.77
  },
  "if04_errors": [],
  "note": "Routes on this geometry are never shown as validated (ARCH-030)."

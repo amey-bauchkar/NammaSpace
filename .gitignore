@@ -22,6 +22,8 @@ projects/*/runs/*/50_mesh/
 projects/*/runs/*/65_splat/
 projects/*/runs/*/60_texture/*_openmvs*
 projects/*/runs/*/60_texture/*.orig_bak
+projects/*/runs/*/60_texture/*_before_mirrors.glb
+projects/*/runs/*/60_texture/*_unrepaired.glb
 projects/*/capture/originals/*.jpg
 projects/*/capture/originals/*.jpeg
 projects/*/capture/originals/*.png

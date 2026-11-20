@@ -86,6 +86,7 @@ def keyframes_to_colmap(zip_path, out, *, max_points=150_000, max_depth_m=4.0, s
         names = set(z.namelist())
         cams = sorted(x for x in names if x.startswith("keyframes/cameras/") and x.endswith(".json"))
         cam_lines, img_lines, pts, cols = [], [], [], []
+        cam_pts = {}
         for i, c in enumerate(cams, 1):
             stem = c.rsplit("/", 1)[1][:-5]
             if not re.fullmatch(r"[A-Za-z0-9_.-]+", stem):          # names come from a user file: no paths
@@ -116,6 +117,9 @@ def keyframes_to_colmap(zip_path, out, *, max_points=150_000, max_depth_m=4.0, s
                 Xc = np.c_[(u - float(d["cx"]) * s) / (float(d["fx"]) * s) * dd,
                            (v - float(d["cy"]) * s) / (float(d["fy"]) * s) * dd, dd]
                 pts.append(Xc @ R_c2w.T + T[:, 3])
+                if len(Xc):
+                    sel = np.random.default_rng(i).choice(len(Xc), min(len(Xc), 1500), replace=False)
+                    cam_pts[stem] = Xc[sel].astype(np.float32)
                 img = np.asarray(Image.open(io.BytesIO(z.read(ip))).convert("RGB").resize((w, h)))
                 cols.append(img[v, u])
     if len(img_lines) < 10 or not pts:
@@ -129,6 +133,8 @@ def keyframes_to_colmap(zip_path, out, *, max_points=150_000, max_depth_m=4.0, s
     with open(out / "sparse" / "points3D.txt", "w", encoding="utf-8") as f:
         for j, (p, c) in enumerate(zip(P, C), 1):
             f.write(f"{j} {p[0]:.5f} {p[1]:.5f} {p[2]:.5f} {c[0]} {c[1]} {c[2]} 0\n")
+    if cam_pts:
+        np.savez_compressed(out / "depth_points.npz", **cam_pts)
     return {"keyframes": len(img_lines), "start_points": int(len(P))}
 
 
@@ -303,12 +309,83 @@ def drop_see_through_depth(D, tolerance=DEPTH_LEAK_TOLERANCE):
     return out
 
 
+VOXEL_M = 0.5                        # culling cells for the depth maps (only a speed setting: results are identical)
+
+
+class _Voxels:
+    """Surface points grouped by 0.5 m cubes, so each camera handles only the cubes that may be in view."""
+
+    def __init__(self, P, size=VOXEL_M):
+        key = np.floor(P / size).astype(np.int64)
+        order = np.lexsort((key[:, 2], key[:, 1], key[:, 0]))
+        self.P = P[order]
+        k = key[order]
+        brk = np.flatnonzero(np.any(np.diff(k, axis=0) != 0, axis=1)) + 1
+        self.start = np.r_[0, brk]
+        self.end = np.r_[brk, len(k)]
+        self.centre = (k[self.start] + 0.5) * size
+        self.radius = 0.5 * np.sqrt(3) * size
+
+    def candidates(self, R, t, W, H, fx, fy, cx, cy, near=0.05):
+        """Indices (into self.P) of every point that CAN project into the picture: a cube is skipped only when its
+        bounding sphere lies wholly outside one of the five view planes (conservative - nothing visible is lost)."""
+        C = self.centre @ R.T + t                      # cube centres in the camera frame
+        planes = np.array([[fx, 0.0, cx], [-fx, 0.0, W - cx], [0.0, fy, cy], [0.0, -fy, H - cy]])
+        planes /= np.linalg.norm(planes, axis=1, keepdims=True)
+        keep = (C[:, 2] - near) > -self.radius
+        for n_ in planes:                              # u >= 0, u < W, v >= 0, v < H (planes through the camera)
+            keep &= C @ n_ > -self.radius
+        idx = np.flatnonzero(keep)
+        if not len(idx):
+            return np.zeros(0, np.int64)
+        lens = self.end[idx] - self.start[idx]
+        return np.repeat(self.start[idx] - np.cumsum(np.r_[0, lens[:-1]]), lens) + np.arange(lens.sum())
+
+
+def _depth_map(P, R, t, W, H, fx, fy, cx, cy, scale):
+    """One camera's depth map from surface points P (same arithmetic for any subset of the points)."""
+    w, h = max(1, round(W * scale)), max(1, round(H * scale))
+    Xc = P @ R.T + t
+    ok = Xc[:, 2] > 0.05
+    zc = Xc[ok, 2]
+    # floor, not truncation: int() rounds towards zero and folded points just outside the left / top edge
+    # (pixel -0.9 .. 0) into the first column / row
+    u = np.floor((Xc[ok, 0] / zc * fx + cx) * (w / W)).astype(np.int64)
+    v = np.floor((Xc[ok, 1] / zc * fy + cy) * (h / H)).astype(np.int64)
+    inb = (u >= 0) & (u < w) & (v >= 0) & (v < h)
+    D = np.full(h * w, np.inf)
+    np.minimum.at(D, v[inb] * w + u[inb], zc[inb])
+    D[~np.isfinite(D)] = 0
+    return drop_see_through_depth(D.reshape(h, w)).astype(np.float16)
+
+
+_W = {}                                # per-process state of the depth-map workers
+
+
+def _depth_worker_init(P, start, end, centre, radius, out, scale):
+    vox = _Voxels.__new__(_Voxels)
+    vox.P, vox.start, vox.end, vox.centre, vox.radius = P, start, end, centre, radius
+    _W.update(vox=vox, out=Path(out), scale=scale)
+
+
+def _depth_worker(job):
+    stem, R, t, (W, H, fx, fy, cx, cy) = job
+    vox = _W["vox"]
+    pts = vox.P[vox.candidates(R, t, W, H, fx, fy, cx, cy)]
+    np.save(_W["out"] / f"{stem}.npy", _depth_map(pts, R, t, W, H, fx, fy, cx, cy, _W["scale"]))
+    return 1
+
+
 def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, samples=3_000_000,
-                    samples_per_m2=DEPTH_SAMPLES_PER_M2):
+                    samples_per_m2=DEPTH_SAMPLES_PER_M2, workers=None, cull=True):
     """Depth of the Polycam mesh seen from every training camera (z-buffer of surface samples at `scale` of the
     photo size) -> out/<photo stem>.npy (float16 metres, 0 = no mesh or not reliable). The number of samples follows
     the mesh area (at least `samples`), so a hall is covered as densely as a room. Checked on "New room" (before the
-    density and see-through changes): within 2-6 % of the phone's own depth maps on most keyframes. -> number of maps."""
+    density and see-through changes): within 2-6 % of the phone's own depth maps on most keyframes. -> number of maps.
+    Speed (same maps, tests/test_splat.py compares them): each camera projects only the 0.5 m cubes that can be in its
+    view (about a quarter of a flat's surface), and cameras run in parallel PROCESSES (threads crashed numpy here).
+    If the process pool cannot start, the same work runs serially. cull=False / workers=1: the plain loop."""
+    import os
     from namma.studio import mesh_import as mi
     from namma.studio.splat_align import surface_sample_count
     out = Path(out)
@@ -325,7 +402,7 @@ def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, sampl
         p = ln.split()
         if p and not p[0].startswith("#"):
             cams[int(p[0])] = (int(p[2]), int(p[3]), *map(float, p[4:8]))
-    n = 0
+    jobs = []
     for ln in (Path(sparse_dir) / "images.txt").read_text(encoding="utf-8").splitlines():
         p = ln.split()
         if len(p) < 10 or ln.startswith("#"):
@@ -334,23 +411,23 @@ def mesh_depth_maps(sparse_dir, glb, T_mesh_from_cams, out, *, scale=0.25, sampl
         R = np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - w_ * z), 2 * (x * z + w_ * y)],
                       [2 * (x * y + w_ * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w_ * x)],
                       [2 * (x * z - w_ * y), 2 * (y * z + w_ * x), 1 - 2 * (x * x + y * y)]])
-        W, H, fx, fy, cx, cy = cams[int(p[8])]
-        w, h = max(1, round(W * scale)), max(1, round(H * scale))
-        Xc = P @ R.T + np.array([float(v) for v in p[5:8]])
-        ok = Xc[:, 2] > 0.05
-        zc = Xc[ok, 2]
-        # floor, not truncation: int() rounds towards zero and folded points just outside the left / top edge
-        # (pixel -0.9 .. 0) into the first column / row
-        u = np.floor((Xc[ok, 0] / zc * fx + cx) * (w / W)).astype(np.int64)
-        v = np.floor((Xc[ok, 1] / zc * fy + cy) * (h / H)).astype(np.int64)
-        inb = (u >= 0) & (u < w) & (v >= 0) & (v < h)
-        D = np.full(h * w, np.inf)
-        np.minimum.at(D, v[inb] * w + u[inb], zc[inb])
-        D[~np.isfinite(D)] = 0
-        D = drop_see_through_depth(D.reshape(h, w))
-        np.save(out / f"{Path(' '.join(p[9:])).stem}.npy", D.astype(np.float16))
-        n += 1
-    return n
+        jobs.append((Path(" ".join(p[9:])).stem, R, np.array([float(v) for v in p[5:8]]), cams[int(p[8])]))
+    if not cull:
+        for stem, R, t, (W, H, fx, fy, cx, cy) in jobs:
+            np.save(out / f"{stem}.npy", _depth_map(P, R, t, W, H, fx, fy, cx, cy, scale))
+        return len(jobs)
+    vox = _Voxels(P)
+    state = (vox.P, vox.start, vox.end, vox.centre, vox.radius, str(out), scale)
+    workers = workers or max(1, min(8, (os.cpu_count() or 2) - 1))
+    if workers > 1 and len(jobs) >= 4 * workers:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+            with ProcessPoolExecutor(workers, initializer=_depth_worker_init, initargs=state) as ex:
+                return sum(ex.map(_depth_worker, jobs, chunksize=max(1, len(jobs) // (8 * workers))))
+        except Exception:                      # noqa: BLE001 - no process pool here: same work, one process
+            pass
+    _depth_worker_init(*state)
+    return sum(_depth_worker(j) for j in jobs)
 
 
 # ---------------------------------------------------------------------------------------- job
@@ -416,12 +493,231 @@ LARGE_INIT_SCALE_MAX_MULT = 3.0
 LARGE_MEANS_LR_SCENE_CAP_M = 3.0
 
 
+# Options added on branch quality-mirrors. With these defaults and no mirrors marked, the trainer is called exactly
+# as before (tests/test_splat_options.py compares the commands). Set in the run's config.json "config" or in
+# project.json, key "splat_options" (project.json wins).
+SPLAT_OPTION_DEFAULTS = {
+    "large_init_points": False,     # >150 photos: mesh start points scaled to the surface area (up to 600 k)
+    "mirrors_force_large": True,    # marked mirrors: use this trainer (pixel masks) even for a small room
+    "block_mode": "off",            # "off" | "auto" (blocks when the floor is large) | "on" (namma.studio.splat_blocks)
+    "mesh_pose_refine": False,      # phone-tracking fallback: line each keyframe up with the scanned mesh (drift)
+    "robust_align": False,          # splat <-> mesh line-up without trimming (see splat_align._refine)
+    "guide_mesh": "unrepaired",     # mesh for start points, depth guide, pose correction and line-up: "unrepaired"
+                                    # (the app's scan) | "repaired" (levelled ceiling, scraps out, straight walls;
+                                    # its added backing sheets / fills are left out - nothing is seen there)
+    "block_target_per_m2": 12_000,  # splats per m2 of FLOOR wanted in every block (a small room's density)
+    "max_total_splats": 3_600_000,  # splat budget of the merged result (6 blocks x 600 k)
+}
+
+
+def splat_options(run_dir, project_dir):
+    """Effective options (defaults, then run config, then project.json); unknown keys are ignored."""
+    out = dict(SPLAT_OPTION_DEFAULTS)
+    for src in (Path(run_dir) / "config.json", Path(project_dir) / "project.json"):
+        if src.exists():
+            try:
+                doc = load_strict(src)
+                doc = doc.get("config", doc) if src.name == "config.json" else doc
+                out.update({k: v for k, v in (doc.get("splat_options") or {}).items() if k in SPLAT_OPTION_DEFAULTS})
+            except Exception:                     # noqa: BLE001 - a broken file leaves the defaults
+                pass
+    if out["block_mode"] not in ("off", "auto", "on"):
+        out["block_mode"] = "off"
+    return out
+
+
+LARGE_INIT_POINTS_PER_M2 = 4_000
+LARGE_MAX_INIT_POINTS = 600_000
+
+
+def init_point_count(n_photos, surface_m2):
+    """Mesh start points: MESH_INIT_POINTS, or for large captures enough to give the surface about the start density
+    of a room (LARGE_INIT_POINTS_PER_M2), at most LARGE_MAX_INIT_POINTS (MCMC caps the total anyway)."""
+    if n_photos <= LARGE_MIN_PHOTOS:
+        return MESH_INIT_POINTS
+    return int(min(LARGE_MAX_INIT_POINTS, max(MESH_INIT_POINTS, LARGE_INIT_POINTS_PER_M2 * surface_m2)))
+
+
 def training_plan(n_photos, iters):
     """(iters, extra trainer arguments) for a capture of n_photos keyframes."""
     if n_photos <= LARGE_MIN_PHOTOS:
         return iters, []
     steps = min(LARGE_MAX_ITERS, max(iters, LARGE_STEPS_PER_PHOTO * n_photos))
     return steps, ["--init-scale-max-mult", LARGE_INIT_SCALE_MAX_MULT, "--means-lr-scene-cap", LARGE_MEANS_LR_SCENE_CAP_M]
+
+
+POSE_FIX_MAX_SHIFT_M = 0.5
+POSE_FIX_MAX_ROT_DEG = 10.0
+POSE_FIX_MIN_GAIN = 0.02            # share of the keyframe's points within 5 cm of the mesh must rise by this
+POSE_FIX_MIN_POINTS = 200
+
+
+def refine_poses_to_mesh(sparse_dir, depth_npz, glb, out_dir, *, samples_per_m2=10_000):
+    """Phone-tracking keyframes -> the same poses corrected against the scanned mesh. 1. one rigid line-up of all
+    keyframes' depth points with the mesh (the phone's world -> mesh frame); 2. per keyframe a short rigid ICP of its
+    own depth points; a correction is kept only if it is small (<= POSE_FIX_MAX_SHIFT_M, POSE_FIX_MAX_ROT_DEG) and
+    brings clearly more points onto the mesh. EVERY pose is written in the MESH frame (corrected or not), so all
+    keyframes agree with one surface even if the first line-up is slightly off. Writes out_dir/sparse/*.txt.
+    -> {"frames", "corrected", "within_5cm_before", "within_5cm_after", "shift_m_median", "rot_deg_median", ...}"""
+    from scipy.spatial import cKDTree
+    from namma.studio import mesh_import as mi_
+    from namma.studio.splat_align import _icp, align_points_to_mesh, surface_sample_count
+    from namma.studio.splat_blocks import read_text_model
+    sparse_dir, out = Path(sparse_dir), Path(out_dir) / "sparse"
+    out.mkdir(parents=True, exist_ok=True)
+    _, imgs = read_text_model(sparse_dir)
+    cp = np.load(depth_npz)
+    frames = []
+    for im in imgs:
+        stem = Path(im["name"]).stem
+        if stem in cp.files and len(cp[stem]) >= POSE_FIX_MIN_POINTS:
+            Xc = cp[stem].astype(np.float64)
+            frames.append((im, Xc, (Xc - im["t"]) @ im["R"]))          # world = R^T (x_c - t)
+    if len(frames) < 10:
+        raise SplatError(f"only {len(frames)} keyframes with depth points")
+    rng = np.random.default_rng(0)
+    allw = np.vstack([w for _, _, w in frames])
+    Tg, gstats = align_points_to_mesh(allw[rng.choice(len(allw), min(len(allw), 40_000), replace=False)], glb,
+                                      samples_per_m2=samples_per_m2, robust=True)
+    V, F, _ = mi_.mesh_triangles(glb)
+    Q, _, _ = mi_.sample_surface(V, F, surface_sample_count(V, F, 400_000, samples_per_m2), seed=0)
+    tree = cKDTree(Q)
+    within = lambda X: float((tree.query(X, workers=-1)[0] < 0.05).mean())
+    # consensus: a line-up of ALL keyframes is a compromise between the good and the drifted ones; refit it on the
+    # keyframes that already agree best with the mesh (twice). A single keyframe facing one plain wall cannot fix a
+    # slide along that wall itself, so the shared line-up must be right for the majority.
+    for _ in range(2):
+        fit_ = np.array([within(w @ Tg[:3, :3].T + Tg[:3, 3]) for _, _, w in frames])
+        best = [w for (_, _, w), f_ in zip(frames, fit_) if f_ >= np.median(fit_)]
+        sub_ = np.vstack(best)
+        Tg, gstats = align_points_to_mesh(sub_[rng.choice(len(sub_), min(len(sub_), 40_000), replace=False)], glb,
+                                          init_T=Tg, samples_per_m2=samples_per_m2, robust=True)
+    Rg, tg = Tg[:3, :3], Tg[:3, 3]
+    new_lines, pts_out, shifts, rots, before, after = [], [], [], [], [], []
+    corrected = 0
+    for im, Xc, Xw in frames:
+        X = Xw @ Rg.T + tg
+        b = within(X)
+        # coarse to fine: a 50 cm search first (drift of a few decimetres), then 15 cm to settle on the surface
+        X1, R1, t1 = _icp(X, Q, tree, 15, None, False, 0.5)
+        X2, R2, t2 = _icp(X1, Q, tree, 25, None, False, 0.15)
+        Rd, td = R2 @ R1, R2 @ t1 + t2
+        a = within(X2)
+        rot = float(np.degrees(np.arccos(np.clip((np.trace(Rd) - 1) / 2, -1, 1))))
+        shift = float(np.linalg.norm(X2 - X, axis=1).mean())
+        R, t = im["R"], im["t"]
+        M = Tg                                                          # phone world -> mesh frame
+        if a >= b + POSE_FIX_MIN_GAIN and shift <= POSE_FIX_MAX_SHIFT_M and rot <= POSE_FIX_MAX_ROT_DEG:
+            D = np.eye(4)
+            D[:3, :3], D[:3, 3] = Rd, td
+            M = D @ Tg                                                  # + this keyframe's own correction
+            corrected += 1
+            shifts.append(shift)
+            rots.append(rot)
+            before.append(b)
+            after.append(a)
+        else:
+            before.append(b)
+            after.append(b)
+        Rm, tm = M[:3, :3], M[:3, 3]
+        R, t = R @ Rm.T, t - R @ Rm.T @ tm                              # mesh frame -> camera
+        p = im["lines"][0].split()
+        q = _rot_to_quat(R)
+        new_lines.append(f"{p[0]} {' '.join(f'{v:.12g}' for v in q)} {' '.join(f'{v:.12g}' for v in t)} {p[8]} {' '.join(p[9:])}\n")
+        pts_out.append((Xc - t) @ R)
+    (out / "cameras.txt").write_text((sparse_dir / "cameras.txt").read_text(encoding="utf-8"), encoding="utf-8")
+    (out / "images.txt").write_text("".join(ln + "\n" for ln in new_lines), encoding="utf-8")
+    src_pts = (sparse_dir / "points3D.txt").read_text(encoding="utf-8").splitlines()
+    cols = [ln.split()[4:7] for ln in src_pts if ln and not ln.startswith("#")] or [["160", "160", "160"]]
+    P = np.vstack(pts_out)
+    with open(out / "points3D.txt", "w", encoding="utf-8") as f:            # start points from the corrected frames
+        for j, x in enumerate(P[rng.choice(len(P), min(len(P), 150_000), replace=False)], 1):
+            c = cols[j % len(cols)]
+            f.write(f"{j} {x[0]:.5f} {x[1]:.5f} {x[2]:.5f} {c[0]} {c[1]} {c[2]} 0\n")
+    return {"frames": len(frames), "corrected": corrected, "global_fit": gstats,
+            "within_5cm_before": round(float(np.mean(before)), 3), "within_5cm_after": round(float(np.mean(after)), 3),
+            "shift_m_median": round(float(np.median(shifts)), 4) if shifts else 0.0,
+            "rot_deg_median": round(float(np.median(rots)), 3) if rots else 0.0,
+            "shift_m_max": round(float(max(shifts)), 4) if shifts else 0.0}
+
+
+def _block_plan(opts, glb, T0, cap):
+    """Block plan (namma.studio.splat_blocks) or None when block mode is off / not worth it / impossible."""
+    if opts["block_mode"] == "off":
+        return None
+    from namma.studio import splat_blocks as sb
+    if T0 is None:
+        return {"k": 1, "reason": "the quick splat could not be lined up with the model: one splat"}
+    from namma.studio import mesh_import as mi_
+    V, F, _ = mi_.mesh_triangles(glb)
+    P, N, _ = mi_.sample_surface(V, F, 400_000, seed=1)
+    Ti = np.linalg.inv(T0)                                  # mesh frame -> training frame (+Y up in both)
+    P, N = P @ Ti[:3, :3].T + Ti[:3, 3], N @ Ti[:3, :3].T
+    fxz = sb.floor_cells(P, N)
+    plan = sb.plan_blocks(fxz, target_per_m2=opts["block_target_per_m2"], cap_per_block=cap,
+                          max_total=opts["max_total_splats"])
+    if opts["block_mode"] == "auto" and plan["floor_m2"] < sb.BLOCK_AUTO_MIN_FLOOR_M2:
+        return {**plan, "k": 1, "reason": f"floor {plan['floor_m2']:.0f} m2 < {sb.BLOCK_AUTO_MIN_FLOOR_M2:.0f} m2: one splat"}
+    plan["surface_samples"] = P
+    plan["floor_xz"] = fxz
+    return plan
+
+
+def _train_blocks(plan, *, model, work, logs, depth_args, mask_args, iters0, max_side, ply, label, progress,
+                  timeout_s, cancel_file, max_total):
+    """Train every block (one after the other), merge, apply the budget -> ply + ply.json (summary like the
+    trainer's, with "blocks")."""
+    from namma.recon.runner import run_step
+    from namma.studio import splat_blocks as sb
+    cams, imgs = sb.read_text_model(model)
+    blocks = plan["blocks"]
+    names = sb.assign_cameras(cams, imgs, blocks, plan.pop("surface_samples"))
+    fxz = plan.pop("floor_xz")
+    bdir = work / "blocks"
+    shutil.rmtree(bdir, ignore_errors=True)
+    init = None
+    if "--init-points" in depth_args:
+        init = Path(depth_args[depth_args.index("--init-points") + 1])
+    plys, per = [], []
+    k = len(blocks)
+    for i, b in enumerate(blocks):
+        d = bdir / f"b{i}"
+        st = sb.write_block_model(model, d / "sparse", names[i], b["rect"])
+        args = list(depth_args)
+        if init is not None:
+            n_init = sb.crop_init(init, d / "init.npz", b["rect"])
+            args[args.index("--init-points") + 1] = d / "init.npz"
+            st["init_points"] = n_init
+        radius = sb.block_radius(b["rect"], fxz)
+        it_i, _ = training_plan(len(names[i]), iters0)
+        lab = f"{label}: block {i + 1} of {k}"
+
+        def on_line(line, i=i, lab=lab):
+            m = re.match(r"step (\d+)/(\d+)", line)
+            if m:
+                progress(lab, 0.15 + 0.75 * (i + int(m.group(1)) / int(m.group(2))) / k)
+        run_step(f"splat_train_block{i}", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", d / "sparse",
+                                           "--images", work / "input" / "images", "--out", d / "block.ply",
+                                           "--iters", it_i, "--max-side", max_side, "--cap", b["cap"],
+                                           "--max-splat-scale", MAX_SPLAT_SCALE_M, "--pose-opt", "--appearance",
+                                           *args, "--init-scale-max-mult", LARGE_INIT_SCALE_MAX_MULT,
+                                           "--means-lr-scene-cap", max(0.5, radius), *mask_args],
+                 logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
+        summ = load_strict((d / "block.ply").with_suffix(".json"))
+        plys.append(d / "block.ply")
+        per.append({**b, "cameras": len(names[i]), "radius_m": radius, "iters": it_i, **st,
+                    "splats": summ.get("splats"), "seconds": summ.get("seconds"), "gpu_peak_gb": summ.get("gpu_peak_gb")})
+    merged = work / "room_blocks_merged.ply"
+    mst = sb.merge_blocks(plys, [b["rect"] for b in blocks], merged)
+    bst = sb.enforce_budget(merged, ply, max_total)
+    for p_, m_ in zip(per, mst["per_block"]):
+        p_["kept_after_crop"] = m_["kept"]
+    write_json(ply.with_suffix(".json"), {
+        "photos": len(imgs), "iters": int(sum(p_["iters"] for p_ in per)), "splats": bst["splats_out"],
+        "seconds": round(float(sum(p_["seconds"] or 0 for p_ in per)), 1),
+        "gpu_peak_gb": max((p_["gpu_peak_gb"] or 0) for p_ in per), "max_side": max_side, "frame": "input cameras",
+        "pose_opt": True, "appearance": True, "blocks": per,
+        "block_plan": {k_: v_ for k_, v_ in plan.items() if k_ != "blocks"}, "budget": bst})
 
 
 def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4050_SAFE_CAP, depth_weight=0.1,
@@ -451,10 +747,27 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
     if kz is None:
         raise SplatError("no Polycam 'Images' export is kept with this space: import the GLTF together with the "
                          "Images export")
+    opts = splat_options(run_dir, pdir)
     tex = run_dir / "60_texture"
     glb = ((tex / "lod0_unrepaired.glb") if (tex / "lod0_unrepaired.glb").exists() else (tex / "lod0.glb")).read_bytes()
+    guide = "unrepaired" if (tex / "lod0_unrepaired.glb").exists() else "as imported"
+    if opts["guide_mesh"] == "repaired" and (tex / "lod0_unrepaired.glb").exists():
+        from namma.studio.mesh_tidy import strip_inferred
+        glb, _ = strip_inferred((tex / "lod0.glb").read_bytes())
+        guide = "repaired (scanned surfaces only)"
+    # marked mirrors (namma.studio.mirrors): reflected surface is cut from the mesh BEFORE it gives start points and
+    # the depth guide, the photos are masked where the mirror is seen, and splats behind it are removed at the end
+    from namma.studio import mirrors as mir
+    frame_doc = load_strict(run_dir / "70_frame" / "frame.json") if (run_dir / "70_frame" / "frame.json").exists() else None
+    regions_mesh = []
+    if frame_doc is not None:
+        regions_model = mir.load_regions(pdir, run_id, frame_doc["start"]["position"])
+        if regions_model:
+            regions_mesh = mir.transform_regions(regions_model, np.linalg.inv(np.asarray(frame_doc["T_model_from_sfm"], float)))
+            glb = mir.cut_mesh(glb, regions_mesh, cap=False)[0]
+    mirror_stats = {"regions": len(regions_mesh)} if regions_mesh else None
     work = run_dir / "65_splat"
-    for d in ("input", "colmap", "depth"):
+    for d in ("input", "colmap", "depth", "meshposes"):
         shutil.rmtree(work / d, ignore_errors=True)
     progress("Preparing the keyframes", 0.01)
     kf = keyframes_to_colmap(kz, work / "input")
@@ -477,6 +790,20 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
         if cancel_file is not None and Path(cancel_file).exists():
             raise SplatError("cancelled") from e
         rp = {"error": str(e)}
+    pose_fix = None
+    if opts["mesh_pose_refine"] and model == work / "input" / "sparse" and (work / "input" / "depth_points.npz").exists():
+        # COLMAP was not used: the phone's own tracking drifts over a multi-room walk (one room's photos then disagree
+        # with the next room's about where the walls are -> doubled, blurred surfaces). The scanned mesh is one
+        # consistent surface: each keyframe's own depth points are lined up with it.
+        progress("Correcting the camera positions against the scanned model", 0.10)
+        try:
+            pose_fix = refine_poses_to_mesh(model, work / "input" / "depth_points.npz", glb, work / "meshposes")
+            if pose_fix["corrected"]:
+                model = work / "meshposes" / "sparse"
+                poses = (f"phone tracking (ARKit), {pose_fix['corrected']} of {pose_fix['frames']} keyframes corrected "
+                         "against the scanned mesh")
+        except Exception as e:                      # noqa: BLE001 - the phone's poses stay
+            pose_fix = {"error": f"{e.__class__.__name__}: {e}"}
     # 2. the mesh as a depth guide. The cameras -> mesh line-up comes from a quick 3,000-step splat: its solid surface
     #    lines up reliably, while COLMAP's sparse points (window views, outliers) gave 18 % within 5 cm and a wrong turn
     progress("Rendering the depth guide from the model", 0.12)
@@ -489,12 +816,17 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
                                     "--max-side", max_side, "--cap", 200_000,
                                     "--max-splat-scale", MAX_SPLAT_SCALE_M], logs, timeout_s=1800,
                  cancel_file=cancel_file)
-        T0, fit0 = align_splat_to_mesh(pre, glb, samples_per_m2=ALIGN_SAMPLES_PER_M2)
+        T0, fit0 = align_splat_to_mesh(pre, glb, samples_per_m2=ALIGN_SAMPLES_PER_M2,
+                                       **({"robust": True} if opts["robust_align"] else {}))
         if fit0["within_5cm"] >= MIN_PRETRAIN_WITHIN_5CM and fit0.get("tilt_deg", 0.0) <= MAX_PRETRAIN_TILT_DEG:
             mesh_depth_maps(model, glb, T0, work / "depth")
             depth_args = ["--depth-dir", work / "depth", "--depth-weight", depth_weight]
             # start from the room's shape and colours: points on the scanned surface, in the training frame
-            P, C = mesh_points(glb, MESH_INIT_POINTS)
+            from namma.studio import mesh_import as _mi
+            _V, _F, _ = _mi.mesh_triangles(glb)
+            _area = float((np.linalg.norm(np.cross(_V[_F[:, 1]] - _V[_F[:, 0]], _V[_F[:, 2]] - _V[_F[:, 0]]), axis=1) / 2).sum())
+            n_init = init_point_count(kf["keyframes"], _area) if opts["large_init_points"] else MESH_INIT_POINTS
+            P, C = mesh_points(glb, n_init)
             Ti = np.linalg.inv(T0)
             np.savez(work / "mesh_init.npz", xyz=(P @ Ti[:3, :3].T + Ti[:3, 3]).astype(np.float32),
                      rgb=C.astype(np.float32))
@@ -505,23 +837,40 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
     label = f"Training the photoreal view ({kf['keyframes']} photos)"
     progress(label, 0.15)
     ply = work / "room.ply"
+    iters0 = iters
     iters, large_args = training_plan(kf["keyframes"], iters)
+    if regions_mesh:
+        if T0 is None:
+            mirror_stats["masks"] = "not made: the quick splat could not be lined up with the model"
+        else:
+            regions_train = mir.transform_regions(regions_mesh, np.linalg.inv(T0))
+            mirror_stats.update(mir.write_masks(model, regions_train, work / "masks"))
+            large_args = [*large_args, "--mask-dir", work / "masks"]
 
     def on_line(line):
         m = re.match(r"step (\d+)/(\d+)", line)
         if m:
             progress(label, 0.15 + 0.77 * int(m.group(1)) / int(m.group(2)))
+    mask_args = ["--mask-dir", work / "masks"] if "--mask-dir" in large_args else []
+    plan = _block_plan(opts, glb, T0, cap)
     try:
-        run_step("splat_train", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", model,
-                                 "--images", work / "input" / "images", "--out", ply, "--iters", iters,
-                                 "--max-side", max_side, "--cap", cap, "--max-splat-scale", MAX_SPLAT_SCALE_M,
-                                 "--pose-opt", "--appearance", *depth_args, *large_args],
-                 logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
+        if plan and plan["k"] >= 2:
+            progress(f"Training the photoreal view in {plan['k']} blocks ({plan['floor_m2']:.0f} m2 of floor)", 0.15)
+            _train_blocks(plan, model=model, work=work, logs=logs, depth_args=depth_args, mask_args=mask_args,
+                          iters0=iters0, max_side=max_side, ply=ply, label=label, progress=progress,
+                          timeout_s=timeout_s, cancel_file=cancel_file, max_total=opts["max_total_splats"])
+        else:
+            run_step("splat_train", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", model,
+                                     "--images", work / "input" / "images", "--out", ply, "--iters", iters,
+                                     "--max-side", max_side, "--cap", cap, "--max-splat-scale", MAX_SPLAT_SCALE_M,
+                                     "--pose-opt", "--appearance", *depth_args, *large_args],
+                     logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
     except StepFailed as e:
         raise SplatError(str(e)) from e
     # 4. line-up of the trained splat (pose correction may have moved it slightly) and packaging
     progress("Lining it up with the 3D model", 0.93)
-    T, fit = align_splat_to_mesh(ply, glb, init_T=T0, samples_per_m2=ALIGN_SAMPLES_PER_M2)
+    T, fit = align_splat_to_mesh(ply, glb, init_T=T0, samples_per_m2=ALIGN_SAMPLES_PER_M2,
+                                 **({"robust": True} if opts["robust_align"] else {}))
     write_json(work / "align.json", {"T_mesh_from_splat": T.tolist(), "fit": fit, "pre_fit": fit0})
     if fit["within_5cm"] < MIN_WITHIN_5CM:
         raise SplatError(f"the photoreal view could not be lined up with the model (only {fit['within_5cm']:.0%} "
@@ -540,7 +889,26 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
     corners = np.array([[x, y, z] for x in (min_m[0], max_m[0]) for y in (min_m[1], max_m[1]) for z in (min_m[2], max_m[2])])
     corners_splat = corners @ Ti[:3, :3].T + Ti[:3, 3]
     keep_box = (corners_splat.min(axis=0), corners_splat.max(axis=0))
-    spz = ply_to_spz(ply, tex / "splat.spz", min_opacity=MIN_SPLAT_OPACITY, keep_box=keep_box)
+    src_ply = ply
+    if regions_mesh:                               # splats behind each mirror out, an INFERRED flat cap in
+        regions_splat = mir.transform_regions(regions_mesh, Ti)
+        src_ply = work / "room_mirrors.ply"
+        cs = mir.cull_and_cap_splat(ply, src_ply, regions_splat)
+        mirror_stats.update(removed_splats=cs["removed_splats"], cap_splats=cs["cap_splats"],
+                            inferred_area_m2=cs["inferred_area_m2"], per_region=cs["per_region"])
+    spz = ply_to_spz(src_ply, tex / "splat.spz", min_opacity=MIN_SPLAT_OPACITY, keep_box=keep_box)
+    density = None
+    try:                                           # splats per m2 of floor, per 2 m block (quality report: blur check)
+        from namma.studio.model_health import splat_density
+        from namma.studio.splat_align import read_splat_ply
+        sp_ = read_splat_ply(src_ply)
+        ok_ = 1 / (1 + np.exp(-sp_["opacity"])) >= MIN_SPLAT_OPACITY
+        Ps = np.c_[sp_["x"], sp_["y"], sp_["z"]][ok_].astype(np.float64)
+        if frame_doc is not None:
+            Tm = np.asarray(frame_doc["T_model_from_sfm"], float) @ T
+            density = splat_density(Ps @ Tm[:3, :3].T + Tm[:3, 3])
+    except Exception as e:                         # noqa: BLE001 - informative only
+        density = {"error": f"{e.__class__.__name__}: {e}"}
     write_json(tex / "splat.json", {"file": "splat.spz", "profile": "large", "T_mesh_from_splat": T.tolist(), "splats": spz["splats_out"],
                                     "compression": spz,
                                     "fit": fit, "created_at": timefmt.now_iso(), "poses": poses, "colmap": rp,
@@ -548,7 +916,9 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
                                               f"colour correction{', mesh depth guide' if depth_args else ''}) from "
                                               f"{kf['keyframes']} Polycam keyframes, camera poses from {poses}; lined "
                                               "up with the imported mesh by the splat's solid surface (ICP)",
-                                    "training": train})
+                                    "training": train, "density": density, "guide_mesh": guide,
+                                    **({"mesh_pose_refine": pose_fix} if pose_fix is not None else {}), **({"options": opts} if opts != SPLAT_OPTION_DEFAULTS else {}),
+                                    **({"block_plan": {k: v for k, v in plan.items() if k not in ("surface_samples", "floor_xz")}} if plan else {}), **({"mirrors": mirror_stats} if mirror_stats else {})})
     ctx = RunContext(pdir, run_id, cfg)
     res = build_scene_package(ctx, ctx.dir("package"))
     progress("Done", 1.0)

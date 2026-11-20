@@ -124,3 +124,19 @@ test('open floor: the preferred path is the straight one', () => {
   assert.equal(r.status, 'route');
   assert.ok(r.length < 1.03 * Math.hypot(1.9, 1.5), `length ${r.length}`);
 });
+
+test('preferred body clearance where possible, a narrow doorway only when there is no other way', () => {
+  const g = grid();                                   // the only way across is a door right next to the wall cells
+  const r = planRoute(g, [0.25, 0.25], [0.95, 0.25], { maxGoalSnap: 0.3, preferExtra: 0.1 });
+  assert.equal(r.status, 'route');
+  assert.equal(r.tight, true);                         // reported, so the viewer can say "tight passage"
+  const rows = [];                                     // open floor: the roomy plan succeeds
+  for (let k = 0; k < 30; k++) rows.push([0, 30]);
+  const open = decodeRoamGrid({ origin_xz: [0, 0], cell: 0.1, width: 30, height: 30, rows });
+  const o = planRoute(open, [0.55, 0.55], [2.45, 2.45], { maxGoalSnap: 0.3, preferExtra: 0.1 });
+  assert.equal(o.status, 'route');
+  assert.equal(o.tight, false);
+  const closed = grid();
+  for (const k of [9, 10]) closed.allowed[k * closed.width + 6] = 0;
+  assert.equal(planRoute(closed, [0.25, 0.25], [0.95, 0.25], { maxGoalSnap: 0.3, preferExtra: 0.1 }).status, 'unreachable');
+});

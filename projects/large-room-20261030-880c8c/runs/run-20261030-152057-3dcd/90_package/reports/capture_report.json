@@ -1,0 +1,19 @@
+{
+ "status": "ready",
+ "mode": null,
+ "errors": [],
+ "warnings": [
+  {
+   "code": "CAP-UNSUPPORTED",
+   "severity": "warning",
+   "message": ".gitkeep is not a photo or video and was ignored."
+  }
+ ],
+ "stats": {
+  "mode": null,
+  "files_uploaded": 1,
+  "inputs_accepted": 0
+ },
+ "seconds": 0.0,
+ "created_at": "2026-11-04T15:38:32+05:30"
+}
