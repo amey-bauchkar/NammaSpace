@@ -101,6 +101,16 @@ table edge) and type its real length. This is optional and can be done at any ti
 | ☐ | Preview checked for holes; missed areas rescanned |
 | ☐ | Route A: **both** GLTF and Images exported |
 
+## 4a. Mirrors, glass, shiny floors, dark rooms (added 17 Nov 2026)
+
+| Surface | What goes wrong | What to do while capturing | What to do afterwards |
+|---|---|---|---|
+| **Mirror** | The phone sees a second, reflected room behind the wall: phantom geometry, "walkable" floor behind the wall, a blurry ghost room in the photoreal view | Cover it if you can (a sheet, or tape paper over it). Otherwise film it from an angle and do not stand in front of it. Do not walk close to it: grazing views put the reflection far to the side, where the cut does not reach. | In the viewer: **Mark a mirror** (click its corners on the wall), **Apply mirrors**, then make the photoreal view again. The quality report lists suggested areas: check each one, because it could be a real window or door. |
+| **Window / glass door** | Depth through or off the glass; outdoor light blinds the camera | Close the blinds if the view is not needed, and do not point at bright sky for long. | If a "possible mirror" suggestion is a window, ignore it. Never mark a window as a mirror: the room behind it would be removed. |
+| **Shiny floor / tiles** | Reflections of lights and furniture appear "under" the floor; floor holes | Turn off spotlights that reflect, capture from a lower angle, and include rugs and furniture legs in the frame. | Check the model-health "largest hole". The floor is never invented: large holes stay open and are reported. |
+| **Dark room** | Noise and blur; few features, so holes | Switch on every light. Move slowly: about one step per second, with the phone steady. | Holes are reported in the health section, with a recapture hint saying where. |
+| **Plain white wall / ceiling** | No texture to track: wavy or holey ceiling | Include an edge or corner in every frame, and do the ceiling last in one slow sweep. | The ceiling repair and backing sheets handle small gaps. Large ones are reported, not filled. |
+
 ## 5. Privacy
 
 Everything Namma Space does runs on your own computer; nothing is uploaded unless you publish the walkthrough

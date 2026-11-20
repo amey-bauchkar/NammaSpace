@@ -68,15 +68,15 @@
  "roam_stats": {
   "cell_units": 0.05,
   "width": 229,
-  "height": 177,
-  "allowed_cells": 9679,
+  "height": 178,
+  "allowed_cells": 9758,
   "min_obstacle_cells": 15,
-  "blocked_cells": 6369,
-  "observed_floor_cells": 11283,
-  "footprint_cells": 17137,
-  "observed_floor_in_footprint_cells": 11280
+  "blocked_cells": 6355,
+  "observed_floor_cells": 11505,
+  "footprint_cells": 17273,
+  "observed_floor_in_footprint_cells": 11495
  },
- "floor_coverage": 0.6582,
+ "floor_coverage": 0.6655,
  "start": {
   "camera": "start",
   "position": [

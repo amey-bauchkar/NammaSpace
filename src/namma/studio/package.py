@@ -41,15 +41,19 @@ def _route_grid(ctx, out, metres_per_unit):
         geometry, _ = load_geometry(out / "nav" / "geometry.if04.json")
         if geometry is None or not metres_per_unit:
             return None
-        layer = build_navlayer(geometry, "F0", res=cfg["res_m"], agent_radius_m=cfg["agent_radius_m"],
-                               enforce_resolution=False)
+        from namma.studio.routing import TIGHT_RADIUS_M
+        # exported at the MINIMUM body radius: the browser planner keeps the preferred radius where it can (extra
+        # clearance from the cell's distance to obstacles) and passes narrow doorways only when it must (routing.py)
+        tight = min(TIGHT_RADIUS_M, cfg["agent_radius_m"])
+        layer = build_navlayer(geometry, "F0", res=cfg["res_m"], agent_radius_m=tight, enforce_resolution=False)
         if not layer.free.any():
             return None
         write_json(out / "nav" / "route_grid.json", {
             "origin_xz": [layer.origin[0] / metres_per_unit, layer.origin[1] / metres_per_unit],
             "cell": layer.res / metres_per_unit, "width": layer.width, "height": layer.height,
             "encoding": "rle_rows_v1", "value": "allowed", "rows": encode_rle(layer.free),
-            "resolution_m": layer.res, "agent_radius_m": layer.agent_radius_m, "navlayer_id": layer.navlayer_id,
+            "resolution_m": layer.res, "agent_radius_m": layer.agent_radius_m,
+            "preferred_radius_m": cfg["agent_radius_m"], "navlayer_id": layer.navlayer_id,
             "note": "configuration space: a free cell is fully on reconstructed floor and at least the agent radius "
                     "from every reconstructed obstacle"})
         return "nav/route_grid.json"
@@ -90,6 +94,8 @@ def build_scene_package(ctx, out):
                      "to_model": {"matrix_row_major": [float(v) for v in Tm.ravel()],
                                   "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
                                   "fit": sd.get("fit", {})}}
+            if project.get("photoreal_default") is False:     # project.json: start on the mesh (splat on request)
+                splat["shown_by_default"] = False
     (out / "views").mkdir()
     shutil.copy2(ctx.dir("frame") / "cameras.json", out / "views" / "cameras.json")
     (out / "nav").mkdir()
@@ -148,6 +154,16 @@ def build_scene_package(ctx, out):
                          "fit": fm["fit"], "planes": fm["planes"]}
             notices.append("Holes in walls, floor and ceiling are closed with ESTIMATED flat surfaces "
                            "(toggle 'Estimated surfaces'); they are not scanned geometry.")
+    mirrors = (quality.get("facts") or {}).get("mirrors")
+    inferred = None
+    if mirrors and mirrors.get("regions"):
+        inferred = {"mirror_regions": int(mirrors["regions"]), "inferred_area_m2": float(mirrors.get("inferred_area_m2") or 0),
+                    "removed_area_m2": float(mirrors.get("geometry_removed_m2") or 0),
+                    "splats_excluded": mirrors.get("splats_excluded"),
+                    "note": "Marked mirrors: reflected geometry removed; the mirror openings are closed with flat "
+                            "INFERRED surfaces (material namma-inferred-mirror), not scanned."}
+        notices.append(f"{inferred['mirror_regions']} mirror(s) marked: the reflected room is removed and "
+                       f"{inferred['inferred_area_m2']:.1f} m2 of mirror is shown as an INFERRED flat surface.")
     files = []
     for p in sorted(out.rglob("*")):
         if p.is_file():
@@ -177,7 +193,8 @@ def build_scene_package(ctx, out):
            "pois": "poi/pois.json",
            "quality": {"verdict": quality["verdict"], "report": "reports/quality_report.json",
                        "capture_report": "reports/capture_report.json" if cap_rep.exists() else None,
-                       "warnings": [w["code"] for w in quality["warnings"]]},
+                       "warnings": [w["code"] for w in quality["warnings"]],
+                       **({"inferred": inferred} if inferred else {})},
            "notices": notices, "files": files}
     errs = errors_only(validate_document(pkg, "IF-13", base_dir=out, verify_files=True))
     if errs:

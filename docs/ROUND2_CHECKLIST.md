@@ -58,3 +58,27 @@ laptop, by request). Open the re-published site once and walk one path before re
 - **Repository**: README covers Round 2, tests run on every push (`.github/workflows/ci.yml`), the personal photo
   folders are no longer tracked (they remain in earlier commits until the history is rewritten).
 - Checked by unit tests only (Node: planner, search parity). Not yet seen in a browser.
+
+## Verified in a real browser on 17 Nov 2026 (team laptop, Intel integrated graphics)
+
+Large room (1BHK), with three temporary TEST labels that were removed afterwards. Both the Studio viewer and the
+**published static site** (served as plain files, no server code) were checked.
+
+| Feature | Result |
+|---|---|
+| Places list, category buttons (All / exit / furniture / room) | Works |
+| Search as you type; typo tolerance ("entrnce" finds "entrance") | Works |
+| Choosing a place | **Changed:** a click or Enter now *selects* the place and turns the view to it without moving. "Go there" flies there; "Show walking path" starts from where the visitor stands. Before, choosing a place flew to it, so the path started at the destination. |
+| Walking path across the flat (about 9.5 m) | **Was "unreachable"; fixed.** The only doorway between the two halves is scanned about 50 cm wide, which is too narrow for the 25 cm body radius after the safety margin. Paths now keep 25 cm wherever they can and retry once at an 18 cm minimum, marked "(tight passage)" with the measured gap, and never shown as validated. The independent validator found no obstacle crossed. Studio: 9.5 m; published site (in-browser planner): 9.4 m. |
+| Path on the floor with arrows, mini-map line, "x m left" | Works |
+| Walk me there | Works. On very slow frames it now keeps its pace (up to 0.25 s per step). |
+| Place card buttons | **Fixed:** "AR Walk" was cut off at the right edge of the panel; the row now wraps. |
+| AR Walk on a laptop | **Fixed:** with no motion sensors or camera (or permission refused) it no longer stops with an error. It runs as a simulation, with an explanation: Start, then Step walks the path. The banner showed "Walk straight · 4.3 m", then "Bear right · 2.4 m to …"; floor chevrons and the destination beacon appeared; Exit AR returned to the 3D view cleanly. Arrow directions were checked numerically with three.js. |
+| Not checked | AR Walk on a real phone (needs https and a phone), and recording the demo video. |
+
+### Demo flow (replaces steps 2–4 of the storyboard)
+
+1. Search a place, or click it in the list: the view turns to it.
+2. Click "Show walking path": the path is drawn from where you stand, through the doorway.
+3. Click "Walk me there".
+4. Round 3 preview: click "AR Walk" (simulation on a laptop; the real thing on a phone over https).

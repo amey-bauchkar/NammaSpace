@@ -47,8 +47,9 @@ export function checkScenePackage(p, label = 'scene_package.json') {
       throw new PackageLoadError('invalid_package', `${label}: splat needs format 3dgs-ply or spz and a 16-number to_model`);
     }
   }
+  const routeGrid = p.navigation && p.navigation.route_grid;   // additive, optional: grid for in-browser path planning
   for (const rel of [...p.appearance.lods.map((l) => l.path), ...(est ? [est.path] : []), ...(splat ? [splat.path] : []),
-    p.roam, p.cameras, p.pois]) {
+    ...(routeGrid ? [routeGrid] : []), p.roam, p.cameras, p.pois]) {
     if (!listed.has(rel)) throw new PackageLoadError('invalid_package', `${label}: ${rel} is not listed in files[]`);
     if (rel.includes('..') || rel.startsWith('/') || rel.includes('\\')) throw new PackageLoadError('invalid_package', `${label}: unsafe path ${rel}`);
   }
@@ -107,9 +108,10 @@ export async function loadScenePackage(url, { fetchFn, onProgress } = {}) {
   const [cameras, roam, pois] = await Promise.all([getJson(pkg.cameras), getJson(pkg.roam), getJson(pkg.pois)]);
   if (!Array.isArray(pois)) throw new PackageLoadError('invalid_package', `${pkg.pois} must be an array`);
   const quality = pkg.quality && pkg.quality.report && index.has(pkg.quality.report) ? await getJson(pkg.quality.report) : null;
+  const routeGrid = pkg.navigation && pkg.navigation.route_grid ? await getJson(pkg.navigation.route_grid) : null;
   // lightest level first (highest lod number) for a fast first view
   const lods = [...pkg.appearance.lods].sort((a, b) => b.lod - a.lod);
-  return { pkg, base: base.href, cameras: cameras.cameras || [], roam, pois, quality, lods,
+  return { pkg, base: base.href, cameras: cameras.cameras || [], roam, pois, quality, lods, routeGrid,
     estimated: pkg.appearance.estimated_surfaces || null,
     splat: pkg.appearance.splat || null,
     fetchSplat: (progress) => getVerified(pkg.appearance.splat.path, progress),

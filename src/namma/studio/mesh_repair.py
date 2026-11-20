@@ -430,30 +430,156 @@ def _straighten(V, F, keep, weld, n, d, *, wall_tol=0.05, floor_tol=0.03, top_cu
     return out
 
 
+def _big_pieces(Fw, mask, area, max_m2):
+    """Faces of `mask` in connected pieces (welded vertices) larger than max_m2."""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    idx = np.flatnonzero(mask)
+    out = np.zeros(len(mask), bool)
+    if not len(idx):
+        return out
+    f = Fw[idx]
+    e = np.vstack([f[:, [0, 1]], f[:, [1, 2]]])
+    n = int(Fw.max()) + 1
+    _, lab = connected_components(coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(n, n)), directed=False)
+    comp = lab[f[:, 0]]
+    big = np.bincount(comp, weights=area[idx]) > max_m2
+    out[idx[big[comp]]] = True
+    return out
+
+
+def _image_index(doc, prim):
+    try:
+        tex = doc["materials"][prim["material"]]["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+        return doc["textures"][tex]["source"]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+def _combine(doc, binary, prims):
+    """Several primitives (a large Polycam scan: one per texture atlas) as ONE mesh for the analysis: vertices and
+    faces concatenated, and - when every piece is textured - the textures stacked into one image with the UVs
+    mapped into it, so every colour lookup works unchanged. -> (V, F, UV or None, tex or None, layout)"""
+    Vs, Fs, UVs, texs, layout = [], [], [], [], []
+    v0 = f0 = 0
+    for prim in prims:
+        V_ = _accessor(doc, binary, prim["attributes"]["POSITION"]).astype(np.float64)
+        F_ = _accessor(doc, binary, prim["indices"]).reshape(-1, 3).astype(np.int64)
+        UV_ = _accessor(doc, binary, prim["attributes"]["TEXCOORD_0"]) if "TEXCOORD_0" in prim["attributes"] else None
+        tx = _texture(doc, binary, prim) if UV_ is not None else None
+        layout.append({"prim": prim, "v0": v0, "nv": len(V_), "f0": f0, "nf": len(F_), "image": _image_index(doc, prim),
+                       "uv": UV_})
+        Vs.append(V_)
+        Fs.append(F_ + v0)
+        UVs.append(UV_)
+        texs.append(tx)
+        v0 += len(V_)
+        f0 += len(F_)
+    V, F = np.vstack(Vs), np.vstack(Fs)
+    if any(u is None for u in UVs) or any(x is None for x in texs):
+        return V, F, None, None, layout
+    wmax = max(x.shape[1] for x in texs)
+    htot = sum(x.shape[0] for x in texs)
+    tex = np.zeros((htot, wmax, 3), np.uint8)
+    UV = np.zeros((len(V), 2), np.float64)
+    row = 0
+    for L, x, uv in zip(layout, texs, UVs):
+        h, w = x.shape[:2]
+        tex[row:row + h, :w] = x
+        uvc = np.clip(np.asarray(uv, np.float64), 0.0, 1.0 - 1e-9)
+        UV[L["v0"]:L["v0"] + L["nv"], 0] = uvc[:, 0] * w / wmax
+        UV[L["v0"]:L["v0"] + L["nv"], 1] = (uvc[:, 1] * h + row) / htot
+        row += h
+    return V, F, UV, tex, layout
+
+
 def _srgb_to_linear(c):
     c = np.asarray(c, np.float64) / 255.0
     return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 
 
+def _write_pieces(doc, binary, layout, V, V2, F, keep, fills, padded_multi, stats):
+    """Write a several-piece repair back: each piece gets its kept faces (new index buffer) and, if any of its
+    vertices moved, new positions in a NEW buffer view (pieces may share one view); fills as one extra primitive."""
+    replace = dict(padded_multi)
+    add, plan = [], []
+    for L in layout:
+        sl = slice(L["v0"], L["v0"] + L["nv"])
+        fk = keep[L["f0"]:L["f0"] + L["nf"]]
+        Fl = (F[L["f0"]:L["f0"] + L["nf"]][fk] - L["v0"]).astype("<u4")
+        add.append(Fl.tobytes())
+        moved = bool((V2[sl] != V[sl]).any())
+        if moved:
+            add.append(V2[sl].astype("<f4").tobytes())
+        plan.append((L, int(Fl.size), moved, V2[sl]))
+    if fills:
+        fv = np.vstack([q for q, _, _ in fills]).astype("<f4")
+        fc = np.vstack([_srgb_to_linear(col) if np.ndim(col) == 2 else np.tile(_srgb_to_linear(col), (len(q), 1))
+                        for q, _, col in fills]).astype("<f4")
+        base = np.cumsum([0] + [len(q) for q, _, _ in fills])[:-1]
+        fi = np.vstack([t + b for (_, t, _), b in zip(fills, base)]).astype("<u4")
+        add += [fv.tobytes(), fc.tobytes(), fi.ravel().tobytes()]
+    doc, binary, views = _rebuild(doc, binary, replace=replace, add=add)
+    acc = doc["accessors"]
+    k = 0
+    for L, count, moved, Vp in plan:
+        acc.append({"bufferView": views[k], "componentType": 5125, "count": count, "type": "SCALAR"})
+        L["prim"]["indices"] = len(acc) - 1
+        k += 1
+        if moved:
+            acc.append({"bufferView": views[k], "componentType": 5126, "count": len(Vp), "type": "VEC3",
+                        "min": Vp.min(0).tolist(), "max": Vp.max(0).tolist()})
+            L["prim"]["attributes"]["POSITION"] = len(acc) - 1
+            k += 1
+    if fills:
+        acc.append({"bufferView": views[k], "componentType": 5126, "count": len(fv), "type": "VEC3",
+                    "min": fv.min(0).tolist(), "max": fv.max(0).tolist()})
+        acc.append({"bufferView": views[k + 1], "componentType": 5126, "count": len(fv), "type": "VEC3"})
+        acc.append({"bufferView": views[k + 2], "componentType": 5125, "count": int(fi.size), "type": "SCALAR"})
+        doc.setdefault("materials", []).append({"name": "namma-hole-fill", "doubleSided": True,
+                                                "pbrMetallicRoughness": {"metallicFactor": 0.0, "roughnessFactor": 1.0}})
+        doc["meshes"][0]["primitives"].append({"attributes": {"POSITION": len(acc) - 3, "COLOR_0": len(acc) - 2},
+                                               "indices": len(acc) - 1, "material": len(doc["materials"]) - 1})
+    stats["applied"] = True
+    return glb_bytes(doc, binary), stats
+
+
 def repair(glb, *, weld_m=0.001, above_tol=0.3, flatten_below=0.25, sheet_wall_gap=0.3, max_hole_perimeter=8.0,
            max_hole_rms=0.12, backing_m=0.02, pad_texture=True, object_drop_m=0.05, object_colour_diff=45.0,
            plain_ceiling=True, scrap_m=0.08, debris_m=0.3, straighten=True, straighten_tol=0.05,
-           wall_top_cut=0.15):
+           wall_top_cut=0.15, multi_primitive=True, max_object_m2=1.0):
     doc, binary = _parse_glb(glb)
     stats = {"applied": False}
     nodes = doc.get("nodes", [])
     prims = [p for m in doc.get("meshes", []) for p in m["primitives"] if p.get("mode", 4) == 4 and "indices" in p]
-    if len(prims) != 1 or any(k in n for n in nodes for k in ("matrix", "rotation", "scale", "translation")):
-        stats["skipped"] = "only single-primitive meshes without node transforms are repaired"
+    if not prims or (len(prims) > 1 and not multi_primitive) \
+            or any(k in n for n in nodes for k in ("matrix", "rotation", "scale", "translation")):
+        stats["skipped"] = ("only meshes without node transforms are repaired" if prims and (len(prims) == 1 or multi_primitive)
+                            else "only single-primitive meshes without node transforms are repaired")
         return glb, stats
-    prim = prims[0]
-    V = _accessor(doc, binary, prim["attributes"]["POSITION"]).astype(np.float64)
-    F = _accessor(doc, binary, prim["indices"]).reshape(-1, 3).astype(np.int64)
-    UV = _accessor(doc, binary, prim["attributes"]["TEXCOORD_0"]) if "TEXCOORD_0" in prim["attributes"] else None
+    layout = None
+    if len(prims) == 1:
+        prim = prims[0]
+        V = _accessor(doc, binary, prim["attributes"]["POSITION"]).astype(np.float64)
+        F = _accessor(doc, binary, prim["indices"]).reshape(-1, 3).astype(np.int64)
+        UV = _accessor(doc, binary, prim["attributes"]["TEXCOORD_0"]) if "TEXCOORD_0" in prim["attributes"] else None
+        tex = _texture(doc, binary, prim) if UV is not None else None
+    else:
+        # a large scan comes as several pieces (one per texture atlas; 4 for the 1BHK "Large room"): repaired as one
+        # room - pieces are welded at their shared borders, so their seams are not holes
+        prim = prims[0]
+        V, F, UV, tex, layout = _combine(doc, binary, prims)
+        stats["pieces"] = len(prims)
+        # whole flats: beams, false-ceiling steps and lofts sit 10-30 cm under the ceiling. Measured on the 1BHK "Large
+        # room": the ceiling's own waviness is within 9 cm (90 %), so only that band is flattened (single room: 25 cm).
+        # Ceiling debris keeps the 30 cm depth but only pieces up to max_object_m2 go: the torn scraps there were
+        # 0.14-0.56 m2 and touch nothing, while a beam or loft is bigger and joins the walls
+        flatten_below = min(flatten_below, 0.10)
+        stats["whole_flat_limits"] = {"flatten_below_m": flatten_below, "debris_m": debris_m,
+                                      "debris_max_piece_m2": max_object_m2}
     _, weld = np.unique(np.round(V / weld_m).astype(np.int64), axis=0, return_inverse=True)
     weld = weld.ravel()
 
-    tex = _texture(doc, binary, prim) if UV is not None else None
     fit = fit_ceiling(V, F)
     keep = np.ones(len(F), bool)
     V2 = V.copy()
@@ -481,6 +607,7 @@ def repair(glb, *, weld_m=0.001, above_tol=0.3, flatten_below=0.25, sheet_wall_g
         # ceiling: surface that sits clearly below the plane AND does not have the ceiling's colour is removed instead
         # (the ceiling backing shows plain ceiling there)
         obj = np.zeros(len(F), bool)
+        protect = np.zeros(len(F), bool)
         if tex is not None:
             fcol = _face_colours(tex, UV, F)
             on = near & (np.abs(cdist) < 0.02) & (N @ n < -0.5)
@@ -489,11 +616,18 @@ def repair(glb, *, weld_m=0.001, above_tol=0.3, flatten_below=0.25, sheet_wall_g
                 low = dist[F].min(axis=1) < -object_drop_m
                 # down-facing only: a curtain's top (vertical, patterned) hangs just as low but is a real object
                 obj = down & low & (np.linalg.norm(fcol - ccol, axis=1) > object_colour_diff)
+                if layout is not None and obj.any():
+                    # several-piece scans are whole flats: one ceiling colour does not fit every room, and a loft
+                    # or cabinet underside under the ceiling is "down-facing, low, not ceiling-coloured" too. Only
+                    # fan / lamp-sized pieces (<= max_object_m2) are objects; bigger ones are kept as they are.
+                    protect = _big_pieces(weld[F], obj, area, max_object_m2)
+                    obj &= ~protect
+                    stats["protected_large_pieces_m2"] = round(float(area[protect].sum()), 3)
                 keep &= ~obj
         # flatten only DOWN-facing surface: pulling vertical surface (a curtain, a wall top) up to the plane stretched
         # it; vertical debris is removed as a whole piece below instead
         sel = np.zeros(len(V), bool)
-        sel[F[down & ~obj].ravel()] = True
+        sel[F[down & ~obj & ~protect].ravel()] = True
         # move every copy of a welded vertex together (texture seams must stay closed)
         wsel = np.zeros(weld.max() + 1, bool)
         wsel[weld[sel]] = True
@@ -511,12 +645,14 @@ def repair(glb, *, weld_m=0.001, above_tol=0.3, flatten_below=0.25, sheet_wall_g
             # on the plane, or down-facing scraps hanging just below it (torn ceiling along the wall tops)
             # (either facing: scans flip some triangles, and flipped scraps stayed as dark torn bits)
             band = (V2[F] @ n + d).min(axis=1) > -scrap_m
-            plain = keep & (np.abs(N2 @ n) > 0.5) & ((np.abs(V2[F] @ n + d).max(axis=1) < 0.005) | band)
+            plain = keep & ~protect & (np.abs(N2 @ n) > 0.5) & ((np.abs(V2[F] @ n + d).max(axis=1) < 0.005) | band)
             keep &= ~plain
             # ceiling debris: with the ceiling surface replaced, torn sheets and slivers become separate pieces. A
             # piece lying ENTIRELY within debris_m below the ceiling is debris; a curtain, a wall or the AC continues
             # further down and is kept whole (judging single triangles removed the top of a curtain).
-            debris = _shallow_pieces(weld[F], keep, V2[F] @ n + d, debris_m)
+            debris = _shallow_pieces(weld[F], keep, V2[F] @ n + d, debris_m) & ~protect
+            if layout is not None and debris.any():
+                debris &= ~_big_pieces(weld[F], debris, area, max_object_m2)
             plain |= debris
             keep &= ~debris
         stats.update(removed_above_triangles=int(above.sum()), removed_hanging_object_triangles=int(obj.sum()),
@@ -604,7 +740,37 @@ def repair(glb, *, weld_m=0.001, above_tol=0.3, flatten_below=0.25, sheet_wall_g
     # 6. texture padding: texels no triangle uses are black in phone-app atlases; mip-mapping and filtering blend that
     # black into the edges of the patches (dark specks and seams). Give them the colour of the nearest used texel.
     padded = None
-    if tex is not None and pad_texture:
+    padded_multi = []
+    if layout is not None and pad_texture:
+        from namma.recon.blendtex import rasterize_atlas
+        shares = []
+        for img_i in sorted({L["image"] for L in layout if L["image"] is not None and L["uv"] is not None}):
+            parts = [L for L in layout if L["image"] == img_i and L["uv"] is not None]
+            t0 = _texture(doc, binary, parts[0]["prim"])
+            if t0 is None:
+                continue
+            h_, w_ = t0.shape[:2]
+            used_tx = np.zeros((h_, w_), bool)
+            for L in parts:
+                Fl = F[L["f0"]:L["f0"] + L["nf"]] - L["v0"]
+                fid, _ = rasterize_atlas(np.asarray(L["uv"], np.float64), Fl, w_, h_)
+                used_tx |= fid >= 0
+            if used_tx.any() and not used_tx.all():
+                near = ndimage.distance_transform_edt(~ndimage.binary_erosion(used_tx), return_distances=False,
+                                                      return_indices=True)
+                out = t0[near[0], near[1]]
+                img = doc["images"][img_i]
+                buf = io.BytesIO()
+                if img.get("mimeType") == "image/png":
+                    Image.fromarray(out).save(buf, "PNG", optimize=True)
+                else:
+                    Image.fromarray(out).save(buf, "JPEG", quality=95)
+                    img["mimeType"] = "image/jpeg"
+                padded_multi.append((img["bufferView"], buf.getvalue()))
+                shares.append(round(float(1 - used_tx.mean()), 3))
+        if shares:
+            stats["texture_padding"] = {"unused_texel_share": shares}
+    if tex is not None and pad_texture and layout is None:
         from namma.recon.blendtex import rasterize_atlas
         h_, w_ = tex.shape[:2]
         fid, _ = rasterize_atlas(UV.astype(np.float64), F, w_, h_)
@@ -625,8 +791,10 @@ def repair(glb, *, weld_m=0.001, above_tol=0.3, flatten_below=0.25, sheet_wall_g
             stats["texture_padding"] = {"unused_texel_share": round(float(1 - used_tx.mean()), 3)}
 
     changed = fit is not None and (not keep.all() or (V2 != V).any())
-    if not changed and not fills and padded is None:
+    if not changed and not fills and padded is None and not padded_multi:
         return glb, stats
+    if layout is not None:
+        return _write_pieces(doc, binary, layout, V, V2, F, keep, fills, padded_multi, stats)
     pos_acc = doc["accessors"][prim["attributes"]["POSITION"]]
     replace = {pos_acc["bufferView"]: V2.astype("<f4").tobytes()} if (V2 != V).any() else {}
     if padded is not None:

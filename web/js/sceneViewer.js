@@ -50,11 +50,17 @@ function setLoading(step, frac = null, bytes = '') {
 
 const mb = (b) => `${(b / 2 ** 20).toFixed(1)} MB`;
 
+const QUALITY = { default: { pixelRatio: 1.75, anisotropy: 4 }, high: { pixelRatio: 2, anisotropy: 16 },
+  low: { pixelRatio: 1, anisotropy: 4 } };
+
 class SceneApp {
   constructor(canvas) {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    // ?quality=high: full device pixel ratio (up to 2) and 16x anisotropic filtering (sharper textures at glancing
+    // angles); ?quality=low: pixel ratio 1 for weak integrated graphics. Default unchanged (1.75, 4x).
+    this.quality = QUALITY[params.get('quality')] || QUALITY.default;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.quality.pixelRatio));
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x10151f);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.01, 1000);
@@ -82,7 +88,7 @@ class SceneApp {
       if (!o.isMesh) return;
       const old = o.material;
       const map = old && old.map ? old.map : null;
-      if (map) map.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+      if (map) map.anisotropy = Math.min(this.quality.anisotropy, this.renderer.capabilities.getMaxAnisotropy());
       // photo textures already contain the room's lighting: show them unlit (no double shading)
       o.material = new THREE.MeshBasicMaterial({ map, side: THREE.DoubleSide, vertexColors: !map && !!o.geometry.attributes.color,
         color: map || o.geometry.attributes.color ? 0xffffff : 0xb8c2d0 });
@@ -330,7 +336,7 @@ async function main() {
   if (data.splat) {
     // shown by default (held-out photos: 26.3 dB, SSIM 0.86 on "New room"); ?mesh starts on the mesh and downloads
     // the splat (~150 MB) only when asked for
-    const go = () => loadSplat(ctx).catch((e) => {
+    const go = (requested = false) => loadSplat(ctx, requested).catch((e) => {
       state.errors.push({ kind: 'splat', message: e.message });
       const button = $('splat-toggle');
       button.disabled = false;
@@ -338,11 +344,18 @@ async function main() {
       button.onclick = go;
       toast(`Photoreal view not available; mesh remains visible: ${e.message}`);
     });
-    if (!params.has('mesh')) go();
+    const limit = splatLimit(app);
+    if (!params.has('mesh') && data.splat.splats > limit) {
+      // integrated graphics: a very large splat (block-wise training) is not loaded by default; the mesh is shown
+      $('splat-toggle').hidden = false;
+      $('splat-toggle').textContent = `Show photoreal (${(data.splat.splats / 1e6).toFixed(1)} M splats – may be slow here)`;
+      $('splat-toggle').onclick = () => go(true);
+      state.splatDeferred = { splats: data.splat.splats, limit };
+    } else if (!params.has('mesh') && data.splat.shown_by_default !== false) go();
     else {
       $('splat-toggle').hidden = false;
       $('splat-toggle').textContent = `Show photoreal (${mb(data.splat.bytes)})`;
-      $('splat-toggle').onclick = () => { params.delete('mesh'); go(); };
+      $('splat-toggle').onclick = () => { params.delete('mesh'); go(true); };
     }
   }
 
@@ -367,7 +380,22 @@ function setMeshHidden(app, hidden) {
   if (app.appearance) app.appearance.traverse((o) => { if (o.isMesh) o.material.visible = !hidden; });
 }
 
-async function loadSplat(ctx) {
+/** Splats loaded automatically: ?maxsplats=N, else 1.5 M on integrated / mobile graphics (or ?quality=low), else
+ * no limit. Today's single splats (<= 600 k) always load; only merged block-wise splats can exceed it. */
+function splatLimit(app) {
+  const forced = Number(params.get('maxsplats'));
+  if (forced > 0) return forced;
+  let weak = params.get('quality') === 'low';
+  try {
+    const gl = app.renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+    if (/intel|uhd|iris|mali|adreno|powervr|apple gpu|swiftshader|llvmpipe/i.test(name)) weak = true;
+  } catch { /* unknown GPU: no limit */ }
+  return weak ? 1_500_000 : Infinity;
+}
+
+async function loadSplat(ctx, requested = false) {
   const { app, data } = ctx;
   const s = data.splat;
   const btn = $('splat-toggle');
@@ -389,7 +417,9 @@ async function loadSplat(ctx) {
   mesh.matrixWorldNeedsUpdate = true;
   app.scene.add(mesh);
   app.splat = mesh;
-  const startSplat = !params.has('mesh');
+  // ?mesh, or a package that marks its splat as not shown by default (project.json "photoreal_default": false):
+  // start on the mesh; the photoreal view is one click away
+  const startSplat = requested || (!params.has('mesh') && s.shown_by_default !== false);
   mesh.visible = startSplat;
   setMeshHidden(app, startSplat);
   state.splat = { splats: s.splats, bytes: s.bytes, shown: startSplat };
@@ -465,7 +495,7 @@ function addFloorGuide(app, g, eye) {
   x.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = Math.min(4, app.renderer.capabilities.getMaxAnisotropy());
+  tex.anisotropy = Math.min(app.quality.anisotropy, app.renderer.capabilities.getMaxAnisotropy());
   const w = g.width * g.cell, h = g.height * g.cell;
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
@@ -742,8 +772,9 @@ function routeStart(ctx) {
 }
 
 /** Places panel: results update as the visitor types; category buttons (built from the categories the labels
- * actually use) narrow the list; with nothing typed every place in the chosen category is listed. The camera moves
- * only on an explicit action - pressing Enter / Search with exactly one match, or clicking a result. */
+ * actually use) narrow the list; with nothing typed every place in the chosen category is listed. Choosing a place
+ * (a click, or Enter / Search with exactly one match) SELECTS it and turns the view towards it without moving, so
+ * "Show walking path" starts from where the visitor stands; "Go there" flies there. */
 function wirePlaces(ctx) {
   const norm = (s) => (s || '').trim().toLowerCase();
   const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
@@ -766,6 +797,12 @@ function wirePlaces(ctx) {
       catsBox.appendChild(b);
     }
   };
+  const choose = (id) => {
+    selectPoi(ctx, id);
+    faceSelected(ctx);
+    $('search-msg').textContent = `${ctx.selected.name}: choose "Go there" or "Show walking path".`;
+    state.lastChosen = id;
+  };
   const run = (jump) => {
     const q = $('search').value;
     const pool = ctx.pois.filter((p) => !cat || norm(p.category) === cat);
@@ -786,11 +823,11 @@ function wirePlaces(ctx) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = h.display_name;
-      b.onclick = () => { selectPoi(ctx, h.poi_id); goToSelected(ctx); };
+      b.onclick = () => choose(h.poi_id);
       li.appendChild(b);
       list.appendChild(li);
     }
-    if (jump && res.status === 'unique') { selectPoi(ctx, res.hits[0].poi_id); goToSelected(ctx); }
+    if (jump && res.status === 'unique') choose(res.hits[0].poi_id);
     state.lastSearch = { ...res, category: cat, listed: hits.length };
     return res;
   };
@@ -821,6 +858,26 @@ function openArWalk(ctx) {
     destName: ctx.selected ? ctx.selected.name : 'the destination',
     starts: startChoices(poly, ctx.pois.filter((p) => !ctx.selected || p.poi_id !== ctx.selected.poi_id), mpu),
     onExit: resume });
+}
+
+/** Turn the view towards the selected place without moving (0.5 s). */
+function faceSelected(ctx) {
+  if (!ctx.selected) return;
+  const { app, walker } = ctx;
+  const p = app.camera.position, P = ctx.selected.position;
+  const dx = P[0] - p.x, dy = P[1] - p.y, dz = P[2] - p.z, len = Math.hypot(dx, dy, dz) || 1;
+  const y0 = walker.yaw, x0 = walker.pitch;
+  let dyaw = Math.atan2(-dx, -dz) - y0;
+  dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw));
+  const pitch = Math.max(-0.6, Math.min(0.6, Math.asin(dy / len)));
+  const t0 = performance.now();
+  app.tween = (now) => {
+    const t = Math.min(1, (now - t0) / 500), s = t * t * (3 - 2 * t);
+    walker.yaw = y0 + dyaw * s;
+    walker.pitch = x0 + (pitch - x0) * s;
+    walker.apply();
+    if (t >= 1) app.tween = null;
+  };
 }
 
 async function goToSelected(ctx) {
@@ -854,7 +911,11 @@ function localRoute(ctx, start) {
   const oneMetre = mpu ? 1 / mpu : 0.7 * ctx.eye;              // goal snap / start move limit: 1 m (policy), in model units
   const p = ctx.selected.position;
   // comfort: paths are pushed away from obstacles nearer than 0.5 m beyond body clearance (corridor centring)
-  const r = planRoute(g, start, [p[0], p[2]], { maxGoalSnap: oneMetre, maxStartMove: oneMetre, comfort: 0.5 * oneMetre });
+  // a grid exported at the minimum body radius also carries the preferred one: keep it wherever possible
+  const rg = ctx.data.routeGrid || {};
+  const preferExtra = rg.preferred_radius_m && rg.agent_radius_m && mpu
+    ? (rg.preferred_radius_m - rg.agent_radius_m) / mpu : 0;
+  const r = planRoute(g, start, [p[0], p[2]], { maxGoalSnap: oneMetre, maxStartMove: oneMetre, comfort: 0.5 * oneMetre, preferExtra });
   const out = { status: r.status, polyline_model: [], planner: 'browser', scale_basis: nav.scale_basis };
   if (r.status === 'start_blocked') {
     return { ...out, title: 'Your position is not on confirmed open floor',
@@ -868,8 +929,10 @@ function localRoute(ctx, start) {
       message: 'The reconstructed open floor does not connect your position to this place. Parts of the floor may simply be missing from the reconstruction.' };
   }
   return { ...out, status: 'unverified', polyline_model: r.polyline, length_units: r.length,
-    title: `Walking path – ${metres(r.length)}`,      // status stays 'unverified'; the caveat is in the detail text
-    message: 'This path stays on reconstructed floor and keeps body clearance from every obstacle that was reconstructed. '
+    title: `Walking path – ${metres(r.length)}${r.tight ? ' (tight passage)' : ''}`,      // status stays 'unverified'
+    tight_passage: !!r.tight,
+    message: (r.tight ? 'The only way there passes a narrow gap (a door or doorway is often scanned narrower than it is). ' : '')
+      + 'This path stays on reconstructed floor and keeps body clearance from every obstacle that was reconstructed. '
       + 'It is NOT verified: objects missing from the reconstruction cannot be ruled out'
       + (nav.scale_basis === 'assumed_capture_height' ? ', and the scale is assumed from a typical phone height.' : '.')
       + (r.startMoved > 0.01 ? ` (Started from the nearest clear floor, ${metres(r.startMoved)} from where you stand.)` : '') };
@@ -987,7 +1050,7 @@ function startGuidance(ctx, poly, box) {
     follow.textContent = 'Stop';
     ctx.walker.setMode('walk');
     ctx.app.tween = (now) => {
-      const dt = Math.min(0.1, Math.max(0, (now - prev) / 1000));
+      const dt = Math.min(0.25, Math.max(0, (now - prev) / 1000));     // weak GPUs: keep walking pace at ~4 fps
       prev = now;
       const moving = ['forward', 'back', 'left', 'right'].some((k) => ctx.walker.has(k));
       d = Math.min(total, d + speed * dt);
@@ -1308,6 +1371,84 @@ function wireMeasure(ctx) {
   if (!mpu) hint('The scale of this model is unknown: lengths are in model units.');
 }
 
+/** Studio: mark mirrors (corners clicked on the wall), list / delete them, apply them to the model
+ * (namma.studio.mirrors). Automatic suggestions are only shown as a count: a person decides. */
+function wireMirrorTool(ctx, meshTargets) {
+  const { app } = ctx;
+  const group = new THREE.Group();
+  app.measureGroup.parent.add(group);
+  let pts = [];
+  const msg = (s) => { $('mirror-msg').textContent = s; };
+  const draw = () => {
+    group.clear();
+    const mat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, depthTest: false });
+    for (const p of pts) {
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.02 * ctx.eye, 10, 8), mat);
+      dot.position.copy(p);
+      dot.renderOrder = 9;
+      group.add(dot);
+    }
+    if (pts.length > 1) {
+      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x3b82f6, depthTest: false }));
+      line.renderOrder = 9;
+      group.add(line);
+    }
+    $('mirror-save').disabled = pts.length < 3;
+  };
+  const list = (r) => {
+    const ul = $('mirror-list');
+    ul.innerHTML = '';
+    for (const m of r.mirrors) {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `Remove ${m.name}`;
+      b.onclick = async () => { try { list(await api(`/mirrors/${encodeURIComponent(m.mirror_id)}`, { method: 'DELETE' })); } catch (e) { msg(e.message); } };
+      li.appendChild(b);
+      ul.appendChild(li);
+    }
+    const sug = (r.suggestions || []).length;
+    const applied = r.applied ? ` Applied: ${r.applied.regions} mirror(s), ${r.applied.geometry_removed_m2} m² removed, ${r.applied.inferred_area_m2} m² inferred.` : '';
+    msg(`${r.mirrors.length} mirror(s) marked.${sug ? ` ${sug} possible mirror area(s) suggested in the quality report (check them: they may be windows or doors).` : ''}${applied}`);
+    state.mirrors = r;
+  };
+  const pick = (e) => {
+    const hit = app.pick(e.clientX, e.clientY, meshTargets());
+    if (!hit) { msg('No surface there – click on the wall at a corner of the mirror.'); return; }
+    pts.push(hit.point.clone());
+    draw();
+    msg(`${pts.length} corner(s). Click the next corner${pts.length >= 3 ? ', or Save mirror' : ''}.`);
+  };
+  $('tool-mirror').onclick = async () => {
+    if (document.pointerLockElement) document.exitPointerLock();
+    $('mirror-box').hidden = false;
+    pts = [];
+    draw();
+    try { list(await api('/mirrors')); } catch (e) { msg(e.message); }
+    msg('Click the corners of the mirror on the wall, in order (at least 3).');
+    app.onPick = pick;
+  };
+  $('mirror-undo').onclick = () => { pts.pop(); draw(); };
+  $('mirror-cancel').onclick = () => { pts = []; draw(); app.onPick = null; $('mirror-box').hidden = true; };
+  $('mirror-save').onclick = async () => {
+    try {
+      list(await api('/mirrors', { method: 'POST', body: JSON.stringify({ corners: pts.map((p) => [p.x, p.y, p.z]) }) }));
+      pts = [];
+      draw();
+      app.onPick = pick;
+    } catch (e) { msg(`Could not save: ${e.message}`); }
+  };
+  $('mirror-apply').onclick = async () => {
+    $('mirror-apply').disabled = true;
+    msg('Applying the mirrors (cutting the model, rebuilding the walking maps)…');
+    try {
+      await api('/mirrors/apply', { method: 'POST', body: '{}' });
+      msg('Done. Reloading the model…');
+      setTimeout(() => location.reload(), 600);
+    } catch (e) { msg(`Could not apply: ${e.message}`); $('mirror-apply').disabled = false; }
+  };
+}
+
 function wireStudioTools(ctx) {
   const { app } = ctx;
   const meshTargets = () => (app.appearance ? [app.appearance] : []);
@@ -1322,6 +1463,7 @@ function wireStudioTools(ctx) {
     };
   };
   $('poi-cancel').onclick = () => { $('poi-form').hidden = true; $('tool-msg').textContent = ''; };
+  wireMirrorTool(ctx, meshTargets);
   $('poi-form-el').onsubmit = async (e) => {
     e.preventDefault();
     const pt = ctx.pendingPoint;

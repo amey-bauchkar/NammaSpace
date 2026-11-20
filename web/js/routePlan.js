@@ -226,8 +226,23 @@ export const polylineLength = (pts) => pts.slice(1).reduce((s, p, k) => s + Math
  * opts.maxGoalSnap / opts.maxStartMove are distances in model units.
  * opts.comfort (model units, default 6 cells) is the distance from obstacles beyond which a path is not penalised;
  * opts.clearanceWeight (default 3) is how strongly cells nearer than that are avoided; 0 gives the plain shortest path.
+ * opts.preferExtra (model units): first plan only on cells at least this much farther from obstacles than the grid
+ * already guarantees (the preferred body radius on a grid made with the minimum one); only when that finds no way,
+ * plan on the whole grid and report tight = true (a narrow doorway).
  */
-export function planRoute(g, startXZ, goalXZ, { maxGoalSnap, maxStartMove = 0, comfort, clearanceWeight = 3 } = {}) {
+export function planRoute(g, startXZ, goalXZ, opts = {}) {
+  if (opts.preferExtra > 0) {
+    const d = clearanceCells(g), need = opts.preferExtra / g.cell;
+    const roomy = { ...g, allowed: g.allowed.map((v, i) => (v && d[i] - 1 >= need ? 1 : 0)), clearanceCells: undefined };
+    const r = planOnce(roomy, startXZ, goalXZ, opts);
+    if (r.status === 'route') return { ...r, tight: false, minClearance: minClearance(g, r.polyline) };
+    const t = planOnce(g, startXZ, goalXZ, opts);
+    return t.status === 'route' ? { ...t, tight: true } : (r.status === 'unreachable' ? t : r);
+  }
+  return planOnce(g, startXZ, goalXZ, opts);
+}
+
+function planOnce(g, startXZ, goalXZ, { maxGoalSnap, maxStartMove = 0, comfort, clearanceWeight = 3 } = {}) {
   let start = cellOf(g, startXZ[0], startXZ[1]);
   let startMoved = 0;
   if (start < 0 || !g.allowed[start]) {

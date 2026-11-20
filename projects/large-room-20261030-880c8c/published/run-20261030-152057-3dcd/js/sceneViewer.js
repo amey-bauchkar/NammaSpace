@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createMinimap } from './minimap.js';
 import { canOccupyGrid, decodeRoamGrid, isAllowed } from './roam.js';
+import { planRoute, pointAlong, polylineLength, remainingFrom } from './routePlan.js';
+import { arUnavailableReason, startArWalk, startChoices } from './arNav.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
 import { levelStartTarget, Walker } from './walker.js';
@@ -15,8 +17,8 @@ import { levelStartTarget, Walker } from './walker.js';
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const pkgUrl = new URL(params.get('package') || 'data/scene_package.json', location.href).href;
-const studio = params.get('project') && params.get('run') ? { project: params.get('project'), run: params.get('run') } : null;
-const apiBase = studio ? `/api/projects/${encodeURIComponent(studio.project)}/runs/${encodeURIComponent(studio.run)}` : null;
+let studio = params.get('project') && params.get('run') ? { project: params.get('project'), run: params.get('run') } : null;
+let apiBase = studio ? `/api/projects/${encodeURIComponent(studio.project)}/runs/${encodeURIComponent(studio.run)}` : null;
 const forcedLod = params.has('lod') ? Number(params.get('lod')) : null;
 const T0 = performance.now();
 const AUTO_FULL_DETAIL_MAX_BYTES = 160 * 2 ** 20;
@@ -48,11 +50,17 @@ function setLoading(step, frac = null, bytes = '') {
 
 const mb = (b) => `${(b / 2 ** 20).toFixed(1)} MB`;
 
+const QUALITY = { default: { pixelRatio: 1.75, anisotropy: 4 }, high: { pixelRatio: 2, anisotropy: 16 },
+  low: { pixelRatio: 1, anisotropy: 4 } };
+
 class SceneApp {
   constructor(canvas) {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    // ?quality=high: full device pixel ratio (up to 2) and 16x anisotropic filtering (sharper textures at glancing
+    // angles); ?quality=low: pixel ratio 1 for weak integrated graphics. Default unchanged (1.75, 4x).
+    this.quality = QUALITY[params.get('quality')] || QUALITY.default;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.quality.pixelRatio));
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x10151f);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.01, 1000);
@@ -80,7 +88,7 @@ class SceneApp {
       if (!o.isMesh) return;
       const old = o.material;
       const map = old && old.map ? old.map : null;
-      if (map) map.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+      if (map) map.anisotropy = Math.min(this.quality.anisotropy, this.renderer.capabilities.getMaxAnisotropy());
       // photo textures already contain the room's lighting: show them unlit (no double shading)
       o.material = new THREE.MeshBasicMaterial({ map, side: THREE.DoubleSide, vertexColors: !map && !!o.geometry.attributes.color,
         color: map || o.geometry.attributes.color ? 0xffffff : 0xb8c2d0 });
@@ -197,7 +205,34 @@ async function main() {
   let data;
   try {
     setLoading('Checking the scene package…', 0.02);
-    data = await loadScenePackage(pkgUrl, {});
+    let activePkgUrl = pkgUrl;
+    if (params.get('project') && !params.get('package')) {
+      try {
+        const projId = params.get('project');
+        const projRes = await fetch(`/api/projects/${encodeURIComponent(projId)}`, {
+          headers: { 'X-Namma-Studio': '1' }
+        });
+        if (projRes.ok) {
+          const projData = await projRes.json();
+          const runs = (projData.runs || []).filter((r) => r.status === 'succeeded' || r.status === 'done');
+          const lastRun = runs.length ? runs[runs.length - 1].run_id : (projData.runs && projData.runs[0] ? projData.runs[0].run_id : null);
+          if (lastRun) {
+            activePkgUrl = new URL(`/files/${encodeURIComponent(projId)}/runs/${encodeURIComponent(lastRun)}/90_package/scene_package.json`, location.href).href;
+            if (!studio) {
+              studio = { project: projId, run: lastRun };
+              apiBase = `/api/projects/${encodeURIComponent(studio.project)}/runs/${encodeURIComponent(studio.run)}`;
+              $('studio-link').hidden = false;
+              $('studio-link').href = `studio.html#/project/${encodeURIComponent(studio.project)}`;
+              $('studio-tools').hidden = false;
+              if ($('brand')) $('brand').href = 'studio.html#/';
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not auto-resolve project package URL:', err);
+      }
+    }
+    data = await loadScenePackage(activePkgUrl, {});
     state.timing.package_ms = Math.round(performance.now() - T0);
   } catch (e) {
     fatal(e.kind || 'error', 'The scene package could not be loaded or failed its integrity check.', e.message);
@@ -260,6 +295,7 @@ async function main() {
   // ---- render loop
   let last = performance.now(), fpsAcc = 0, fpsN = 0;
   const tick = (now) => {
+    if (app.paused) { last = now; app.raf = requestAnimationFrame(tick); return; }      // AR Walk is showing
     const dt = Math.min(0.1, (now - last) / 1000);
     app.frameTimes.push(now - last);
     if (app.frameTimes.length > 600) app.frameTimes.shift();
@@ -300,12 +336,26 @@ async function main() {
   if (data.splat) {
     // shown by default (held-out photos: 26.3 dB, SSIM 0.86 on "New room"); ?mesh starts on the mesh and downloads
     // the splat (~150 MB) only when asked for
-    const go = () => loadSplat(ctx).catch((e) => { state.errors.push({ kind: 'splat', message: e.message }); toast(`Photoreal view not available: ${e.message}`); });
-    if (!params.has('mesh')) go();
+    const go = (requested = false) => loadSplat(ctx, requested).catch((e) => {
+      state.errors.push({ kind: 'splat', message: e.message });
+      const button = $('splat-toggle');
+      button.disabled = false;
+      button.textContent = 'Retry photoreal view';
+      button.onclick = go;
+      toast(`Photoreal view not available; mesh remains visible: ${e.message}`);
+    });
+    const limit = splatLimit(app);
+    if (!params.has('mesh') && data.splat.splats > limit) {
+      // integrated graphics: a very large splat (block-wise training) is not loaded by default; the mesh is shown
+      $('splat-toggle').hidden = false;
+      $('splat-toggle').textContent = `Show photoreal (${(data.splat.splats / 1e6).toFixed(1)} M splats – may be slow here)`;
+      $('splat-toggle').onclick = () => go(true);
+      state.splatDeferred = { splats: data.splat.splats, limit };
+    } else if (!params.has('mesh') && data.splat.shown_by_default !== false) go();
     else {
       $('splat-toggle').hidden = false;
       $('splat-toggle').textContent = `Show photoreal (${mb(data.splat.bytes)})`;
-      $('splat-toggle').onclick = () => { params.delete('mesh'); go(); };
+      $('splat-toggle').onclick = () => { params.delete('mesh'); go(true); };
     }
   }
 
@@ -330,7 +380,22 @@ function setMeshHidden(app, hidden) {
   if (app.appearance) app.appearance.traverse((o) => { if (o.isMesh) o.material.visible = !hidden; });
 }
 
-async function loadSplat(ctx) {
+/** Splats loaded automatically: ?maxsplats=N, else 1.5 M on integrated / mobile graphics (or ?quality=low), else
+ * no limit. Today's single splats (<= 600 k) always load; only merged block-wise splats can exceed it. */
+function splatLimit(app) {
+  const forced = Number(params.get('maxsplats'));
+  if (forced > 0) return forced;
+  let weak = params.get('quality') === 'low';
+  try {
+    const gl = app.renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+    if (/intel|uhd|iris|mali|adreno|powervr|apple gpu|swiftshader|llvmpipe/i.test(name)) weak = true;
+  } catch { /* unknown GPU: no limit */ }
+  return weak ? 1_500_000 : Infinity;
+}
+
+async function loadSplat(ctx, requested = false) {
   const { app, data } = ctx;
   const s = data.splat;
   const btn = $('splat-toggle');
@@ -352,7 +417,9 @@ async function loadSplat(ctx) {
   mesh.matrixWorldNeedsUpdate = true;
   app.scene.add(mesh);
   app.splat = mesh;
-  const startSplat = !params.has('mesh');
+  // ?mesh, or a package that marks its splat as not shown by default (project.json "photoreal_default": false):
+  // start on the mesh; the photoreal view is one click away
+  const startSplat = requested || (!params.has('mesh') && s.shown_by_default !== false);
   mesh.visible = startSplat;
   setMeshHidden(app, startSplat);
   state.splat = { splats: s.splats, bytes: s.bytes, shown: startSplat };
@@ -380,11 +447,13 @@ async function loadEstimated(ctx) {
     if (old) old.dispose();
   });
   group.add(gltf.scene);
+  group.visible = false;
   ctx.app.scene.add(group);
   ctx.estimated = group;
-  window.__nammaScene.estimatedShown = true;
+  window.__nammaScene.estimatedShown = false;
   const btn = $('estimated-toggle');
   btn.hidden = false;
+  btn.textContent = 'Show estimated surfaces';
   btn.onclick = () => {
     group.visible = !group.visible;
     window.__nammaScene.estimatedShown = group.visible;
@@ -426,7 +495,7 @@ function addFloorGuide(app, g, eye) {
   x.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = Math.min(4, app.renderer.capabilities.getMaxAnisotropy());
+  tex.anisotropy = Math.min(app.quality.anisotropy, app.renderer.capabilities.getMaxAnisotropy());
   const w = g.width * g.cell, h = g.height * g.cell;
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
@@ -480,7 +549,7 @@ function renderAbout(pkg, quality) {
     : suspect ? 'uncertain (may be a table or desk top)' : 'detected');
   if (quality) {
     const f = quality.facts;
-    if (f.source === 'imported_mesh') add('Source', 'Iphone 14 scan');
+    if (f.source === 'imported_mesh') add('Source', 'Imported 3D model');
     else add('Photos placed', `${f.images_registered} of ${f.images_input}`);
     add('Surface', `${(f.mesh_faces / 1e6).toFixed(2)} M triangles`);
     const filteredWarnings = (quality.warnings || []).filter((w) =>
@@ -491,9 +560,9 @@ function renderAbout(pkg, quality) {
     );
     const b = $('quality-badge');
     b.hidden = false;
-    const verdictKey = (f.source === 'imported_mesh' && filteredWarnings.length === 0) ? 'good' : quality.verdict;
-    b.textContent = { good: 'Quality: good', usable_with_warnings: 'Quality: usable, with warnings', poor: 'Quality: poor', failed: 'Quality: failed' }[verdictKey] || 'Quality: good';
-    b.className = `badge ${{ good: 'ok', usable_with_warnings: 'warn', poor: 'bad', failed: 'bad' }[verdictKey] || 'ok'}`;
+    const verdictKey = quality.verdict;
+    b.textContent = { good: 'Checks: good', usable_with_warnings: 'Checks: warnings', poor: 'Checks: poor', failed: 'Checks: failed' }[verdictKey] || 'Checks: unavailable';
+    b.className = `badge ${{ good: 'ok', usable_with_warnings: 'warn', poor: 'bad', failed: 'bad' }[verdictKey] || 'warn'}`;
     const ul = $('warnings');
     ul.innerHTML = '';
     for (const w of filteredWarnings) {
@@ -504,6 +573,7 @@ function renderAbout(pkg, quality) {
     $('quality-details').hidden = filteredWarnings.length === 0;
   }
   add('Navigation', { unavailable: 'not available', unverified: 'unverified (automatic)', accepted: 'verified' }[pkg.navigation.status]);
+  add('Coverage', 'Completeness and per-surface confidence have not been measured; missing areas may not be visible.');
   add('Floor guide', 'faint grid = floor area the photos did not reconstruct (a guide, not a scan)');
   const nl = $('notices');
   nl.innerHTML = '';
@@ -615,7 +685,11 @@ function selectPoi(ctx, id) {
   $('poi-title').textContent = p.name;
   $('poi-meta').textContent = [p.category, (p.aliases || []).join(', ')].filter(Boolean).join(' · ') || 'Place label';
   $('route-status').hidden = true;
-  $('poi-route').hidden = !studio || ctx.pkg.navigation.status === 'unavailable';
+  // Studio: routes from the server (planner + independent validator). Published site: planned in the browser on the
+  // package's conservative route grid, when the package has one.
+  $('poi-route').hidden = ctx.pkg.navigation.status === 'unavailable' || !(studio || routeGridOf(ctx));
+  stopGuidance(ctx);
+  $('poi-ar').hidden = true;                             // shown once a path is drawn
   ctx.app.routeGroup.clear();
   if (ctx.app.minimap) { ctx.app.minimap.setRoute(null); ctx.app.minimap.setSelected(p.poi_id); }
 }
@@ -697,33 +771,113 @@ function routeStart(ctx) {
   return best ? [best, true] : [[p.x, p.z], false];
 }
 
+/** Places panel: results update as the visitor types; category buttons (built from the categories the labels
+ * actually use) narrow the list; with nothing typed every place in the chosen category is listed. Choosing a place
+ * (a click, or Enter / Search with exactly one match) SELECTS it and turns the view towards it without moving, so
+ * "Show walking path" starts from where the visitor stands; "Go there" flies there. */
 function wirePlaces(ctx) {
-  const run = () => {
+  const norm = (s) => (s || '').trim().toLowerCase();
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  let cat = '';                                             // '' = all categories
+  const catsBox = $('place-cats');
+  const drawCats = () => {
+    const names = new Map();                                // normalised -> first spelling seen
+    for (const p of ctx.pois) if (norm(p.category) && !names.has(norm(p.category))) names.set(norm(p.category), p.category.trim());
+    if (cat && !names.has(cat)) cat = '';
+    catsBox.innerHTML = '';
+    catsBox.hidden = names.size === 0;
+    for (const [key, label] of [['', 'All'], ...[...names].sort((a, b) => cmp(a[0], b[0]))]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.dataset.cat = key;
+      b.className = key === cat ? '' : 'secondary';
+      b.setAttribute('aria-pressed', String(key === cat));
+      b.onclick = () => { cat = key; drawCats(); run(false); };
+      catsBox.appendChild(b);
+    }
+  };
+  const choose = (id) => {
+    selectPoi(ctx, id);
+    faceSelected(ctx);
+    $('search-msg').textContent = `${ctx.selected.name}: choose "Go there" or "Show walking path".`;
+    state.lastChosen = id;
+  };
+  const run = (jump) => {
     const q = $('search').value;
-    const res = search(ctx.pois.map(asSearchable), q);
+    const pool = ctx.pois.filter((p) => !cat || norm(p.category) === cat);
+    const res = search(pool.map(asSearchable), q);
+    const browsing = res.status === 'empty_query';
+    const hits = browsing ? pool.map((p) => ({ poi_id: p.poi_id, display_name: p.name }))
+      .sort((a, b) => cmp(a.display_name.toLowerCase(), b.display_name.toLowerCase()) || cmp(a.poi_id, b.poi_id)) : res.hits;
+    const where = cat ? ` in "${cat}"` : '';
+    const empty = studio ? 'No places labelled yet – use "Add a place label".' : 'No places are labelled in this model.';
+    $('search-msg').textContent = {
+      empty_query: !ctx.pois.length ? empty : `${hits.length} place${hits.length === 1 ? '' : 's'}${where} – type to search, or choose one:`,
+      not_found: `No place${where} matches "${q}".`, ambiguous: `${hits.length} matches${where} – choose one:`,
+      unique: `1 match${where}${jump ? '' : ' – press Enter to go there'}` }[res.status];
     const list = $('results');
     list.innerHTML = '';
-    const msg = { empty_query: ctx.pois.length ? 'Type a name to search.' : 'No places are labelled yet.',
-      not_found: `No place matches "${q}".`, ambiguous: `${res.hits.length} matches – choose one:`, unique: '1 match' }[res.status];
-    $('search-msg').textContent = msg;
-    for (const h of res.hits) {
+    for (const h of hits) {
       const li = document.createElement('li');
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = h.display_name;
-      b.onclick = () => { selectPoi(ctx, h.poi_id); goToSelected(ctx); };
+      b.onclick = () => choose(h.poi_id);
       li.appendChild(b);
       list.appendChild(li);
     }
-    if (res.status === 'unique') { selectPoi(ctx, res.hits[0].poi_id); goToSelected(ctx); }
-    state.lastSearch = res;
+    if (jump && res.status === 'unique') choose(res.hits[0].poi_id);
+    state.lastSearch = { ...res, category: cat, listed: hits.length };
     return res;
   };
-  $('search-form').addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  $('search-form').addEventListener('submit', (e) => { e.preventDefault(); run(true); });
+  $('search').addEventListener('input', () => run(false));
   $('poi-jump').onclick = () => goToSelected(ctx);
   $('poi-route').onclick = () => requestRoute(ctx);
-  ctx.search = run;
-  if (!ctx.pois.length) $('search-msg').textContent = studio ? 'No places labelled yet – use "Add a place label".' : 'No places are labelled in this model.';
+  $('poi-ar').onclick = () => openArWalk(ctx);
+  ctx.search = () => run(true);
+  ctx.refreshPlaces = () => { drawCats(); run(false); };
+  ctx.refreshPlaces();
+}
+
+/** AR Walk on the drawn path (web/js/arNav.js). Called straight from the tap: iOS asks for sensor access only then. */
+function openArWalk(ctx) {
+  const r = state.lastRoute;
+  const why = arUnavailableReason();
+  const nav = ctx.pkg.navigation;
+  const mpu = nav.metres_per_unit || 1.6 / ctx.eye;                 // unknown scale: a typical standing eye height
+  const poly = r && r.polyline_model;
+  ctx.app.paused = true;                                            // the 3D view stops drawing while AR runs
+  const resume = () => { ctx.app.paused = false; state.lastAr = window.__nammaAr || null; };
+  if (why || !poly) {
+    startArWalk({ poly, mpu, onExit: resume });                     // shows the explanation and comes back
+    return;
+  }
+  startArWalk({ poly, mpu, scaleAssumed: !nav.metres_per_unit || nav.scale_basis === 'assumed_capture_height',
+    destName: ctx.selected ? ctx.selected.name : 'the destination',
+    starts: startChoices(poly, ctx.pois.filter((p) => !ctx.selected || p.poi_id !== ctx.selected.poi_id), mpu),
+    onExit: resume });
+}
+
+/** Turn the view towards the selected place without moving (0.5 s). */
+function faceSelected(ctx) {
+  if (!ctx.selected) return;
+  const { app, walker } = ctx;
+  const p = app.camera.position, P = ctx.selected.position;
+  const dx = P[0] - p.x, dy = P[1] - p.y, dz = P[2] - p.z, len = Math.hypot(dx, dy, dz) || 1;
+  const y0 = walker.yaw, x0 = walker.pitch;
+  let dyaw = Math.atan2(-dx, -dz) - y0;
+  dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw));
+  const pitch = Math.max(-0.6, Math.min(0.6, Math.asin(dy / len)));
+  const t0 = performance.now();
+  app.tween = (now) => {
+    const t = Math.min(1, (now - t0) / 500), s = t * t * (3 - 2 * t);
+    walker.yaw = y0 + dyaw * s;
+    walker.pitch = x0 + (pitch - x0) * s;
+    walker.apply();
+    if (t >= 1) app.tween = null;
+  };
 }
 
 async function goToSelected(ctx) {
@@ -738,14 +892,62 @@ async function goToSelected(ctx) {
   state.lastJump = { poi_id: ctx.selected.poi_id, position: pos, on_floor: onFloor };
 }
 
+/** The package's route grid, decoded once (null when the package has none or it is unreadable). */
+function routeGridOf(ctx) {
+  if (ctx.routeGrid === undefined) {
+    ctx.routeGrid = null;
+    if (ctx.data.routeGrid) {
+      try { ctx.routeGrid = decodeRoamGrid(ctx.data.routeGrid); } catch (e) { state.errors.push({ kind: 'route_grid', message: e.message }); }
+    }
+  }
+  return ctx.routeGrid;
+}
+
+/** Walking path planned in the browser (published sites). Same display contract as the Studio's /route reply.
+ * Always "unverified": the floor / obstacle map is automatic and the independent validator runs only in the Studio. */
+function localRoute(ctx, start) {
+  const g = routeGridOf(ctx), nav = ctx.pkg.navigation, mpu = nav.metres_per_unit || null;
+  const metres = (u) => (mpu ? `${nav.scale_basis === 'assumed_capture_height' ? '≈ ' : ''}${(u * mpu).toFixed(1)} m` : `${u.toFixed(1)} model units`);
+  const oneMetre = mpu ? 1 / mpu : 0.7 * ctx.eye;              // goal snap / start move limit: 1 m (policy), in model units
+  const p = ctx.selected.position;
+  // comfort: paths are pushed away from obstacles nearer than 0.5 m beyond body clearance (corridor centring)
+  // a grid exported at the minimum body radius also carries the preferred one: keep it wherever possible
+  const rg = ctx.data.routeGrid || {};
+  const preferExtra = rg.preferred_radius_m && rg.agent_radius_m && mpu
+    ? (rg.preferred_radius_m - rg.agent_radius_m) / mpu : 0;
+  const r = planRoute(g, start, [p[0], p[2]], { maxGoalSnap: oneMetre, maxStartMove: oneMetre, comfort: 0.5 * oneMetre, preferExtra });
+  const out = { status: r.status, polyline_model: [], planner: 'browser', scale_basis: nav.scale_basis };
+  if (r.status === 'start_blocked') {
+    return { ...out, title: 'Your position is not on confirmed open floor',
+      message: 'Paths start only from floor that was reconstructed and is clear of obstacles. Walk to an open area (or jump to a photo viewpoint) and try again.' };
+  }
+  if (r.status === 'goal_not_snappable') {
+    return { ...out, title: 'No reachable floor next to this place', message: 'There is no reconstructed open floor within 1 m of the label.' };
+  }
+  if (r.status === 'unreachable') {
+    return { ...out, title: 'Destination unreachable on the reconstructed floor',
+      message: 'The reconstructed open floor does not connect your position to this place. Parts of the floor may simply be missing from the reconstruction.' };
+  }
+  return { ...out, status: 'unverified', polyline_model: r.polyline, length_units: r.length,
+    title: `Walking path – ${metres(r.length)}${r.tight ? ' (tight passage)' : ''}`,      // status stays 'unverified'
+    tight_passage: !!r.tight,
+    message: (r.tight ? 'The only way there passes a narrow gap (a door or doorway is often scanned narrower than it is). ' : '')
+      + 'This path stays on reconstructed floor and keeps body clearance from every obstacle that was reconstructed. '
+      + 'It is NOT verified: objects missing from the reconstruction cannot be ruled out'
+      + (nav.scale_basis === 'assumed_capture_height' ? ', and the scale is assumed from a typical phone height.' : '.')
+      + (r.startMoved > 0.01 ? ` (Started from the nearest clear floor, ${metres(r.startMoved)} from where you stand.)` : '') };
+}
+
 async function requestRoute(ctx) {
   const box = $('route-status');
   box.hidden = false;
   box.dataset.state = 'pending';
   box.textContent = 'Computing a walking path…';
+  stopGuidance(ctx);
   const [start, moved] = routeStart(ctx);
   try {
-    const r = await api('/route', { method: 'POST', body: JSON.stringify({ start, poi_id: ctx.selected.poi_id }) });
+    const r = studio ? await api('/route', { method: 'POST', body: JSON.stringify({ start, poi_id: ctx.selected.poi_id }) })
+      : localRoute(ctx, start);
     r.start_moved = moved;
     state.lastRoute = r;
     box.dataset.state = r.status;
@@ -757,7 +959,11 @@ async function requestRoute(ctx) {
     det.textContent = r.message + (moved ? ' (Starting from the nearest clear floor.)' : '');
     box.append(strong, det);
     ctx.app.routeGroup.clear();
-    if (r.polyline_model && r.polyline_model.length > 1) drawRoute(ctx, r.polyline_model, r.status);
+    if (r.polyline_model && r.polyline_model.length > 1) {
+      drawRoute(ctx, r.polyline_model, r.status);
+      startGuidance(ctx, r.polyline_model, box);
+      $('poi-ar').hidden = false;
+    }
   } catch (e) {
     box.dataset.state = 'error';
     box.textContent = `Route request failed: ${e.message}`;
@@ -774,7 +980,100 @@ function drawRoute(ctx, poly, status) {
   line.computeLineDistances();
   line.renderOrder = 8;
   ctx.app.routeGroup.add(line);
+  // direction chevrons on the floor every ~0.6 eye heights, and a pin at the destination
+  const total = polylineLength(poly), stepLen = 0.6 * ctx.eye;
+  const chevron = new THREE.Shape();
+  const s = 0.09 * ctx.eye;
+  chevron.moveTo(0, s); chevron.lineTo(s * 0.8, -s * 0.6); chevron.lineTo(0, -s * 0.15); chevron.lineTo(-s * 0.8, -s * 0.6); chevron.closePath();
+  const geo = new THREE.ShapeGeometry(chevron);
+  geo.rotateX(-Math.PI / 2);                              // flat on the floor, tip towards -Z
+  const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, side: THREE.DoubleSide });
+  for (let d = stepLen * 0.5; d < total - stepLen * 0.25; d += stepLen) {
+    const { point, heading } = pointAlong(poly, d);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(point[0], y, point[1]);
+    m.rotation.y = Math.atan2(-heading[0], -heading[1]);
+    m.renderOrder = 8;
+    ctx.app.routeGroup.add(m);
+  }
+  const end = poly[poly.length - 1];
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.02 * ctx.eye, 0.02 * ctx.eye, 0.9 * ctx.eye, 10),
+    new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.9 }));
+  pin.position.set(end[0], 0.45 * ctx.eye, end[1]);
+  pin.renderOrder = 8;
+  ctx.app.routeGroup.add(pin);
   if (ctx.app.minimap) ctx.app.minimap.setRoute(poly);
+}
+
+/** Guidance along a drawn path: live distance remaining while the visitor walks, arrival notice, and an optional
+ * "Walk me there" that moves the camera along the path at walking pace (any movement key takes control back). */
+function startGuidance(ctx, poly, box) {
+  const nav = ctx.pkg.navigation, mpu = nav.metres_per_unit || null;
+  const fmt = (u) => (mpu ? `${(u * mpu).toFixed(1)} m` : `${u.toFixed(1)} units`);
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.style.marginTop = '8px';
+  const follow = document.createElement('button');
+  follow.type = 'button';
+  follow.id = 'route-follow';
+  follow.textContent = 'Walk me there';
+  const left = document.createElement('span');
+  left.className = 'small';
+  left.id = 'route-remaining';
+  row.append(follow, left);
+  box.append(row);
+  const total = polylineLength(poly);
+  const g = { poly, total, arrived: false, following: false, timer: 0 };
+  ctx.guidance = g;
+  const refresh = () => {
+    const p = ctx.app.camera.position;
+    const { remaining, offPath } = remainingFrom(poly, p.x, p.z);
+    const end = poly[poly.length - 1];
+    if (!g.arrived && Math.hypot(end[0] - p.x, end[1] - p.z) < 0.35 * ctx.eye) {
+      g.arrived = true;
+      left.textContent = `You have arrived at ${ctx.selected ? ctx.selected.name : 'the destination'}.`;
+      toast(left.textContent);
+    } else if (!g.arrived) {
+      left.textContent = offPath > 1.2 * ctx.eye ? `${fmt(remaining)} left – you are off the path (press the path button to re-plan)` : `${fmt(remaining)} left`;
+    }
+    state.lastGuidance = { remaining, offPath, arrived: g.arrived, following: g.following };
+  };
+  g.timer = setInterval(refresh, 250);
+  refresh();
+  follow.onclick = () => {
+    if (g.following) { g.following = false; ctx.app.tween = null; follow.textContent = 'Walk me there'; return; }
+    const p = ctx.app.camera.position;
+    let d = total - remainingFrom(poly, p.x, p.z).remaining;          // start from the nearest point on the path
+    const speed = 1.1 * ctx.eye;                                       // about a comfortable walking pace
+    let prev = performance.now();
+    g.following = true;
+    follow.textContent = 'Stop';
+    ctx.walker.setMode('walk');
+    ctx.app.tween = (now) => {
+      const dt = Math.min(0.25, Math.max(0, (now - prev) / 1000));     // weak GPUs: keep walking pace at ~4 fps
+      prev = now;
+      const moving = ['forward', 'back', 'left', 'right'].some((k) => ctx.walker.has(k));
+      d = Math.min(total, d + speed * dt);
+      const { point } = pointAlong(poly, d), ahead = pointAlong(poly, Math.min(total, d + 0.8 * ctx.eye)).point;
+      ctx.app.camera.position.set(point[0], ctx.eye, point[1]);
+      if (Math.hypot(ahead[0] - point[0], ahead[1] - point[1]) > 1e-6) {
+        let dy = Math.atan2(-(ahead[0] - point[0]), -(ahead[1] - point[1])) - ctx.walker.yaw;
+        dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+        ctx.walker.yaw += dy * Math.min(1, 4 * dt);                     // turn smoothly into each corner
+        ctx.walker.pitch += (0 - ctx.walker.pitch) * Math.min(1, 3 * dt);
+      }
+      ctx.walker.apply();
+      if (d >= total || moving) { ctx.app.tween = null; g.following = false; follow.textContent = 'Walk me there'; }
+    };
+  };
+}
+
+function stopGuidance(ctx) {
+  const g = ctx.guidance;
+  if (!g) return;
+  clearInterval(g.timer);
+  if (g.following) ctx.app.tween = null;
+  ctx.guidance = null;
 }
 
 // ------------------------------------------------------------------ mini-map
@@ -1072,6 +1371,84 @@ function wireMeasure(ctx) {
   if (!mpu) hint('The scale of this model is unknown: lengths are in model units.');
 }
 
+/** Studio: mark mirrors (corners clicked on the wall), list / delete them, apply them to the model
+ * (namma.studio.mirrors). Automatic suggestions are only shown as a count: a person decides. */
+function wireMirrorTool(ctx, meshTargets) {
+  const { app } = ctx;
+  const group = new THREE.Group();
+  app.measureGroup.parent.add(group);
+  let pts = [];
+  const msg = (s) => { $('mirror-msg').textContent = s; };
+  const draw = () => {
+    group.clear();
+    const mat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, depthTest: false });
+    for (const p of pts) {
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.02 * ctx.eye, 10, 8), mat);
+      dot.position.copy(p);
+      dot.renderOrder = 9;
+      group.add(dot);
+    }
+    if (pts.length > 1) {
+      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x3b82f6, depthTest: false }));
+      line.renderOrder = 9;
+      group.add(line);
+    }
+    $('mirror-save').disabled = pts.length < 3;
+  };
+  const list = (r) => {
+    const ul = $('mirror-list');
+    ul.innerHTML = '';
+    for (const m of r.mirrors) {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `Remove ${m.name}`;
+      b.onclick = async () => { try { list(await api(`/mirrors/${encodeURIComponent(m.mirror_id)}`, { method: 'DELETE' })); } catch (e) { msg(e.message); } };
+      li.appendChild(b);
+      ul.appendChild(li);
+    }
+    const sug = (r.suggestions || []).length;
+    const applied = r.applied ? ` Applied: ${r.applied.regions} mirror(s), ${r.applied.geometry_removed_m2} m² removed, ${r.applied.inferred_area_m2} m² inferred.` : '';
+    msg(`${r.mirrors.length} mirror(s) marked.${sug ? ` ${sug} possible mirror area(s) suggested in the quality report (check them: they may be windows or doors).` : ''}${applied}`);
+    state.mirrors = r;
+  };
+  const pick = (e) => {
+    const hit = app.pick(e.clientX, e.clientY, meshTargets());
+    if (!hit) { msg('No surface there – click on the wall at a corner of the mirror.'); return; }
+    pts.push(hit.point.clone());
+    draw();
+    msg(`${pts.length} corner(s). Click the next corner${pts.length >= 3 ? ', or Save mirror' : ''}.`);
+  };
+  $('tool-mirror').onclick = async () => {
+    if (document.pointerLockElement) document.exitPointerLock();
+    $('mirror-box').hidden = false;
+    pts = [];
+    draw();
+    try { list(await api('/mirrors')); } catch (e) { msg(e.message); }
+    msg('Click the corners of the mirror on the wall, in order (at least 3).');
+    app.onPick = pick;
+  };
+  $('mirror-undo').onclick = () => { pts.pop(); draw(); };
+  $('mirror-cancel').onclick = () => { pts = []; draw(); app.onPick = null; $('mirror-box').hidden = true; };
+  $('mirror-save').onclick = async () => {
+    try {
+      list(await api('/mirrors', { method: 'POST', body: JSON.stringify({ corners: pts.map((p) => [p.x, p.y, p.z]) }) }));
+      pts = [];
+      draw();
+      app.onPick = pick;
+    } catch (e) { msg(`Could not save: ${e.message}`); }
+  };
+  $('mirror-apply').onclick = async () => {
+    $('mirror-apply').disabled = true;
+    msg('Applying the mirrors (cutting the model, rebuilding the walking maps)…');
+    try {
+      await api('/mirrors/apply', { method: 'POST', body: '{}' });
+      msg('Done. Reloading the model…');
+      setTimeout(() => location.reload(), 600);
+    } catch (e) { msg(`Could not apply: ${e.message}`); $('mirror-apply').disabled = false; }
+  };
+}
+
 function wireStudioTools(ctx) {
   const { app } = ctx;
   const meshTargets = () => (app.appearance ? [app.appearance] : []);
@@ -1086,6 +1463,7 @@ function wireStudioTools(ctx) {
     };
   };
   $('poi-cancel').onclick = () => { $('poi-form').hidden = true; $('tool-msg').textContent = ''; };
+  wireMirrorTool(ctx, meshTargets);
   $('poi-form-el').onsubmit = async (e) => {
     e.preventDefault();
     const pt = ctx.pendingPoint;
@@ -1097,6 +1475,7 @@ function wireStudioTools(ctx) {
       const r = await api('/pois', { method: 'POST', body: JSON.stringify(body) });
       ctx.pois = r.pois;
       renderPois(ctx);
+      if (ctx.refreshPlaces) ctx.refreshPlaces();     // list + category buttons follow label edits
       $('poi-form').hidden = true;
       $('tool-msg').textContent = `Saved "${body.name}".`;
       toast(`Label saved: ${body.name}`);

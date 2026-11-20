@@ -120,3 +120,19 @@ def downscale_textures(glb, max_side=2048, quality=85):
         return glb, {"textures": []}
     doc, binary, _ = _rebuild(doc, binary, replace=replace)
     return glb_bytes(doc, binary), {"textures": sizes}
+
+
+def strip_inferred(glb):
+    """The same model without the surfaces the pipeline ADDED (hole fills, backing sheets, mirror caps: primitives with
+    a namma-hole-fill / namma-inferred-mirror material). Buffers are left as they are. -> (bytes, removed primitives)"""
+    from namma.studio.mesh_import import INFERRED_MATERIALS
+    doc, binary = _parse_glb(glb)
+    mats = doc.get("materials", [])
+    removed = 0
+    for m in doc.get("meshes", []):
+        keep = [p for p in m["primitives"]
+                if not ("material" in p and p["material"] < len(mats) and mats[p["material"]].get("name") in INFERRED_MATERIALS)]
+        removed += len(m["primitives"]) - len(keep)
+        if keep:
+            m["primitives"] = keep
+    return (glb_bytes(doc, binary) if removed else glb), removed

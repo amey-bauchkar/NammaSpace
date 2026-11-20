@@ -3,6 +3,7 @@
 import io
 import json
 import zipfile
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -305,3 +306,84 @@ def test_line_up_sample_count_follows_the_mesh_area():
     assert surface_sample_count(*floor(4.0), 200_000, 10_000) == 200_000               # 16 m2: the floor value
     assert surface_sample_count(*floor(15.0), 200_000, 10_000) == 2_250_000            # 225 m2 hall: 1 cm spacing
     assert surface_sample_count(*floor(40.0), 200_000, 10_000) == MAX_ALIGN_SAMPLES    # bounded
+
+
+def test_drifted_phone_poses_are_corrected_against_the_mesh(tmp_path):
+    """Multi-room walks drift: keyframes whose recorded pose is off by 15 cm / 3 degrees are put back on the mesh
+    using their own depth points; good keyframes are left alone."""
+    from namma.studio import splat_large as sl
+    box_room(tmp_path / "room.glb", size=(6.0, 2.7, 4.0), offset=(0.0, 0.0, 0.0), table=True)
+    glb = (tmp_path / "room.glb").read_bytes()
+    V, F, _ = mi.mesh_triangles(glb)
+    S, _, _ = mi.sample_surface(V, F, 200_000, seed=5)
+    rng = np.random.default_rng(3)
+    sp = tmp_path / "sparse"
+    sp.mkdir()
+    (sp / "cameras.txt").write_text("1 PINHOLE 64 48 40 40 32 24\n")
+    lines, cam_pts, truth, drifted = [], {}, {}, set()
+    for i in range(24):
+        C = np.array([1.0 + 4.0 * (i % 6) / 5, 1.4, 1.0 + 2.0 * (i // 6) / 3])
+        yaw = np.radians(15 * i)
+        Rw = np.array([[np.cos(yaw), 0, -np.sin(yaw)], [0, 1, 0], [np.sin(yaw), 0, np.cos(yaw)]])   # camera -> world
+        R = (Rw @ np.diag([1.0, -1.0, -1.0])).T                                                     # world -> camera
+        t = -R @ C
+        Xc = S @ R.T + t
+        ok = (Xc[:, 2] > 0.3)
+        Xc = Xc[ok][rng.choice(int(ok.sum()), 1500, replace=False)]
+        stem = f"kf{i:02d}"
+        cam_pts[stem] = Xc.astype(np.float32)
+        truth[stem] = C
+        Rr, tr = R, t
+        if i % 2:                                              # drifted: the recorded pose is wrong
+            d = np.radians(3.0)
+            Dz = np.array([[np.cos(d), 0, np.sin(d)], [0, 1, 0], [-np.sin(d), 0, np.cos(d)]])
+            Cr = C + [0.15, 0.0, -0.1]
+            Rr = R @ Dz.T
+            tr = -Rr @ Cr
+            drifted.add(stem)
+        q = sp_quat(Rr)
+        lines.append(f"{i + 1} {' '.join(map(str, q))} {' '.join(map(str, tr))} 1 {stem}.jpg\n\n")
+    (sp / "images.txt").write_text("".join(lines))
+    (sp / "points3D.txt").write_text("1 1 1 1 100 100 100 0\n")
+    np.savez(tmp_path / "depth_points.npz", **cam_pts)
+    st = sl.refine_poses_to_mesh(sp, tmp_path / "depth_points.npz", glb, tmp_path / "fixed", samples_per_m2=0)
+    assert st["frames"] == 24 and st["corrected"] >= 10
+    assert st["within_5cm_after"] > st["within_5cm_before"] + 0.1   # half the keyframes were already right
+    from namma.studio.splat_blocks import read_text_model
+    _, imgs = read_text_model(tmp_path / "fixed" / "sparse")
+    err = {Path(im["name"]).stem: np.linalg.norm(im["C"] - truth[Path(im["name"]).stem]) for im in imgs}
+    assert max(err[s] for s in drifted) < 0.03                  # was 18 cm
+    assert max(err[s] for s in err if s not in drifted) < 0.03  # good ones stay good
+    assert (tmp_path / "fixed" / "sparse" / "points3D.txt").stat().st_size > 1000
+
+
+def sp_quat(R):
+    return sp._rot_to_quat(R)
+
+
+def test_fast_depth_maps_are_identical_to_the_plain_loop(tmp_path):
+    """Speed-up without any change: culling by 0.5 m cubes and parallel processes give the same maps, bit for bit."""
+    from namma.studio import splat_large as sl
+    box_room(tmp_path / "room.glb", size=(6.0, 2.7, 4.0), offset=(0.0, 0.0, 0.0), table=True)
+    glb = (tmp_path / "room.glb").read_bytes()
+    sp_dir = tmp_path / "sparse"
+    sp_dir.mkdir()
+    (sp_dir / "cameras.txt").write_text("1 PINHOLE 320 240 220 220 160 120\n")
+    rng = np.random.default_rng(4)
+    lines = []
+    for i in range(12):
+        C = np.array([rng.uniform(0.5, 5.5), rng.uniform(0.8, 1.8), rng.uniform(0.5, 3.5)])
+        yaw = rng.uniform(0, 2 * np.pi)
+        Rw = np.array([[np.cos(yaw), 0, -np.sin(yaw)], [0, 1, 0], [np.sin(yaw), 0, np.cos(yaw)]])
+        R = (Rw @ np.diag([1.0, -1.0, -1.0])).T
+        lines.append(f"{i + 1} {' '.join(map(str, sp._rot_to_quat(R)))} {' '.join(map(str, -R @ C))} 1 c{i:02d}.jpg\n\n")
+    (sp_dir / "images.txt").write_text("".join(lines))
+    kw = dict(scale=0.5, samples=300_000, samples_per_m2=0)
+    assert sl.mesh_depth_maps(sp_dir, glb, np.eye(4), tmp_path / "plain", workers=1, cull=False, **kw) == 12
+    assert sl.mesh_depth_maps(sp_dir, glb, np.eye(4), tmp_path / "cull", workers=1, **kw) == 12
+    assert sl.mesh_depth_maps(sp_dir, glb, np.eye(4), tmp_path / "procs", workers=2, **kw) == 12
+    for i in range(12):
+        a = np.load(tmp_path / "plain" / f"c{i:02d}.npy")
+        assert (a > 0).mean() > 0.1                                       # a real map, not an empty one
+        assert np.array_equal(a, np.load(tmp_path / "cull" / f"c{i:02d}.npy"))
+        assert np.array_equal(a, np.load(tmp_path / "procs" / f"c{i:02d}.npy"))

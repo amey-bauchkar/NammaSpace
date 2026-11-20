@@ -60,6 +60,9 @@ def main():
             c.eval("window.__nammaScene.walker.setPose([0,0,0],[1,0,0])")
             c.eval(f"document.getElementById('search').value = {json.dumps(a.label.split()[-1])};"
                    "document.getElementById('search-btn').click()")
+            # a search SELECTS the place (view turns to it); "Go there" moves the camera
+            c.wait_for("window.__nammaScene.lastChosen", timeout=30)
+            c.eval("document.getElementById('poi-jump').click()")
             c.wait_for("window.__nammaScene.lastJump", timeout=30)
             st = json.loads(c.eval("JSON.stringify({s: window.__nammaScene.lastSearch.status, j: window.__nammaScene.lastJump})"))
             check("search finds the label and jumps to it", st["s"] == "unique" and st["j"], json.dumps(st)[:160])

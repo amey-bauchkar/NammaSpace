@@ -108,7 +108,7 @@
       <div id="poi-card" hidden>
         <h3 id="poi-title"></h3>
         <p class="small muted" id="poi-meta"></p>
-        <div class="row"><button type="button" id="poi-jump">Go there</button><button type="button" class="secondary" id="poi-route" hidden>Show walking path</button><button type="button" class="secondary" id="poi-ar" hidden title="Follow the path through your phone's camera">AR Walk</button></div>
+        <div class="row" style="flex-wrap:wrap"><button type="button" id="poi-jump">Go there</button><button type="button" class="secondary" id="poi-route" hidden>Show walking path</button><button type="button" class="secondary" id="poi-ar" hidden title="Follow the path through your phone's camera">AR Walk</button></div>
         <div class="status-box" id="route-status" hidden></div>
       </div>
     </section>
@@ -141,7 +141,14 @@
     </section>
     <section id="studio-tools" hidden>
       <h2>Studio tools</h2>
-      <div class="row" style="flex-wrap:wrap"><button type="button" id="tool-poi">Add a place label</button><button type="button" class="secondary" id="tool-measure">Measure / set scale</button><button type="button" class="secondary" id="tool-rename">Rename model</button></div>
+      <div class="row" style="flex-wrap:wrap"><button type="button" id="tool-poi">Add a place label</button><button type="button" class="secondary" id="tool-measure">Measure / set scale</button><button type="button" class="secondary" id="tool-rename">Rename model</button><button type="button" class="secondary" id="tool-mirror" title="Click the corners of a mirror on the wall">Mark a mirror</button></div>
+      <div id="mirror-box" hidden>
+        <p class="small" id="mirror-msg"></p>
+        <div class="row" style="flex-wrap:wrap"><button type="button" id="mirror-save" disabled>Save mirror</button><button type="button" class="secondary" id="mirror-undo">Undo point</button><button type="button" class="secondary" id="mirror-cancel">Cancel</button></div>
+        <ul class="list" id="mirror-list"></ul>
+        <div class="row"><button type="button" id="mirror-apply" title="Remove the reflected room and close each mirror with a flat INFERRED surface">Apply mirrors</button></div>
+        <p class="small muted">Applying removes geometry behind each mirror and treats the mirror as a wall for walking. The closed mirror is shown as an inferred flat surface. Make the photoreal view again afterwards. Removing every mirror and applying restores the original model.</p>
+      </div>
       <p class="small muted" id="tool-msg"></p>
       <div id="measure-box" hidden>
         <p class="small">Measured: <strong id="measure-value">–</strong></p>
@@ -186,6 +193,6 @@
   <div class="card"><h3 id="ar-modal-title" style="margin-top:0"></h3><p id="ar-modal-text"></p>
     <div class="row"><button type="button" id="ar-modal-ok">OK</button></div></div>
 </div>
-<script type="module" src="js/sceneViewer.js?v=6"></script>
+<script type="module" src="js/sceneViewer.js?v=7"></script>
 </body>
 </html>

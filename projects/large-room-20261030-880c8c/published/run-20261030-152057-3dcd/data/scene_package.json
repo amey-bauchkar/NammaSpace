@@ -7,7 +7,7 @@
   "title": "Large room"
  },
  "run_id": "run-20261030-152057-3dcd",
- "created_at": "2026-11-01T01:37:16+05:30",
+ "created_at": "2026-11-17T03:55:55+05:30",
  "model_frame": {
   "frame_id": "model:run-20261030-152057-3dcd",
   "units": "model",
@@ -52,17 +52,17 @@
     "lod": 0,
     "path": "scene/lod0.glb",
     "format": "glb",
-    "bytes": 8212640,
-    "sha256": "6bec4a34e165709fbaba9b080b92baf04179f9ddc26eddfe5c16441c09fd9173",
-    "faces": 93641
+    "bytes": 15731300,
+    "sha256": "e90b5cf02b59052a7b603baf94a188ba961a2004e011b6fc8a210686a6b34f72",
+    "faces": 180768
    },
    {
     "lod": 1,
     "path": "scene/lod1.glb",
     "format": "glb",
-    "bytes": 4275740,
-    "sha256": "d6d05cf45ab0787347654bfb0dc59f6a16df9de7557ec4c9707a7f9313f87fee",
-    "faces": 93641
+    "bytes": 8660164,
+    "sha256": "b6e8452623d66a660f311971cab1965b34434c44059ca0174f6b26ea4fe96745",
+    "faces": 180768
    }
   ],
   "splat": {
@@ -101,7 +101,8 @@
      "within_5cm": 0.328,
      "median_m": 0.0857
     }
-   }
+   },
+   "shown_by_default": false
   }
  },
  "eye_height_units": 1.6,
@@ -137,17 +138,20 @@
   "geometry": "nav/geometry.if04.json",
   "scale_basis": "device_tracking",
   "metres_per_unit": 1.0,
-  "note": "Automatic floor / obstacle map from the reconstruction. NOT verified: unobserved floor is treated as blocked, missing obstacles cannot be detected without a reference, and the scale comes from device_tracking."
+  "note": "Automatic floor / obstacle map from the reconstruction. NOT verified: unobserved floor is treated as blocked, missing obstacles cannot be detected without a reference, and the scale comes from device_tracking.",
+  "route_grid": "nav/route_grid.json"
  },
  "pois": "poi/pois.json",
  "quality": {
   "verdict": "usable_with_warnings",
   "report": "reports/quality_report.json",
-  "capture_report": null,
+  "capture_report": "reports/capture_report.json",
   "warnings": [
    "IMPORTED-MESH",
    "EYE-HEIGHT-ASSUMED",
-   "NO-PHOTO-VIEWPOINTS"
+   "NO-PHOTO-VIEWPOINTS",
+   "LARGE-OPEN-AREAS",
+   "MIRROR-SUSPECTED"
   ]
  },
  "notices": [
@@ -158,13 +162,18 @@
  "files": [
   {
    "path": "nav/geometry.if04.json",
-   "sha256": "681074417cecef8cbaf614c52b917c935ab96153268f8e04d1b3766fe6791cdf",
-   "bytes": 66306
+   "sha256": "f7c6ae5a1cb8cab23d63d4809c6ab3613e408251926addc033ff082abbd0ac65",
+   "bytes": 61659
   },
   {
    "path": "nav/roam_grid.json",
-   "sha256": "40426582c283ec5535b9d77f1515a638e50416285d378f3ba98a9ed04983fd9b",
-   "bytes": 6281
+   "sha256": "35a6fd0d44570ac9853024004267f591bf9b793bf95782c5353bfadc7c536ef8",
+   "bytes": 6238
+  },
+  {
+   "path": "nav/route_grid.json",
+   "sha256": "22be6072d6678b159bb4002efeb2208a71f170b1a9a031d60da39766088bfd77",
+   "bytes": 6134
   },
   {
    "path": "poi/pois.json",
@@ -172,19 +181,24 @@
    "bytes": 3
   },
   {
+   "path": "reports/capture_report.json",
+   "sha256": "09a1b4175d383f99aa9a6b4c857d094d071bbb33df631f3e627c8a5ea5f7d6fd",
+   "bytes": 341
+  },
+  {
    "path": "reports/quality_report.json",
-   "sha256": "6638e977df8b4060dce97eaabd702278a529de20ef0b64cb7ef13e66cfb61e76",
-   "bytes": 1267
+   "sha256": "214d56568aba72185260e0e8b99d5bf2978d3df42c56485a17d8250841d22768",
+   "bytes": 3573
   },
   {
    "path": "scene/lod0.glb",
-   "sha256": "6bec4a34e165709fbaba9b080b92baf04179f9ddc26eddfe5c16441c09fd9173",
-   "bytes": 8212640
+   "sha256": "e90b5cf02b59052a7b603baf94a188ba961a2004e011b6fc8a210686a6b34f72",
+   "bytes": 15731300
   },
   {
    "path": "scene/lod1.glb",
-   "sha256": "d6d05cf45ab0787347654bfb0dc59f6a16df9de7557ec4c9707a7f9313f87fee",
-   "bytes": 4275740
+   "sha256": "b6e8452623d66a660f311971cab1965b34434c44059ca0174f6b26ea4fe96745",
+   "bytes": 8660164
   },
   {
    "path": "scene/splat.spz",

@@ -184,6 +184,65 @@ class Studio:
         write_json(p, pois)
         return self.list_pois(pid, rid)
 
+    # ---- mirror regions (namma.studio.mirrors): marked by hand, applied on request, never automatically
+    def mirrors_path(self, pid):
+        return self.store.path(pid) / "mirrors.json"
+
+    def list_mirrors(self, pid, rid):
+        p = self.mirrors_path(pid)
+        recs = [x for x in (load_strict(p) if p.exists() else []) if x.get("run_id") in (None, rid)]
+        q = self.store.run_dir(pid, rid) / "80_quality" / "quality_report.json"
+        facts = load_strict(q).get("facts", {}) if q.exists() else {}
+        return {"mirrors": recs, "suggestions": (facts.get("model_health") or {}).get("mirror_suggestions", []),
+                "applied": facts.get("mirrors")}
+
+    def add_mirror(self, pid, rid, body):
+        from namma.studio import mirrors as mir
+        run_dir = self.store.run_dir(pid, rid)
+        extra = set(body) - {"corners", "name", "cap"}
+        if extra:
+            raise ApiError(400, "MIRROR-FIELDS", f"unknown fields {sorted(extra)}")
+        corners = body.get("corners")
+        if not (isinstance(corners, list) and 3 <= len(corners) <= 16 and all(_finite_vec(c, 3) for c in corners)):
+            raise ApiError(400, "MIRROR-CORNERS", "corners must be 3-16 points of 3 finite numbers")
+        frame = load_strict(run_dir / "70_frame" / "frame.json")
+        try:
+            g = mir.plane_of(corners, frame["start"]["position"])
+        except ValueError as e:
+            raise ApiError(400, "MIRROR-PLANE", str(e)) from e
+        if mir.polygon_area(g["poly2"]) < 0.01 or mir.polygon_area(g["poly2"]) > 30:
+            raise ApiError(400, "MIRROR-SIZE", "a mirror must be 0.01-30 m2")
+        p = self.mirrors_path(pid)
+        recs = load_strict(p) if p.exists() else []
+        ids = {x["mirror_id"] for x in recs}
+        k = 1
+        while f"mirror-{k}" in ids:
+            k += 1
+        rec = {"mirror_id": f"mirror-{k}", "name": str(body.get("name") or f"Mirror {k}").strip()[:80],
+               "corners": [[float(v) for v in c] for c in corners], "cap": bool(body.get("cap", True)),
+               "origin": "human_authored", "created_at": timefmt.now_iso(), "run_id": rid}
+        recs.append(rec)
+        write_json(p, recs)
+        return self.list_mirrors(pid, rid)
+
+    def delete_mirror(self, pid, rid, mirror_id):
+        p = self.mirrors_path(pid)
+        recs = [x for x in (load_strict(p) if p.exists() else [])
+                if not (x["mirror_id"] == mirror_id and x.get("run_id") in (None, rid))]
+        write_json(p, recs)
+        return self.list_mirrors(pid, rid)
+
+    def apply_mirrors(self, pid, rid):
+        from namma.studio import mirrors as mir
+        self.store.run_dir(pid, rid)
+        if self.jobs.run_status(pid, rid).get("status") != "succeeded":
+            raise ApiError(409, "MIRROR-RUN", "apply mirrors to a finished run")
+        try:
+            stats = mir.apply_to_run(self.store.path(pid), rid)
+        except ValueError as e:
+            raise ApiError(409, "MIRROR-APPLY", str(e)) from e
+        return {"applied": stats, **self.list_mirrors(pid, rid)}
+
     def calibrate(self, pid, rid, body):
         run_dir = self.store.run_dir(pid, rid)
         if not (_finite_vec(body.get("p1"), 3) and _finite_vec(body.get("p2"), 3)):
@@ -661,6 +720,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         return self._json(201, {"pois": st.add_poi(pid, rid, self._body_json())})
                 if len(sub) == 2 and sub[0] == "pois" and method == "DELETE":
                     return self._json(200, {"pois": st.delete_poi(pid, rid, sub[1])})
+                if sub == ["mirrors"]:
+                    if method == "GET":
+                        return self._json(200, st.list_mirrors(pid, rid))
+                    if method == "POST":
+                        return self._json(201, st.add_mirror(pid, rid, self._body_json()))
+                if sub == ["mirrors", "apply"] and method == "POST":
+                    return self._json(200, st.apply_mirrors(pid, rid))
+                if len(sub) == 2 and sub[0] == "mirrors" and method == "DELETE":
+                    return self._json(200, st.delete_mirror(pid, rid, sub[1]))
                 if sub == ["calibration"] and method == "POST":
                     return self._json(200, st.calibrate(pid, rid, self._body_json()))
                 if sub == ["route"] and method == "POST":

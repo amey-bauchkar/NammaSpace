@@ -3,8 +3,8 @@
   {
    "lod": 0,
    "file": "lod0.glb",
-   "bytes": 8212640,
-   "triangles": 93641,
+   "bytes": 15731300,
+   "triangles": 180768,
    "textures": [
     [
      4096,
@@ -23,13 +23,13 @@
      320
     ]
    ],
-   "source": "Polycam export 27_10_2026.glb, 178 floating fragment(s) removed"
+   "source": "Polycam export 27_10_2026.glb, 178 floating fragment(s) removed, repaired (4 piece(s), 162 hole(s) closed)"
   },
   {
    "lod": 1,
    "file": "lod1.glb",
-   "bytes": 4275740,
-   "triangles": 93641,
+   "bytes": 8660164,
+   "triangles": 180768,
    "textures": [
     [
      2048,
@@ -59,7 +59,3414 @@
   "total_area": 211.317
  },
  "repair": {
-  "applied": false,
-  "skipped": "only single-primitive meshes without node transforms are repaired"
+  "applied": true,
+  "pieces": 4,
+  "whole_flat_limits": {
+   "flatten_below_m": 0.1,
+   "debris_m": 0.3,
+   "debris_max_piece_m2": 1.0
+  },
+  "ceiling": {
+   "tilt_deg": 0.21,
+   "height": 1.11,
+   "inlier_share": 0.665,
+   "down_area_m2": 35.47,
+   "parallel_to": "floor"
+  },
+  "protected_large_pieces_m2": 1.688,
+  "removed_above_triangles": 160,
+  "removed_hanging_object_triangles": 900,
+  "flattened_vertices": 5551,
+  "flattened_triangles": 10079,
+  "hanging_triangles": 1524,
+  "removed_slivers": 28,
+  "plain_ceiling_triangles": 9500,
+  "ceiling_debris_triangles": 1539,
+  "max_vertex_move_m": 0.316,
+  "straighten": {
+   "walls": [
+    {
+     "facing_deg": 177.8,
+     "vertices": 231,
+     "max_move_m": 0.049
+    },
+    {
+     "facing_deg": 177.8,
+     "vertices": 573,
+     "max_move_m": 0.05
+    },
+    {
+     "facing_deg": 87.9,
+     "vertices": 1482,
+     "max_move_m": 0.05
+    },
+    {
+     "facing_deg": 87.9,
+     "vertices": 2384,
+     "max_move_m": 0.05
+    }
+   ],
+   "floor": {
+    "vertices": 2884,
+    "max_move_m": 0.03,
+    "height": -1.541
+   },
+   "wall_top_triangles": 313
+  },
+  "holes": [
+   {
+    "vertices": 4,
+    "perimeter_m": 0.1,
+    "centre": [
+     -5.19,
+     0.75,
+     4.4
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     203,
+     203,
+     201
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.13,
+    "centre": [
+     -4.03,
+     1.05,
+     4.38
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     249,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.22,
+    "centre": [
+     -3.2,
+     1.1,
+     0.38
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     205,
+     208,
+     209
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.43,
+    "centre": [
+     -3.86,
+     1.12,
+     0.35
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 3,
+    "colour_rgb": [
+     179,
+     183,
+     182
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.25,
+    "centre": [
+     -3.93,
+     1.12,
+     0.34
+    ],
+    "filled": false,
+    "rms_m": 0.003,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.21,
+    "centre": [
+     -5.1,
+     1.08,
+     1.39
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     239,
+     248,
+     252
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.21,
+    "centre": [
+     -5.17,
+     1.04,
+     1.9
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     251,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.12,
+    "centre": [
+     -5.17,
+     1.04,
+     1.96
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     251,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.19,
+    "centre": [
+     -5.17,
+     1.08,
+     1.95
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     251,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.32,
+    "centre": [
+     -5.32,
+     1.08,
+     3.58
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.34,
+    "centre": [
+     -5.35,
+     1.11,
+     4.42
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     192,
+     194,
+     193
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.38,
+    "centre": [
+     -5.34,
+     1.03,
+     4.41
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     198,
+     199,
+     200
+    ]
+   },
+   {
+    "vertices": 299,
+    "perimeter_m": 20.23,
+    "centre": [
+     -3.73,
+     1.05,
+     2.38
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.24,
+    "centre": [
+     -5.31,
+     1.11,
+     4.0
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.2,
+    "centre": [
+     -5.27,
+     1.05,
+     4.48
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     192,
+     192,
+     192
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.33,
+    "centre": [
+     -5.26,
+     -0.16,
+     4.47
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 6,
+    "colour_rgb": [
+     214,
+     215,
+     213
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.26,
+    "centre": [
+     -5.26,
+     1.11,
+     2.96
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 2,
+    "colour_rgb": [
+     220,
+     224,
+     223
+    ]
+   },
+   {
+    "vertices": 50,
+    "perimeter_m": null,
+    "centre": [
+     -5.02,
+     -1.04,
+     2.02
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": null,
+    "centre": [
+     -5.15,
+     -1.28,
+     1.94
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.24,
+    "centre": [
+     -5.18,
+     1.1,
+     2.14
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     254,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.23,
+    "centre": [
+     -5.18,
+     1.1,
+     2.09
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     254,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": 0.49,
+    "centre": [
+     -5.1,
+     -0.95,
+     3.87
+    ],
+    "filled": true,
+    "rms_m": 0.009,
+    "triangles": 7,
+    "colour_rgb": [
+     136,
+     108,
+     97
+    ]
+   },
+   {
+    "vertices": 33,
+    "perimeter_m": 1.38,
+    "centre": [
+     -5.07,
+     -1.38,
+     1.79
+    ],
+    "filled": false,
+    "rms_m": 0.048,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 287,
+    "perimeter_m": 18.15,
+    "centre": [
+     -4.46,
+     -0.45,
+     -3.07
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 27,
+    "perimeter_m": 1.17,
+    "centre": [
+     -5.01,
+     -1.29,
+     0.85
+    ],
+    "filled": true,
+    "rms_m": 0.017,
+    "triangles": 25,
+    "colour_rgb": [
+     148,
+     149,
+     143
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.11,
+    "centre": [
+     -5.08,
+     1.11,
+     0.46
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     204,
+     206,
+     201
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.13,
+    "centre": [
+     -4.98,
+     -0.79,
+     1.05
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     226,
+     227,
+     222
+    ]
+   },
+   {
+    "vertices": 18,
+    "perimeter_m": 0.85,
+    "centre": [
+     -5.03,
+     -0.87,
+     1.03
+    ],
+    "filled": true,
+    "rms_m": 0.019,
+    "triangles": 16,
+    "colour_rgb": [
+     203,
+     203,
+     200
+    ]
+   },
+   {
+    "vertices": 22,
+    "perimeter_m": 0.99,
+    "centre": [
+     -4.98,
+     -1.35,
+     1.27
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 20,
+    "colour_rgb": [
+     144,
+     145,
+     139
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.1,
+    "centre": [
+     -4.95,
+     1.13,
+     0.24
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     199,
+     199,
+     197
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.29,
+    "centre": [
+     -4.91,
+     1.13,
+     0.24
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     214,
+     215,
+     212
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.1,
+    "centre": [
+     -4.92,
+     -0.76,
+     1.08
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     215,
+     214,
+     209
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.25,
+    "centre": [
+     -4.87,
+     -1.5,
+     1.34
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     177,
+     179,
+     168
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.08,
+    "centre": [
+     -4.83,
+     -0.81,
+     1.05
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     212,
+     212,
+     210
+    ]
+   },
+   {
+    "vertices": 7,
+    "perimeter_m": 0.71,
+    "centre": [
+     -4.39,
+     1.1,
+     0.26
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 5,
+    "colour_rgb": [
+     241,
+     243,
+     241
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.28,
+    "centre": [
+     -4.61,
+     1.1,
+     0.24
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     229,
+     233,
+     234
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.17,
+    "centre": [
+     -4.7,
+     1.12,
+     0.25
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     226,
+     228,
+     227
+    ]
+   },
+   {
+    "vertices": 293,
+    "perimeter_m": 16.22,
+    "centre": [
+     -3.68,
+     -1.25,
+     -0.43
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.32,
+    "centre": [
+     -4.43,
+     -1.35,
+     0.06
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 3,
+    "colour_rgb": [
+     192,
+     190,
+     181
+    ]
+   },
+   {
+    "vertices": 13,
+    "perimeter_m": 0.79,
+    "centre": [
+     -4.34,
+     -1.23,
+     3.45
+    ],
+    "filled": true,
+    "rms_m": 0.007,
+    "triangles": 11,
+    "colour_rgb": [
+     83,
+     83,
+     75
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.08,
+    "centre": [
+     -4.14,
+     -1.28,
+     3.44
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     61,
+     61,
+     49
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.21,
+    "centre": [
+     -4.11,
+     -1.5,
+     3.39
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 3,
+    "colour_rgb": [
+     163,
+     160,
+     144
+    ]
+   },
+   {
+    "vertices": 15,
+    "perimeter_m": 0.67,
+    "centre": [
+     -4.07,
+     -1.43,
+     3.46
+    ],
+    "filled": true,
+    "rms_m": 0.018,
+    "triangles": 13,
+    "colour_rgb": [
+     110,
+     111,
+     105
+    ]
+   },
+   {
+    "vertices": 16,
+    "perimeter_m": 0.75,
+    "centre": [
+     -3.88,
+     -1.47,
+     3.47
+    ],
+    "filled": true,
+    "rms_m": 0.021,
+    "triangles": 14,
+    "colour_rgb": [
+     121,
+     121,
+     107
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.09,
+    "centre": [
+     -3.94,
+     1.07,
+     0.38
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     225,
+     231,
+     231
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.34,
+    "centre": [
+     -3.86,
+     -1.3,
+     -0.13
+    ],
+    "filled": false,
+    "rms_m": 0.003,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.12,
+    "centre": [
+     -3.9,
+     0.13,
+     0.11
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 2,
+    "colour_rgb": [
+     221,
+     221,
+     216
+    ]
+   },
+   {
+    "vertices": 27,
+    "perimeter_m": 1.58,
+    "centre": [
+     -3.51,
+     -1.24,
+     3.49
+    ],
+    "filled": false,
+    "rms_m": 0.032,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 10,
+    "perimeter_m": 0.95,
+    "centre": [
+     -3.54,
+     -1.39,
+     -0.17
+    ],
+    "filled": true,
+    "rms_m": 0.011,
+    "triangles": 8,
+    "colour_rgb": [
+     26,
+     19,
+     19
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.21,
+    "centre": [
+     -3.54,
+     -1.37,
+     3.49
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 3,
+    "colour_rgb": [
+     69,
+     67,
+     54
+    ]
+   },
+   {
+    "vertices": 10,
+    "perimeter_m": 0.66,
+    "centre": [
+     -3.37,
+     0.4,
+     0.09
+    ],
+    "filled": true,
+    "rms_m": 0.011,
+    "triangles": 8,
+    "colour_rgb": [
+     173,
+     182,
+     184
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.24,
+    "centre": [
+     -3.37,
+     -0.55,
+     -0.17
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 4,
+    "colour_rgb": [
+     98,
+     98,
+     96
+    ]
+   },
+   {
+    "vertices": 36,
+    "perimeter_m": 1.93,
+    "centre": [
+     -3.3,
+     -0.46,
+     -0.02
+    ],
+    "filled": false,
+    "rms_m": 0.021,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 2,
+    "perimeter_m": null,
+    "centre": [
+     -3.33,
+     -1.54,
+     -0.77
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": 0.41,
+    "centre": [
+     -3.34,
+     -1.28,
+     4.3
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 7,
+    "colour_rgb": [
+     72,
+     65,
+     55
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.11,
+    "centre": [
+     -3.31,
+     -1.2,
+     4.33
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     117,
+     113,
+     104
+    ]
+   },
+   {
+    "vertices": 28,
+    "perimeter_m": 1.52,
+    "centre": [
+     -3.2,
+     -1.08,
+     0.05
+    ],
+    "filled": true,
+    "rms_m": 0.022,
+    "triangles": 26,
+    "colour_rgb": [
+     98,
+     93,
+     83
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.24,
+    "centre": [
+     -3.19,
+     0.32,
+     0.12
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 2,
+    "colour_rgb": [
+     66,
+     64,
+     60
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.22,
+    "centre": [
+     -3.22,
+     0.21,
+     0.13
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     52,
+     48,
+     47
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.14,
+    "centre": [
+     -3.22,
+     -1.5,
+     3.17
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 2,
+    "colour_rgb": [
+     200,
+     199,
+     188
+    ]
+   },
+   {
+    "vertices": 29,
+    "perimeter_m": 1.38,
+    "centre": [
+     -3.11,
+     -1.37,
+     4.18
+    ],
+    "filled": true,
+    "rms_m": 0.022,
+    "triangles": 27,
+    "colour_rgb": [
+     129,
+     117,
+     105
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.33,
+    "centre": [
+     -2.9,
+     -1.48,
+     -0.79
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 3,
+    "colour_rgb": [
+     71,
+     67,
+     56
+    ]
+   },
+   {
+    "vertices": 2,
+    "perimeter_m": null,
+    "centre": [
+     -2.67,
+     -0.22,
+     0.22
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.14,
+    "centre": [
+     -2.58,
+     -1.54,
+     1.47
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 2,
+    "colour_rgb": [
+     173,
+     162,
+     150
+    ]
+   },
+   {
+    "vertices": 7,
+    "perimeter_m": 0.37,
+    "centre": [
+     -2.44,
+     -0.04,
+     4.57
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 5,
+    "colour_rgb": [
+     209,
+     215,
+     215
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.25,
+    "centre": [
+     -2.2,
+     1.08,
+     0.35
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 2,
+    "colour_rgb": [
+     232,
+     233,
+     233
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.05,
+    "centre": [
+     -2.15,
+     0.79,
+     2.04
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     249,
+     250,
+     252
+    ]
+   },
+   {
+    "vertices": 15,
+    "perimeter_m": 0.87,
+    "centre": [
+     -1.96,
+     0.77,
+     3.75
+    ],
+    "filled": true,
+    "rms_m": 0.021,
+    "triangles": 13,
+    "colour_rgb": [
+     163,
+     165,
+     159
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.14,
+    "centre": [
+     -1.95,
+     0.75,
+     2.64
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 2,
+    "colour_rgb": [
+     174,
+     179,
+     181
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.14,
+    "centre": [
+     -1.95,
+     0.74,
+     2.63
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 3,
+    "colour_rgb": [
+     170,
+     174,
+     177
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.23,
+    "centre": [
+     -1.87,
+     1.03,
+     4.58
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 2,
+    "colour_rgb": [
+     165,
+     166,
+     158
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.34,
+    "centre": [
+     -1.93,
+     1.03,
+     4.52
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 4,
+    "colour_rgb": [
+     157,
+     158,
+     150
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.16,
+    "centre": [
+     -1.8,
+     1.05,
+     1.53
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 2,
+    "colour_rgb": [
+     254,
+     254,
+     254
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.17,
+    "centre": [
+     -0.54,
+     1.07,
+     0.5
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     227,
+     237,
+     246
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.18,
+    "centre": [
+     -0.52,
+     1.1,
+     0.48
+    ],
+    "filled": true,
+    "rms_m": 0.007,
+    "triangles": 2,
+    "colour_rgb": [
+     225,
+     234,
+     243
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.27,
+    "centre": [
+     0.04,
+     1.08,
+     2.81
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 2,
+    "colour_rgb": [
+     255,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.1,
+    "centre": [
+     -1.8,
+     1.03,
+     1.95
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     251,
+     253,
+     252
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.26,
+    "centre": [
+     -1.85,
+     1.1,
+     1.89
+    ],
+    "filled": true,
+    "rms_m": 0.009,
+    "triangles": 2,
+    "colour_rgb": [
+     251,
+     252,
+     251
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.16,
+    "centre": [
+     -1.88,
+     1.05,
+     1.79
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     255,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.14,
+    "centre": [
+     -1.88,
+     1.08,
+     1.77
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 4,
+    "colour_rgb": [
+     255,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.17,
+    "centre": [
+     -1.87,
+     1.1,
+     1.8
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     253,
+     253,
+     253
+    ]
+   },
+   {
+    "vertices": 285,
+    "perimeter_m": 18.44,
+    "centre": [
+     -0.64,
+     1.07,
+     2.14
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.13,
+    "centre": [
+     -1.85,
+     1.13,
+     4.36
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     149,
+     150,
+     142
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.28,
+    "centre": [
+     -1.87,
+     1.13,
+     4.44
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     149,
+     149,
+     141
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.34,
+    "centre": [
+     -1.84,
+     1.09,
+     4.51
+    ],
+    "filled": true,
+    "rms_m": 0.006,
+    "triangles": 2,
+    "colour_rgb": [
+     148,
+     149,
+     141
+    ]
+   },
+   {
+    "vertices": 11,
+    "perimeter_m": 1.26,
+    "centre": [
+     -1.81,
+     1.13,
+     4.08
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 9,
+    "colour_rgb": [
+     149,
+     150,
+     142
+    ]
+   },
+   {
+    "vertices": 181,
+    "perimeter_m": 6.85,
+    "centre": [
+     -1.4,
+     -0.28,
+     -0.26
+    ],
+    "filled": false,
+    "rms_m": 0.156,
+    "reason": "not flat enough to close safely"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.09,
+    "centre": [
+     -1.79,
+     0.84,
+     2.46
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     235,
+     239,
+     240
+    ]
+   },
+   {
+    "vertices": 11,
+    "perimeter_m": 0.53,
+    "centre": [
+     -1.69,
+     1.12,
+     3.06
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 9,
+    "colour_rgb": [
+     162,
+     163,
+     158
+    ]
+   },
+   {
+    "vertices": 7,
+    "perimeter_m": 0.5,
+    "centre": [
+     -1.69,
+     1.04,
+     3.18
+    ],
+    "filled": false,
+    "rms_m": 0.012,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 12,
+    "perimeter_m": 0.79,
+    "centre": [
+     -1.5,
+     1.05,
+     4.6
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 10,
+    "colour_rgb": [
+     160,
+     160,
+     152
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 1.29,
+    "centre": [
+     -1.4,
+     1.05,
+     4.13
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 6,
+    "colour_rgb": [
+     151,
+     152,
+     145
+    ]
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": 0.42,
+    "centre": [
+     -1.41,
+     -0.8,
+     0.63
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 7,
+    "colour_rgb": [
+     44,
+     52,
+     41
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.14,
+    "centre": [
+     -1.29,
+     1.04,
+     3.64
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.29,
+    "centre": [
+     -1.2,
+     0.0,
+     -0.17
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     91,
+     88,
+     83
+    ]
+   },
+   {
+    "vertices": 12,
+    "perimeter_m": 0.4,
+    "centre": [
+     -1.23,
+     -0.96,
+     4.1
+    ],
+    "filled": true,
+    "rms_m": 0.006,
+    "triangles": 10,
+    "colour_rgb": [
+     1,
+     2,
+     4
+    ]
+   },
+   {
+    "vertices": 188,
+    "perimeter_m": 5.2,
+    "centre": [
+     -0.93,
+     -1.14,
+     4.32
+    ],
+    "filled": false,
+    "rms_m": 0.147,
+    "reason": "not flat enough to close safely"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.08,
+    "centre": [
+     -1.23,
+     -1.06,
+     3.82
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     176,
+     175,
+     170
+    ]
+   },
+   {
+    "vertices": 33,
+    "perimeter_m": 1.44,
+    "centre": [
+     -1.13,
+     -0.7,
+     4.43
+    ],
+    "filled": true,
+    "rms_m": 0.014,
+    "triangles": 31,
+    "colour_rgb": [
+     51,
+     57,
+     57
+    ]
+   },
+   {
+    "vertices": 11,
+    "perimeter_m": 0.45,
+    "centre": [
+     -1.13,
+     0.29,
+     0.18
+    ],
+    "filled": true,
+    "rms_m": 0.016,
+    "triangles": 9,
+    "colour_rgb": [
+     117,
+     103,
+     90
+    ]
+   },
+   {
+    "vertices": 10,
+    "perimeter_m": 0.39,
+    "centre": [
+     -1.14,
+     0.24,
+     0.23
+    ],
+    "filled": true,
+    "rms_m": 0.007,
+    "triangles": 8,
+    "colour_rgb": [
+     114,
+     99,
+     87
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.05,
+    "centre": [
+     -1.13,
+     -0.62,
+     0.62
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     22,
+     68,
+     42
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.19,
+    "centre": [
+     -1.1,
+     -0.62,
+     0.48
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 3,
+    "colour_rgb": [
+     46,
+     41,
+     37
+    ]
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": 0.37,
+    "centre": [
+     -1.0,
+     0.43,
+     0.26
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 7,
+    "colour_rgb": [
+     79,
+     56,
+     40
+    ]
+   },
+   {
+    "vertices": 17,
+    "perimeter_m": 0.73,
+    "centre": [
+     -0.94,
+     -0.48,
+     0.2
+    ],
+    "filled": true,
+    "rms_m": 0.016,
+    "triangles": 15,
+    "colour_rgb": [
+     34,
+     30,
+     38
+    ]
+   },
+   {
+    "vertices": 12,
+    "perimeter_m": 0.57,
+    "centre": [
+     -0.92,
+     -1.14,
+     3.92
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 10,
+    "colour_rgb": [
+     1,
+     3,
+     7
+    ]
+   },
+   {
+    "vertices": 14,
+    "perimeter_m": 0.46,
+    "centre": [
+     -0.96,
+     -0.62,
+     0.5
+    ],
+    "filled": true,
+    "rms_m": 0.01,
+    "triangles": 12,
+    "colour_rgb": [
+     50,
+     63,
+     84
+    ]
+   },
+   {
+    "vertices": 21,
+    "perimeter_m": 0.78,
+    "centre": [
+     -0.85,
+     -0.55,
+     0.38
+    ],
+    "filled": true,
+    "rms_m": 0.021,
+    "triangles": 19,
+    "colour_rgb": [
+     135,
+     133,
+     138
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.06,
+    "centre": [
+     -0.86,
+     -1.46,
+     4.22
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     95,
+     97,
+     84
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.1,
+    "centre": [
+     -0.65,
+     -0.05,
+     0.21
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     130,
+     122,
+     109
+    ]
+   },
+   {
+    "vertices": 53,
+    "perimeter_m": 2.73,
+    "centre": [
+     -0.77,
+     -0.2,
+     0.25
+    ],
+    "filled": false,
+    "rms_m": 0.045,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.07,
+    "centre": [
+     -0.76,
+     0.08,
+     0.38
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     104,
+     101,
+     92
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.23,
+    "centre": [
+     -0.66,
+     -0.44,
+     -0.01
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     69,
+     67,
+     59
+    ]
+   },
+   {
+    "vertices": 205,
+    "perimeter_m": 7.01,
+    "centre": [
+     -0.11,
+     -0.34,
+     -0.39
+    ],
+    "filled": false,
+    "rms_m": 0.178,
+    "reason": "not flat enough to close safely"
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.35,
+    "centre": [
+     -0.74,
+     -1.07,
+     4.06
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 6,
+    "colour_rgb": [
+     9,
+     15,
+     18
+    ]
+   },
+   {
+    "vertices": 17,
+    "perimeter_m": 0.69,
+    "centre": [
+     -0.58,
+     -0.91,
+     0.96
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 15,
+    "colour_rgb": [
+     228,
+     229,
+     221
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.12,
+    "centre": [
+     -0.66,
+     -0.24,
+     0.06
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 2,
+    "colour_rgb": [
+     71,
+     70,
+     65
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.16,
+    "centre": [
+     -0.53,
+     -0.94,
+     4.62
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     161,
+     162,
+     156
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.15,
+    "centre": [
+     -0.54,
+     -0.97,
+     4.62
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 2,
+    "colour_rgb": [
+     171,
+     172,
+     164
+    ]
+   },
+   {
+    "vertices": 52,
+    "perimeter_m": 2.69,
+    "centre": [
+     -0.28,
+     0.23,
+     0.29
+    ],
+    "filled": false,
+    "rms_m": 0.038,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 14,
+    "perimeter_m": 0.93,
+    "centre": [
+     -0.43,
+     -0.9,
+     4.59
+    ],
+    "filled": true,
+    "rms_m": 0.012,
+    "triangles": 12,
+    "colour_rgb": [
+     181,
+     182,
+     174
+    ]
+   },
+   {
+    "vertices": 50,
+    "perimeter_m": 1.77,
+    "centre": [
+     -0.22,
+     0.46,
+     0.39
+    ],
+    "filled": false,
+    "rms_m": 0.028,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 35,
+    "perimeter_m": 1.04,
+    "centre": [
+     -0.39,
+     -0.89,
+     4.53
+    ],
+    "filled": false,
+    "rms_m": 0.011,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 7,
+    "perimeter_m": 0.35,
+    "centre": [
+     -0.4,
+     -1.05,
+     0.98
+    ],
+    "filled": true,
+    "rms_m": 0.006,
+    "triangles": 5,
+    "colour_rgb": [
+     224,
+     225,
+     217
+    ]
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": 0.2,
+    "centre": [
+     -0.37,
+     -0.78,
+     4.57
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 7,
+    "colour_rgb": [
+     170,
+     171,
+     165
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.14,
+    "centre": [
+     -0.29,
+     -0.71,
+     4.55
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     197,
+     198,
+     192
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.09,
+    "centre": [
+     -0.29,
+     -0.69,
+     4.56
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     202,
+     203,
+     195
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.08,
+    "centre": [
+     -0.22,
+     -0.72,
+     4.57
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     203,
+     204,
+     196
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.09,
+    "centre": [
+     -0.21,
+     -0.7,
+     4.56
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     205,
+     206,
+     198
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.27,
+    "centre": [
+     -0.19,
+     -0.22,
+     4.58
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 6,
+    "colour_rgb": [
+     212,
+     212,
+     204
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.22,
+    "centre": [
+     -0.18,
+     0.24,
+     0.42
+    ],
+    "filled": true,
+    "rms_m": 0.007,
+    "triangles": 6,
+    "colour_rgb": [
+     84,
+     93,
+     95
+    ]
+   },
+   {
+    "vertices": 7,
+    "perimeter_m": 0.28,
+    "centre": [
+     -0.12,
+     -0.57,
+     4.54
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 5,
+    "colour_rgb": [
+     209,
+     210,
+     203
+    ]
+   },
+   {
+    "vertices": 18,
+    "perimeter_m": 0.55,
+    "centre": [
+     -0.07,
+     -0.43,
+     4.54
+    ],
+    "filled": false,
+    "rms_m": 0.013,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.13,
+    "centre": [
+     -0.04,
+     -0.58,
+     4.5
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 2,
+    "colour_rgb": [
+     172,
+     172,
+     165
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.3,
+    "centre": [
+     -0.03,
+     -0.54,
+     4.53
+    ],
+    "filled": false,
+    "rms_m": 0.006,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.05,
+    "centre": [
+     -0.02,
+     -0.95,
+     4.5
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     182,
+     182,
+     174
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.08,
+    "centre": [
+     -0.02,
+     -0.96,
+     4.51
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     147,
+     147,
+     139
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.17,
+    "centre": [
+     0.07,
+     1.05,
+     2.26
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.07,
+    "centre": [
+     0.11,
+     1.07,
+     0.49
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     217,
+     223,
+     223
+    ]
+   },
+   {
+    "vertices": 9,
+    "perimeter_m": 0.44,
+    "centre": [
+     0.15,
+     -0.56,
+     1.21
+    ],
+    "filled": true,
+    "rms_m": 0.013,
+    "triangles": 7,
+    "colour_rgb": [
+     172,
+     165,
+     149
+    ]
+   },
+   {
+    "vertices": 11,
+    "perimeter_m": 0.38,
+    "centre": [
+     0.38,
+     -0.87,
+     2.58
+    ],
+    "filled": true,
+    "rms_m": 0.006,
+    "triangles": 9,
+    "colour_rgb": [
+     17,
+     9,
+     4
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.04,
+    "centre": [
+     1.39,
+     1.09,
+     2.8
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     144,
+     145,
+     131
+    ]
+   },
+   {
+    "vertices": 74,
+    "perimeter_m": 4.28,
+    "centre": [
+     0.93,
+     1.07,
+     3.16
+    ],
+    "filled": true,
+    "rms_m": 0.025,
+    "triangles": 72,
+    "colour_rgb": [
+     126,
+     128,
+     115
+    ]
+   },
+   {
+    "vertices": 25,
+    "perimeter_m": 1.24,
+    "centre": [
+     1.58,
+     -1.34,
+     2.76
+    ],
+    "filled": false,
+    "rms_m": 0.022,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.11,
+    "centre": [
+     2.53,
+     1.12,
+     2.98
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.1,
+    "centre": [
+     2.54,
+     1.12,
+     2.88
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     127,
+     125,
+     112
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.16,
+    "centre": [
+     1.54,
+     1.04,
+     3.2
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     130,
+     130,
+     118
+    ]
+   },
+   {
+    "vertices": 72,
+    "perimeter_m": 4.66,
+    "centre": [
+     2.0,
+     1.06,
+     3.09
+    ],
+    "filled": true,
+    "rms_m": 0.03,
+    "triangles": 70,
+    "colour_rgb": [
+     125,
+     125,
+     113
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.41,
+    "centre": [
+     1.6,
+     -1.44,
+     3.52
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 6,
+    "colour_rgb": [
+     41,
+     33,
+     25
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.15,
+    "centre": [
+     1.57,
+     1.1,
+     2.75
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 29,
+    "perimeter_m": 1.03,
+    "centre": [
+     1.61,
+     -0.04,
+     2.7
+    ],
+    "filled": true,
+    "rms_m": 0.017,
+    "triangles": 27,
+    "colour_rgb": [
+     135,
+     131,
+     121
+    ]
+   },
+   {
+    "vertices": 10,
+    "perimeter_m": 0.38,
+    "centre": [
+     1.64,
+     0.19,
+     2.65
+    ],
+    "filled": true,
+    "rms_m": 0.009,
+    "triangles": 8,
+    "colour_rgb": [
+     153,
+     150,
+     138
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.31,
+    "centre": [
+     1.79,
+     -0.57,
+     2.71
+    ],
+    "filled": true,
+    "rms_m": 0.009,
+    "triangles": 2,
+    "colour_rgb": [
+     134,
+     129,
+     116
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.34,
+    "centre": [
+     1.81,
+     -1.3,
+     2.76
+    ],
+    "filled": true,
+    "rms_m": 0.007,
+    "triangles": 3,
+    "colour_rgb": [
+     126,
+     124,
+     112
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.04,
+    "centre": [
+     1.83,
+     -0.83,
+     2.75
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     129,
+     127,
+     115
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.32,
+    "centre": [
+     1.97,
+     -1.21,
+     2.75
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 4,
+    "colour_rgb": [
+     127,
+     126,
+     114
+    ]
+   },
+   {
+    "vertices": 13,
+    "perimeter_m": null,
+    "centre": [
+     2.51,
+     0.93,
+     2.73
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": null,
+    "centre": [
+     2.49,
+     0.88,
+     2.71
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 12,
+    "perimeter_m": 0.79,
+    "centre": [
+     2.77,
+     -1.35,
+     3.58
+    ],
+    "filled": true,
+    "rms_m": 0.015,
+    "triangles": 10,
+    "colour_rgb": [
+     174,
+     170,
+     159
+    ]
+   },
+   {
+    "vertices": 37,
+    "perimeter_m": 1.5,
+    "centre": [
+     2.9,
+     -1.48,
+     1.68
+    ],
+    "filled": true,
+    "rms_m": 0.038,
+    "triangles": 35,
+    "colour_rgb": [
+     41,
+     37,
+     27
+    ]
+   },
+   {
+    "vertices": 17,
+    "perimeter_m": 0.76,
+    "centre": [
+     2.88,
+     -0.95,
+     2.43
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 15,
+    "colour_rgb": [
+     44,
+     25,
+     13
+    ]
+   },
+   {
+    "vertices": 5,
+    "perimeter_m": 0.22,
+    "centre": [
+     3.93,
+     1.1,
+     0.64
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 3,
+    "colour_rgb": [
+     205,
+     205,
+     203
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.19,
+    "centre": [
+     4.23,
+     1.09,
+     0.68
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 2,
+    "colour_rgb": [
+     145,
+     146,
+     143
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.21,
+    "centre": [
+     5.62,
+     1.09,
+     2.08
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 252,
+    "perimeter_m": 14.43,
+    "centre": [
+     4.3,
+     1.1,
+     1.95
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.25,
+    "centre": [
+     2.83,
+     1.06,
+     2.35
+    ],
+    "filled": true,
+    "rms_m": 0.002,
+    "triangles": 2,
+    "colour_rgb": [
+     255,
+     255,
+     255
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.53,
+    "centre": [
+     3.03,
+     1.04,
+     -1.92
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 4,
+    "colour_rgb": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.3,
+    "centre": [
+     3.06,
+     -0.98,
+     1.84
+    ],
+    "filled": true,
+    "rms_m": 0.005,
+    "triangles": 6,
+    "colour_rgb": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.2,
+    "centre": [
+     3.41,
+     1.09,
+     0.53
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 2,
+    "perimeter_m": null,
+    "centre": [
+     3.47,
+     -0.99,
+     0.12
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.11,
+    "centre": [
+     3.56,
+     1.1,
+     0.54
+    ],
+    "filled": false,
+    "rms_m": 0.0,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.34,
+    "centre": [
+     3.76,
+     -0.6,
+     0.11
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 4,
+    "colour_rgb": [
+     64,
+     63,
+     60
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.13,
+    "centre": [
+     3.78,
+     -0.86,
+     0.09
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 2,
+    "colour_rgb": [
+     41,
+     37,
+     28
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.13,
+    "centre": [
+     3.82,
+     -1.28,
+     0.27
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     11,
+     11,
+     11
+    ]
+   },
+   {
+    "vertices": 14,
+    "perimeter_m": 0.62,
+    "centre": [
+     3.88,
+     -1.13,
+     0.28
+    ],
+    "filled": false,
+    "rms_m": 0.014,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": null,
+    "centre": [
+     3.9,
+     -0.77,
+     0.28
+    ],
+    "filled": false,
+    "reason": "open boundary"
+   },
+   {
+    "vertices": 12,
+    "perimeter_m": 0.8,
+    "centre": [
+     3.93,
+     -0.18,
+     0.07
+    ],
+    "filled": false,
+    "rms_m": 0.01,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 8,
+    "perimeter_m": 0.19,
+    "centre": [
+     4.09,
+     0.39,
+     0.32
+    ],
+    "filled": false,
+    "rms_m": 0.004,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 15,
+    "perimeter_m": 0.67,
+    "centre": [
+     4.04,
+     0.32,
+     0.33
+    ],
+    "filled": false,
+    "rms_m": 0.011,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 38,
+    "perimeter_m": 1.74,
+    "centre": [
+     4.09,
+     -1.09,
+     0.24
+    ],
+    "filled": true,
+    "rms_m": 0.023,
+    "triangles": 36,
+    "colour_rgb": [
+     44,
+     39,
+     29
+    ]
+   },
+   {
+    "vertices": 16,
+    "perimeter_m": 0.63,
+    "centre": [
+     4.05,
+     -0.19,
+     0.2
+    ],
+    "filled": false,
+    "rms_m": 0.009,
+    "reason": "outline crosses itself"
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.08,
+    "centre": [
+     4.03,
+     0.11,
+     0.16
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     76,
+     64,
+     52
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.17,
+    "centre": [
+     4.06,
+     -0.24,
+     0.23
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     86,
+     80,
+     68
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.07,
+    "centre": [
+     4.08,
+     -1.47,
+     3.41
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     92,
+     80,
+     66
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.13,
+    "centre": [
+     4.22,
+     1.03,
+     0.72
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     162,
+     166,
+     167
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.1,
+    "centre": [
+     5.68,
+     1.05,
+     -1.74
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     2,
+     2,
+     2
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.42,
+    "centre": [
+     5.88,
+     1.02,
+     -2.08
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     1,
+     1,
+     1
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.4,
+    "centre": [
+     5.84,
+     1.02,
+     -1.99
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     1,
+     1,
+     1
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.3,
+    "centre": [
+     5.79,
+     1.05,
+     -2.21
+    ],
+    "filled": true,
+    "rms_m": 0.011,
+    "triangles": 2,
+    "colour_rgb": [
+     5,
+     5,
+     5
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.22,
+    "centre": [
+     5.8,
+     1.0,
+     -2.18
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     3,
+     3,
+     3
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.29,
+    "centre": [
+     4.49,
+     1.02,
+     -2.19
+    ],
+    "filled": true,
+    "rms_m": 0.006,
+    "triangles": 2,
+    "colour_rgb": [
+     8,
+     8,
+     6
+    ]
+   },
+   {
+    "vertices": 216,
+    "perimeter_m": 14.75,
+    "centre": [
+     5.25,
+     0.08,
+     -1.98
+    ],
+    "filled": false,
+    "reason": "too large (open side of the scan)"
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.15,
+    "centre": [
+     4.42,
+     0.42,
+     0.37
+    ],
+    "filled": true,
+    "rms_m": 0.003,
+    "triangles": 2,
+    "colour_rgb": [
+     139,
+     139,
+     136
+    ]
+   },
+   {
+    "vertices": 28,
+    "perimeter_m": 1.38,
+    "centre": [
+     4.59,
+     0.57,
+     3.5
+    ],
+    "filled": true,
+    "rms_m": 0.027,
+    "triangles": 26,
+    "colour_rgb": [
+     224,
+     227,
+     228
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.03,
+    "centre": [
+     4.49,
+     0.35,
+     0.42
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     89,
+     80,
+     75
+    ]
+   },
+   {
+    "vertices": 7,
+    "perimeter_m": 0.2,
+    "centre": [
+     4.5,
+     0.35,
+     0.4
+    ],
+    "filled": true,
+    "rms_m": 0.008,
+    "triangles": 5,
+    "colour_rgb": [
+     64,
+     56,
+     53
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.06,
+    "centre": [
+     4.76,
+     0.4,
+     0.39
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     27,
+     23,
+     20
+    ]
+   },
+   {
+    "vertices": 10,
+    "perimeter_m": 0.22,
+    "centre": [
+     4.85,
+     0.4,
+     0.36
+    ],
+    "filled": false,
+    "rms_m": 0.005,
+    "reason": "edge of a surface, not a hole"
+   },
+   {
+    "vertices": 23,
+    "perimeter_m": 1.69,
+    "centre": [
+     5.01,
+     0.14,
+     0.21
+    ],
+    "filled": true,
+    "rms_m": 0.018,
+    "triangles": 21,
+    "colour_rgb": [
+     147,
+     141,
+     136
+    ]
+   },
+   {
+    "vertices": 18,
+    "perimeter_m": 0.76,
+    "centre": [
+     5.09,
+     -0.8,
+     0.26
+    ],
+    "filled": true,
+    "rms_m": 0.018,
+    "triangles": 16,
+    "colour_rgb": [
+     83,
+     83,
+     76
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.13,
+    "centre": [
+     5.02,
+     -0.15,
+     0.31
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     81,
+     78,
+     69
+    ]
+   },
+   {
+    "vertices": 16,
+    "perimeter_m": 0.38,
+    "centre": [
+     5.58,
+     -1.53,
+     1.09
+    ],
+    "filled": true,
+    "rms_m": 0.006,
+    "triangles": 14,
+    "colour_rgb": [
+     118,
+     113,
+     108
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.05,
+    "centre": [
+     5.65,
+     1.11,
+     1.96
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     249,
+     249,
+     251
+    ]
+   },
+   {
+    "vertices": 4,
+    "perimeter_m": 0.09,
+    "centre": [
+     5.66,
+     -1.34,
+     1.79
+    ],
+    "filled": true,
+    "rms_m": 0.001,
+    "triangles": 2,
+    "colour_rgb": [
+     141,
+     141,
+     133
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.18,
+    "centre": [
+     5.68,
+     1.01,
+     -1.66
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "vertices": 3,
+    "perimeter_m": 0.26,
+    "centre": [
+     5.78,
+     -1.16,
+     2.29
+    ],
+    "filled": true,
+    "rms_m": 0.0,
+    "triangles": 1,
+    "colour_rgb": [
+     192,
+     192,
+     182
+    ]
+   },
+   {
+    "vertices": 6,
+    "perimeter_m": 0.26,
+    "centre": [
+     5.74,
+     -1.23,
+     2.27
+    ],
+    "filled": true,
+    "rms_m": 0.004,
+    "triangles": 4,
+    "colour_rgb": [
+     189,
+     187,
+     178
+    ]
+   }
+  ],
+  "filled_holes": 162,
+  "backings": [
+   {
+    "surface": "ceiling",
+    "colour_rgb": [
+     215,
+     217,
+     217
+    ],
+    "height": 1.11
+   },
+   {
+    "surface": "floor",
+    "colour_rgb": [
+     183,
+     181,
+     170
+    ],
+    "height": -1.541
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     205,
+     208,
+     205
+    ],
+    "facing_deg": 177.9,
+    "area_m2": 1.4,
+    "width_m": 0.9
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     215,
+     216,
+     213
+    ],
+    "facing_deg": 177.9,
+    "area_m2": 4.9,
+    "width_m": 7.59
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     209,
+     212,
+     210
+    ],
+    "facing_deg": 87.8,
+    "area_m2": 7.15,
+    "width_m": 5.47
+   },
+   {
+    "surface": "wall",
+    "colour_rgb": [
+     186,
+     185,
+     178
+    ],
+    "facing_deg": 87.8,
+    "area_m2": 3.66,
+    "width_m": 10.83
+   }
+  ],
+  "texture_padding": {
+   "unused_texel_share": [
+    0.341,
+    0.371,
+    0.423,
+    0.797
+   ]
+  }
  }
 }

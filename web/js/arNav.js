@@ -124,22 +124,24 @@ export async function startArWalk({ poly, mpu, scaleAssumed = false, destName = 
   const why = arUnavailableReason();
   if (why) { showModal('AR Walk is not available', why, exitTo3d); return null; }
   if (!poly || poly.length < 2) { showModal('No path yet', 'Choose a place and show the walking path first; AR Walk follows that path.', exitTo3d); return null; }
-  let stream;
+  // Sensors or camera missing / refused (a laptop, a denied permission): AR Walk still runs, as a SIMULATION
+  // (the view follows the path, "Step" walks it) - useful on laptops and for recording; the reason is shown.
+  let stream = null, sensorDenied = false, cameraNote = '';
+  try { await askSensorPermission(); } catch { sensorDenied = true; }
   try {
-    await askSensorPermission();
     stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
   } catch (e) {
-    const msg = e && e.name === 'NotAllowedError' ? 'Camera access was not allowed. Allow the camera for this site and try again.'
-      : e && e.name === 'NotFoundError' ? 'No camera was found on this device.' : (e && e.message) || String(e);
-    showModal('AR Walk could not start', msg, exitTo3d);
-    return null;
+    cameraNote = e && e.name === 'NotAllowedError' ? 'Camera access was not allowed for this site.'
+      : e && e.name === 'NotFoundError' ? 'No camera was found on this device.' : `The camera could not start (${(e && e.message) || e}).`;
   }
 
   const layer = $('ar-layer'), video = $('ar-video');
   layer.hidden = false;
   document.body.classList.add('ar-on');
   video.srcObject = stream;
-  try { await video.play(); } catch { /* autoplay with playsinline + muted normally works */ }
+  video.hidden = !stream;
+  layer.classList.toggle('ar-nocam', !stream);
+  if (stream) { try { await video.play(); } catch { /* autoplay with playsinline + muted normally works */ } }
 
   // ---- renderer (transparent, over the video)
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
@@ -245,12 +247,19 @@ export async function startArWalk({ poly, mpu, scaleAssumed = false, destName = 
     Rw = earthToWorld(screenRotation(0, 80, 0, 0));
     qWorld = matToQuat(Rw);
   };
-  const sensorTimer = setTimeout(() => {
-    if (sensorSeen) return;
+  const goSimulation = (why) => {
     simulate();
-    showModal('Simulation mode', 'This device sends no orientation readings to the browser (desktop computers usually have none). '
-      + 'AR Walk continues as a simulation: press Start, then "Step" to walk the path one stride at a time.');
-  }, 2000);
+    showModal('Simulation mode', `${why} AR Walk continues as a simulation: press Start, then "Step" to walk the path `
+      + 'one stride at a time (on a phone, allow camera and motion access for the real thing).');
+  };
+  let sensorTimer = 0;
+  if (sensorDenied) goSimulation('Motion and orientation access was not allowed.');
+  else {
+    sensorTimer = setTimeout(() => {
+      if (sensorSeen) return;
+      goSimulation(`This device sends no orientation readings to the browser (desktop computers usually have none).${cameraNote ? ' ' + cameraNote : ''}`);
+    }, 2000);
+  }
 
   // ---- render loop
   const v = new THREE.Vector3(), q = new THREE.Quaternion();
@@ -277,7 +286,7 @@ export async function startArWalk({ poly, mpu, scaleAssumed = false, destName = 
     window.removeEventListener('deviceorientation', onOrient);
     window.removeEventListener('devicemotion', onMotion);
     window.removeEventListener('resize', resize);
-    stream.getTracks().forEach((t) => t.stop());
+    if (stream) stream.getTracks().forEach((t) => t.stop());
     video.srcObject = null;
     world.dispose();
     renderer.dispose();
