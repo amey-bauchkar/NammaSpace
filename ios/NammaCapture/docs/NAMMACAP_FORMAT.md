@@ -30,6 +30,9 @@ coverage.json          capture-time coverage estimate per room and tracking segm
 images/fNNNNNN.jpg     keyframe photos (JPEG, sRGB)
 depth/fNNNNNN.depth.f32   LiDAR depth (only on devices with LiDAR)
 depth/fNNNNNN.conf.u8     LiDAR confidence (when ARKit provides it)
+mesh/arkit_scene_mesh.glb optional (LiDAR phones, app >= 1.1): ARKit scene-reconstruction mesh, glTF 2.0 binary,
+                          one untextured triangle mesh in ARKit world coordinates (metres, +Y up; glTF's convention),
+                          for the coordinate frame active when the scan was finished; named by manifest.files.mesh
 integrity.json         {algorithm:"sha256", file_count, total_bytes, files:[{path, bytes, sha256}]} for every other member
 ```
 
@@ -52,7 +55,8 @@ integrity.json         {algorithm:"sha256", file_count, total_bytes, files:[{pat
    known `room_id` (or null), image present, rigid 4×4 pose with last row `[0,0,0,1]`, positive focal lengths, and
    intrinsics `width/height` equal to the image's. Depth: file size = `width*height*4`; confidence = `width*height`;
    depth pose valid.
-5. `manifest.counts.frames_accepted` and `frames_with_depth` equal what the frames say; `manifest.depth.available`
+5. If `manifest.files.mesh` is not null, that member exists and starts with the glTF magic `glTF`.
+6. `manifest.counts.frames_accepted` and `frames_with_depth` equal what the frames say; `manifest.depth.available`
    is true exactly when at least one frame has depth; at least one frame.
 
 Any failure rejects the whole archive. Importers create nothing until validation passes and every extracted member
@@ -118,7 +122,7 @@ than 0.5 m within 0.2 s under normal tracking. No numeric drift is ever reported
                           "angular_speed_deg_s": 21.0, "linear_speed_m_s": 0.31, "difference_from_last_keyframe": 0.08},
               "warnings": ["soft_focus_or_motion_blur"], "overridden": false},
   "selection": {"trigger": "auto" | "manual" | "manual_override" | "annotation" | "doorway" | "loop_back",
-                "reason": "first_frame" | "translation" | "rotation" | "stale" | ...,
+                "reason": "first_frame" | "translation" | "rotation" | "rotation_only" | "stale" | ...,
                 "translation_since_last_m": 0.23, "rotation_since_last_deg": 6.1},
   "depth": null | {
      "path": "depth/f000042.depth.f32", "confidence_path": "depth/f000042.conf.u8" | null,
@@ -128,7 +132,9 @@ than 0.5 m within 0.2 s under normal tracking. No numeric drift is ever reported
      "pairing": "same_frame" | "stream_frame_before_still",
      "valid_sample_fraction": 0.97 },
   "flags": ["relaxed_gate", "quality_override", "high_resolution_capture_failed: ...",
-            "shortly_after_relocalization", "depth_missing_on_lidar_device", "depth_lost_before_export"]
+            "shortly_after_relocalization", "depth_missing_on_lidar_device", "depth_lost_before_export",
+            "high_resolution_capture_retried", "stream_fallback_after_repeated_high_resolution_failures",
+            "downscaled_from_WxH"]
 }
 ```
 
@@ -160,11 +166,20 @@ than 0.5 m within 0.2 s under normal tracking. No numeric drift is ever reported
 * Devices without LiDAR write `depth: null` for every frame and `manifest.depth = {available: false, source: null,
   unavailable_reason: ...}`. Depth is never estimated, inferred or synthesized.
 
+### Keyframe settings (`manifest.capture_settings.keyframe`)
+
+`min_translation_m`, `min_rotation_deg`, `rotation_min_translation_m`, `rotation_only_min_deg`,
+`max_consecutive_rotation_only` (-1 = no limit), `pivot_arm_m`, `low_overlap_rotation_deg`, `min_interval_s`. App 1.0
+wrote only the first two and last two; readers should treat the missing ones as 0 / `min_rotation_deg` / -1 / 0 (the
+1.0 behaviour). Movement is measured as the smaller of the camera's motion and the motion of a point `pivot_arm_m`
+behind it along the horizontal view direction.
+
 ## 7. Other records
 
 * **rejections.jsonl**: `{candidate_index, timestamp_s, coordinate_frame_id, trigger, reasons[], metrics}`. Reasons:
   `blurry`, `underexposed`, `overexposed`, `turning_too_fast`, `moving_too_fast`, `duplicate_of_last_keyframe`,
-  `tracking_not_available`, `tracking_limited_<reason>`, `writer_backpressure`.
+  `tracking_not_available`, `tracking_limited_<reason>`, `writer_backpressure`, `high_resolution_capture_failed`
+  (the still failed twice; the candidate was skipped rather than stored at video resolution).
 * **trajectory.jsonl**: `{timestamp_s, coordinate_frame_id, position[3], quaternion_xyzw[4], tracking, tracking_reason}`.
 * **events.jsonl**: `{seq, type, timestamp_s, wallclock, coordinate_frame_id, room_id, position|null, frame_id|null,
   data{string:string}}`. Types: `session_start`, `session_end`, `room_start`, `room_renamed`, `doorway`
@@ -190,7 +205,9 @@ system_version}`, `capabilities{world_tracking, scene_depth, smoothed_scene_dept
 high_resolution_frame_capture, configurable_capture_device, video_format{width, height, frames_per_second,
 recommended_for_high_resolution_capture, hdr_supported}}`, `conventions`, `depth`, `capture_settings{keyframe{...},
 quality{...} (all thresholds used), image_encoding, jpeg_quality, trajectory_sample_hz, camera_controls[{control,
-outcome: locked|enabled|disabled|unavailable|failed|not_requested, detail, at}]}`, `scale{provenance:
+outcome: locked|enabled|disabled|unavailable|failed|reverted|not_requested, detail, at}]}` (controls: `video_hdr`,
+`exposure_lock`, `white_balance_lock`, `focus_lock`; app ≥ 1.1 records at least one outcome for each of the last three;
+the latest entry per control is the final state; `detail` carries the values read back from the device), `scale{provenance:
 "arkit_visual_inertial", status: device_tracked_unverified|user_validated|user_validation_failed, validations[{id, at,
 coordinate_frame_id, point_a, point_b, measured_m, true_m, ratio, method}], note}`, `coordinate_frames[]`, `rooms[]`,
 `counts{frames_accepted, frames_rejected, frames_with_depth, frames_high_resolution, trajectory_samples, events,

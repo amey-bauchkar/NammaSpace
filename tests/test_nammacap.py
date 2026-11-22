@@ -115,6 +115,7 @@ def test_non_lidar_archive_is_valid_without_depth(tmp_path):
     ("depth_wrong_size", "depth size mismatch"),
     ("unknown_coordinate_frame", "unknown coordinate_frame_id"),
     ("no_integrity", "integrity.json missing"),
+    ("mesh_missing", "names mesh"),
 ])
 def test_bad_archives_are_rejected(tmp_path, case, expect):
     p = tmp_path / "a.nammacap"
@@ -145,6 +146,8 @@ def test_bad_archives_are_rejected(tmp_path, case, expect):
         build(p, members_mutate=lambda m: m.update({"depth/f000001.depth.f32": b"\x00" * 10}))
     elif case == "unknown_coordinate_frame":
         build(p, mutate=lambda man, fr, rec: fr[0].update(coordinate_frame_id=7))
+    elif case == "mesh_missing":
+        build(p, mutate=lambda man, fr, rec: man["files"].update(mesh="mesh/arkit_scene_mesh.glb"))
     elif case == "no_integrity":
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
@@ -221,6 +224,21 @@ def test_photo_route_gets_at_most_its_limit_with_user_frames_first(tmp_path, mon
     assert any("6 of 20 keyframes" in n for n in store.get(res["project_id"])["notices"])
 
 
+def test_a_stray_lower_resolution_frame_stays_out_of_the_photo_route(tmp_path):
+    """First real capture: one 1920x1440 video-stream fallback among 4032x3024 stills -> CAP-MIXED-CAMERAS."""
+    def fallback(man, fr, rec):
+        fr[-1]["image"].update(width=1920, height=1440, source="video_stream")
+        fr[-1]["camera"]["intrinsics"].update(width=1920, height=1440)
+        fr[-1]["flags"].append("high_resolution_capture_failed: Capturing a high resolution frame failed.")
+    store = ProjectStore(tmp_path / "projects")
+    res = nc.import_archive(store, build(tmp_path / "a.nammacap", n=12, depth=False, mutate=fallback))
+    cap = store.path(res["project_id"]) / "capture"
+    assert res["frames_other_size"] == ["f000012"]
+    assert "f000012.jpg" not in {p.name for p in (cap / "originals").iterdir()}
+    assert (cap / "nammacap" / "images" / "f000012.jpg").exists()          # kept, not discarded
+    assert any("different image size" in n for n in store.get(res["project_id"])["notices"])
+
+
 def test_imported_photos_pass_the_existing_capture_check(tmp_path):
     """The real photo-route ingest accepts what the importer lays out (decodable JPEGs, one camera size)."""
     from PIL import Image
@@ -263,6 +281,12 @@ def test_swift_exported_archive_validates_and_imports(tmp_path):
     assert r["ok"], r["errors"]
     res = nc.import_archive(ProjectStore(tmp_path / "projects"), p)
     assert res["frames_imported"] == r["frames"]
+    if res["mesh"]:          # the Swift-written GLB is readable by the existing mesh route's parser
+        from namma.studio.mesh_import import mesh_triangles
+        store = ProjectStore(tmp_path / "projects")
+        glb = (store.path(res["project_id"]) / "capture" / "nammacap" / res["mesh"]).read_bytes()
+        V, F, stats = mesh_triangles(glb)
+        assert len(F) > 0 and V.shape[1] == 3
 
 
 # ------------------------------------------------------------------------------------------- phone upload route

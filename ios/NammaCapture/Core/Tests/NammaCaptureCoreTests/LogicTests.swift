@@ -77,7 +77,12 @@ import Testing
         let r = simd_double3x3(simd_quatd(angle: 15 * .pi / 180, axis: SIMD3(0, 1, 0)))
         var rot = p0.matrix
         rot.columns.0 = SIMD4(r.columns.0, 0); rot.columns.1 = SIMD4(r.columns.1, 0); rot.columns.2 = SIMD4(r.columns.2, 0)
-        #expect(s.evaluate(pose: Pose(rot), time: 1, coordinateFrame: 0, staleAfterS: 4).reason == "rotation")
+        // turning 15 degrees without moving no longer makes a keyframe (it is noticed as turning on the spot)...
+        let spin = s.evaluate(pose: Pose(rot), time: 1, coordinateFrame: 0, staleAfterS: 4)
+        #expect(!spin.isCandidate && spin.turnedWithoutMoving)
+        // ...but 15 degrees plus 12 cm of movement does
+        var rotMoved = rot; rotMoved.columns.3.x += 0.12; s.thresholds.rotationMinTranslationM = 0.10
+        #expect(s.evaluate(pose: Pose(rotMoved), time: 1, coordinateFrame: 0, staleAfterS: 4).reason == "rotation")
         // standing still
         #expect(!s.evaluate(pose: p0, time: 1, coordinateFrame: 0, staleAfterS: 4).isCandidate)
         // a new coordinate frame always starts with a first frame

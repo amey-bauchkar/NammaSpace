@@ -53,6 +53,17 @@ public struct Pose: Sendable, Equatable {
         return a
     }
 
+    /// Estimated body pivot: `armM` behind the camera along the horizontal viewing direction (the point a person
+    /// turns around when they rotate on the spot holding the phone out). Equals `position` for armM = 0 or when
+    /// looking straight up/down.
+    public func pivot(armM: Double) -> SIMD3<Double> {
+        let f = forward
+        let h = SIMD2(f.x, f.z)
+        let n = simd_length(h)
+        guard armM > 0, n > 0.2 else { return position }
+        return position - armM * SIMD3(f.x / n, 0, f.z / n)
+    }
+
     /// Pitch of the viewing direction, degrees, + = looking up.
     public var pitchDegrees: Double { asin(max(-1, min(1, forward.y))) * 180 / .pi }
 

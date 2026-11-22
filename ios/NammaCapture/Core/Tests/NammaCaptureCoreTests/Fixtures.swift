@@ -104,6 +104,11 @@ enum Fixtures {
             SurfaceAnnotation(id: "ann_1", kind: "mirror", frameId: "f000002", imagePointNormalized: [0.5, 0.4], coordinateFrameId: 0,
                               tWorldFromCamera: pose(1).rowMajor, worldPoint: nil, worldPointMethod: nil, roomId: "room_1",
                               note: "", createdAt: ISOTime.string(), updatedAt: ISOTime.string())]))
+        if depth {      // LiDAR sessions carry a scene mesh: a 1 m floor quad
+            let glb = try GLBWriter.data(positions: [0, 0, 0, 1, 0, 0, 1, 0, -1, 0, 0, -1], indices: [0, 1, 2, 0, 2, 3])
+            try FileManager.default.createDirectory(at: dir.appendingPathComponent("mesh"), withIntermediateDirectories: true)
+            try glb.write(to: dir.appendingPathComponent(NammaCapFormat.meshPath))
+        }
         var cov = CoverageModel()
         cov.setFloor(y: 0)
         cov.addCameraView(pose: pose(0))

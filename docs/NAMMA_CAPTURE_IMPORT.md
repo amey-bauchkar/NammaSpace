@@ -27,10 +27,13 @@ web-capture page, the 3D-scan (GLTF/GLB) import, COLMAP/OpenMVS/splat steps and 
 ```
 projects/<id>/capture/nammacap/images/fNNNNNN.jpg  every keyframe photo
 projects/<id>/capture/originals/fNNNNNN.jpg        hard links to at most `max_images` of them (300 by default) for the
-                                                     existing photo route: doorway/loop-back/annotation/manual frames
-                                                     first, then an even spread; tested to pass the real capture check
+                                                     existing photo route, majority image size only (a stray fallback
+                                                     frame of another size would trigger CAP-MIXED-CAMERAS):
+                                                     doorway/loop-back/annotation/manual frames first, then an even
+                                                     spread; tested to pass the real capture check
 projects/<id>/capture/nammacap/manifest.json       + integrity.json, frames.jsonl, rejections.jsonl,
                                                      trajectory.jsonl, events.jsonl, annotations.json, coverage.json
+projects/<id>/capture/nammacap/mesh/arkit_scene_mesh.glb   ARKit LiDAR mesh when the phone had LiDAR (untextured)
 projects/<id>/capture/nammacap/depth/...           LiDAR depth/confidence (if the phone had LiDAR)
 projects/<id>/capture/nammacap/colmap_priors/coordinate_frame_N/{cameras,images,points3D}.txt
 projects/<id>/capture/nammacap/import_report.json
@@ -55,5 +58,8 @@ older inputs; the following are the remaining integration steps:
    `studio/mirrors.py` instead of after-the-fact detection.
 5. **Exposure.** Per-frame EXIF exposure / light estimate and `brightness_jump` events are available for the splat
    trainer's colour-gain initialisation.
+6. **LiDAR mesh → mesh route.** `mesh/arkit_scene_mesh.glb` is a glTF mesh `mesh_import.mesh_triangles` already
+   parses. It is untextured; the mesh route (repair, nav grid, splat init) would need the keyframes + poses for
+   texturing instead of Polycam's baked texture.
 
 The current photo route caps captures at its own limits (e.g. `MAX_FRAMES`), unchanged by this importer.

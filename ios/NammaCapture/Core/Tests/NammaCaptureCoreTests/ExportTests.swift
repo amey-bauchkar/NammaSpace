@@ -15,6 +15,10 @@ import Testing
         #expect(r.manifest.scale.status == "device_tracked_unverified")
         #expect(r.manifest.depth.available && r.manifest.depth.source == "arkit_scene_depth")
         #expect(r.manifest.recovery == nil)
+        #expect(r.manifest.files.mesh == NammaCapFormat.meshPath)
+        let z = try ZipReader(url: r.archive)
+        let glb = try z.data(try #require(z.entries.first { $0.path == NammaCapFormat.meshPath }))
+        #expect(Array(glb.prefix(4)) == Array("glTF".utf8))
         // revalidate from scratch
         #expect(ArchiveValidator.validate(r.archive).ok)
 
@@ -34,6 +38,7 @@ import Testing
         #expect(r.manifest.depth.source == nil)
         #expect(r.manifest.depth.unavailableReason?.contains("LiDAR") == true)
         #expect(r.manifest.counts.framesWithDepth == 0)
+        #expect(r.manifest.files.mesh == nil)
         let json = String(decoding: try NammaJSON.encoder().encode(r.manifest), as: UTF8.self)
         #expect(json.contains("\"source\":null"))     // explicit null, not an omitted key
     }
@@ -86,6 +91,21 @@ import Testing
     @Test func emptySessionRefusesToExport() async throws {
         let s = try await Fixtures.session(frames: 0, depth: false)
         #expect(throws: ExportError.self) { try Exporter.export(sessionDirectory: s.dir) }
+    }
+}
+
+@Suite struct GLBTests {
+    @Test func writesAValidGLBWithBoundsAndAlignedChunks() throws {
+        let d = try GLBWriter.data(positions: [0, 0, 0, 2, 0, 0, 0, 3, -1], indices: [0, 1, 2])
+        #expect(Array(d.prefix(4)) == Array("glTF".utf8))
+        let total = d.subdata(in: 8..<12).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+        #expect(Int(total) == d.count && d.count % 4 == 0)
+        let jl = Int(d.subdata(in: 12..<16).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
+        let json = try JSONSerialization.jsonObject(with: d.subdata(in: 20..<(20 + jl))) as! [String: Any]
+        let acc = json["accessors"] as! [[String: Any]]
+        #expect(acc[0]["count"] as? Int == 3 && acc[1]["count"] as? Int == 3)
+        #expect(acc[0]["max"] as? [Double] == [2, 3, 0])
+        #expect(throws: GLBWriter.Error.self) { try GLBWriter.data(positions: [0, 0, 0], indices: [0, 1, 2]) }
     }
 }
 

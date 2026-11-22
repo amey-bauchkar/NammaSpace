@@ -276,6 +276,15 @@ def validate(path, *, keep_records=False):
             err.append("manifest.depth.available disagrees with the frames")
         if not seen:
             err.append("archive has no frames")
+        mesh = (man.get("files") or {}).get("mesh")
+        if mesh is not None:
+            mi = by.get(mesh) if isinstance(mesh, str) else None
+            if mi is None:
+                err.append(f"manifest names mesh {mesh!r} but it is missing")
+            else:
+                with zf.open(mi) as f:
+                    if f.read(4) != b"glTF":
+                        err.append(f"{mesh} is not a glTF binary")
         rec = man.get("recovery")
         if rec and rec.get("frames_without_image"):
             warn.append(f"{len(rec['frames_without_image'])} frame(s) were lost on the phone before export "
@@ -365,9 +374,23 @@ def photo_route_limit():
         return 300
 
 
+def majority_size(frames):
+    """(width, height) shared by most frames. The photo route calibrates each image size separately and warns
+    CAP-MIXED-CAMERAS, so a stray fallback frame (e.g. one 1920x1440 video-stream frame among 4032x3024 stills, seen in
+    the first real capture) is kept out of it."""
+    sizes = {}
+    for f in frames:
+        k = (f["image"]["width"], f["image"]["height"])
+        sizes[k] = sizes.get(k, 0) + 1
+    return max(sizes.items(), key=lambda kv: (kv[1], kv[0][0] * kv[0][1]))[0] if sizes else None
+
+
 def select_for_photo_route(frames, limit):
-    """Frame ids for originals/: all if they fit; otherwise user-requested frames (doorways, loop-backs, annotations,
-    manual) first, then an even spread over the remaining frames in capture order, so no stretch of the walk is lost."""
+    """Frame ids for originals/: only frames of the majority image size; all of those if they fit, otherwise
+    user-requested frames (doorways, loop-backs, annotations, manual) first, then an even spread over the remaining
+    frames in capture order, so no stretch of the walk is lost."""
+    size = majority_size(frames)
+    frames = [f for f in frames if (f["image"]["width"], f["image"]["height"]) == size]
     ids = [f["frame_id"] for f in sorted(frames, key=lambda f: f["index"])]
     if len(ids) <= limit:
         return set(ids)
@@ -419,6 +442,9 @@ def import_archive(store, path, title=None):
             (meta / "integrity.json").write_bytes(zf.read("integrity.json"))   # not self-listed; parsed above
             for name in ("manifest.json", *RECORD_FILES):
                 extract(name, meta / name)
+            mesh = (man.get("files") or {}).get("mesh")
+            if mesh:
+                extract(mesh, meta / mesh)
             name_of = {}
             for f in frames:
                 src = f["image"]["path"]
@@ -449,9 +475,18 @@ def import_archive(store, path, title=None):
                    f"Scale: {man['scale'].get('status')} (ARKit metric tracking; see capture/nammacap/manifest.json).",
                    "ARKit poses are kept as priors in capture/nammacap/colmap_priors; the current reconstruction "
                    "pipeline does not read them yet."]
-        if len(chosen) < len(frames):
-            notices.append(f"{len(chosen)} of {len(frames)} keyframes were placed in the photo route (its limit is {limit}); "
-                           "all keyframes are kept in capture/nammacap/images.")
+        size = majority_size(frames)
+        other = [f["frame_id"] for f in frames if (f["image"]["width"], f["image"]["height"]) != size]
+        if other:
+            notices.append(f"{len(other)} keyframe(s) with a different image size than the other {len(frames) - len(other)} "
+                           f"({size[0]}x{size[1]}) were kept out of the photo route so it calibrates one camera: "
+                           + ", ".join(other[:10]) + (" ..." if len(other) > 10 else ""))
+        if len(chosen) < len(frames) - len(other):
+            notices.append(f"{len(chosen)} of {len(frames) - len(other)} keyframes were placed in the photo route (its limit "
+                           f"is {limit}); all keyframes are kept in capture/nammacap/images.")
+        if mesh:
+            notices.append("ARKit LiDAR scene mesh included (capture/nammacap/" + mesh + ", untextured, ARKit world "
+                           "coordinates). The mesh import route is not wired to it yet.")
         if len(man["coordinate_frames"]) > 1:
             notices.append(f"Tracking was reset during capture: {len(man['coordinate_frames'])} separate coordinate frames.")
         notices.extend(rep["warnings"][:5])
@@ -462,7 +497,8 @@ def import_archive(store, path, title=None):
             shutil.move(str(f), str(cap / "originals" / f.name))
         shutil.move(str(meta), str(cap / "nammacap"))
         result = {"project_id": pid, "title": title, "frames_imported": len(frames),
-                  "frames_in_photo_route": len(chosen), "photo_route_limit": limit, "depth_frames": rep["depth_frames"],
+                  "frames_in_photo_route": len(chosen), "photo_route_limit": limit,
+                  "frames_other_size": other, "mesh": mesh, "depth_frames": rep["depth_frames"],
                   "coordinate_frames": len(man["coordinate_frames"]), "rooms": [r.get("label") for r in man["rooms"]],
                   "scale_status": man["scale"].get("status"), "colmap_priors": priors,
                   "warnings": rep["warnings"], "imported_at": timefmt.now_iso(),
