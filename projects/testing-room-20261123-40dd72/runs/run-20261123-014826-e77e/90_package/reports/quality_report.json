@@ -1,0 +1,88 @@
+{
+ "verdict": "usable_with_warnings",
+ "warnings": [
+  {
+   "code": "REG-MISSING",
+   "severity": "warning",
+   "message": "5 of 201 photos could not be placed; the areas they show may be missing.",
+   "value": 0.975,
+   "threshold": 1.0,
+   "detail": {
+    "unregistered": [
+     "f000087.jpg",
+     "f000088.jpg",
+     "f000161.jpg",
+     "f000162.jpg",
+     "f000163.jpg"
+    ]
+   }
+  },
+  {
+   "code": "SPARSE-WEAK",
+   "severity": "warning",
+   "message": "Few 3D points were found per photo; the geometry may be unreliable.",
+   "value": 292.5,
+   "threshold": 300
+  },
+  {
+   "code": "FLOOR-SUSPECT",
+   "severity": "warning",
+   "message": "The surface found as 'floor' is probably a table or other raised surface (26% of the model lies below it). Walking height and the floor guide may be wrong; capture more of the real floor.",
+   "value": 0.2584,
+   "threshold": 0.05
+  },
+  {
+   "code": "SCALE-UNKNOWN",
+   "severity": "info",
+   "message": "Real-world size is unknown: photos alone do not fix scale. The model is shown in its own units. Add a known measurement to enable metric distances."
+  },
+  {
+   "code": "DOORWAYS-NOT-EVALUATED",
+   "severity": "info",
+   "message": "Doorways are not detected automatically; check them visually."
+  }
+ ],
+ "facts": {
+  "images_input": 201,
+  "images_registered": 196,
+  "unregistered": [
+   "f000087.jpg",
+   "f000088.jpg",
+   "f000161.jpg",
+   "f000162.jpg",
+   "f000163.jpg"
+  ],
+  "other_models": 0,
+  "sparse_points": 57333,
+  "mean_reprojection_px": 1.3698630578899174,
+  "sift_max_features": 8192,
+  "mean_track_length": 3.7270507386670855,
+  "low_texture_images": [],
+  "dense_fallback": false,
+  "dense_fallback_reason": null,
+  "floor_detected": true,
+  "floor_coverage": 0.6618,
+  "floor_suspect": true,
+  "below_floor_fraction": 0.2584,
+  "mesh_vertices": 680819,
+  "mesh_faces": 1342467,
+  "mesh_components": 14,
+  "mesh_largest_component_share": 0.9135,
+  "mesh_tiny_components": 7,
+  "dense_points": 1473703,
+  "scale_status": "unknown"
+ },
+ "thresholds": {
+  "registration_ok": 1.0,
+  "registration_poor": 0.6,
+  "low_texture_keypoints": 1500,
+  "low_texture_fraction": 0.25,
+  "points_per_image_min": 300,
+  "reprojection_px_max": 1.5,
+  "floor_coverage_min": 0.5,
+  "largest_component_min": 0.8,
+  "floater_component_max_share": 0.005
+ },
+ "registration_rate": 0.9751,
+ "created_at": "2026-11-23T02:44:07+05:30"
+}

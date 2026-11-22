@@ -1,0 +1,71 @@
+{
+ "status": "ready",
+ "mode": "photos",
+ "errors": [],
+ "warnings": [
+  {
+   "code": "CAP-MIXED-CAMERAS",
+   "severity": "warning",
+   "message": "Photos come from different cameras or sizes; each is calibrated separately, which is less stable. Use one phone and one zoom level.",
+   "sizes": [
+    [
+     1920,
+     1440
+    ],
+    [
+     4032,
+     3024
+    ]
+   ]
+  },
+  {
+   "code": "CAP-ISOLATED",
+   "severity": "warning",
+   "message": "7 images share few matching details with the others in this quick check and might not be placed. The check is cautious (on test rooms it also flagged photos that were placed): after processing, look at 'Photos placed' and re-shoot around the missing ones.",
+   "images": [
+    "f000084.jpg",
+    "f000085.jpg",
+    "f000119.jpg",
+    "f000120.jpg",
+    "f000121.jpg",
+    "f000122.jpg",
+    "f000160.jpg"
+   ]
+  },
+  {
+   "code": "CAP-GROUPS",
+   "severity": "warning",
+   "message": "In this quick check the images form 3 groups that do not overlap. If the final model is split or photos are missing, take extra photos while walking between those areas in both directions, including overlapping views on each side of doorways, so they connect.",
+   "group_sizes": [
+    189,
+    3,
+    2
+   ]
+  }
+ ],
+ "stats": {
+  "mode": "photos",
+  "files_uploaded": 201,
+  "inputs_accepted": 201,
+  "flags": {
+   "sharpness_median": 115.7,
+   "sharpness_peak_median": 286.6,
+   "blur_threshold": 35.0,
+   "blur_measure": "sharpness_peak"
+  },
+  "blurry": 0,
+  "too_dark": 0,
+  "too_bright": 0,
+  "low_detail": 5,
+  "near_duplicate_pairs": 0,
+  "overlap": {
+   "pairs_tested": 2069,
+   "verified_pairs": 499,
+   "isolated": 7,
+   "groups": 3,
+   "largest_group": 189
+  }
+ },
+ "seconds": 44.1,
+ "created_at": "2026-11-23T01:47:22+05:30"
+}

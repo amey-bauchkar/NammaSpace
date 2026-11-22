@@ -1,0 +1,200 @@
+{
+ "contract": "IF-13",
+ "contract_version": "1.3.0",
+ "package_id": "pkg-testing-room-20261123-40dd72-run-20261123-014826-e77e",
+ "project": {
+  "project_id": "testing-room-20261123-40dd72",
+  "title": "Testing Room"
+ },
+ "run_id": "run-20261123-014826-e77e",
+ "created_at": "2026-11-23T02:56:39+05:30",
+ "model_frame": {
+  "frame_id": "model:run-20261123-014826-e77e",
+  "units": "model",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "floor_detected": true,
+  "up_source": "floor_plane",
+  "datum": "origin on the floor plane below the centroid of the capture cameras; +X along the principal horizontal axis of the floor; units = reconstruction units"
+ },
+ "scale": {
+  "status": "unknown",
+  "metres_per_unit": null,
+  "relative_uncertainty": null,
+  "method": "photos only: scale not observable",
+  "evaluation_only": false
+ },
+ "appearance": {
+  "representation": "textured_mesh",
+  "to_model": {
+   "matrix_row_major": [
+    -0.9511320018759766,
+    -0.13116722662502334,
+    -0.27954082647602135,
+    0.1406779640830593,
+    0.1703991728230986,
+    0.5320132607063778,
+    -0.8294130529077606,
+    4.123540181807558,
+    0.25751123647056856,
+    -0.836514822996023,
+    -0.48366405076181906,
+    0.08663858677588589,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "method": "rigid SfM -> model frame (floor plane / camera orientation), see 70_frame/frame.json"
+  },
+  "lods": [
+   {
+    "lod": 0,
+    "path": "scene/lod0.glb",
+    "format": "glb",
+    "bytes": 70556624,
+    "sha256": "42bd12ec8c0836d8ad023ad0dec070554a10e1d9398c473039d23d896b21b9a0",
+    "faces": 1342467
+   },
+   {
+    "lod": 1,
+    "path": "scene/lod1.glb",
+    "format": "glb",
+    "bytes": 24814476,
+    "sha256": "d4d0cf6f2bedf9b5725ca43007e1608ddee218dc8bb53f65617c328ad8608b6f",
+    "faces": 271490
+   }
+  ],
+  "splat": {
+   "path": "scene/splat.spz",
+   "format": "spz",
+   "bytes": 2775064,
+   "sha256": "59aa4db3c0cc67b3d92d877a948003fb995293f919d6a948da8f50c541fb4b5e",
+   "splats": 115957,
+   "method": "3D Gaussian splat (gsplat 1.5.3, MCMC, 15000 steps) from 180 photos, camera poses from COLMAP SfM; aligned with reconstruction frame",
+   "to_model": {
+    "matrix_row_major": [
+     -0.9511320018759766,
+     -0.13116722662502334,
+     -0.27954082647602135,
+     0.1406779640830593,
+     0.1703991728230986,
+     0.5320132607063778,
+     -0.8294130529077606,
+     4.123540181807558,
+     0.25751123647056856,
+     -0.836514822996023,
+     -0.48366405076181906,
+     0.08663858677588589,
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
+    "fit": {
+     "within_5cm": 1.0,
+     "median_cm": 0.0
+    }
+   }
+  }
+ },
+ "eye_height_units": 4.170540053875479,
+ "bounds": {
+  "min": [
+   -4.64067849341746,
+   -3.8977374450169973,
+   -3.21810953517596
+  ],
+  "max": [
+   4.643496244495764,
+   7.069935552833487,
+   3.2876370530170087
+  ]
+ },
+ "start_view": {
+  "position": [
+   -1.21637,
+   6.6949,
+   0.76298
+  ],
+  "target": [
+   1.35727,
+   4.50061,
+   -1.67733
+  ],
+  "source": "capture camera f000139.jpg"
+ },
+ "cameras": "views/cameras.json",
+ "roam": "nav/roam_grid.json",
+ "navigation": {
+  "status": "unavailable",
+  "geometry": null,
+  "scale_basis": "unknown",
+  "metres_per_unit": null,
+  "note": "Navigation geometry unavailable: the detected floor is probably a table or other raised surface (26% of the points lie below it)."
+ },
+ "pois": "poi/pois.json",
+ "quality": {
+  "verdict": "usable_with_warnings",
+  "report": "reports/quality_report.json",
+  "capture_report": "reports/capture_report.json",
+  "warnings": [
+   "REG-MISSING",
+   "SPARSE-WEAK",
+   "FLOOR-SUSPECT",
+   "SCALE-UNKNOWN",
+   "DOORWAYS-NOT-EVALUATED"
+  ]
+ },
+ "notices": [
+  "Imported from Namma Capture (201 keyframes, schema 1.0).",
+  "Depth: LiDAR scene depth on 201 frames.",
+  "Scale: device_tracked_unverified (ARKit metric tracking; see capture/nammacap/manifest.json).",
+  "ARKit poses are kept as priors in capture/nammacap/colmap_priors; the current reconstruction pipeline does not read them yet.",
+  "Scale unknown: photos alone do not fix real-world size. Distances are in model units.",
+  "Reconstruction quality: usable with warnings (3 warnings)."
+ ],
+ "files": [
+  {
+   "path": "nav/roam_grid.json",
+   "sha256": "f31eca56411580e2309b04e1d895beab5c6043568e8538182d2f5db371d05863",
+   "bytes": 1690
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+   "bytes": 3
+  },
+  {
+   "path": "reports/capture_report.json",
+   "sha256": "5764b7493817fca1db0426d6d3e97710f49a17cdc6963e352b3c9e786114b74c",
+   "bytes": 1770
+  },
+  {
+   "path": "reports/quality_report.json",
+   "sha256": "ef80a0c759bc81d955fd4fed7ebd4b3ba1c7bafc57c2ccc59c512f97f4ca2275",
+   "bytes": 2385
+  },
+  {
+   "path": "scene/lod0.glb",
+   "sha256": "42bd12ec8c0836d8ad023ad0dec070554a10e1d9398c473039d23d896b21b9a0",
+   "bytes": 70556624
+  },
+  {
+   "path": "scene/lod1.glb",
+   "sha256": "d4d0cf6f2bedf9b5725ca43007e1608ddee218dc8bb53f65617c328ad8608b6f",
+   "bytes": 24814476
+  },
+  {
+   "path": "scene/splat.spz",
+   "sha256": "59aa4db3c0cc67b3d92d877a948003fb995293f919d6a948da8f50c541fb4b5e",
+   "bytes": 2775064
+  },
+  {
+   "path": "views/cameras.json",
+   "sha256": "aaa09b94eb9938e8f93b0aeb03372055a0ac3acbba3de747cb788f398ead30d7",
+   "bytes": 51317
+  }
+ ]
+}

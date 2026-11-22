@@ -1,0 +1,521 @@
+{
+ "run_id": "run-20261123-014826-e77e",
+ "profile": "high",
+ "config_sha256": "1fa32a5b9f7167b443c1985845dd91dea0ef100629b3b91e42e827238fa4cb40",
+ "pipeline_version": "13.10.0",
+ "status": "succeeded",
+ "created_at": "2026-11-23T01:48:26+05:30",
+ "stages": [
+  {
+   "name": "prepare",
+   "label": "Preparing photos",
+   "status": "done",
+   "started_at": "2026-11-23T01:48:27+05:30",
+   "ended_at": "2026-11-23T01:48:27+05:30",
+   "seconds": 0.5,
+   "result": {
+    "images": 201,
+    "single_camera": false
+   }
+  },
+  {
+   "name": "sfm",
+   "label": "Placing cameras (structure from motion)",
+   "status": "done",
+   "started_at": "2026-11-23T01:48:27+05:30",
+   "ended_at": "2026-11-23T02:01:13+05:30",
+   "seconds": 765.7,
+   "result": {
+    "registered": 196,
+    "input": 201,
+    "rescue": {
+     "attempted": true,
+     "before": 195,
+     "after": 196,
+     "used": true
+    },
+    "commands": 4,
+    "matching": "exhaustive",
+    "loop_detection": false
+   }
+  },
+  {
+   "name": "undistort",
+   "label": "Correcting lens distortion",
+   "status": "done",
+   "started_at": "2026-11-23T02:01:13+05:30",
+   "ended_at": "2026-11-23T02:01:25+05:30",
+   "seconds": 12.1,
+   "result": {
+    "registered": 196,
+    "dense_images": 180,
+    "subset": true,
+    "selection_method": "name_bins",
+    "selected_images": [
+     "f000002.jpg",
+     "f000003.jpg",
+     "f000006.jpg",
+     "f000007.jpg",
+     "f000010.jpg",
+     "f000011.jpg",
+     "f000013.jpg",
+     "f000015.jpg",
+     "f000017.jpg",
+     "f000020.jpg",
+     "f000022.jpg",
+     "f000024.jpg",
+     "f000026.jpg",
+     "f000027.jpg",
+     "f000029.jpg",
+     "f000031.jpg",
+     "f000033.jpg",
+     "f000034.jpg",
+     "f000035.jpg",
+     "f000036.jpg",
+     "f000037.jpg",
+     "f000038.jpg",
+     "f000039.jpg",
+     "f000040.jpg",
+     "f000041.jpg",
+     "f000042.jpg",
+     "f000043.jpg",
+     "f000044.jpg",
+     "f000045.jpg",
+     "f000046.jpg",
+     "f000047.jpg",
+     "f000048.jpg",
+     "f000049.jpg",
+     "f000050.jpg",
+     "f000051.jpg",
+     "f000052.jpg",
+     "f000053.jpg",
+     "f000054.jpg",
+     "f000055.jpg",
+     "f000056.jpg",
+     "f000057.jpg",
+     "f000058.jpg",
+     "f000059.jpg",
+     "f000060.jpg",
+     "f000061.jpg",
+     "f000062.jpg",
+     "f000063.jpg",
+     "f000064.jpg",
+     "f000065.jpg",
+     "f000066.jpg",
+     "f000067.jpg",
+     "f000068.jpg",
+     "f000069.jpg",
+     "f000070.jpg",
+     "f000071.jpg",
+     "f000072.jpg",
+     "f000073.jpg",
+     "f000074.jpg",
+     "f000075.jpg",
+     "f000076.jpg",
+     "f000077.jpg",
+     "f000078.jpg",
+     "f000079.jpg",
+     "f000080.jpg",
+     "f000081.jpg",
+     "f000082.jpg",
+     "f000083.jpg",
+     "f000084.jpg",
+     "f000085.jpg",
+     "f000086.jpg",
+     "f000089.jpg",
+     "f000090.jpg",
+     "f000091.jpg",
+     "f000092.jpg",
+     "f000093.jpg",
+     "f000094.jpg",
+     "f000095.jpg",
+     "f000096.jpg",
+     "f000097.jpg",
+     "f000098.jpg",
+     "f000099.jpg",
+     "f000100.jpg",
+     "f000101.jpg",
+     "f000102.jpg",
+     "f000103.jpg",
+     "f000104.jpg",
+     "f000105.jpg",
+     "f000106.jpg",
+     "f000107.jpg",
+     "f000108.jpg",
+     "f000109.jpg",
+     "f000110.jpg",
+     "f000111.jpg",
+     "f000112.jpg",
+     "f000113.jpg",
+     "f000114.jpg",
+     "f000115.jpg",
+     "f000116.jpg",
+     "f000117.jpg",
+     "f000118.jpg",
+     "f000119.jpg",
+     "f000120.jpg",
+     "f000121.jpg",
+     "f000122.jpg",
+     "f000123.jpg",
+     "f000124.jpg",
+     "f000125.jpg",
+     "f000126.jpg",
+     "f000127.jpg",
+     "f000128.jpg",
+     "f000129.jpg",
+     "f000130.jpg",
+     "f000131.jpg",
+     "f000132.jpg",
+     "f000133.jpg",
+     "f000134.jpg",
+     "f000135.jpg",
+     "f000136.jpg",
+     "f000137.jpg",
+     "f000138.jpg",
+     "f000139.jpg",
+     "f000140.jpg",
+     "f000141.jpg",
+     "f000142.jpg",
+     "f000143.jpg",
+     "f000144.jpg",
+     "f000145.jpg",
+     "f000146.jpg",
+     "f000147.jpg",
+     "f000148.jpg",
+     "f000149.jpg",
+     "f000150.jpg",
+     "f000151.jpg",
+     "f000152.jpg",
+     "f000153.jpg",
+     "f000154.jpg",
+     "f000155.jpg",
+     "f000156.jpg",
+     "f000157.jpg",
+     "f000158.jpg",
+     "f000159.jpg",
+     "f000160.jpg",
+     "f000164.jpg",
+     "f000165.jpg",
+     "f000166.jpg",
+     "f000167.jpg",
+     "f000168.jpg",
+     "f000169.jpg",
+     "f000170.jpg",
+     "f000171.jpg",
+     "f000172.jpg",
+     "f000173.jpg",
+     "f000174.jpg",
+     "f000175.jpg",
+     "f000176.jpg",
+     "f000177.jpg",
+     "f000178.jpg",
+     "f000179.jpg",
+     "f000180.jpg",
+     "f000181.jpg",
+     "f000182.jpg",
+     "f000183.jpg",
+     "f000184.jpg",
+     "f000185.jpg",
+     "f000186.jpg",
+     "f000187.jpg",
+     "f000188.jpg",
+     "f000189.jpg",
+     "f000190.jpg",
+     "f000191.jpg",
+     "f000192.jpg",
+     "f000193.jpg",
+     "f000194.jpg",
+     "f000195.jpg",
+     "f000196.jpg",
+     "f000197.jpg",
+     "f000198.jpg",
+     "f000199.jpg",
+     "f000200.jpg",
+     "f000201.jpg"
+    ],
+    "max_side": 2727,
+    "input_megapixels": 2185.3,
+    "undistorted": 180
+   }
+  },
+  {
+   "name": "dense",
+   "label": "Building dense 3D geometry",
+   "status": "done",
+   "started_at": "2026-11-23T02:01:25+05:30",
+   "ended_at": "2026-11-23T02:31:03+05:30",
+   "seconds": 1777.7,
+   "result": {
+    "dense": true,
+    "dense_points": 1473703,
+    "compute": {
+     "densify": "gpu",
+     "fallbacks": []
+    }
+   }
+  },
+  {
+   "name": "mesh",
+   "label": "Building the surface mesh",
+   "status": "done",
+   "started_at": "2026-11-23T02:31:03+05:30",
+   "ended_at": "2026-11-23T02:32:09+05:30",
+   "seconds": 66.4,
+   "result": {
+    "wall_s": 65.19,
+    "clean": {
+     "faces_in": 1440736,
+     "median_edge": 0.010388305573986449,
+     "long_edge_removed": 42127,
+     "small_component_faces_removed": 56142,
+     "faces_out": 1342467
+    }
+   }
+  },
+  {
+   "name": "texture",
+   "label": "Painting photo textures onto the mesh",
+   "status": "done",
+   "started_at": "2026-11-23T02:32:09+05:30",
+   "ended_at": "2026-11-23T02:44:00+05:30",
+   "seconds": 711.2,
+   "result": {
+    "lods": [
+     {
+      "lod": 0,
+      "file": "lod0.glb",
+      "bytes": 70556624,
+      "wall_s": 183.02,
+      "triangles": 1342467,
+      "textures": [
+       {
+        "source": "lod0_openmvs_0.png",
+        "source_size": [
+         8192,
+         8192
+        ],
+        "size": [
+         8192,
+         8192
+        ],
+        "jpeg_bytes": 15931520
+       },
+       {
+        "source": "lod0_openmvs_1.png",
+        "source_size": [
+         8192,
+         8192
+        ],
+        "size": [
+         8192,
+         8192
+        ],
+        "jpeg_bytes": 3435849
+       }
+      ],
+      "harmonize": {
+       "status": "ok",
+       "method": "multi-view blend",
+       "exposure": {
+        "photos": 196,
+        "points": 54325,
+        "observations": 199450,
+        "inliers": 191671,
+        "log_spread_before": 0.07209786772727966,
+        "log_spread_after": 0.03839294663555026,
+        "gain_min": 0.5,
+        "gain_max": 2.0
+       },
+       "photos": 196,
+       "scale": 2,
+       "device": "gpu",
+       "atlas_0_texels_blended": 0.9422251951221977,
+       "atlas_0_size": [
+        8192,
+        8192
+       ],
+       "photos_used": 196,
+       "atlas_1_texels_blended": 0.980236205239394,
+       "atlas_1_size": [
+        8192,
+        8192
+       ]
+      }
+     },
+     {
+      "lod": 1,
+      "file": "lod1.glb",
+      "bytes": 24814476,
+      "wall_s": 53.04,
+      "triangles": 271490,
+      "textures": [
+       {
+        "source": "lod1_openmvs_0.png",
+        "source_size": [
+         4096,
+         4096
+        ],
+        "size": [
+         4096,
+         4096
+        ],
+        "jpeg_bytes": 3576490
+       },
+       {
+        "source": "lod1_openmvs_1.png",
+        "source_size": [
+         2048,
+         2048
+        ],
+        "size": [
+         2048,
+         2048
+        ],
+        "jpeg_bytes": 434807
+       }
+      ],
+      "harmonize": {
+       "status": "ok",
+       "method": "multi-view blend",
+       "exposure": {
+        "photos": 196,
+        "points": 54325,
+        "observations": 199450,
+        "inliers": 191671,
+        "log_spread_before": 0.07209786772727966,
+        "log_spread_after": 0.03839294663555026,
+        "gain_min": 0.5,
+        "gain_max": 2.0
+       },
+       "photos": 196,
+       "scale": 2,
+       "device": "gpu",
+       "atlas_0_texels_blended": 0.9413211470970718,
+       "atlas_0_size": [
+        8192,
+        8192
+       ],
+       "photos_used": 196,
+       "atlas_1_texels_blended": 0.9906468065703622,
+       "atlas_1_size": [
+        4096,
+        4096
+       ]
+      }
+     }
+    ],
+    "exposure": {
+     "status": "ok",
+     "photos": 180,
+     "points": 50324,
+     "observations": 174251,
+     "inliers": 167407,
+     "log_spread_before": 0.07255485206842421,
+     "log_spread_after": 0.03852269761717397,
+     "gain_min": 0.5,
+     "gain_max": 2.0
+    }
+   }
+  },
+  {
+   "name": "frame",
+   "label": "Finding the floor and orientation",
+   "status": "done",
+   "started_at": "2026-11-23T02:44:00+05:30",
+   "ended_at": "2026-11-23T02:44:06+05:30",
+   "seconds": 5.9,
+   "result": {
+    "floor_detected": true,
+    "eye_height_units": 4.170540053875479,
+    "floor_coverage": 0.6618417000307977,
+    "estimated_surfaces": {
+     "status": "skipped",
+     "reason": "no trustworthy floor plane",
+     "triangles": null
+    }
+   }
+  },
+  {
+   "name": "quality",
+   "label": "Checking reconstruction quality",
+   "status": "done",
+   "started_at": "2026-11-23T02:44:06+05:30",
+   "ended_at": "2026-11-23T02:44:07+05:30",
+   "seconds": 0.5,
+   "result": {
+    "verdict": "usable_with_warnings",
+    "warnings": 5
+   }
+  },
+  {
+   "name": "navgeom",
+   "label": "Extracting walkable floor (unverified)",
+   "status": "done",
+   "started_at": "2026-11-23T02:44:07+05:30",
+   "ended_at": "2026-11-23T02:44:07+05:30",
+   "seconds": 0.0,
+   "result": {
+    "status": "unavailable"
+   }
+  },
+  {
+   "name": "package",
+   "label": "Packaging for the 3D viewer",
+   "status": "done",
+   "started_at": "2026-11-23T02:44:07+05:30",
+   "ended_at": "2026-11-23T02:44:07+05:30",
+   "seconds": 0.5,
+   "result": {
+    "package_id": "pkg-testing-room-20261123-40dd72-run-20261123-014826-e77e",
+    "files": 7,
+    "verdict": "usable_with_warnings",
+    "lods": [
+     "scene/lod0.glb",
+     "scene/lod1.glb"
+    ],
+    "bytes": 95428265
+   }
+  }
+ ],
+ "progress": 1.0,
+ "current": null,
+ "error": null,
+ "attempts": 1,
+ "started_at": "2026-11-23T01:48:26+05:30",
+ "pid": 472,
+ "tools": {
+  "colmap": "C:\\Users\\Tanmay\\OneDrive\\Desktop\\NammaSpace\\tools\\colmap-4.2.1-cuda\\bin\\colmap.exe",
+  "openmvs_dir": "C:\\Users\\Tanmay\\OneDrive\\Desktop\\NammaSpace\\tools\\openmvs-2.4.0\\vc17\\x64\\Release",
+  "colmap_cuda": true,
+  "densify_cuda_dir": "C:\\Users\\Tanmay\\OneDrive\\Desktop\\NammaSpace\\tools\\openmvs-2.4.0-cuda",
+  "use_gpu": true,
+  "gpu_reason": "NVIDIA GeForce RTX 4050 Laptop GPU (driver 592.82, 5725 of 6141 MB free)",
+  "gpu_steps": [
+   "colmap_features",
+   "colmap_matching",
+   "openmvs_densify"
+  ],
+  "notes": []
+ },
+ "resources": {
+  "ram_reserve_gb": 0.0,
+  "ram_budget_gb": 15.6,
+  "cpu_threads": 16,
+  "sift_max_threads": 16,
+  "match_max_threads": 16,
+  "io_workers": 16,
+  "gpu": "on",
+  "gpu_index": 0,
+  "vram_reserve_mb": 0,
+  "min_free_vram_mb": 0,
+  "max_images": 10000,
+  "max_video_gb": 50.0,
+  "ram_at_start": {
+   "total_gb": 15.64,
+   "available_gb": 5.0,
+   "used_percent": 68.0
+  }
+ },
+ "updated_at": "2026-11-23T02:44:07+05:30",
+ "ended_at": "2026-11-23T02:44:07+05:30"
+}

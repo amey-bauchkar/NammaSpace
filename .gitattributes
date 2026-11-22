@@ -5,3 +5,4 @@ phase8_artifacts/** -text
 
 # published packages and project data: byte-exact hashes checked by the web viewer
 projects/** -text
+projects/testing-room-20261123-40dd72/**/scene/*.glb filter=lfs diff=lfs merge=lfs -text
