@@ -14,6 +14,12 @@ What the phone side may do (nothing else is served on the network):
   PUT  /api/session/<pid>/frames/<frame_00001.jpg>   JPEG bytes          (fallback "photo frames" mode)
   POST /api/session/<pid>/done        {"frames": [...], "device": {...}} -> capture check, then Preview
   GET  /api/session/<pid>/status
+Namma Capture native app (.nammacap archive, resumable; see docs/NAMMACAP_FORMAT.md):
+  POST /api/nammacap                  {"bytes", "sha256", "title"} -> {"upload_id", "part_size", "parts"}
+  PUT  /api/nammacap/<id>/part/<n>    bytes [n*part_size, ...) of the archive (retry-safe: a part overwrites itself)
+  GET  /api/nammacap/<id>             {"received": [n, ...], "parts", "state"}   (to resume after a dropped connection)
+  POST /api/nammacap/<id>/finish      join parts, check size + SHA-256, validate, import into a NEW project -> 201
+                                      {"project_id", ...}; 422 with the validation errors otherwise (nothing imported)
 Safety: a 6-digit pairing code that expires after 10 minutes and is replaced after 8 wrong guesses, after which pairing
 pauses (1 min, doubling up to 1 h; a new code in the Studio ends the pause) - without the pause a LAN neighbour could
 keep guessing at full speed; random session
@@ -21,6 +27,7 @@ tokens (Authorization: Bearer) bound to the project they created; Host must be o
 frames must be JPEG, <= 25 MB, at most 400 per session; free-disk check before every frame.
 """
 import datetime
+import hashlib
 import http.server
 import ipaddress
 import json
@@ -59,6 +66,10 @@ MAX_WRONG_CODES = 8
 LOCKOUT_S = 60                  # after MAX_WRONG_CODES wrong codes pairing pauses; doubles each time, up to an hour
 MAX_LOCKOUT_S = 3600
 CONN_TIMEOUT_S = 60             # idle connection (incl. a TLS handshake that never comes) is dropped
+NAMMACAP_PART_BYTES = 8 * 2**20
+NAMMACAP_MAX_BYTES = 32 * 2**30
+SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
+UPLOAD_ID = re.compile(r"^[a-f0-9]{24}$")
 
 
 # ------------------------------------------------------------------------------------------- network + TLS
@@ -364,6 +375,8 @@ class PhoneHandler(http.server.BaseHTTPRequestHandler):
                 res = st.polycam.finish(seg[1], title=self._body_json().get("title", ""))
                 s["imports"].discard(seg[1])
                 return self._json(201, res)
+        if seg and seg[0] == "nammacap":
+            return self._nammacap(method, seg[1:])
         if seg == ["session"] and method == "POST":
             s = self.pairing.session(self._token())
             if s["project_id"]:
@@ -384,6 +397,92 @@ class PhoneHandler(http.server.BaseHTTPRequestHandler):
                 return self._json(202, self._done(pid))
             if seg[2:] == ["status"] and method == "GET":
                 return self._json(200, self._status(pid))
+        return self._json(404, {"error": "NOT-FOUND", "message": "unknown endpoint"})
+
+    # ---------------------------------------------------------------- Namma Capture (.nammacap) uploads
+    def _nammacap_dir(self, uid):
+        return self.studio.store.root / "_nammacap_uploads" / uid
+
+    def _nammacap(self, method, seg):
+        from namma.capture import nammacap
+        s = self.pairing.session(self._token())
+        mine = s.setdefault("nammacap", set())
+        if seg == [] and method == "POST":
+            body = self._body_json()
+            size, sha = body.get("bytes"), str(body.get("sha256") or "").lower()
+            if not isinstance(size, int) or isinstance(size, bool) or not 0 < size <= NAMMACAP_MAX_BYTES:
+                raise PhoneError(413, "NAMMACAP-SIZE", f"archive must be 1 byte to {NAMMACAP_MAX_BYTES // 2**30} GB")
+            if not SHA256_HEX.match(sha):
+                raise PhoneError(400, "NAMMACAP-SHA", "sha256 must be 64 lowercase hex characters")
+            root = self.studio.store.root
+            if shutil.disk_usage(root).free < 2 * size + 2 * 2**30:
+                raise PhoneError(507, "DISK", "not enough free disk space on the computer")
+            uid = secrets.token_hex(12)
+            d = self._nammacap_dir(uid)
+            d.mkdir(parents=True)
+            parts = (size + NAMMACAP_PART_BYTES - 1) // NAMMACAP_PART_BYTES
+            title = " ".join(str(body.get("title") or "").split())[:80]
+            write_json(d / "upload.json", {"bytes": size, "sha256": sha, "title": title, "parts": parts,
+                                           "part_size": NAMMACAP_PART_BYTES, "created_at": timefmt.now_iso()})
+            mine.add(uid)
+            return self._json(201, {"upload_id": uid, "part_size": NAMMACAP_PART_BYTES, "parts": parts})
+        if not seg or not UPLOAD_ID.match(seg[0]) or seg[0] not in mine:
+            raise PhoneError(403, "NOT-YOUR-UPLOAD", "This phone did not start that upload.")
+        uid, d = seg[0], self._nammacap_dir(seg[0])
+        if not (d / "upload.json").exists():
+            raise PhoneError(404, "UPLOAD-GONE", "That upload no longer exists; start the upload again.")
+        meta = load_strict(d / "upload.json")
+        if len(seg) == 1 and method == "GET":
+            got = sorted(int(p.stem.split("-")[1]) for p in d.glob("part-*.bin"))
+            return self._json(200, {"upload_id": uid, "parts": meta["parts"], "part_size": meta["part_size"],
+                                    "received": got, "state": "receiving"})
+        if len(seg) == 3 and seg[1] == "part" and method == "PUT":
+            if not SEQ.match(seg[2]) or int(seg[2]) >= meta["parts"]:
+                raise PhoneError(400, "PART-NUMBER", f"part must be 0-{meta['parts'] - 1}")
+            n = int(seg[2])
+            want = min(meta["part_size"], meta["bytes"] - n * meta["part_size"])
+            got = int(self.headers.get("Content-Length") or -1)
+            if got != want:
+                raise PhoneError(400, "PART-SIZE", f"part {n} must be exactly {want} bytes")
+            data = self.rfile.read(got)
+            self._body_read = True
+            if len(data) != want:
+                raise PhoneError(400, "PART-INCOMPLETE", "incomplete upload")
+            tmp = d / f".part-{n:05d}.{secrets.token_hex(4)}.tmp"
+            tmp.write_bytes(data)
+            tmp.replace(d / f"part-{n:05d}.bin")
+            return self._json(201, {"part": n, "bytes": want})
+        if len(seg) == 2 and seg[1] == "finish" and method == "POST":
+            self._body_json()
+            missing = [i for i in range(meta["parts"]) if not (d / f"part-{i:05d}.bin").exists()]
+            if missing:
+                raise PhoneError(409, "PARTS-MISSING", f"parts still missing: {missing[:20]}")
+            archive = d / "capture.nammacap"
+            h, total = hashlib.sha256(), 0
+            with open(archive, "wb") as out:
+                for i in range(meta["parts"]):
+                    with open(d / f"part-{i:05d}.bin", "rb") as src:
+                        while True:
+                            b = src.read(1 << 20)
+                            if not b:
+                                break
+                            h.update(b)
+                            total += len(b)
+                            out.write(b)
+            if total != meta["bytes"] or h.hexdigest() != meta["sha256"]:
+                for p in d.glob("part-*.bin"):      # the parts are wrong somewhere: make the phone send them again
+                    p.unlink()
+                archive.unlink()
+                raise PhoneError(422, "NAMMACAP-CHECKSUM", "The received file does not match its checksum; it will be re-sent.")
+            try:
+                res = nammacap.import_archive(self.studio.store, archive, title=meta.get("title") or None)
+            except nammacap.NammaCapError as e:
+                shutil.rmtree(d, ignore_errors=True)
+                mine.discard(uid)
+                return self._json(e.status, {"error": e.code, "message": str(e), "report": e.report})
+            shutil.rmtree(d, ignore_errors=True)
+            mine.discard(uid)
+            return self._json(201, res)
         return self._json(404, {"error": "NOT-FOUND", "message": "unknown endpoint"})
 
     def _frame(self, pid, name):

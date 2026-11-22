@@ -1,0 +1,52 @@
+# XcodeGen spec: `xcodegen generate` writes NammaCapture.xcodeproj (the .xcodeproj is generated, not hand-edited).
+name: NammaCapture
+options:
+  bundleIdPrefix: space.namma
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"            # app code: Swift 5 mode (ARKit delegate APIs predate strict Sendable); Core uses Swift 6
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""            # set your own team in Xcode (Signing & Capabilities); never committed here
+    CODE_SIGN_STYLE: Automatic
+packages:
+  NammaCaptureCore:
+    path: Core
+targets:
+  NammaCapture:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+    dependencies:
+      - package: NammaCaptureCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Namma Capture
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiredDeviceCapabilities: [arkit]
+        UIApplicationSupportsIndirectInputEvents: true
+        NSCameraUsageDescription: Namma Capture uses the camera and motion tracking to photograph rooms for 3D reconstruction.
+        NSLocalNetworkUsageDescription: Namma Capture sends finished scans to Namma Space Studio on your computer over your local network.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: space.namma.nammacap
+            UTTypeDescription: Namma Capture scan
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [nammacap]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: space.namma.capture
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UIStatusBarHidden: false
+        ENABLE_PREVIEWS: true
