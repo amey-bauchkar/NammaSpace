@@ -30,6 +30,17 @@ struct CaptureSnapshot: Equatable {
     var elapsed: TimeInterval = 0
     var finished = false
     var lastLoopCandidates = 0
+    /// e.g. "Exposure & colour locked", "Exposure auto (lock unavailable on this phone)"
+    var cameraLock = "Exposure: waiting to lock"
+    var cameraLockOK = false
+    var spinning = false
+    var newAreaSuggested = false
+    var uncoveredDown: [Double] = []
+    var uncoveredUp: [Double] = []
+    var directionsCovered = 0
+    var directionsTotal = 36
+    var scaleChecks = 0
+    var hiResFallback = false
 }
 
 final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
@@ -78,6 +89,19 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
     private var lastBrightness: Double?
     private var finished = false
     private var ioTail: Task<Void, Never>?
+    private var spin = SpinDetector()
+    // high-resolution capture failures (issue D)
+    private var hiResFailuresInARow = 0
+    private var hiResFallback = false
+    static let hiResFailuresBeforeFallback = 3
+    // automatic exposure / white-balance lock (issue A)
+    private var autoLockWanted = true
+    private var lockApplied = false
+    private var lockAttempts = 0
+    private var lockReverts = 0
+    private var normalSince: Double?
+    private var lastLockCheckT = -1.0
+    private var exposureRejectsInARow = 0
 
     struct PendingAnnotation { let kind: String; let imagePoint: CGPoint; let worldPoint: SIMD3<Float>?; let method: String?; let note: String }
 
@@ -93,6 +117,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
                                 trajectorySampleHz: 5, cameraControls: [])
         s.cameraControls.append(CameraControlResult(control: "video_hdr", outcome: "disabled",
                                                     detail: "HDR video off for consistent exposure between frames", at: ISOTime.string()))
+        if !caps.configurableDevice { s.cameraControls.append(contentsOf: CameraControls.unavailableAtStart()) }
         settings = s
         selector = KeyframeSelector(thresholds: s.keyframe)
         let id = UUID().uuidString.lowercased()
@@ -136,6 +161,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         var restored = ScanState()
         for r in doc.rooms { restored.startRoom(label: r.label, at: nil, time: nil, wallclock: r.createdAt) }
         if restored.rooms.isEmpty { restored.startRoom(label: "Room 1", at: nil, time: nil) }
+        if !caps.configurableDevice { doc.settings.cameraControls.append(contentsOf: CameraControls.unavailableAtStart()) }
         scan = restored
         doc.rooms = scan.rooms
         try store.save(doc)
@@ -162,13 +188,17 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         c.planeDetection = [.horizontal, .vertical]
         c.environmentTexturing = .none
         if caps.sceneDepth { c.frameSemantics.insert(.sceneDepth) }
+        // LiDAR mesh: saved with the scan (Namma Space's mesh route works from a scanned mesh) and drawable on screen
+        if caps.sceneReconstruction { c.sceneReconstruction = .mesh }
         return c
     }
 
     private func run(reset: Bool) {
         guard let s = session else { return }
         s.run(configuration(), options: reset ? [.resetTracking, .removeExistingAnchors] : [])
-        startDate = Date()
+        if reset { startDate = Date() }
+        // running a configuration may reconfigure the camera: lock again once exposure has settled
+        lockApplied = false; lockAttempts = 0; normalSince = nil
     }
 
     func setAutoCapture(_ on: Bool) { queue.async { self.autoCapture = on; self.publish(force: true) } }
@@ -187,16 +217,98 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         }
     }
 
+    /// User toggle. Locking is automatic by default; turning it off is recorded and respected.
     func setExposureLock(_ lock: Bool) {
         queue.async {
-            let results = CameraControls.setLocked(lock)
-            self.doc.settings.cameraControls.append(contentsOf: results)
-            self.saveDoc()
-            for r in results {
-                self.event(EventType.cameraControl, data: ["control": r.control, "outcome": r.outcome, "detail": r.detail ?? ""])
-            }
-            self.snapshot.exposureControls = results
+            self.autoLockWanted = lock
+            self.applyLock(lock, reason: lock ? "user requested lock" : "user turned the lock off")
+        }
+    }
+
+    private func recordControls(_ results: [CameraControlResult]) {
+        doc.settings.cameraControls.append(contentsOf: results)
+        saveDoc()
+        for r in results {
+            event(EventType.cameraControl, data: ["control": r.control, "outcome": r.outcome, "detail": r.detail ?? ""])
+        }
+        snapshot.exposureControls = results
+        updateLockLabel()
+    }
+
+    private func applyLock(_ lock: Bool, reason: String) {
+        let results = CameraControls.setLocked(lock, reason: reason)
+        recordControls(results)
+        lockApplied = lock && results.first { $0.control == "exposure_lock" }?.outcome == "locked"
+        lastLockCheckT = lastPose?.1 ?? -1
+        publish(force: true)
+    }
+
+    private func updateLockLabel() {
+        let latest: [String: String] = Dictionary(doc.settings.cameraControls.map { ($0.control, $0.outcome) }, uniquingKeysWith: { _, b in b })
+        let e = latest["exposure_lock"], w = latest["white_balance_lock"]
+        switch (e, w) {
+        case ("locked", "locked"): snapshot.cameraLock = "Exposure & colour locked"; snapshot.cameraLockOK = true
+        case ("locked", _): snapshot.cameraLock = "Exposure locked, colour auto"; snapshot.cameraLockOK = false
+        case ("unavailable", _): snapshot.cameraLock = "Exposure auto: lock not available on this phone"; snapshot.cameraLockOK = false
+        case ("failed", _): snapshot.cameraLock = "Exposure auto: lock failed"; snapshot.cameraLockOK = false
+        case ("reverted", _): snapshot.cameraLock = "Exposure auto: lock was undone, retrying"; snapshot.cameraLockOK = false
+        case ("disabled", _), ("not_requested", _): snapshot.cameraLock = "Exposure auto (lock off)"; snapshot.cameraLockOK = false
+        default: snapshot.cameraLock = "Exposure: waiting to lock"; snapshot.cameraLockOK = false
+        }
+    }
+
+    /// Called every frame: lock exposure + white balance automatically once tracking has been normal for 2 s and the
+    /// camera has stopped adjusting; then check every 5 s that the lock still holds (ARKit may reconfigure the camera).
+    private func maintainCameraLock(_ t: Double) {
+        guard caps.configurableDevice, autoLockWanted, !interrupted else { return }
+        if !lockApplied {
+            guard let ns = normalSince, t - ns >= 2, lockAttempts < 3, lockReverts <= 3 else { return }
+            if CameraControls.isAdjusting && t - ns < 6 { return }          // still converging; give it up to 6 s
+            lockAttempts += 1
+            applyLock(true, reason: lockReverts > 0 ? "re-applied after the lock was undone" : "automatic after exposure settled")
+            return
+        }
+        guard t - lastLockCheckT >= 5 else { return }
+        lastLockCheckT = t
+        guard let rb = CameraControls.readBack(), !(rb.exposureLocked && rb.whiteBalanceLocked) else { return }
+        lockReverts += 1
+        let now = ISOTime.string()
+        var r: [CameraControlResult] = []
+        if !rb.exposureLocked { r.append(CameraControlResult(control: "exposure_lock", outcome: "reverted", detail: "device reports auto exposure again (check \(lockReverts))", at: now)) }
+        if !rb.whiteBalanceLocked { r.append(CameraControlResult(control: "white_balance_lock", outcome: "reverted", detail: "device reports auto white balance again (check \(lockReverts))", at: now)) }
+        if lockReverts > 3 {
+            r.append(CameraControlResult(control: "exposure_lock", outcome: "failed", detail: "the lock was undone more than 3 times; left on auto", at: now))
+            warn("Exposure lock keeps being undone on this phone; exposure is automatic for the rest of the scan.")
+        }
+        recordControls(r)
+        lockApplied = false; lockAttempts = 0; normalSince = t
+        publish(force: true)
+    }
+
+    /// Unlock and let auto-exposure settle again; maintainCameraLock re-locks ~2 s later. Used when the light changes
+    /// (new room, or several photos in a row rejected as too dark / too bright under a lock).
+    private func remeter(_ why: String, t: Double?) {
+        guard caps.configurableDevice, autoLockWanted, lockApplied else { return }
+        applyLock(false, reason: "re-metering: \(why)")
+        lockApplied = false; lockAttempts = 0; normalSince = t
+        exposureRejectsInARow = 0
+    }
+
+    func dismissNewArea() {
+        queue.async {
+            guard let (pose, _) = self.lastPose else { return }
+            self.scan.dismissNewArea(at: pose.position)
+            self.event(EventType.warning, position: pose.position, data: ["kind": "new_area_prompt_dismissed"])
             self.publish(force: true)
+        }
+    }
+
+    /// All coverage summaries (every room / tracking segment), for the finish screen.
+    func coverageForReview(_ done: @escaping ([CoverageSummary], [Room]) -> Void) {
+        queue.async {
+            let all = self.coverage.keys.sorted().compactMap { k in self.coverage[k]?.summary(roomId: String(k.split(separator: "#").first ?? "")) }
+            let rooms = self.scan.rooms
+            DispatchQueue.main.async { done(all, rooms) }
         }
     }
 
@@ -226,6 +338,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
             self.event(EventType.doorway, roomId: self.scan.currentRoomId, position: pose.position, t: t,
                        data: ["doorway_id": d.id, "from_room": from ?? "", "to_room": d.toRoomId ?? "",
                               "forward": "\(pose.forward.x),\(pose.forward.y),\(pose.forward.z)"])
+            if nextRoom != nil { self.remeter("new room", t: t) }
             self.forceNext = ("doorway", nil)        // photograph the doorway itself
             self.writeCoverage()
             self.publish(force: true)
@@ -296,6 +409,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
     func finish(_ done: @escaping (Result<URL, Error>) -> Void) {
         queue.async {
             self.finished = true
+            self.saveSceneMesh()
             self.session?.pause()
             self.finishWhenIdle(done, attempts: 0)
         }
@@ -308,6 +422,13 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
             return
         }
         if pending > 0 { warn("\(pending) photo(s) were still being saved when the scan was finished") }
+        if !doc.settings.cameraControls.contains(where: { $0.control == "exposure_lock" }) {
+            recordControls([CameraControlResult(control: "exposure_lock", outcome: "not_requested",
+                                                detail: "scan ended before tracking was normal long enough to lock", at: ISOTime.string()),
+                            CameraControlResult(control: "white_balance_lock", outcome: "not_requested",
+                                                detail: "scan ended before tracking was normal long enough to lock", at: ISOTime.string()),
+                            CameraControlResult(control: "focus_lock", outcome: "not_requested", detail: CameraControls.focusPolicy, at: ISOTime.string())])
+        }
         writeCoverage()
         event(EventType.sessionEnd)
         doc.state = "finished"
@@ -342,9 +463,12 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         }
         if tq != .notAvailable {
             motion.update(pose: pose, time: t)
+            spin.update(pose: pose, time: t)
             lastPose = (pose, t)
-            scan.updatePose(pose)
+            scan.updatePose(pose, time: t, coordinateFrame: coordFrame)
         }
+        if tq == .normal { if normalSince == nil { normalSince = t } } else { normalSince = nil }
+        maintainCameraLock(t)
 
         // trajectory (5 Hz), recorded in every tracking state so gaps are visible
         if t - lastTrajectoryT >= 1.0 / settings.trajectorySampleHz {
@@ -420,6 +544,10 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
                                                   secondsSinceLastAccept: selector.secondsSinceAccept(t), override: override),
                                         settings.quality)
         if !gate.accept {
+            if gate.rejectReasons.contains("underexposed") || gate.rejectReasons.contains("overexposed") {
+                exposureRejectsInARow += 1
+                if exposureRejectsInARow >= 3 { remeter("3 photos in a row too dark or too bright under the lock", t: t) }
+            } else { exposureRejectsInARow = 0 }
             snapshot.rejected += 1
             snapshot.lastRejectReasons = gate.rejectReasons
             let r = RejectionRecord(candidateIndex: candidateIndex, timestampS: t, coordinateFrameId: coordFrame,
@@ -440,6 +568,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
             return
         }
         forceNext = nil
+        exposureRejectsInARow = 0
         snapshot.lastRejectReasons = []
         captureKeyframe(streamFrame: frame, trigger: trigger, decision: decision, metrics: m, gate: gate, thumb: thumb,
                         annotation: forced?.annotation)
@@ -459,33 +588,65 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         let streamExposure = FrameEncoding.exposure(streamFrame)
         let streamDepth = streamFrame.sceneDepth.flatMap(FrameEncoding.copyDepth)
 
-        let complete: (ARFrame?, Error?) -> Void = { hi, err in
-            self.queue.async {
-                if let hi {
-                    let hiDepth = hi.sceneDepth.flatMap(FrameEncoding.copyDepth)
-                    self.storeKeyframe(fid: fid, index: index, image: hi.capturedImage, camera: hi.camera, t: hi.timestamp,
-                                       mapping: hi.worldMappingStatus, exposure: FrameEncoding.exposure(hi),
-                                       source: "high_resolution_capture",
-                                       depth: hiDepth.map { ($0, hi.camera, hi.timestamp, "same_frame") }
-                                           ?? streamDepth.map { ($0, streamCamera, streamT, "stream_frame_before_still") },
-                                       trigger: trigger, decision: decision, metrics: metrics, gate: gate, thumb: thumb,
-                                       extraFlags: [], annotation: annotation)
-                } else {
-                    let msg = err?.localizedDescription ?? "no frame"
-                    self.storeKeyframe(fid: fid, index: index, image: streamImage, camera: streamCamera, t: streamT,
-                                       mapping: streamMapping, exposure: streamExposure, source: "video_stream",
-                                       depth: streamDepth.map { ($0, streamCamera, streamT, "same_frame") },
-                                       trigger: trigger, decision: decision, metrics: metrics, gate: gate, thumb: thumb,
-                                       extraFlags: self.caps.highResFormat == nil ? [] : ["high_resolution_capture_failed: \(msg)"],
-                                       annotation: annotation)
+        let storeStream: ([String]) -> Void = { flags in
+            self.storeKeyframe(fid: fid, index: index, image: streamImage, camera: streamCamera, t: streamT,
+                               mapping: streamMapping, exposure: streamExposure, source: "video_stream",
+                               depth: streamDepth.map { ($0, streamCamera, streamT, "same_frame") },
+                               trigger: trigger, decision: decision, metrics: metrics, gate: gate, thumb: thumb,
+                               extraFlags: flags, annotation: annotation)
+        }
+        guard caps.highResFormat != nil, !hiResFallback, let s = session else {
+            storeStream(hiResFallback ? ["stream_fallback_after_repeated_high_resolution_failures"] : [])
+            return
+        }
+        // High-resolution still: one retry; if both fail the candidate is skipped (recorded as a rejection) instead of
+        // mixing a lower-resolution frame into the photo set. Only after repeated failures in a row does the scan switch
+        // to video-stream photos, with a warning in the manifest and on screen.
+        func attempt(_ n: Int) {
+            s.captureHighResolutionFrame { hi, err in
+                self.queue.async {
+                    if let hi {
+                        self.hiResFailuresInARow = 0
+                        let hiDepth = hi.sceneDepth.flatMap(FrameEncoding.copyDepth)
+                        self.storeKeyframe(fid: fid, index: index, image: hi.capturedImage, camera: hi.camera, t: hi.timestamp,
+                                           mapping: hi.worldMappingStatus, exposure: FrameEncoding.exposure(hi),
+                                           source: "high_resolution_capture",
+                                           depth: hiDepth.map { ($0, hi.camera, hi.timestamp, "same_frame") }
+                                               ?? streamDepth.map { ($0, streamCamera, streamT, "stream_frame_before_still") },
+                                           trigger: trigger, decision: decision, metrics: metrics, gate: gate, thumb: thumb,
+                                           extraFlags: n > 0 ? ["high_resolution_capture_retried"] : [], annotation: annotation)
+                    } else if n == 0, !self.finished {
+                        self.queue.asyncAfter(deadline: .now() + 0.15) { attempt(1) }
+                    } else {
+                        self.highResFailed(err?.localizedDescription ?? "no frame", t: streamT, trigger: trigger, metrics: metrics,
+                                           annotation: annotation, storeStream: storeStream)
+                    }
                 }
             }
         }
-        if caps.highResFormat != nil, let s = session {
-            s.captureHighResolutionFrame { hi, err in complete(hi, err) }
-        } else {
-            complete(nil, nil)
+        attempt(0)
+    }
+
+    private func highResFailed(_ msg: String, t: Double, trigger: String, metrics: QualityMetrics,
+                               annotation: PendingAnnotation?, storeStream: ([String]) -> Void) {
+        hiResFailuresInARow += 1
+        if hiResFailuresInARow >= Self.hiResFailuresBeforeFallback {
+            hiResFallback = true
+            snapshot.hiResFallback = true
+            warn("High-resolution photos failed \(hiResFailuresInARow) times in a row; the rest of this scan uses video-resolution photos.")
+            event(EventType.warning, t: t, data: ["kind": "high_resolution_unavailable", "error": msg,
+                                                  "failures_in_a_row": "\(hiResFailuresInARow)"])
+            storeStream(["high_resolution_capture_failed: \(msg)", "stream_fallback_after_repeated_high_resolution_failures"])
+            return
         }
+        let r = RejectionRecord(candidateIndex: candidateIndex, timestampS: t, coordinateFrameId: coordFrame, trigger: trigger,
+                                reasons: ["high_resolution_capture_failed"], metrics: metrics)
+        io { try? await $0.writeRejection(r) }
+        snapshot.rejected += 1
+        captureInFlight = false
+        // a user-requested photo (annotation, doorway, manual) is tried again on the next frame
+        if trigger != "auto" { forceNext = (trigger, annotation) }
+        publish(force: true)
     }
 
     private func storeKeyframe(fid: String, index: Int, image: CVPixelBuffer, camera: ARCamera, t: TimeInterval,
@@ -559,7 +720,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         }
         // a new candidate may be considered while this one is encoding; the pending limit bounds memory
         captureInFlight = false
-        selector.markAccepted(pose: pose, time: t, coordinateFrame: coordFrame)
+        selector.markAccepted(pose: pose, time: t, coordinateFrame: coordFrame, reason: decision.reason)
         lastThumb = thumb
     }
 
@@ -592,6 +753,55 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
             snapshot.annotations = annotations.count
         }
         publish(force: true)
+    }
+
+    // MARK: LiDAR scene mesh
+
+    /// Writes ARKit's scene-reconstruction mesh (all ARMeshAnchors, world coordinates) as mesh/arkit_scene_mesh.glb.
+    /// Only the current coordinate frame's mesh exists (ARKit drops anchors on a tracking reset); recorded in the event.
+    private func saveSceneMesh() {
+        guard caps.sceneReconstruction, let frame = session?.currentFrame else { return }
+        let anchors = frame.anchors.compactMap { $0 as? ARMeshAnchor }
+        guard !anchors.isEmpty else {
+            event(EventType.warning, data: ["kind": "scene_mesh_empty"])
+            return
+        }
+        var pos: [Float] = [], idx: [UInt32] = []
+        for a in anchors {
+            let g = a.geometry
+            let base = UInt32(pos.count / 3)
+            let vs = g.vertices
+            guard vs.format == .float3, vs.componentsPerVector == 3 else { continue }
+            let vb = vs.buffer.contents()
+            pos.reserveCapacity(pos.count + vs.count * 3)
+            for i in 0..<vs.count {
+                let o = vs.offset + vs.stride * i
+                let x = vb.load(fromByteOffset: o, as: Float.self), y = vb.load(fromByteOffset: o + 4, as: Float.self)
+                let z = vb.load(fromByteOffset: o + 8, as: Float.self)
+                let w = a.transform * SIMD4<Float>(x, y, z, 1)
+                pos.append(w.x); pos.append(w.y); pos.append(w.z)
+            }
+            let f = g.faces
+            guard f.indexCountPerPrimitive == 3 else { continue }
+            let fb = f.buffer.contents()
+            let n = f.count * 3
+            for i in 0..<n {
+                let v: UInt32 = f.bytesPerIndex == 4 ? fb.load(fromByteOffset: i * 4, as: UInt32.self)
+                                                     : UInt32(fb.load(fromByteOffset: i * 2, as: UInt16.self))
+                idx.append(base + v)
+            }
+        }
+        do {
+            let glb = try GLBWriter.data(positions: pos, indices: idx)
+            let url = sessionDirectory.appendingPathComponent(NammaCapFormat.meshPath)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try SessionStore.writeAtomically(glb, to: url)
+            event("scene_mesh", data: ["kind": "saved", "vertices": "\(pos.count / 3)",
+                                            "triangles": "\(idx.count / 3)", "anchors": "\(anchors.count)",
+                                            "bytes": "\(glb.count)", "coordinate_frame_id": "\(coordFrame)"])
+        } catch {
+            warn("Could not save the LiDAR mesh: \(error)")
+        }
     }
 
     // MARK: coverage
@@ -637,6 +847,10 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         let summary = model.summary(roomId: scan.currentRoomId)
         snapshot.coverage = summary
         snapshot.uncoveredHeadings = model.uncoveredHeadings()
+        snapshot.uncoveredDown = model.uncoveredHeadings(band: 0)
+        snapshot.uncoveredUp = model.uncoveredHeadings(band: 2)
+        snapshot.directionsCovered = summary.directionsCovered.filter { $0 }.count
+        snapshot.directionsTotal = summary.directionsCovered.count
         snapshot.headingNow = pose.headingDegrees
         if frame.timestamp - lastCoverageWriteT > 10 { lastCoverageWriteT = frame.timestamp; writeCoverage() }
     }
@@ -706,6 +920,10 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         snapshot.pendingLookBack = scan.pendingLookBack != nil
         snapshot.suggestLoopBack = scan.loopBackSuggested
         snapshot.elapsed = Date().timeIntervalSince(startDate)
+        snapshot.spinning = spin.spinning
+        snapshot.newAreaSuggested = scan.newAreaSuggested
+        snapshot.scaleChecks = doc.scaleValidations.count
+        if snapshot.exposureControls.isEmpty { updateLockLabel() }
         let tq: TrackingQuality = lastTracking.0 == "normal" ? .normal : (lastTracking.0 == "limited" ? .limited : .notAvailable)
         snapshot.guidance = GuidanceBuilder.build(
             tracking: tq, trackingReason: lastTracking.1, interrupted: interrupted,
@@ -713,7 +931,8 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
             lastRejectReasons: snapshot.lastRejectReasons, lowOverlap: lastLowOverlap, coverage: snapshot.coverage,
             pendingLookBack: snapshot.pendingLookBack, suggestLoopBack: snapshot.suggestLoopBack, storageLow: storageLow,
             thermalSerious: thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue,
-            relocalizedRecently: relocalizedAt.map { (lastPose?.1 ?? 0) - $0 < 5 } ?? false)
+            relocalizedRecently: relocalizedAt.map { (lastPose?.1 ?? 0) - $0 < 5 } ?? false,
+            spinning: spin.spinning, newAreaSuggested: scan.newAreaSuggested)
         let snap = snapshot
         let cb = onSnapshot
         DispatchQueue.main.async { cb?(snap) }

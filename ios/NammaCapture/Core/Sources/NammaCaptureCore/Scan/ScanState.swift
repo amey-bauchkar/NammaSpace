@@ -28,8 +28,16 @@ public struct ScanState: Sendable {
     private var lastPosition: SIMD3<Double>?
     public private(set) var loopBackSuggested = false
     public private(set) var loopBacksInRoom = 0
+    /// Heuristic, not detection: the camera is far from every place photographed earlier in this room, so the user
+    /// may have walked into another area. Only prompts; a doorway is never marked automatically.
+    public private(set) var newAreaSuggested = false
+    private var newAreaDismissedAt: SIMD3<Double>?
 
     public var lookBackRadiusM = 2.5
+    /// distance (horizontal) from all earlier keyframes of the current room that triggers the new-area prompt
+    public var newAreaDistanceM = 3.0
+    /// keyframes younger than this do not count as "earlier" (they follow the user)
+    public var newAreaMinAgeS = 20.0
     public var loopBackRadiusM = 1.5
     public var loopBackMinAgeS = 20.0
     public var suggestLoopBackAfterPathM = 8.0
@@ -48,6 +56,7 @@ public struct ScanState: Sendable {
         currentRoomId = id
         roomStartPosition = position; roomStartTime = time
         pathLengthInRoom = 0; loopBackSuggested = false; loopBacksInRoom = 0
+        newAreaSuggested = false; newAreaDismissedAt = nil
         return room
     }
 
@@ -68,15 +77,34 @@ public struct ScanState: Sendable {
         let d = Doorway(id: "door_\(doorways.count + 1)", position: pose.position, forward: pose.forward, fromRoomId: from,
                         toRoomId: to, time: time, coordinateFrame: coordinateFrame, lookBackFrameId: nil)
         doorways.append(d)
+        newAreaSuggested = false
+        newAreaDismissedAt = pose.position
         return d
     }
 
-    /// Feed every processed pose (cheap).
-    public mutating func updatePose(_ pose: Pose) {
+    /// Feed every processed pose (cheap). `time` and `coordinateFrame` enable the new-area prompt.
+    public mutating func updatePose(_ pose: Pose, time: Double? = nil, coordinateFrame: Int? = nil) {
         let p = pose.position
         if let l = lastPosition { pathLengthInRoom += simd_distance(l, p) }
         lastPosition = p
         if !loopBackSuggested, loopBacksInRoom == 0, pathLengthInRoom > suggestLoopBackAfterPathM { loopBackSuggested = true }
+        if let time, let coordinateFrame { updateNewArea(p, time: time, coordinateFrame: coordinateFrame) }
+    }
+
+    private static func flat(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double { simd_length(SIMD2(a.x - b.x, a.z - b.z)) }
+
+    private mutating func updateNewArea(_ p: SIMD3<Double>, time: Double, coordinateFrame: Int) {
+        if let a = newAreaDismissedAt, Self.flat(a, p) < newAreaDistanceM { newAreaSuggested = false; return }
+        let earlier = keyframes.filter { $0.roomId == currentRoomId && $0.coordinateFrame == coordinateFrame && time - $0.time >= newAreaMinAgeS }
+        guard earlier.count >= 5 else { newAreaSuggested = false; return }
+        newAreaSuggested = earlier.allSatisfy { Self.flat($0.position, p) >= newAreaDistanceM }
+    }
+
+    /// The user answered the prompt without marking a doorway ("same room"): ask again only after another
+    /// `newAreaDistanceM` of travel from here.
+    public mutating func dismissNewArea(at position: SIMD3<Double>) {
+        newAreaSuggested = false
+        newAreaDismissedAt = position
     }
 
     /// Record an accepted keyframe. Returns the doorway whose look-back this keyframe satisfied, if any.
@@ -125,7 +153,8 @@ public enum GuidanceBuilder {
                              angularSpeed: Double?, linearSpeed: Double?, thresholds: QualityThresholds,
                              lastRejectReasons: [String], lowOverlap: Bool, coverage: CoverageSummary?,
                              pendingLookBack: Bool, suggestLoopBack: Bool, storageLow: Bool, thermalSerious: Bool,
-                             relocalizedRecently: Bool) -> [Guidance] {
+                             relocalizedRecently: Bool, spinning: Bool = false,
+                             newAreaSuggested: Bool = false) -> [Guidance] {
         var g: [Guidance] = []
         if interrupted { g.append(.init(id: "interrupted", level: .blocking, message: "Camera interrupted. Return to the app to continue.")) }
         if storageLow { g.append(.init(id: "storage", level: .blocking, message: "Phone storage is almost full. Finish the scan now.")) }
@@ -151,6 +180,14 @@ public enum GuidanceBuilder {
         if lastRejectReasons.contains("blurry") { g.append(.init(id: "blur", level: .warning, message: "Images are blurry. Hold steadier or add light.")) }
         if lastRejectReasons.contains("underexposed") { g.append(.init(id: "dark", level: .warning, message: "Too dark. Turn on lights if you can.")) }
         if lastRejectReasons.contains("overexposed") { g.append(.init(id: "bright", level: .warning, message: "Too bright. Avoid pointing at windows or lamps.")) }
+        if spinning {
+            g.append(.init(id: "spin", level: .warning,
+                           message: "Move, don't just turn: take a few steps, then look around. Turning on the spot adds little 3D detail."))
+        }
+        if newAreaSuggested {
+            g.append(.init(id: "newarea", level: .suggestion,
+                           message: "New area? If you went through a doorway, tap the room name and mark the doorway."))
+        }
         if lowOverlap { g.append(.init(id: "overlap", level: .suggestion, message: "Big jump between photos. Turn more gradually.")) }
         if relocalizedRecently { g.append(.init(id: "revisit", level: .suggestion, message: "Tracking recovered. Sweep over an area you already scanned.")) }
         if pendingLookBack { g.append(.init(id: "lookback", level: .suggestion, message: "Turn around and capture the previous room through the doorway.")) }
@@ -161,5 +198,50 @@ public enum GuidanceBuilder {
             if c.guidance.contains("turn_around_walls") { g.append(.init(id: "walls", level: .suggestion, message: "Turn around: some walls are not covered yet.")) }
         }
         return g.sorted { $0.level > $1.level }
+    }
+}
+
+/// End-of-scan check of coverage, shown before the scan is finished. It warns; it never blocks finishing.
+/// Thresholds are guidance values chosen for this app, not calibrated against reconstruction quality.
+public enum CoverageAssessment {
+    public static let minDirections = 24          // of 36 viewing-direction bins
+    public static let minFloor = 0.6
+    public static let minCeiling = 0.5
+
+    public struct Result: Sendable, Equatable {
+        public var directionsCovered: Int
+        public var directionsTotal: Int
+        public var floor: Double?
+        public var ceiling: Double?
+        /// human-readable issues; empty when nothing is low
+        public var issues: [String]
+        public var isLow: Bool { !issues.isEmpty }
+    }
+
+    /// `rooms`: one summary per room / tracking segment. Each room is judged on its own.
+    public static func assess(_ rooms: [CoverageSummary], roomLabel: (String?) -> String = { $0 ?? "Room" }) -> Result {
+        var issues: [String] = []
+        var dc = 0, dt = 0
+        var floors: [Double] = [], ceilings: [Double] = []
+        if rooms.isEmpty { issues.append("No coverage was measured (tracking never became normal).") }
+        for r in rooms {
+            let n = r.directionsCovered.filter { $0 }.count
+            dc += n; dt += r.directionsCovered.count
+            let name = roomLabel(r.roomId)
+            if n < minDirections * r.directionsCovered.count / 36 {
+                issues.append("\(name): only \(n) of \(r.directionsCovered.count) viewing directions seen from two places.")
+            }
+            if let f = r.floorCoveredFractionEstimate {
+                floors.append(f)
+                if f < minFloor { issues.append("\(name): floor about \(Int(f * 100))% covered.") }
+            } else { issues.append("\(name): floor coverage unknown (no floor plane found).") }
+            if let c = r.ceilingCoveredFractionEstimate {
+                ceilings.append(c)
+                if c < minCeiling { issues.append("\(name): ceiling about \(Int(c * 100))% covered.") }
+            }
+        }
+        return Result(directionsCovered: dc, directionsTotal: dt,
+                      floor: floors.isEmpty ? nil : floors.reduce(0, +) / Double(floors.count),
+                      ceiling: ceilings.isEmpty ? nil : ceilings.reduce(0, +) / Double(ceilings.count), issues: issues)
     }
 }

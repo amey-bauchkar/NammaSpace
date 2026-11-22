@@ -34,6 +34,16 @@ struct ReviewView: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
+                if !frames.isEmpty {
+                    Section {
+                        NavigationLink { PhotoGridView(directory: dir, frames: frames) } label: {
+                            Label("Browse \(frames.count) photos", systemImage: "photo.on.rectangle")
+                        }
+                        if FileManager.default.fileExists(atPath: dir.appendingPathComponent(NammaCapFormat.meshPath).path) {
+                            Label("LiDAR surface mesh saved with this scan", systemImage: "square.3.layers.3d").foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 Section("Summary") {
                     row("Photos", "\(frames.count)")
                     row("High-resolution stills", "\(frames.filter { $0.image.source == "high_resolution_capture" }.count)")

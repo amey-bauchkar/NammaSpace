@@ -30,8 +30,8 @@ Core/                       Swift package, no camera code; builds and tests on m
 
 * Mac with Xcode 27.2 (iOS 27.2 SDK) – built and tested with that toolchain. Swift 6.4.
 * `brew install xcodegen` (2.48 used).
-* iPhone with ARKit world tracking (A12 or later), **iOS 17.0 or later**. LiDAR (Pro models) is optional.
-  Deployment target 17.0 was chosen so the team's iPhone 14 and iPhone 15 Plus are supported without requiring the
+* iPhone with ARKit world tracking (A12 or later), **iOS 17.0 or later**. LiDAR (Pro models) is optional. Used so far: iPhone 17 Pro (iPhone18,1, iOS 26.6, LiDAR) for the first real capture; see docs/CAPABILITIES.md.
+  Deployment target 17.0 keeps the team's non-LiDAR phones (iPhone 14, iPhone 15 Plus) supported without requiring the
   newest iOS; nothing used needs a newer version (high-resolution stills and exposure control need iOS 16).
 
 ## Build
