@@ -66,7 +66,11 @@ validated by `nammacap-validate` and `scripts/import_nammacap.py --validate-only
 | Rooms, doorway look-back, loop candidates | Real (logic), Unverified on device | The Testing Room had one room and no doorway |
 | Mirror / glass annotations | Real, Unverified | 0 annotations in the Testing Room |
 | LiDAR scene mesh saved with the scan (`mesh/arkit_scene_mesh.glb`) | Real (code), **Unverified on device** | GLB writer tested; Namma Space's own `mesh_import.mesh_triangles` parses a Swift-written GLB. Not yet produced by a real capture; the mesh route is not wired to it |
-| "Show scanned surfaces" (live LiDAR mesh overlay, off by default) | Real (code), Unverified | RealityKit `showSceneUnderstanding` |
+| Live LiDAR mesh grid while scanning (Polycam-style, on by default on LiDAR phones) | Real (code), Unverified on device | RealityKit `showSceneUnderstanding`; hide from the ⋯ menu |
+| **Photo-textured LiDAR mesh** (glTF export): texture atlases (up to 3 x 4096) baked from the full-resolution keyframes; best view per triangle by angle, distance and measured sharpness; LiDAR occlusion test; per-photo colour gains | Real (code), Unverified on device | Synthetic tests: texture matches the photo left/right halves, occluded surface untextured, sharper photo chosen. Mac benchmark (release): 75.5 k triangles x 40 photos 4032x3024 -> 3 atlases, 2.1 mm texels, 23.5 MB, 2.7 s. Not yet run on a real capture |
+| Vertex-coloured mesh (fallback if texturing fails) | Real (code) | Synthetic tests |
+| Export: Raw data (.zip, Polycam raw layout) | Real | Namma Space's `PolycamExport` reads a Swift-made export as a LiDAR export (`_is_lidar_export` true); bridge import tested end to end |
+| Export: Images (.zip), glTF (.zip, coloured GLB + mesh_info.json) | Real | Bridge classifies the glTF zip as the mesh; `mesh_triangles` parses it |
 | Photo review grid (thumbnails + per-photo record) | Real (UI), Unverified on device | Simulator build |
 | Exposure re-metering on a new room or 3 too-dark/bright rejections in a row | Real (code), Unverified | |
 | Auto-capture paused while the Finish / scale sheets are open | Real (code), Unverified | |

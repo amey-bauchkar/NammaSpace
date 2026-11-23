@@ -99,6 +99,10 @@ struct ReviewView: View {
                 if let r = exportResult {
                     ExportPanel(result: r, title: doc.name)
                 }
+                if !frames.isEmpty {
+                    PolycamExportsSection(directory: dir,
+                                          hasMesh: FileManager.default.fileExists(atPath: dir.appendingPathComponent(NammaCapFormat.meshPath).path))
+                }
             }
         }
         .navigationTitle(doc?.name ?? "Scan")

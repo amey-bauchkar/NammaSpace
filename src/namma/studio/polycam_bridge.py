@@ -197,6 +197,16 @@ class PolycamStaging:
                 shutil.copy2(p, pdir / "capture" / "originals" / p.name)
             for p, _, info in sidecars:                           # mesh_info / roomplan: same scan, fixed names
                 shutil.copy2(p, pdir / "capture" / "originals" / info["file"])
+            if not any(i["file"] == "mesh_info.json" for _, _, i in sidecars):
+                # Namma Capture's raw export carries mesh_info.json at the top of the zip (Polycam ships it separately)
+                for p, _, _ in raws:
+                    with zipfile.ZipFile(p) as z:
+                        if "mesh_info.json" in z.namelist():
+                            data = z.read("mesh_info.json")
+                            json.loads(data)                          # must be JSON, like an uploaded sidecar
+                            (pdir / "capture" / "originals" / "mesh_info.json").write_bytes(data)
+                            sidecars.append((p, "sidecar", {"file": "mesh_info.json"}))
+                            break
             write_json(pdir / "capture" / "polycam_import.json", {
                 "imported_at": timefmt.now_iso(), "mesh": {"file": meshes[0][0].name, **meshes[0][2]}, "raw": raw_info,
                 "sidecars": sorted(i["file"] for _, _, i in sidecars), "device": device, "lidar": lidar})

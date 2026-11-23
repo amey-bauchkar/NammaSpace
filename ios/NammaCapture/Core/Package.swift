@@ -8,10 +8,12 @@ let package = Package(
     name: "NammaCaptureCore",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "NammaCaptureCore", targets: ["NammaCaptureCore"]),
-               .executable(name: "nammacap-validate", targets: ["nammacap-validate"])],
+               .executable(name: "nammacap-validate", targets: ["nammacap-validate"]),
+               .executable(name: "nammacap-bake", targets: ["nammacap-bake"])],
     targets: [
         .target(name: "NammaCaptureCore"),
         .executableTarget(name: "nammacap-validate", dependencies: ["NammaCaptureCore"]),
+        .executableTarget(name: "nammacap-bake", dependencies: ["NammaCaptureCore"]),
         .testTarget(name: "NammaCaptureCoreTests", dependencies: ["NammaCaptureCore"]),
     ]
 )

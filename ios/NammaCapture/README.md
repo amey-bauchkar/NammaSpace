@@ -109,6 +109,11 @@ what was saved (marked *recovered*).
 * The Studio's certificate is self-signed. The app accepts it the first time for that local address and refuses a
   different one later (*Forget certificate* if you regenerated it). Only private-network addresses are allowed.
 
+**Export like Polycam** (Review screen): *Raw data (.zip)* (photos, poses, LiDAR depth + confidence in Polycam's raw
+layout), *Images (.zip)*, *glTF mesh (.zip)* (LiDAR mesh coloured from the photos). For Namma Space, import the raw
+data zip and the glTF zip together in the Studio's 3D-scan import: it runs the Polycam LiDAR route with full-resolution
+photos.
+
 Command-line import on the computer (no phone needed):
 
 ```bash

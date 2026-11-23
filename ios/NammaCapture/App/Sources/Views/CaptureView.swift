@@ -29,8 +29,8 @@ final class ARViewHolder {
 
     var center: CGPoint { view.map { CGPoint(x: $0.bounds.midX, y: $0.bounds.midY) } ?? .zero }
 
-    /// RealityKit's scene-understanding overlay of the LiDAR mesh (measured geometry). Off by default: users asked
-    /// for a camera view without grid-like overlays.
+    /// RealityKit's scene-understanding overlay: the LiDAR mesh drawn as a grid over everything measured (like
+    /// Polycam's scanning view). On by default on LiDAR phones.
     func showSurfaces(_ on: Bool) {
         guard let v = view else { return }
         if on { v.debugOptions.insert(.showSceneUnderstanding) } else { v.debugOptions.remove(.showSceneUnderstanding) }
@@ -40,6 +40,7 @@ final class ARViewHolder {
 struct ARViewContainer: UIViewRepresentable {
     let engine: CaptureEngine
     let holder: ARViewHolder
+    var showSurfaces = false
     var onTap: (CGPoint) -> Void
 
     func makeUIView(context: Context) -> ARView {
@@ -47,6 +48,8 @@ struct ARViewContainer: UIViewRepresentable {
         v.renderOptions = [.disableMotionBlur, .disableDepthOfField, .disablePersonOcclusion, .disableGroundingShadows,
                            .disableHDR, .disableCameraGrain, .disableAREnvironmentLighting, .disableFaceMesh]
         v.environment.sceneUnderstanding.options = []
+        // Polycam-style live mesh grid on everything LiDAR has measured (LiDAR phones; can be hidden from the ⋯ menu)
+        if showSurfaces { v.debugOptions.insert(.showSceneUnderstanding) }
         holder.view = v
         engine.attach(v.session)
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped(_:)))
@@ -88,7 +91,7 @@ struct CaptureView: View {
     var body: some View {
         ZStack {
             if let engine {
-                ARViewContainer(engine: engine, holder: holder) { p in handleTap(p) }
+                ARViewContainer(engine: engine, holder: holder, showSurfaces: showSurfaces) { p in handleTap(p) }
                     .ignoresSafeArea()
                     .overlay {
                         RoundedRectangle(cornerRadius: 0).strokeBorder(Color.green.opacity(flash ? 0.8 : 0), lineWidth: 6)
@@ -167,6 +170,7 @@ struct CaptureView: View {
                                       appVersion: model.appVersion, appBuild: model.appBuild)
             }
             e.onSnapshot = { s in snap = s }
+            showSurfaces = model.capabilities.sceneReconstruction      // live mesh grid on by default with LiDAR
             engine = e
         } catch {
             startError = "\(error)"

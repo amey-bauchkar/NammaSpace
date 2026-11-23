@@ -1,4 +1,6 @@
+import CoreGraphics
 import Foundation
+import ImageIO
 import simd
 @testable import NammaCaptureCore
 
@@ -34,12 +36,18 @@ enum Fixtures {
         return Pose(m)
     }
 
-    /// A tiny but real JPEG-signature payload (contents are not decoded by the validators).
-    static func jpeg(_ i: Int) -> Data {
-        var d = Data([0xFF, 0xD8, 0xFF, 0xE0])
-        d.append(Data(repeating: UInt8(i % 251), count: 3000 + i))
-        d.append(contentsOf: [0xFF, 0xD9])
-        return d
+    /// A small real JPEG (decodable), colour varying with i.
+    static func jpeg(_ i: Int, width: Int = 64, height: Int = 48, rgb: (UInt8, UInt8, UInt8)? = nil) -> Data {
+        let c = rgb ?? (UInt8(40 + (i * 37) % 200), UInt8(90), UInt8(200 - (i * 23) % 150))
+        var px = [UInt8](repeating: 0, count: width * height * 4)
+        for k in 0..<(width * height) { px[k * 4] = c.0; px[k * 4 + 1] = c.1; px[k * 4 + 2] = c.2; px[k * 4 + 3] = 255 }
+        let ctx = CGContext(data: &px, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!
+        let out = NSMutableData()
+        let dst = CGImageDestinationCreateWithData(out, "public.jpeg" as CFString, 1, nil)!
+        CGImageDestinationAddImage(dst, ctx.makeImage()!, [kCGImageDestinationLossyCompressionQuality: 0.95] as CFDictionary)
+        CGImageDestinationFinalize(dst)
+        return out as Data
     }
 
     struct Built { let store: SessionStore; let dir: URL; let id: String }

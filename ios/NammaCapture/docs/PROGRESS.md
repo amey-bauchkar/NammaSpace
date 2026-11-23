@@ -138,3 +138,58 @@ Added:
 Tests: Core 37 passed (GLB writer, mesh in export, mesh validation); Python 33 passed (mesh validation, Swift-written
 mesh parsed by `mesh_import.mesh_triangles`). Builds: simulator + device, 0 warnings; installed on iPhone18,1
 (launch not confirmed: phone locked). Mesh, overlay, grid, re-metering not yet exercised on a device.
+
+## Polycam-parity pass (2026-11-23)
+
+Goal from the team: perfect LiDAR capture, best resolution, coloured LiDAR mesh, live mesh grid like Polycam, and
+Polycam's three exports (raw data, images, glTF zip).
+
+* **Exports** (`Core/.../Format/ShareExports.swift`, Review screen "Export like Polycam"):
+  - Raw data (.zip) in Polycam's raw "Images" layout, which Namma Space's LiDAR route already reads
+    (`keyframes/cameras|images|depth|confidence|corrected_*`, `mesh_info.json` identity). Our "corrected" set is the
+    same ARKit pose with the photo at 2016 px and depth upsampled to 512x384 (stated in `namma_capture.json`).
+  - Images (.zip): full-resolution keyframes.
+  - glTF (.zip): the coloured LiDAR mesh + mesh_info.json. Importing raw + glTF zips together in the Studio uses the
+    Polycam LiDAR route (gentle LiDAR repair, capture report, LiDAR-depth splat) with 4032 px photos instead of 1024.
+  - Namma Space change: the bridge takes `mesh_info.json` from inside a raw zip when it is not uploaded separately.
+* **Coloured mesh** (`Mesh/MeshColorizer.swift`): per-vertex colour from every keyframe that sees the vertex head-on and
+  close, with a LiDAR-depth occlusion test; one midpoint subdivision. Unlit glTF material (colours are photos).
+* **Live mesh grid**: the LiDAR mesh overlay is on by default on LiDAR phones (the team asked for Polycam's look).
+* **Resolution**: ARKit's still on iPhone18,1 is 4032x3024 (12 MP, the Testing Room shows no downscale), the maximum
+  ARKit delivers there; the stored-size cap was raised to 8064 so larger stills are never shrunk.
+* Release build installed on iPhone18,1 (faster for colouring).
+
+Tests: Swift 42 passed (colouriser, GLB colours, exports); Python: `tests/test_namma_capture_polycam_exports.py`
+3 passed with Swift-made zips (reader, mesh parse, full bridge import). Not yet verified on a device capture: mesh
+colouring time and quality, the grid overlay, the export sizes.
+
+## Photo-textured mesh (2026-11-23)
+
+`Mesh/TextureBaker.swift`: the glTF export now carries a photo texture, not vertex colours.
+- Layout: every triangle flat in its true shape in up to 3 atlases of 4096 px, finest texel size that fits (shelf
+  packing; 2 px padding filled with the edge colour so mipmaps do not bleed).
+- View per triangle: all corners in frame, LiDAR depth agrees at the centroid, best cos^2/d^2 x sqrt(sharpness/median).
+- Colour gains per photo against the multi-view vertex average (0.7-1.4) to soften exposure seams.
+- Raster from the full 4032x3024 photo, bilinear; one photo decoded at a time.
+- Compared with the Polycam kitchen model in the repo (3 atlases of 4096, built from 1024x768 keyframes): same atlas
+  budget, source photos with ~15x the pixels. Whether the result looks better than Polycam's has not been compared on
+  the same room yet.
+Tests: Swift 45 passed (3 bake tests + benchmark, opt-in); Namma Space reads the textured GLB (atlas 4096 wide).
+
+## First kitchen capture with texturing (2026-11-23)
+
+Scan: iPhone18,1, 289 keyframes (all 4032x3024 high-res, all with LiDAR depth), 488 s, 216 movement-triggered /
+69 turn-only keyframes, ISO median 64 (3 distinct values: the auto exposure lock held), tracking normal throughout.
+Exports: raw 1.66 GB, images 1.34 GB, glTF 35.7 MB. Namma Space's PolycamExport reads the raw zip as a LiDAR export.
+
+| Mesh | Imported into Namma Space | Result in the viewer |
+|---|---|---|
+| ARKit live mesh + texture (app export as built) | `namma-capture-kitchen-2026-11-23-…1894cd` | Shattered: ARKit's mesh is 134 m2 of overlapping scraps, 10,749 holes, floor 3.8 % |
+| LiDAR TSDF fusion (Open3D, lidar_fusion.fuse, 1.5 cm) + texture | `…fused-lidar-mesh-…af36a9` | Coherent room, but 6,934 "fragments" deleted by the importer: triangles were spread over atlases at random |
+| + atlases packed by region (Morton order) | `…fused-textured-v2-…57295e` | Fragments removed 6,934 -> 38, floor 50 % |
+| + view smoothing (top-4 photos, ICM) | `…fused-textured-v3-…386eb6` | Fewer texture seams. Best so far; still below Polycam's finish (ragged edges, blotchy walls) |
+
+Fixed in TextureBaker: spatial atlas chunks (Morton order) and neighbour-aware view choice; tests added (47 pass).
+The fused-mesh models were made on the Mac (Open3D fusion + `swift run nammacap-bake`), not yet by the app.
+Remaining for Polycam-level finish: depth fusion in the app (or Namma Space), finer fusion (1 cm) with edge-preserving
+cleanup, seam colour levelling / blending, and a Python port of the baker for the Windows pipeline machine.
