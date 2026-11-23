@@ -9,7 +9,9 @@ enum FrameEncoding {
     static let ciContext = CIContext(options: [.cacheIntermediates: false])
 
     /// Longest stored image side. Larger stills (e.g. 48 MP) are downscaled; intrinsics are scaled to match.
-    static let maxStoredLongSide = 4032
+    /// ARKit's high-resolution still is 4032x3024 on the iPhone 17 Pro (Testing Room, 2026-11-22); larger stills from a
+    /// future device are kept up to this size (48 MP) instead of being shrunk.
+    static let maxStoredLongSide = 8064
 
     /// Stored size for a source image (aspect preserved, never upscaled).
     static func storedSize(width w: Int, height h: Int) -> (Int, Int) {

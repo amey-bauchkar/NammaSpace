@@ -207,6 +207,33 @@ def glb_from_poses(project_dir, poses, *, cancel_file=None, progress=None):
 # -0.2 dB on held-out photos (scripts/qa/lidar_splat_ablation.py runs I-K, docs/polycam_lidar/phase3_results.md)
 DEPTH_WEIGHT = 1.0
 
+# Training photo size. train_splat.py keeps every training photo on the GPU (uint8), so memory grows with the size:
+# the Polycam kitchen (410 photos at 1024 px) peaked at 2.04 GB on the 6 GB RTX 4050. Namma Capture's photos are
+# 4032x3024; at 1600 px 289 of them need ~1.7 GB as photos plus ~2.5 GB for training (estimate, not yet measured),
+# at 1920 px ~6 GB (too close to 6 GB). "auto" = 1600 when the raw photos are at least 1920 px wide, else the
+# caller's max_side (1024: Polycam's 1024x768 keyframes are unchanged). Override per project in project.json:
+#   "splat_options": {"lidar_max_side": 1280}      (e.g. after a CUDA out-of-memory error)
+LIDAR_MAX_SIDE_HIGH_RES = 1600
+
+
+def lidar_max_side(project_dir, images_dir, max_side):
+    """-> training photo size for this project (see LIDAR_MAX_SIDE_HIGH_RES)."""
+    from namma.core.jsonio import load_strict
+    opt = "auto"
+    pj = Path(project_dir) / "project.json"
+    if pj.exists():
+        try:
+            opt = (load_strict(pj).get("splat_options") or {}).get("lidar_max_side", "auto")
+        except ValueError:
+            pass
+    if opt != "auto":
+        try:
+            return max(256, int(opt))
+        except (TypeError, ValueError):
+            return max_side
+    from namma.studio.splat_large import photo_long_side
+    return max(max_side, LIDAR_MAX_SIDE_HIGH_RES) if photo_long_side(images_dir) >= 1920 else max_side
+
 
 def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_000, depth_weight=DEPTH_WEIGHT,
                    timeout_s=3 * 3600, progress=None, cancel_file=None, **_):
@@ -250,9 +277,10 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     lidar_in = work / "lidar_input"
     prep = prepare(pdir, lidar_in, holdout_every=0, **RECIPE)
     ply = work / "room.ply"
+    max_side = lidar_max_side(pdir, lidar_in / "images", max_side)
 
     # 3. training
-    label = f"Training the photoreal view ({prep['train']} photos, LiDAR depth guide)"
+    label = f"Training the photoreal view ({prep['train']} photos at {max_side} px, LiDAR depth guide)"
     progress(label, 0.12)
 
     def on_line(line):

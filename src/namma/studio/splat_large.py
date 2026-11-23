@@ -507,7 +507,40 @@ SPLAT_OPTION_DEFAULTS = {
                                     # its added backing sheets / fills are left out - nothing is seen there)
     "block_target_per_m2": 12_000,  # splats per m2 of FLOOR wanted in every block (a small room's density)
     "max_total_splats": 3_600_000,  # splat budget of the merged result (6 blocks x 600 k)
+    # Final training phase (last 15 % of steps) at this photo size: "auto" = 1920 when the capture's photos are at
+    # least that large (e.g. Namma Capture's 4032x3024 stills), otherwise off; a number forces it; 0 = off.
+    # Polycam's keyframes are 1024x768, so "auto" leaves that route unchanged. Not yet measured on the 6 GB card.
+    "late_max_side": "auto",
 }
+
+LATE_MAX_SIDE_AUTO = 1920
+
+
+def photo_long_side(images_dir, sample=12):
+    """Longest side of the training photos (reads only image headers of up to `sample` files)."""
+    from PIL import Image
+    files = sorted(p for p in Path(images_dir).iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png"))
+    best = 0
+    for f in files[:: max(1, len(files) // sample)][:sample]:
+        try:
+            with Image.open(f) as im:
+                best = max(best, max(im.size))
+        except OSError:
+            continue
+    return best
+
+
+def late_max_side_for(opt, images_dir, max_side):
+    """-> trainer --late-max-side value (0 = off) for the splat option value `opt`."""
+    if opt in (0, "0", None, False, "off"):
+        return 0
+    if opt == "auto":
+        return LATE_MAX_SIDE_AUTO if photo_long_side(images_dir) >= LATE_MAX_SIDE_AUTO > max_side else 0
+    try:
+        n = int(opt)
+    except (TypeError, ValueError):
+        return 0
+    return n if n > max_side else 0
 
 
 def splat_options(run_dir, project_dir):
@@ -664,7 +697,7 @@ def _block_plan(opts, glb, T0, cap):
 
 
 def _train_blocks(plan, *, model, work, logs, depth_args, mask_args, iters0, max_side, ply, label, progress,
-                  timeout_s, cancel_file, max_total):
+                  timeout_s, cancel_file, max_total, late_args=()):
     """Train every block (one after the other), merge, apply the budget -> ply + ply.json (summary like the
     trainer's, with "blocks")."""
     from namma.recon.runner import run_step
@@ -701,7 +734,7 @@ def _train_blocks(plan, *, model, work, logs, depth_args, mask_args, iters0, max
                                            "--iters", it_i, "--max-side", max_side, "--cap", b["cap"],
                                            "--max-splat-scale", MAX_SPLAT_SCALE_M, "--pose-opt", "--appearance",
                                            *args, "--init-scale-max-mult", LARGE_INIT_SCALE_MAX_MULT,
-                                           "--means-lr-scene-cap", max(0.5, radius), *mask_args],
+                                           "--means-lr-scene-cap", max(0.5, radius), *mask_args, *late_args],
                  logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
         summ = load_strict((d / "block.ply").with_suffix(".json"))
         plys.append(d / "block.ply")
@@ -852,18 +885,21 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
         if m:
             progress(label, 0.15 + 0.77 * int(m.group(1)) / int(m.group(2)))
     mask_args = ["--mask-dir", work / "masks"] if "--mask-dir" in large_args else []
+    late = late_max_side_for(opts["late_max_side"], work / "input" / "images", max_side)
+    late_args = ["--late-max-side", late] if late else []
     plan = _block_plan(opts, glb, T0, cap)
     try:
         if plan and plan["k"] >= 2:
             progress(f"Training the photoreal view in {plan['k']} blocks ({plan['floor_m2']:.0f} m2 of floor)", 0.15)
             _train_blocks(plan, model=model, work=work, logs=logs, depth_args=depth_args, mask_args=mask_args,
                           iters0=iters0, max_side=max_side, ply=ply, label=label, progress=progress,
-                          timeout_s=timeout_s, cancel_file=cancel_file, max_total=opts["max_total_splats"])
+                          timeout_s=timeout_s, cancel_file=cancel_file, max_total=opts["max_total_splats"],
+                          late_args=late_args)
         else:
             run_step("splat_train", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", model,
                                      "--images", work / "input" / "images", "--out", ply, "--iters", iters,
                                      "--max-side", max_side, "--cap", cap, "--max-splat-scale", MAX_SPLAT_SCALE_M,
-                                     "--pose-opt", "--appearance", *depth_args, *large_args],
+                                     "--pose-opt", "--appearance", *depth_args, *large_args, *late_args],
                      logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
     except StepFailed as e:
         raise SplatError(str(e)) from e
