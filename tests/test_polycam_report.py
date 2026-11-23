@@ -48,6 +48,7 @@ def test_photo_flags():
     assert rpt.photo_flags(q, median_blur=100) == ["turned fast (possible motion blur)", "tracking limited",
                                                   "few tracking features", "not linked to other photos"]
     assert rpt.photo_flags({"angular_velocity": 0.9, "blur_score": 200, "neighbors": 3}, median_blur=100) == []
+    assert rpt.photo_flags({"neighbors": 0}, median_blur=100, has_links=False) == []    # export without links
 
 
 def test_surface_coverage_cells():

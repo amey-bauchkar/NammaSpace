@@ -62,6 +62,24 @@ def find_raw_zip(project_dir):
     return None
 
 
+def find_model(orig, raw_zip=None):
+    """The scan's 3D model in capture/originals: a .glb, or a GLTF export .zip holding one .glb (not the raw zip)."""
+    import zipfile
+    glbs = sorted(Path(orig).glob("*.glb"))
+    if glbs:
+        return glbs[0]
+    for z in sorted(Path(orig).glob("*.zip")):
+        if raw_zip is not None and z.resolve() == Path(raw_zip).resolve():
+            continue
+        try:
+            with zipfile.ZipFile(z) as f:
+                if sum(n.lower().endswith(".glb") for n in f.namelist()) == 1:
+                    return z
+        except zipfile.BadZipFile:
+            continue
+    return None
+
+
 def _msg(code, severity, message, **extra):
     return {"code": code, "severity": severity, "message": message, **extra}
 
@@ -189,7 +207,9 @@ def _check(cid, ok, value, threshold, good, bad, *, level_if_bad="warning"):
 
 
 # ------------------------------------------------------------------------------------------------ photos
-def photo_flags(q, median_blur):
+def photo_flags(q, median_blur, has_links=True):
+    """has_links: the export lists photo neighbours at all (Polycam does; Namma Capture's Polycam-style export
+    does not - then "not linked" would flag every photo)."""
     f = []
     if (q.get("angular_velocity") or 0) >= FAST_TURN_RAD_S and (q.get("blur_score") or 0) < median_blur:
         f.append("turned fast (possible motion blur)")
@@ -197,7 +217,7 @@ def photo_flags(q, median_blur):
         f.append("tracking limited")
     if (q.get("feature_point_count") if q.get("feature_point_count") is not None else 999) < FEW_FEATURES:
         f.append("few tracking features")
-    if q.get("neighbors") == 0:
+    if has_links and q.get("neighbors") == 0:
         f.append("not linked to other photos")
     return f
 
@@ -316,7 +336,7 @@ def build_report(project_dir, *, progress=None, write=True):
     zp = find_raw_zip(d)
     if zp is None:
         raise pr.PolycamFormatError("no Polycam LiDAR raw export (Images .zip) in this project")
-    glb = next(iter(sorted(orig.glob("*.glb"))), None)
+    glb = find_model(orig, zp)
     side = pr.load_sidecars(orig)
     rng = np.random.default_rng(SEED)
     errors, warnings, checks = [], [], []
@@ -335,7 +355,8 @@ def build_report(project_dir, *, progress=None, write=True):
         progress("Reading Polycam's photo measurements", 0.05)
         Q = {k: ex.quality(k) for k in ex.ids}
         med_blur = float(np.median([q["blur_score"] for q in Q.values() if q.get("blur_score") is not None] or [0]))
-        per = [{"name": k, "flags": photo_flags(q, med_blur)} for k, q in Q.items()]
+        has_links = any(q.get("neighbors") for q in Q.values())
+        per = [{"name": k, "flags": photo_flags(q, med_blur, has_links)} for k, q in Q.items()]
         flagged = [p for p in per if p["flags"]]
         counts = Counter(f for p in per for f in p["flags"])
         rep["photos"] = {"count": len(per), "flagged": len(flagged), "flag_counts": dict(counts),

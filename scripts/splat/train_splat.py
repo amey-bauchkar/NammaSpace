@@ -290,8 +290,10 @@ def main(argv=None):
     state = strategy.initialize_state()
     extra = []
     pose_d = torch.zeros(len(views), 6, device=dev, requires_grad=True)
+    pose_opt = None
     if a.pose_opt:                                       # small, regularised corrections (gsplat's pose_opt recipe)
-        extra.append(torch.optim.Adam([pose_d], lr=1e-4, weight_decay=1e-6))
+        pose_opt = torch.optim.Adam([pose_d], lr=1e-4, weight_decay=1e-6)
+        extra.append(pose_opt)
     app = torch.zeros(len(views), 6, device=dev, requires_grad=True)          # log-gain (3) + offset (3)
     if a.appearance:
         extra.append(torch.optim.Adam([app], lr=1e-3))
@@ -353,7 +355,17 @@ def main(argv=None):
         strategy.step_pre_backward(params, opts, state, step, info)
         l1 = (out - gt).abs().mean()
         loss = 0.8 * l1 + 0.2 * (1 - ssim(out.permute(0, 3, 1, 2), gt.permute(0, 3, 1, 2)))
-        loss = loss + 0.01 * torch.sigmoid(params["opacities"]).mean() + 0.01 * torch.exp(params["scales"]).mean()
+        if fine:
+            # a full-resolution window sees ~1/12 of the photo: penalising EVERY splat's opacity / size each step while
+            # only the visible ones get pulled back by the photo made almost all splats transparent and tiny (Namma
+            # Capture kitchen 2026-11-24: 1,452 of 600,000 splats opaque, median size 0, 10 % within 5 cm of the model).
+            # In windows the penalties apply to the splats this window can see.
+            vis = (info["radii"] > 0).reshape(len(params["means"]), -1).any(dim=1) if info["radii"].numel() else None
+            if vis is not None and vis.any():
+                loss = loss + 0.01 * torch.sigmoid(params["opacities"][vis]).mean() \
+                    + 0.01 * torch.exp(params["scales"][vis]).mean()
+        else:
+            loss = loss + 0.01 * torch.sigmoid(params["opacities"]).mean() + 0.01 * torch.exp(params["scales"]).mean()
         if use_depth:                                    # relative depth error where the mesh is seen
             md = v["depth"].to(dev)
             if dwin is not None:                         # the depth pixels under this window (aligned by crop_box)
@@ -367,7 +379,19 @@ def main(argv=None):
             loss = loss + a.wall_weight * wall_loss()
         loss.backward()
         for o in list(opts.values()) + extra:
+            # full-resolution windows (a quarter of the photo's width, often a plain wall) do not pin a camera: poses
+            # corrected on whole photos are frozen there. Measured on the Namma Capture kitchen (2026-11-24): with the
+            # correction running on windows the cameras drifted 2.2 deg / 5 cm (median), max 5.8 deg / 19 cm, and the
+            # splat no longer lined up with the model (14 % within 5 cm)
+            if o is pose_opt and fine:
+                o.zero_grad(set_to_none=True)
+                continue
             o.step(); o.zero_grad(set_to_none=True)
+        if pose_opt is not None and full_res and step + 1 == int(a.coarse_until * a.iters):
+            dd = pose_d.detach()
+            print(f"pose correction after whole photos: rot median {float(torch.rad2deg(dd[:, :3].norm(dim=1)).median()):.3f}"
+                  f" deg, shift median {float(dd[:, 3:].norm(dim=1).median()):.4f}; frozen for the full-resolution windows",
+                  flush=True)
         sched.step()
         strategy.step_post_backward(params, opts, state, step, info, lr=sched.get_last_lr()[0])
         if a.max_splat_scale > 0:
