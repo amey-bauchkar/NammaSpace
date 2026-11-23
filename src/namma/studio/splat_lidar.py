@@ -207,32 +207,66 @@ def glb_from_poses(project_dir, poses, *, cancel_file=None, progress=None):
 # -0.2 dB on held-out photos (scripts/qa/lidar_splat_ablation.py runs I-K, docs/polycam_lidar/phase3_results.md)
 DEPTH_WEIGHT = 1.0
 
-# Training photo size. train_splat.py keeps every training photo on the GPU (uint8), so memory grows with the size:
-# the Polycam kitchen (410 photos at 1024 px) peaked at 2.04 GB on the 6 GB RTX 4050. Namma Capture's photos are
-# 4032x3024; at 1600 px 289 of them need ~1.7 GB as photos plus ~2.5 GB for training (estimate, not yet measured),
-# at 1920 px ~6 GB (too close to 6 GB). "auto" = 1600 when the raw photos are at least 1920 px wide, else the
-# caller's max_side (1024: Polycam's 1024x768 keyframes are unchanged). Override per project in project.json:
-#   "splat_options": {"lidar_max_side": 1280}      (e.g. after a CUDA out-of-memory error)
-LIDAR_MAX_SIDE_HIGH_RES = 1600
+# Training resolution.
+# Namma Capture photos (4032x3024) are trained at FULL resolution: train_splat.py --full-res-crops trains on whole
+# photos at 1024 px for the first 30 % of the steps (shape), then on random 1024x1024 windows of the full-resolution
+# photos (detail) read from a disk cache, so no full photo is ever on the GPU and the render per step stays ~1 MP.
+# Estimated GPU peak ~1.5-2 GB on the 6 GB RTX 4050 (the Polycam kitchen peaked at 2.04 GB with 410 photos at 1024 px
+# held on the GPU; not yet measured with crops). Disk: ~36 MB per photo for the cache (~10 GB for 289), removed after.
+# Steps: enough for each full-res pixel to be supervised ~12x (60,000 for the kitchen).
+# Polycam's 1024x768 keyframes keep the previous behaviour (1024 px, all on the GPU).
+# Per-project overrides in project.json "splat_options":
+#   lidar_full_res: "auto" | true | false     lidar_crop_size: 1024     lidar_iters: N
+#   lidar_max_side: N  (photo size when not training at full resolution / for the coarse phase)
+#   lidar_cap: N       (maximum splats; 600,000 is the measured-safe value on the 6 GB card)
+FULL_RES_MIN_SIDE = 1920
+FULL_RES_PASSES = 12.0
 
 
-def lidar_max_side(project_dir, images_dir, max_side):
-    """-> training photo size for this project (see LIDAR_MAX_SIDE_HIGH_RES)."""
+def lidar_options(project_dir):
     from namma.core.jsonio import load_strict
-    opt = "auto"
     pj = Path(project_dir) / "project.json"
     if pj.exists():
         try:
-            opt = (load_strict(pj).get("splat_options") or {}).get("lidar_max_side", "auto")
+            return dict(load_strict(pj).get("splat_options") or {})
         except ValueError:
             pass
+    return {}
+
+
+def lidar_max_side(project_dir, images_dir, max_side):
+    """-> photo size for the whole-photo phase (an explicit lidar_max_side, else max_side)."""
+    opt = lidar_options(project_dir).get("lidar_max_side", "auto")
     if opt != "auto":
         try:
             return max(256, int(opt))
         except (TypeError, ValueError):
-            return max_side
+            pass
+    return max_side
+
+
+def lidar_training_plan(project_dir, images_dir, *, iters, max_side, cap):
+    """-> dict of trainer settings for this project's photos (see the notes above)."""
     from namma.studio.splat_large import photo_long_side
-    return max(max_side, LIDAR_MAX_SIDE_HIGH_RES) if photo_long_side(images_dir) >= 1920 else max_side
+    opts = lidar_options(project_dir)
+    long_side = photo_long_side(images_dir)
+    fr = opts.get("lidar_full_res", "auto")
+    full_res = long_side >= FULL_RES_MIN_SIDE if fr == "auto" else bool(fr)
+    plan = {"full_res": full_res, "photo_long_side": long_side, "max_side": lidar_max_side(project_dir, images_dir, max_side),
+            "cap": int(opts.get("lidar_cap", cap)), "iters": iters, "crop_size": int(opts.get("lidar_crop_size", 1024))}
+    if full_res:
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts" / "splat"))
+        import splat_crops
+        from PIL import Image
+        files = sorted(Path(images_dir).glob("*.jpg"))
+        with Image.open(files[0]) as im:
+            W, H = im.size
+        crop_steps = splat_crops.default_crop_steps(len(files), W, H, plan["crop_size"], FULL_RES_PASSES)
+        plan["iters"] = int(opts.get("lidar_iters", max(iters, int(crop_steps / 0.7))))
+    elif "lidar_iters" in opts:
+        plan["iters"] = int(opts["lidar_iters"])
+    return plan
 
 
 def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_000, depth_weight=DEPTH_WEIGHT,
@@ -277,10 +311,14 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     lidar_in = work / "lidar_input"
     prep = prepare(pdir, lidar_in, holdout_every=0, **RECIPE)
     ply = work / "room.ply"
-    max_side = lidar_max_side(pdir, lidar_in / "images", max_side)
+    plan = lidar_training_plan(pdir, lidar_in / "images", iters=iters, max_side=max_side, cap=cap)
+    iters, max_side, cap = plan["iters"], plan["max_side"], plan["cap"]
 
     # 3. training
-    label = f"Training the photoreal view ({prep['train']} photos at {max_side} px, LiDAR depth guide)"
+    label = (f"Training the photoreal view ({prep['train']} photos at FULL resolution "
+             f"({plan['photo_long_side']} px, {plan['crop_size']} px windows), {iters} steps, LiDAR depth guide)"
+             if plan["full_res"] else
+             f"Training the photoreal view ({prep['train']} photos at {max_side} px, LiDAR depth guide)")
     progress(label, 0.12)
 
     def on_line(line):
@@ -289,7 +327,8 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
             progress(label, 0.12 + 0.80 * int(m.group(1)) / int(m.group(2)))
     try:
         run_step("splat_train", train_argv(lidar_in, ply, iters=iters, max_side=max_side, cap=cap,
-                                           depth=RECIPE["depth"], depth_weight=depth_weight, holdout=False),
+                                           depth=RECIPE["depth"], depth_weight=depth_weight, holdout=False,
+                                           full_res=plan["full_res"], crop_size=plan["crop_size"]),
                  logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
     except StepFailed as e:
         raise SplatError(str(e)) from e
@@ -327,7 +366,7 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
 
 
 def train_argv(work, out_ply, *, iters, max_side=1024, cap=600_000, depth=True, depth_weight=0.1, holdout=True,
-               eval_pose_steps=150):
+               eval_pose_steps=150, full_res=False, crop_size=1024):
     from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
     work = Path(work)
     argv = [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", work / "model", "--images", work / "images",
@@ -337,4 +376,6 @@ def train_argv(work, out_ply, *, iters, max_side=1024, cap=600_000, depth=True, 
         argv += ["--depth-dir", work / "depth", "--depth-weight", depth_weight]
     if holdout:
         argv += ["--holdout-names", work / "holdout.txt"]
+    if full_res:
+        argv += ["--full-res-crops", "--crop-size", crop_size, "--coarse-until", 0.3, "--photo-cache", work / "photo_cache"]
     return argv

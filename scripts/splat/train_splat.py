@@ -27,6 +27,8 @@ from plyfile import PlyData, PlyElement
 from gsplat import rasterization
 from gsplat.strategy import MCMCStrategy
 
+import splat_crops                          # scripts/splat/splat_crops.py (full-resolution crop training)
+
 C0 = 0.28209479177387814                     # SH band-0 constant
 
 
@@ -186,13 +188,24 @@ def main(argv=None):
     ap.add_argument("--eval-every", type=int, default=0, help="quick held-out score (colour fit) every N steps")
     ap.add_argument("--walls", help="walls.json (flat room walls in this frame): splats near a wall are kept flat on it")
     ap.add_argument("--wall-weight", type=float, default=0.05)
+    ap.add_argument("--full-res-crops", action="store_true",
+                    help="after --coarse-until, train on random --crop-size windows of the FULL-resolution photos "
+                         "(read from a disk cache; no full photo on the GPU). Before that: whole photos at --max-side")
+    ap.add_argument("--crop-size", type=int, default=1024)
+    ap.add_argument("--coarse-until", type=float, default=0.3, help="fraction of steps on whole photos at --max-side")
+    ap.add_argument("--photo-cache", help="folder for the decoded full-resolution photos (uncompressed; ~36 MB each "
+                                         "for 4032x3024). Default: <out>.photo_cache")
     a = ap.parse_args(argv)
     torch.manual_seed(a.seed); random.seed(a.seed); np.random.seed(a.seed)
-    dev = "cuda"
+    import os
+    dev = os.environ.get("NAMMA_SPLAT_DEVICE", "cuda")      # "cpu" only for the smoke test without a GPU
     t0 = time.time()
     cams, imgs, xyz, rgb = read_model(a.model)
     skip = set(Path(a.exclude).read_text(encoding="utf-8").split()) if a.exclude else set()
-    # photos (kept on the CPU as uint8; one goes to the GPU per step)
+    # photos (uint8). Default: all on the GPU at --max-side. --full-res-crops: the --max-side copy stays on the CPU
+    # (one goes to the GPU per step) and the full-resolution photo goes to a disk cache read window by window.
+    full_res = a.full_res_crops
+    cache_dir = Path(a.photo_cache) if a.photo_cache else Path(a.out).with_suffix(".photo_cache")
     views = []
     for im in imgs:
         f = Path(a.images) / im["name"]
@@ -200,6 +213,12 @@ def main(argv=None):
             continue
         w, h, fx, fy, cx, cy = cams[im["cam"]]
         pic = Image.open(f).convert("RGB")
+        full = None
+        if full_res:
+            fx_full = fx * pic.size[0] / w; fy_full = fy * pic.size[1] / h
+            Kf = np.array([[fx_full, 0, cx * pic.size[0] / w], [0, fy_full, cy * pic.size[1] / h], [0, 0, 1]], np.float32)
+            full = {"path": splat_crops.cache_photo(cache_dir, im["name"], np.asarray(pic)), "W": pic.size[0],
+                    "H": pic.size[1], "K": torch.from_numpy(Kf)}
         k = min(1.0, a.max_side / max(pic.size))
         if k < 1:
             pic = pic.resize((round(pic.size[0] * k), round(pic.size[1] * k)), Image.LANCZOS)
@@ -209,8 +228,9 @@ def main(argv=None):
         dep = None
         if a.depth_dir and (Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").exists():
             dep = torch.from_numpy(np.load(Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").astype(np.float32))
-        views.append({"img": torch.from_numpy(np.asarray(pic)).to(dev), "K": torch.from_numpy(K), "viewmat": torch.from_numpy(V),
-                      "name": im["name"], "depth": dep})
+        img = torch.from_numpy(np.asarray(pic))
+        views.append({"img": (img.pin_memory() if dev == "cuda" else img) if full_res else img.to(dev), "K": torch.from_numpy(K),
+                      "viewmat": torch.from_numpy(V), "name": im["name"], "depth": dep, "full": full})
     if len(views) < 3:
         raise SystemExit("fewer than 3 photos with cameras")
     views.sort(key=lambda v: v["name"])
@@ -235,6 +255,16 @@ def main(argv=None):
     print(f"{len(views)} training photos{f' + {len(test)} held out' if test else ''} "
           f"{views[0]['img'].shape[1]}x{views[0]['img'].shape[0]} ({len(dropped)} outlying cameras dropped), "
           f"{len(xyz)} start points, scene scale {scene_scale:.2f}", flush=True)
+    if full_res:
+        fw, fh = views[0]["full"]["W"], views[0]["full"]["H"]
+        crop_steps = a.iters - int(a.coarse_until * a.iters)
+        print(f"full-resolution crops: {fw}x{fh} photos, {a.crop_size}px windows from step "
+              f"{int(a.coarse_until * a.iters)}, each full-res pixel supervised ~"
+              f"{splat_crops.coverage_estimate(len(views), fw, fh, crop_steps, a.crop_size):.1f}x, photo cache "
+              f"{splat_crops.gb(splat_crops.cache_bytes(len(views), fw, fh)):.1f} GB in {cache_dir}", flush=True)
+        rng_crop = np.random.default_rng(a.seed)
+        for v in views:
+            v["mm"] = splat_crops.open_cached(v["full"]["path"])
 
     # start: one splat per SfM point, size from the distance to its 3 nearest neighbours
     pts = torch.from_numpy(xyz).to(dev)
@@ -296,9 +326,17 @@ def main(argv=None):
             order = random.sample(range(len(views)), len(views))
         vi = order.pop()
         v = views[vi]
-        gt = v["img"].float()[None] / 255.0
-        K = v["K"].to(dev)
-        if step < a.half_res_until * a.iters:                    # early steps: coarse shape at a quarter of the pixels
+        fine = full_res and step >= a.coarse_until * a.iters
+        dwin = None
+        if fine:                                         # a full-resolution window of this photo
+            dshape = tuple(v["depth"].shape) if (a.depth_dir and v["depth"] is not None) else None
+            x0, y0, cw, chh, dwin = splat_crops.crop_box(v["full"]["W"], v["full"]["H"], a.crop_size, rng_crop, dshape)
+            gt = torch.from_numpy(splat_crops.read_window(v["mm"], x0, y0, cw, chh)).to(dev, non_blocking=True).float()[None] / 255.0
+            K = splat_crops.crop_K(v["full"]["K"], x0, y0).to(dev)
+        else:
+            gt = v["img"].to(dev, non_blocking=True).float()[None] / 255.0
+            K = v["K"].to(dev)
+        if not fine and step < a.half_res_until * a.iters:                    # early steps: coarse shape at a quarter of the pixels
             gt = Fn.avg_pool2d(gt.permute(0, 3, 1, 2), 2).permute(0, 2, 3, 1)
             K = K * torch.tensor([[0.5], [0.5], [1.0]], device=dev)
         H, W = gt.shape[1:3]
@@ -318,6 +356,9 @@ def main(argv=None):
         loss = loss + 0.01 * torch.sigmoid(params["opacities"]).mean() + 0.01 * torch.exp(params["scales"]).mean()
         if use_depth:                                    # relative depth error where the mesh is seen
             md = v["depth"].to(dev)
+            if dwin is not None:                         # the depth pixels under this window (aligned by crop_box)
+                dx0, dy0, dnw, dnh = dwin
+                md = md[dy0:dy0 + dnh, dx0:dx0 + dnw]
             rdd = Fn.interpolate(rd[:, None], size=md.shape, mode="area")[0, 0]
             m = md > 0.1
             if m.any():
@@ -339,16 +380,23 @@ def main(argv=None):
             sz = torch.exp(params["scales"]).max(1).values
             print(f"step {step + 1}/{a.iters} loss {float(loss):.4f} psnr {psnr_of(out, gt):.2f} splats "
                   f"{len(params['means'])} size p50/p99/max {float(sz.median()):.3f}/{float(sz.quantile(0.99)):.3f}/"
-                  f"{float(sz.max()):.2f} gpu {torch.cuda.max_memory_allocated() / 2**30:.2f} GB {time.time() - t0:.0f}s",
+                  f"{float(sz.max()):.2f} gpu {(torch.cuda.max_memory_allocated() if dev == 'cuda' else 0) / 2**30:.2f} GB {time.time() - t0:.0f}s",
                   flush=True)
     out_path = Path(a.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     save_ply(out_path, params)
+    if full_res:                                         # the cache is a decoded copy of the photos: free the disk
+        import shutil
+        for v in views:
+            v.pop("mm", None)
+        shutil.rmtree(cache_dir, ignore_errors=True)
     summary = {"photos": len(views), "iters": a.iters, "splats": len(params["means"]), "seconds": round(time.time() - t0, 1),
-               "gpu_peak_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2), "max_side": a.max_side,
+               "gpu_peak_gb": round((torch.cuda.max_memory_allocated() if dev == "cuda" else 0) / 2**30, 2), "max_side": a.max_side,
                "bytes": out_path.stat().st_size, "frame": "input cameras", "pose_opt": a.pose_opt,
                "appearance": a.appearance, "depth_weight": a.depth_weight if a.depth_dir else 0,
-               "max_splat_scale": a.max_splat_scale}
+               "max_splat_scale": a.max_splat_scale,
+               "full_res_crops": ({"crop_size": a.crop_size, "coarse_until": a.coarse_until,
+                                   "photo_size": [views[0]["full"]["W"], views[0]["full"]["H"]]} if full_res else None)}
     if a.pose_opt:
         dd = pose_d.detach()
         rot = torch.rad2deg(dd[:, :3].norm(dim=1))
