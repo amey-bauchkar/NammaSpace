@@ -19,6 +19,7 @@ public enum NammaCapFormat {
     public static let coveragePath = "coverage.json"
     public static let imagesDir = "images"
     public static let depthDir = "depth"
+    public static let meshPath = "mesh/arkit_scene_mesh.glb"
 }
 
 public struct SchemaVersion: Codable, Comparable, Hashable, CustomStringConvertible, Sendable {
@@ -346,7 +347,24 @@ public struct FileIndex: Codable, Sendable {
     public var annotations = NammaCapFormat.annotationsPath
     public var coverage = NammaCapFormat.coveragePath
     public var integrity = NammaCapFormat.integrityPath
+    /// Optional LiDAR scene-reconstruction mesh (glTF binary, ARKit world coordinates); null when not captured.
+    public var mesh: String?
     public init() {}
+    enum CodingKeys: String, CodingKey { case frames, rejections, trajectory, events, annotations, coverage, integrity, mesh }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        frames = try c.decode(String.self, forKey: .frames); rejections = try c.decode(String.self, forKey: .rejections)
+        trajectory = try c.decode(String.self, forKey: .trajectory); events = try c.decode(String.self, forKey: .events)
+        annotations = try c.decode(String.self, forKey: .annotations); coverage = try c.decode(String.self, forKey: .coverage)
+        integrity = try c.decode(String.self, forKey: .integrity); mesh = try c.decodeIfPresent(String.self, forKey: .mesh)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(frames, forKey: .frames); try c.encode(rejections, forKey: .rejections)
+        try c.encode(trajectory, forKey: .trajectory); try c.encode(events, forKey: .events)
+        try c.encode(annotations, forKey: .annotations); try c.encode(coverage, forKey: .coverage)
+        try c.encode(integrity, forKey: .integrity); try c.encodeNullable(mesh, forKey: .mesh)
+    }
 }
 
 public struct RecoveryInfo: Codable, Sendable, Equatable {

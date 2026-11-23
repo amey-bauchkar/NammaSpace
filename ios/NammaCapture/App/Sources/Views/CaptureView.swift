@@ -28,6 +28,13 @@ final class ARViewHolder {
     }
 
     var center: CGPoint { view.map { CGPoint(x: $0.bounds.midX, y: $0.bounds.midY) } ?? .zero }
+
+    /// RealityKit's scene-understanding overlay of the LiDAR mesh (measured geometry). Off by default: users asked
+    /// for a camera view without grid-like overlays.
+    func showSurfaces(_ on: Bool) {
+        guard let v = view else { return }
+        if on { v.debugOptions.insert(.showSceneUnderstanding) } else { v.debugOptions.remove(.showSceneUnderstanding) }
+    }
 }
 
 struct ARViewContainer: UIViewRepresentable {
@@ -70,8 +77,11 @@ struct CaptureView: View {
     @State private var annotating: String?          // kind being marked
     @State private var showRoomSheet = false
     @State private var showScale = false
-    @State private var exposureLocked = false
+    @State private var exposureLockWanted = true       // locked automatically once exposure settles
     @State private var finishing = false
+    @State private var showFinish = false
+    @State private var autoBeforeSheet: Bool?
+    @State private var showSurfaces = false
     @State private var confirmReset = false
     @State private var flash = false
 
@@ -112,6 +122,32 @@ struct CaptureView: View {
         .sheet(isPresented: $showScale) {
             if let engine { ScaleCheckSheet(engine: engine, holder: holder).presentationDetents([.medium]) }
         }
+        // no photos while a sheet covers the camera (the phone is usually pointing at the floor then)
+        .onChange(of: showFinish || showScale) { _, sheetOpen in
+            guard let engine, !finishing else { return }
+            if sheetOpen {
+                autoBeforeSheet = snap.autoCapture
+                engine.setAutoCapture(false)
+            } else if let was = autoBeforeSheet {
+                engine.setAutoCapture(was)
+                autoBeforeSheet = nil
+            }
+        }
+        .onChange(of: showSurfaces) { _, on in holder.showSurfaces(on) }
+        .sheet(isPresented: $showFinish) {
+            if let engine {
+                FinishSheet(engine: engine, snap: snap,
+                            onCheckScale: { showFinish = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showScale = true } },
+                            onFinish: {
+                                showFinish = false
+                                finishing = true
+                                engine.finish { result in
+                                    if case .success = result { onFinished(engine.sessionDirectory.lastPathComponent) }
+                                }
+                            })
+                    .presentationDetents([.medium, .large])
+            }
+        }
         .confirmationDialog("Reset tracking?", isPresented: $confirmReset, titleVisibility: .visible) {
             Button("Reset tracking", role: .destructive) { engine?.resetTracking() }
         } message: {
@@ -151,6 +187,12 @@ struct CaptureView: View {
         VStack(spacing: 10) {
             topBar
             if let g = snap.guidance.first { GuidanceBanner(g: g) }
+            if snap.newAreaSuggested {
+                HStack {
+                    Button("Mark doorway") { showRoomSheet = true }.buttonStyle(.borderedProminent)
+                    Button("Same room") { engine.dismissNewArea() }.buttonStyle(.bordered).tint(.white)
+                }
+            }
             if let a = annotating {
                 Text("Tap the \(a) on screen").font(.headline).padding(10)
                     .background(.ultraThinMaterial, in: Capsule())
@@ -161,7 +203,9 @@ struct CaptureView: View {
             }
             Spacer()
             HStack(alignment: .bottom) {
-                CoverageDial(summary: snap.coverage, uncovered: snap.uncoveredHeadings, heading: snap.headingNow)
+                CoverageDial(summary: snap.coverage, uncoveredDown: snap.uncoveredDown, uncoveredLevel: snap.uncoveredHeadings,
+                             uncoveredUp: snap.uncoveredUp, heading: snap.headingNow,
+                             directions: (snap.directionsCovered, snap.directionsTotal))
                 Spacer()
                 statsColumn
             }
@@ -186,6 +230,17 @@ struct CaptureView: View {
                 .background(.black.opacity(0.55), in: Capsule()).foregroundStyle(.white)
         }
         .padding(.horizontal)
+        .overlay(alignment: .bottom) {
+            // what the camera actually reports, not what was requested
+            Label(snap.cameraLock, systemImage: snap.cameraLockOK ? "lock.fill" : "lock.open")
+                .font(.caption2.weight(.semibold))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background((snap.cameraLockOK ? Color.green : Color.orange).opacity(0.8), in: Capsule())
+                .foregroundStyle(.white)
+                .offset(y: 24)
+                .accessibilityLabel(snap.cameraLock)
+        }
+        .padding(.bottom, 20)
     }
 
     private var statsColumn: some View {
@@ -213,10 +268,15 @@ struct CaptureView: View {
                     }
                 } label: { Label("Mark mirror / glass / window", systemImage: "rectangle.dashed") }
                 Button { showScale = true } label: { Label("Check scale with a tape measure", systemImage: "ruler") }
+                if model.capabilities.sceneReconstruction {
+                    Button { showSurfaces.toggle() } label: {
+                        Label(showSurfaces ? "Hide scanned surfaces" : "Show scanned surfaces (LiDAR)", systemImage: "square.3.layers.3d")
+                    }
+                }
                 Button {
-                    exposureLocked.toggle()
-                    engine.setExposureLock(exposureLocked)
-                } label: { Label(exposureLocked ? "Unlock exposure & colour" : "Lock exposure & colour", systemImage: exposureLocked ? "lock.open" : "lock") }
+                    exposureLockWanted.toggle()
+                    engine.setExposureLock(exposureLockWanted)
+                } label: { Label(exposureLockWanted ? "Turn exposure lock off" : "Lock exposure & colour", systemImage: exposureLockWanted ? "lock.open" : "lock") }
                 Button(role: .destructive) { confirmReset = true } label: { Label("Reset tracking…", systemImage: "arrow.counterclockwise") }
             } label: {
                 Image(systemName: "ellipsis.circle.fill").font(.system(size: 40)).symbolRenderingMode(.hierarchical)
@@ -237,12 +297,7 @@ struct CaptureView: View {
                         .font(.caption.weight(.semibold))
                 }
                 .buttonStyle(.borderedProminent).tint(snap.autoCapture ? .green : .gray)
-                Button {
-                    finishing = true
-                    engine.finish { result in
-                        if case .success = result, let id = engine.sessionDirectory.lastPathComponent as String? { onFinished(id) }
-                    }
-                } label: { Text("Finish").font(.headline) }
+                Button { showFinish = true } label: { Text("Finish").font(.headline) }
                 .buttonStyle(.borderedProminent).tint(.blue).disabled(finishing)
             }
         }
@@ -281,26 +336,27 @@ struct TrackingDot: View {
     var label: String { state == "normal" ? "Tracking" : state == "limited" ? "Limited" : "No tracking" }
 }
 
-/// Compact coverage indicator: a ring of 12 viewing-direction sectors around the current heading (filled = seen from two
-/// spots; soft blue = still needed) and floor/ceiling bars. Plain fills, no grid lines or outlines.
+/// Compact coverage indicator: three rings of 12 viewing-direction sectors around the current heading (inner = looking
+/// down at the floor, middle = level, outer = looking up at the ceiling; white = seen from two places, blue = still
+/// needed), the covered-direction count and floor/ceiling bars. Plain fills, no grid lines or outlines.
 struct CoverageDial: View {
     let summary: CoverageSummary?
-    let uncovered: [Double]
+    let uncoveredDown: [Double]
+    let uncoveredLevel: [Double]
+    let uncoveredUp: [Double]
     let heading: Double
+    let directions: (Int, Int)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack {
-                ForEach(0..<12, id: \.self) { i in
-                    let mid = (Double(i) + 0.5) * 30
-                    let need = uncovered.contains { abs($0 - mid) < 1 }
-                    SectorShape(start: Double(i) * 30 - heading, end: Double(i + 1) * 30 - heading)
-                        .fill(need ? Color.blue.opacity(0.55) : Color.white.opacity(0.85))
-                }
-                Circle().fill(.black.opacity(0.55)).frame(width: 34, height: 34)
-                Image(systemName: "location.north.fill").font(.caption).foregroundStyle(.white)
+                ring(uncoveredUp, inner: 0.70, outer: 1.0)
+                ring(uncoveredLevel, inner: 0.42, outer: 0.68)
+                ring(uncoveredDown, inner: 0.16, outer: 0.40)
+                Image(systemName: "location.north.fill").font(.system(size: 9)).foregroundStyle(.white)
             }
-            .frame(width: 72, height: 72)
+            .frame(width: 80, height: 80)
+            Text("Directions \(directions.0)/\(directions.1)").font(.system(size: 10).monospacedDigit()).foregroundStyle(.white)
             if let s = summary {
                 bar("Floor", s.floorCoveredFractionEstimate)
                 bar("Ceiling", s.ceilingCoveredFractionEstimate)
@@ -310,8 +366,21 @@ struct CoverageDial: View {
         .padding(8)
         .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Coverage: \(12 - uncovered.count) of 12 directions covered")
+        .accessibilityLabel("Coverage: \(directions.0) of \(directions.1) viewing directions; floor \(pct(summary?.floorCoveredFractionEstimate)); ceiling \(pct(summary?.ceilingCoveredFractionEstimate))")
     }
+
+    func ring(_ uncovered: [Double], inner: Double, outer: Double) -> some View {
+        ZStack {
+            ForEach(0..<12, id: \.self) { i in
+                let mid = (Double(i) + 0.5) * 30
+                let need = uncovered.contains { abs($0 - mid) < 1 }
+                SectorShape(start: Double(i) * 30 - heading, end: Double(i + 1) * 30 - heading, innerFraction: inner, outerFraction: outer)
+                    .fill(need ? Color.blue.opacity(0.6) : Color.white.opacity(0.85))
+            }
+        }
+    }
+
+    func pct(_ v: Double?) -> String { v.map { "about \(Int($0 * 100)) percent" } ?? "unknown" }
 
     func bar(_ label: String, _ v: Double?) -> some View {
         HStack(spacing: 4) {
@@ -335,13 +404,72 @@ struct CoverageDial: View {
 
 struct SectorShape: Shape {
     let start: Double, end: Double
+    var innerFraction = 0.0
+    var outerFraction = 1.0
     func path(in r: CGRect) -> Path {
         var p = Path()
         let c = CGPoint(x: r.midX, y: r.midY)
-        p.move(to: c)
-        p.addArc(center: c, radius: r.width / 2, startAngle: .degrees(start - 90 + 1), endAngle: .degrees(end - 90 - 1), clockwise: false)
+        let ro = r.width / 2 * outerFraction, ri = r.width / 2 * innerFraction
+        let a0 = Angle.degrees(start - 90 + 1.5), a1 = Angle.degrees(end - 90 - 1.5)
+        p.addArc(center: c, radius: ro, startAngle: a0, endAngle: a1, clockwise: false)
+        p.addArc(center: c, radius: ri, startAngle: a1, endAngle: a0, clockwise: true)
         p.closeSubpath()
         return p
+    }
+}
+
+/// End-of-scan summary: coverage per room, a scale-check prompt, and a confirmation when coverage is low.
+/// It warns; finishing is never blocked.
+struct FinishSheet: View {
+    let engine: CaptureEngine
+    let snap: CaptureSnapshot
+    let onCheckScale: () -> Void
+    let onFinish: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var assessment: CoverageAssessment.Result?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("This scan") {
+                    LabeledContent("Photos", value: "\(snap.accepted)")
+                    if snap.depthFrames > 0 { LabeledContent("With LiDAR depth", value: "\(snap.depthFrames)") }
+                    if let a = assessment {
+                        LabeledContent("Viewing directions", value: "\(a.directionsCovered) of \(a.directionsTotal)")
+                        LabeledContent("Floor (estimate)", value: a.floor.map { "~\(Int($0 * 100))%" } ?? "unknown")
+                        LabeledContent("Ceiling (estimate)", value: a.ceiling.map { "~\(Int($0 * 100))%" } ?? "unknown")
+                    }
+                    LabeledContent("Exposure", value: snap.cameraLock)
+                    if snap.hiResFallback { Text("High-resolution photos stopped working; later photos are video resolution.").foregroundStyle(.orange) }
+                }
+                if let a = assessment, a.isLow {
+                    Section {
+                        ForEach(a.issues, id: \.self) { Text($0) }
+                        Text("Reconstruction may have holes there. You can keep scanning, or finish anyway.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } header: { Label("Coverage looks low", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
+                }
+                if snap.scaleChecks == 0 {
+                    Section("Scale check (recommended)") {
+                        Text("Measure one door width or any straight edge with a tape measure and compare it with ARKit. Takes 30 seconds and tells the reconstruction whether the scan's scale can be trusted.")
+                            .font(.footnote)
+                        Button { onCheckScale() } label: { Label("Check scale now", systemImage: "ruler") }
+                    }
+                }
+                Section {
+                    Button { dismiss() } label: { Label("Keep scanning", systemImage: "camera.viewfinder") }
+                    Button(role: (assessment?.isLow ?? false) ? .destructive : nil) { onFinish() } label: {
+                        Label((assessment?.isLow ?? false) ? "Finish anyway" : "Finish scan", systemImage: "checkmark.circle")
+                    }
+                }
+            }
+            .navigationTitle("Finish scan?").navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                engine.coverageForReview { rooms, roomList in
+                    assessment = CoverageAssessment.assess(rooms) { id in roomList.first { $0.id == id }?.label ?? id ?? "Room" }
+                }
+            }
+        }
     }
 }
 

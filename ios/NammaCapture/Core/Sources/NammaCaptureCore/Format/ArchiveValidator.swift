@@ -150,6 +150,11 @@ public enum ArchiveValidator {
             r.errors.append("manifest.depth.available disagrees with the frames")
         }
         if seen.isEmpty { r.errors.append("archive has no frames") }
+        if let mp = manifest.files.mesh {
+            if let e = byPath[mp], let head = try? zip.data(e, limit: UInt64.max).prefix(4) {
+                if Array(head) != Array("glTF".utf8) { r.errors.append("\(mp) is not a glTF binary") }
+            } else { r.errors.append("manifest names mesh \(mp) but it is missing") }
+        }
         if let rec = manifest.recovery, !rec.framesWithoutImage.isEmpty {
             r.warnings.append("\(rec.framesWithoutImage.count) frame(s) were lost before export and are listed in manifest.recovery")
         }

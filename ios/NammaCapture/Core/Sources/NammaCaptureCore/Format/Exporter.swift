@@ -119,7 +119,9 @@ public enum Exporter {
         var warnings = doc.warnings
         if interrupted { warnings.append("This scan was interrupted and finished by recovery; see manifest.recovery.") }
         if coordFrames.count > 1 { warnings.append("Tracking was reset \(coordFrames.count - 1) time(s): \(coordFrames.count) coordinate frames must be registered separately.") }
-        let manifest = Manifest(
+        let meshURL = dir.appendingPathComponent(NammaCapFormat.meshPath)
+        let hasMesh = fm.fileExists(atPath: meshURL.path)
+        var manifest = Manifest(
             createdBy: CreatedBy(appVersion: doc.appVersion, build: doc.appBuild),
             session: SessionInfo(id: doc.id, name: doc.name, startedAt: doc.startedAt, endedAt: doc.endedAt,
                                  status: interrupted ? "recovered" : "complete"),
@@ -131,6 +133,7 @@ public enum Exporter {
             recovery: (interrupted || !notes.isEmpty || !lost.isEmpty)
                 ? RecoveryInfo(interrupted: interrupted, droppedPartialLines: dropped, framesWithoutImage: lost, notes: notes)
                 : nil)
+        manifest.files.mesh = hasMesh ? NammaCapFormat.meshPath : nil
 
         // ---- write archive
         let outDir = outputDirectory ?? dir.appendingPathComponent("exports")
@@ -162,6 +165,7 @@ public enum Exporter {
             try add(NammaCapFormat.eventsPath, try Self.jsonl(events.items))
             try add(NammaCapFormat.annotationsPath, try NammaJSON.encoder(pretty: true).encode(annotations))
             try add(NammaCapFormat.coveragePath, coverageData ?? Data("{\"available\":false}".utf8))
+            if hasMesh { try addFile(NammaCapFormat.meshPath) }
             let total = Double(max(1, keptFrames.count))
             for (i, f) in keptFrames.enumerated() {
                 try addFile(f.image.path)
