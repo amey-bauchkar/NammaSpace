@@ -96,6 +96,29 @@ def test_blur_and_exposure_flags():
     assert all(not f for f in flags[:6])
 
 
+def test_sharp_photo_of_a_plain_surface_is_not_blurry():
+    """A sharp photo that is mostly plain ceiling / cabinet (texture only along a few edges) must not be flagged;
+    the same photo blurred must be (user report 2026-11-23: ceiling shots flagged "blurry")."""
+    def metric(g):
+        lap = cv2.Laplacian(g, cv2.CV_64F)
+        return {"sharpness": float(lap.var()), "sharpness_peak": checks.sharpness_peak(lap),
+                "mean_luma": float(g.mean()), "dark_clip": 0.0, "bright_clip": 0.0, "orb_keypoints": 900}
+    rich = [cv2.cvtColor(textured(s), cv2.COLOR_BGR2GRAY) if textured(s).ndim == 3 else textured(s) for s in range(6)]
+    plain = np.full_like(rich[0], 215)                   # white ceiling ...
+    h, w = plain.shape
+    plain[:, w // 2 - 2:w // 2 + 2] = 60                 # ... with a cabinet edge and a shelf line
+    plain[h // 3:h // 3 + 3, :] = 90
+    plain[: h // 5, : w // 4] = rich[0][: h // 5, : w // 4]   # and a little clutter in one corner
+    metrics = [metric(g) for g in rich] + [metric(plain), metric(cv2.GaussianBlur(plain, (0, 0), 3)),
+                                           metric(cv2.GaussianBlur(rich[0], (0, 0), 3))]
+    flags, stats = checks.flag_images(metrics)
+    assert stats["blur_measure"] == "sharpness_peak"
+    assert "blurry" not in flags[6]                      # sharp, just plain
+    assert metrics[6]["sharpness"] < 0.35 * np.median([m["sharpness"] for m in metrics])   # old rule would flag it
+    assert "blurry" in flags[7] and "blurry" in flags[8]  # real blur still caught
+    assert all("blurry" not in f for f in flags[:6])
+
+
 def test_select_sharpest_is_deterministic():
     scores = [1, 5, 2, 9, 9, 3, 0.5]
     assert checks.select_sharpest(scores, 3) == [1, 3, 6]

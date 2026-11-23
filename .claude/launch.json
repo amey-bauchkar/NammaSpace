@@ -144,6 +144,32 @@
         "8795"
       ],
       "port": 8795
+    },
+    {
+      "name": "namma-studio-dev",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/start_studio.py",
+        "--port",
+        "8783",
+        "--projects",
+        "projects",
+        "--no-lan"
+      ],
+      "port": 8783
+    },
+    {
+      "name": "namma-studio-scratch",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "scripts/start_studio.py",
+        "--port",
+        "8784",
+        "--projects",
+        "C:/Users/Tanmay/AppData/Local/Temp/claude/c30991b66502bb8b/ee06bf8e-bc8f-4510-b3d2-1a64d95ae910/scratchpad/studio_projects",
+        "--no-lan"
+      ],
+      "port": 8784
     }
   ]
 }

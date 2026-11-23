@@ -1,7 +1,11 @@
 """Per-image capture diagnostics and an overlap graph (fast, before any reconstruction).
 
 All measurements run on downscaled grey copies; originals are only read.
-- sharpness: variance of the Laplacian at 1024 px (relative to the set median and an absolute floor);
+- sharpness: variance of the Laplacian at 1024 px (kept for frame ranking / dense-image choice);
+- sharpness_peak: the same, per tile of an 8 x 8 grid, 90th percentile -> the "blurry" flag. A whole-image variance
+  calls a sharp photo of a plain ceiling or cabinet "blurry" (little texture, not lack of focus); real blur softens
+  every tile, so the sharpest tiles tell them apart (testing-room 2026-11-23: plain sharp frames 49-75, the same
+  sharp frames blurred by sigma 1.5 px 12-34);
 - exposure: mean luminance and clipped fractions;
 - exact duplicates (SHA-256) and near-duplicates (64-bit difference hash, Hamming <= 3);
 - overlap: ORB features at 640 px, ratio-test matches verified by a RANSAC fundamental matrix;
@@ -37,6 +41,20 @@ def dhash(grey):
     return int("".join("1" if b else "0" for b in bits), 2)
 
 
+PEAK_GRID = 8
+PEAK_PERCENTILE = 90
+BLUR_PEAK_FLOOR = 35.0          # sharpness_peak below this is blurry whatever the set looks like
+BLUR_PEAK_REL, BLUR_PEAK_REL_CAP = 0.12, 60.0   # ... or below 12 % of the set median (capped: plain rooms stay sharp)
+
+
+def sharpness_peak(lap):
+    """90th percentile of the Laplacian variance over an 8 x 8 grid of tiles."""
+    h, w = lap.shape
+    v = [lap[i * h // PEAK_GRID:(i + 1) * h // PEAK_GRID, j * w // PEAK_GRID:(j + 1) * w // PEAK_GRID].var()
+         for i in range(PEAK_GRID) for j in range(PEAK_GRID)]
+    return float(np.percentile(v, PEAK_PERCENTILE))
+
+
 def image_metrics(path):
     g = load_grey(path, SHARP_SIDE)
     lap = cv2.Laplacian(g, cv2.CV_64F)
@@ -47,7 +65,7 @@ def image_metrics(path):
     pts = np.array([k.pt for k in kps], np.float32) if kps else np.zeros((0, 2), np.float32)
     thumb = cv2.resize(small, (16, 16), interpolation=cv2.INTER_AREA).astype(np.float32).ravel()
     thumb = (thumb - thumb.mean()) / (thumb.std() + 1e-6)
-    return {"sharpness": float(lap.var()), "mean_luma": round(mean, 1),
+    return {"sharpness": float(lap.var()), "sharpness_peak": round(sharpness_peak(lap), 1), "mean_luma": round(mean, 1),
             "dark_clip": round(float(np.mean(g <= 8)), 4), "bright_clip": round(float(np.mean(g >= 247)), 4),
             "dhash": dhash(g), "orb_keypoints": len(kps)}, {"desc": desc, "pts": pts, "thumb": thumb}
 
@@ -112,11 +130,14 @@ def flag_images(metrics):
     """Per-image flags relative to the set: blurry, dark, bright, low_detail."""
     sharp = np.array([m["sharpness"] for m in metrics])
     med = float(np.median(sharp)) if len(sharp) else 0.0
-    blur_thr = max(25.0, 0.35 * med)
+    old_thr = max(25.0, 0.35 * med)                     # whole-image rule, for metrics without sharpness_peak
+    peaks = np.array([m["sharpness_peak"] for m in metrics if "sharpness_peak" in m])
+    peak_med = float(np.median(peaks)) if len(peaks) else 0.0
+    blur_thr = max(BLUR_PEAK_FLOOR, min(BLUR_PEAK_REL * peak_med, BLUR_PEAK_REL_CAP))
     flags = []
     for m in metrics:
         f = []
-        if m["sharpness"] < blur_thr:
+        if (m["sharpness_peak"] < blur_thr) if "sharpness_peak" in m else (m["sharpness"] < old_thr):
             f.append("blurry")
         if m["mean_luma"] < 40 or m["dark_clip"] > 0.3:
             f.append("too_dark")
@@ -125,7 +146,8 @@ def flag_images(metrics):
         if m["orb_keypoints"] < 200:
             f.append("low_detail")
         flags.append(f)
-    return flags, {"sharpness_median": round(med, 1), "blur_threshold": round(blur_thr, 1)}
+    return flags, {"sharpness_median": round(med, 1), "sharpness_peak_median": round(peak_med, 1),
+                   "blur_threshold": round(blur_thr, 1), "blur_measure": "sharpness_peak"}
 
 
 def near_duplicates(hashes):

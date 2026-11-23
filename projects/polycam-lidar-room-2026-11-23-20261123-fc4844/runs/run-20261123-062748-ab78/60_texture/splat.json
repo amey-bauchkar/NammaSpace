@@ -1,0 +1,260 @@
+{
+ "file": "splat.spz",
+ "T_mesh_from_splat": [
+  [
+   0.9629204355237267,
+   0.007979775166132682,
+   -0.005908443486333815,
+   -0.03991478117934006
+  ],
+  [
+   -0.007972849679219192,
+   0.9629379503193559,
+   0.0011523140801882016,
+   -0.009404375697538693
+  ],
+  [
+   0.005917785530814445,
+   -0.0011033348853109446,
+   0.9629528099237398,
+   1.4734271273441373
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "splats": 322801,
+ "compression": {
+  "splats_in": 600000,
+  "splats_out": 322801,
+  "removed_low_opacity": 277199,
+  "removed_outside": 0,
+  "sh_degree": 3,
+  "bytes": 7583591
+ },
+ "fit": {
+  "solid_splats": 37867,
+  "used": 37867,
+  "mesh_samples": 200000,
+  "yaw_deg": -0.35,
+  "tilt_deg": 0.48,
+  "scale": 0.96297,
+  "within_2cm": 0.379,
+  "within_5cm": 0.807,
+  "median_m": 0.0256,
+  "regional_discrepancy": {
+   "grid_bins": 4,
+   "minimum_points": 50,
+   "bounds_xz": [
+    [
+     -1.6987973547598816,
+     -15.820490523716972
+    ],
+    [
+     2.371243710628819,
+     3.6081931716353104
+    ]
+   ],
+   "cells": [
+    {
+     "cell_xz": [
+      0,
+      0
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      0,
+      1
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      0,
+      2
+     ],
+     "points": 1811,
+     "status": "sampled",
+     "median_scene_units": 0.0253131007039489,
+     "p90_scene_units": 0.10677168962180374
+    },
+    {
+     "cell_xz": [
+      0,
+      3
+     ],
+     "points": 4299,
+     "status": "sampled",
+     "median_scene_units": 0.029752774861220077,
+     "p90_scene_units": 0.07396880078470679
+    },
+    {
+     "cell_xz": [
+      1,
+      0
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      1,
+      1
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      1,
+      2
+     ],
+     "points": 5497,
+     "status": "sampled",
+     "median_scene_units": 0.025251510177931702,
+     "p90_scene_units": 0.1266671395864784
+    },
+    {
+     "cell_xz": [
+      1,
+      3
+     ],
+     "points": 10691,
+     "status": "sampled",
+     "median_scene_units": 0.024429965116781954,
+     "p90_scene_units": 0.05633327209271646
+    },
+    {
+     "cell_xz": [
+      2,
+      0
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      2,
+      1
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      2,
+      2
+     ],
+     "points": 2549,
+     "status": "sampled",
+     "median_scene_units": 0.03089010129976216,
+     "p90_scene_units": 0.10965205995973246
+    },
+    {
+     "cell_xz": [
+      2,
+      3
+     ],
+     "points": 13014,
+     "status": "sampled",
+     "median_scene_units": 0.024848118574015247,
+     "p90_scene_units": 0.061771044685199346
+    },
+    {
+     "cell_xz": [
+      3,
+      0
+     ],
+     "points": 1,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      3,
+      1
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      3,
+      2
+     ],
+     "points": 4,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      3,
+      3
+     ],
+     "points": 1,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    }
+   ],
+   "limitation": "Fit residuals against sampled imported mesh, not independent accuracy. Grid cells are not identified rooms. Unsampled areas and baked-in repairs are unknown. Scene units depend on imported scale; distances include mesh sampling error."
+  }
+ },
+ "created_at": "2026-11-23T11:58:10+05:30",
+ "poses": "Polycam LiDAR scan, arkit poses",
+ "method": "3D Gaussian splat (gsplat, MCMC, 30000 steps, pose and colour correction, LiDAR depth guide, LiDAR start points) from 410 Polycam raw keyframes; placed on the model with Polycam's alignment transform, checked by ICP",
+ "inputs": {
+  "photos": "raw",
+  "poses": "arkit",
+  "start": "lidar",
+  "depth": true,
+  "keyframes": 410,
+  "train": 410,
+  "held_out": 0,
+  "start_points": 400000
+ },
+ "training": {
+  "photos": 410,
+  "iters": 30000,
+  "splats": 600000,
+  "seconds": 2273.6,
+  "gpu_peak_gb": 2.04,
+  "max_side": 1024,
+  "bytes": 148801531,
+  "frame": "input cameras",
+  "pose_opt": true,
+  "appearance": true,
+  "depth_weight": 1.0,
+  "max_splat_scale": 0.2,
+  "pose_correction": {
+   "rot_deg_median": 0.715,
+   "rot_deg_max": 2.0,
+   "shift_median": 0.0139,
+   "shift_max": 0.1059
+  }
+ },
+ "profile": "polycam_lidar"
+}

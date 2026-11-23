@@ -1,0 +1,28 @@
+{
+ "imported_at": "2026-11-23T06:27:53+05:30",
+ "mesh": {
+  "file": "23_11_2026.glb",
+  "glb": "23_11_2026.glb"
+ },
+ "raw": [
+  {
+   "file": "Images.zip",
+   "keyframes": 410,
+   "folders": {
+    "cameras": 410,
+    "motion": 32,
+    "corrected_images": 410,
+    "corrected_cameras": 410,
+    "corrected_depth": 820,
+    "confidence": 820,
+    "depth": 820,
+    "anchor_updates": 26,
+    "images": 410,
+    "location": 410,
+    "arkit_motion": 10
+   },
+   "device": "iPhone 17 Pro"
+  }
+ ],
+ "device": "iPhone 17 Pro"
+}

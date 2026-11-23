@@ -15,6 +15,7 @@ Rules:
 """
 import json
 import shutil
+import time
 from pathlib import Path
 
 from namma import RELEASE_CONTRACT_VERSION
@@ -95,6 +96,19 @@ def build_release(site_dir, releases_dir, release_id, regression, notes=(), prev
     return manifest
 
 
+def _rename_retry(source, target, wait_s=5.0):
+    """Allow transient Windows scanner/sync locks to clear without deleting either tree."""
+    deadline = time.monotonic() + wait_s
+    while True:
+        try:
+            source.rename(target)
+            return
+        except PermissionError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.05)
+
+
 def _install(src_site, public_dir):
     public_dir = Path(public_dir)
     staging = public_dir.with_name(public_dir.name + ".staging")
@@ -102,11 +116,22 @@ def _install(src_site, public_dir):
         shutil.rmtree(staging)
     shutil.copytree(src_site, staging)
     backup = public_dir.with_name(public_dir.name + ".previous")
+    if backup.exists() and not public_dir.exists():
+        raise ReleaseError(f"An interrupted installation left a backup at {backup}; restore it before retrying")
     if backup.exists():
         shutil.rmtree(backup)
     if public_dir.exists():
-        public_dir.rename(backup)
-    staging.rename(public_dir)
+        _rename_retry(public_dir, backup)
+    try:
+        _rename_retry(staging, public_dir)
+    except OSError as exc:
+        if backup.exists() and not public_dir.exists():
+            try:
+                _rename_retry(backup, public_dir)
+            except OSError as restore_error:
+                raise ReleaseError(f"Installation failed; previous site preserved at {backup}; "
+                                   f"automatic restoration failed: {restore_error}") from exc
+        raise
     if backup.exists():
         shutil.rmtree(backup)
 

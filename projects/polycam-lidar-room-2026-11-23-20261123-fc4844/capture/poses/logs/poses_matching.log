@@ -1,0 +1,21 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe matches_importer --database_path projects\polycam-lidar-room-2026-11-23-20261123-fc4844\capture\poses\work\database.db --match_list_path projects\polycam-lidar-room-2026-11-23-20261123-fc4844\capture\poses\work\pairs.txt --match_type pairs --FeatureMatching.use_gpu 1 --FeatureMatching.guided_matching 1
+
+I20261123 07:29:12.177657 20568 feature_matching.cc:196] === Feature matching & geometric verification ===
+I20261123 07:29:12.215342 22148 feature_matching_utils.cc:79] Bind FeatureMatcherWorker to GPU device 0
+I20261123 07:29:12.215342  4900 feature_matching_utils.cc:79] Bind FeatureMatcherWorker to GPU device 0
+I20261123 07:29:12.216847 22148 sift.cc:1679] Creating SIFT GPU feature matcher
+I20261123 07:29:12.216889  4900 sift.cc:1679] Creating SIFT GPU feature matcher
+I20261123 07:29:12.220999 20568 pairing.cc:905] Importing image pairs...
+I20261123 07:29:12.251589 20568 pairing.cc:938] Processing block [1/6]
+I20261123 07:29:16.146053 20568 feature_matching.cc:218] in 3.894s
+I20261123 07:29:16.146119 20568 pairing.cc:938] Processing block [2/6]
+I20261123 07:29:21.247180 20568 feature_matching.cc:218] in 5.101s
+I20261123 07:29:21.247235 20568 pairing.cc:938] Processing block [3/6]
+I20261123 07:29:26.696656 20568 feature_matching.cc:218] in 5.449s
+I20261123 07:29:26.696714 20568 pairing.cc:938] Processing block [4/6]
+I20261123 07:29:34.215076 20568 feature_matching.cc:218] in 7.518s
+I20261123 07:29:34.215141 20568 pairing.cc:938] Processing block [5/6]
+I20261123 07:29:42.733157 20568 feature_matching.cc:218] in 8.518s
+I20261123 07:29:42.733327 20568 pairing.cc:938] Processing block [6/6]
+I20261123 07:29:45.607803 20568 feature_matching.cc:218] in 2.874s
+I20261123 07:29:45.607861 20568 timer.cc:90] Elapsed time: 0.557 [minutes]

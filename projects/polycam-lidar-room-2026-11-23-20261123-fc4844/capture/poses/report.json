@@ -1,0 +1,140 @@
+{
+ "generated_at": "2026-11-23T07:29:01",
+ "zip": "Images.zip",
+ "colmap": "colmap-4.2.1-cuda",
+ "pairs": {
+  "local": 3664,
+  "revisit": 3234,
+  "total": 6898
+ },
+ "triangulated": {
+  "points": 146649,
+  "reproj_error_px": {
+   "p50": 0.8618,
+   "p90": 2.0817
+  },
+  "track_length": {
+   "p50": 3.0,
+   "p90": 7.0
+  }
+ },
+ "adjusted": {
+  "points": 146649,
+  "reproj_error_px": {
+   "p50": 0.7559,
+   "p90": 1.9345
+  },
+  "track_length": {
+   "p50": 3.0,
+   "p90": 7.0
+  },
+  "registered": 410
+ },
+ "refinement": {
+  "similarity_scale": 1.00083,
+  "fit_residual_m": {
+   "p50": 0.0073,
+   "p90": 0.026
+  },
+  "moved_m": {
+   "p50": 0.0073,
+   "p90": 0.026,
+   "p99": 0.2063
+  },
+  "turned_deg": {
+   "p50": 0.4206,
+   "p90": 1.2565,
+   "p99": 7.44
+  },
+  "kept_polycam_pose": [
+   "10993984335",
+   "11073519289",
+   "11074318968",
+   "11075285248",
+   "11076384808",
+   "11077351088",
+   "11078483967",
+   "11079083727",
+   "11079883407",
+   "11080249927",
+   "11080982966",
+   "11081782646",
+   "11083048805",
+   "11083915125",
+   "11085481164",
+   "11086180884",
+   "11086913923",
+   "11087780243",
+   "11088446642",
+   "11089046402",
+   "11089546201"
+  ]
+ },
+ "evaluation": {
+  "corrected": {
+   "neighbours": {
+    "pairs": 150,
+    "compared": 794798,
+    "within_5pct": 0.9942
+   },
+   "revisits": {
+    "pairs": 120,
+    "compared": 198925,
+    "within_5pct": 0.8956
+   }
+  },
+  "refined": {
+   "neighbours": {
+    "pairs": 150,
+    "compared": 794804,
+    "within_5pct": 0.9945
+   },
+   "revisits": {
+    "pairs": 120,
+    "compared": 201278,
+    "within_5pct": 0.9211
+   }
+  },
+  "arkit_reference": {
+   "neighbours": {
+    "pairs": 150,
+    "compared": 794616,
+    "within_5pct": 0.9859
+   },
+   "revisits": {
+    "pairs": 120,
+    "compared": 211172,
+    "within_5pct": 0.9215
+   }
+  }
+ },
+ "chosen": "refined",
+ "gate": {
+  "revisit_gain": 0.0255,
+  "neighbour_loss": -0.0003,
+  "need_gain": 0.005,
+  "max_loss": 0.003
+ },
+ "glb_fit": {
+  "alignmentTransform": {
+   "within_2cm": 0.8599,
+   "median_m": 0.0087
+  },
+  "refitted": {
+   "within_2cm": 0.862,
+   "median_m": 0.0083
+  }
+ },
+ "model": {
+  "points": 150280,
+  "reproj_error_px": {
+   "p50": 0.8135,
+   "p90": 2.0773
+  },
+  "track_length": {
+   "p50": 3.0,
+   "p90": 7.0
+  }
+ },
+ "seconds": 157.5
+}

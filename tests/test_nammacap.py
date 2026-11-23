@@ -321,3 +321,37 @@ def test_upload_of_invalid_archive_reports_errors_and_imports_nothing(phone, tmp
     assert st == 422 and body["error"] == "NAMMACAP-INVALID"
     assert "incompatible schema 2.0" in body["message"]
     assert studio.store.list() == []
+
+
+def test_studio_import_box_accepts_a_nammacap(tmp_path):
+    """The Studio's 'Import 3D model, scan, or photos' upload (PolycamStaging) imports a .nammacap directly."""
+    import io
+    from namma.studio.polycam_bridge import BridgeError, PolycamStaging
+    arc = build(tmp_path / "scan.nammacap")
+    data = arc.read_bytes()
+    st = PolycamStaging(tmp_path / "projects")
+    iid = st.start()
+    assert st.save(iid, "My scan.nammacap", io.BytesIO(data), len(data))["kind"] == "nammacap"
+    res = st.finish(iid, title="Flat 3B")
+    assert res["title"] == "Flat 3B" and res["frames_imported"] == 5
+    assert (tmp_path / "projects" / res["project_id"] / "capture" / "nammacap").is_dir()
+    assert not (tmp_path / "projects" / "_incoming" / iid).exists()          # staging removed
+    # mixed with other files: refused, nothing imported
+    iid2 = st.start()
+    st.save(iid2, "scan.nammacap", io.BytesIO(data), len(data))
+    st.save(iid2, "photo.jpg", io.BytesIO(b"\xff\xd8\xff"), 3)
+    try:
+        st.finish(iid2)
+        assert False, "expected BridgeError"
+    except BridgeError as e:
+        assert e.code == "IMPORT-NAMMACAP-ALONE"
+    # an invalid archive is rejected with the validator's reason and creates no project
+    before = {p.name for p in (tmp_path / "projects").iterdir()}
+    iid3 = st.start()
+    st.save(iid3, "bad.nammacap", io.BytesIO(b"not a zip"), 9)
+    try:
+        st.finish(iid3)
+        assert False, "expected BridgeError"
+    except BridgeError as e:
+        assert e.status >= 400
+    assert {p.name for p in (tmp_path / "projects").iterdir()} <= before | {"_incoming"}

@@ -26,6 +26,12 @@ def task_ingest(a):
         state.update(label=label, fraction=round(frac, 3))
         write_json(st, state)
     try:
+        from namma.capture import polycam_report
+        if polycam_report.find_raw_zip(d) is not None:           # Polycam LiDAR scan: its own capture report
+            rep = polycam_report.build_report(d, progress=progress)
+            state.update(status="done", result=rep["status"], ended_at=timefmt.now_iso(), fraction=1)
+            write_json(st, state)
+            return 0
         title = json.loads((d / "project.json").read_text(encoding="utf-8")).get("title", "")
         rep = ingest_capture(d, max_frames=a.max_frames, venue_label=title, progress=progress)
         state.update(status="done", result=rep["status"], ended_at=timefmt.now_iso(), fraction=1)
@@ -46,7 +52,37 @@ def task_reconstruct(a):
     write_json(run_dir / "worker.json", {"pid": os.getpid(), "started_at": timefmt.now_iso(), "profile": a.profile})
     st = run_pipeline(a.project_dir, a.run, cfg, stop_after=a.stop_after)
     print(json.dumps({"status": st["status"], "error": st.get("error")}, indent=1))
-    return 0 if st["status"] == "succeeded" else 1
+    if st["status"] != "succeeded":
+        return 1
+    if not a.stop_after:
+        start_queued_splat(a)
+    return 0
+
+
+def start_queued_splat(a):
+    """Photoreal view queued for this run (JobManager.queue_splat): train it now, in this process, so the GPU is free
+    of the reconstruction. Only after a successful full run; the request is kept otherwise (Resume makes it later).
+    -> splat exit code, or None when nothing was queued."""
+    from namma.core.jsonio import load_strict
+    from namma.studio.jobs import QUEUE_FILE, _alive
+    proj = Path(a.project_dir)
+    marker = proj / "runs" / a.run / "65_splat" / QUEUE_FILE
+    if not marker.exists():
+        return None
+    for st in proj.parent.glob("*/runs/*/65_splat/status.json"):     # one GPU training at a time
+        try:
+            o = load_strict(st)
+        except Exception:                                           # noqa: BLE001 - an unreadable status is no job
+            continue
+        if o.get("status") in ("running", "starting") and _alive(o.get("pid")):
+            write_json(marker.parent / "status.json",
+                       {"status": "error", "ended_at": timefmt.now_iso(),
+                        "error": "The queued photoreal view did not start: another one was being made. Start it again."})
+            marker.unlink(missing_ok=True)
+            return 1
+    marker.unlink(missing_ok=True)
+    print("starting the queued photoreal view", flush=True)
+    return task_splat(a)
 
 
 def task_splat(a):

@@ -1,6 +1,7 @@
 """Hardware detection, configurable resource limits, GPU decisions and GPU->CPU fallback (no tools or GPU needed)."""
 import collections
 import json
+from pathlib import Path
 
 import pytest
 
@@ -208,7 +209,12 @@ def test_windows_path_limit_is_checked_before_tools_run(tmp_path, monkeypatch):
         pipeline.check_path_lengths(ctx)
 
 
-def test_onedrive_detection(monkeypatch, tmp_path):
-    monkeypatch.setenv("OneDrive", str(tmp_path / "OneDrive"))
-    assert hardware.onedrive_synced(tmp_path / "OneDrive" / "Desktop" / "x")
-    assert not hardware.onedrive_synced(tmp_path / "Local" / "x")
+def test_onedrive_detection(monkeypatch):
+    # No filesystem access is needed. A pytest temp directory may itself live under
+    # OneDrive, which makes even its "Local" child correctly count as synchronised.
+    base = Path(Path.cwd().anchor) / '__namma_path_detection_test__'
+    for key in ('OneDrive', 'OneDriveConsumer', 'OneDriveCommercial'):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("OneDrive", str(base / "Synced"))
+    assert hardware.onedrive_synced(base / "Synced" / "Desktop" / "x")
+    assert not hardware.onedrive_synced(base / "Local" / "x")

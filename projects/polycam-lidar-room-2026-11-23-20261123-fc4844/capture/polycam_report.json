@@ -1,0 +1,327 @@
+{
+ "generated_at": "2026-11-23T07:13:12",
+ "route": "polycam_lidar",
+ "zip": "Images.zip",
+ "glb": "23_11_2026.glb",
+ "summary": {
+  "file": "Images.zip",
+  "keyframes": 410,
+  "usable": 410,
+  "incomplete": [],
+  "device": "iPhone 17 Pro",
+  "duration_s": 312.68,
+  "tracking_segments": [
+   0
+  ]
+ },
+ "photos": {
+  "count": 410,
+  "flagged": 89,
+  "flag_counts": {
+   "not linked to other photos": 17,
+   "few tracking features": 10,
+   "tracking limited": 63,
+   "turned fast (possible motion blur)": 17
+  },
+  "blur_score": {
+   "p10": 72.0459,
+   "p50": 109.2328,
+   "p90": 187.6414
+  },
+  "angular_velocity": {
+   "p50": 0.199,
+   "p95": 0.603
+  },
+  "world_mapping_status": {
+   "mapped": 222,
+   "extending": 125,
+   "limited": 63
+  }
+ },
+ "capture": {
+  "iso_median": 2997.4,
+  "dim_share": 0.846,
+  "thermal_state": {
+   "serious": 410
+  },
+  "sfm": {
+   "sfmTotalTracks": 33161,
+   "sfmTracks": 16527,
+   "sfmObservations": 47612,
+   "sfmImages": 410,
+   "sfmTracksPerImage": 40.3098,
+   "sfmViewsPerTrack": 2.88086,
+   "sfmRMS": 0.700263,
+   "sfmWeaklyConnectedImages": 269,
+   "sfmIsolatedImages": 10,
+   "sfmComponents": 15,
+   "sfmStrongComponents": 208,
+   "sfmPairs": 2092,
+   "sfmLineTracks": 0,
+   "sfmPlaneTracks": 0
+  },
+  "duration_s": 312.68
+ },
+ "tracking": {
+  "samples": 9023,
+  "rate_hz": 30.0,
+  "states": {
+   "Normal": 9023
+  },
+  "gaps_over_2s": [
+   [
+    10913.6,
+    3.2
+   ],
+   [
+    11015.3,
+    10.3
+   ]
+  ]
+ },
+ "depth_agreement": {
+  "neighbours": {
+   "pairs": 80,
+   "compared": 497397,
+   "within_5pct": 0.9941
+  },
+  "revisits": {
+   "pairs": 60,
+   "compared": 80184,
+   "within_5pct": 0.8901
+  },
+  "candidates": {
+   "neighbours": 1729,
+   "revisits": 5318
+  }
+ },
+ "glb_fit": {
+  "points": 119392,
+  "within_2cm": 0.8489,
+  "within_5cm": 0.9741,
+  "median_m": 0.008
+ },
+ "roomplan_fit": {
+  "wall_height_m": 2.76,
+  "floor": {
+   "offset_m": 0.015,
+   "glb_points": 54010,
+   "inside_outline": 0.8108
+  },
+  "ceiling": {
+   "offset_m": -0.005,
+   "glb_points": 52012,
+   "inside_outline": 0.9996
+  }
+ },
+ "coverage": [
+  {
+   "name": "wall 1 (4.0 m wide)",
+   "kind": "wall",
+   "area_m2": 11.48,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.2796,
+   "covered_within_2m": 0.2796,
+   "in_polycam_model": 0.2448,
+   "nearest_distance_m": {
+    "p50": 0.8729,
+    "p90": 1.1169
+   }
+  },
+  {
+   "name": "wall 2 (2.0 m wide)",
+   "kind": "wall",
+   "area_m2": 5.6,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.125,
+   "covered_within_2m": 0.125,
+   "in_polycam_model": 0.1214,
+   "nearest_distance_m": {
+    "p50": 0.7046,
+    "p90": 0.8238
+   }
+  },
+  {
+   "name": "wall 3 (0.8 m wide)",
+   "kind": "wall",
+   "area_m2": 2.24,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.3527,
+   "covered_within_2m": 0.317,
+   "in_polycam_model": 0.3482,
+   "nearest_distance_m": {
+    "p50": 0.8106,
+    "p90": 1.6289
+   }
+  },
+  {
+   "name": "wall 4 (0.4 m wide)",
+   "kind": "wall",
+   "area_m2": 0.88,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.875,
+   "covered_within_2m": 0.7386,
+   "in_polycam_model": 0.7727,
+   "nearest_distance_m": {
+    "p50": 1.0683,
+    "p90": 2.2596
+   }
+  },
+  {
+   "name": "wall 5 (1.8 m wide)",
+   "kind": "wall",
+   "area_m2": 3.99,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.4035,
+   "covered_within_2m": 0.3434,
+   "in_polycam_model": 0.3033,
+   "nearest_distance_m": {
+    "p50": 0.9641,
+    "p90": 2.0595
+   }
+  },
+  {
+   "name": "wall 6 (0.3 m wide)",
+   "kind": "wall",
+   "area_m2": 0.66,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.2576,
+   "covered_within_2m": 0.1667,
+   "in_polycam_model": 0.2576,
+   "nearest_distance_m": {
+    "p50": 0.8788,
+    "p90": 2.2615
+   }
+  },
+  {
+   "name": "wall 7 (0.3 m wide)",
+   "kind": "wall",
+   "area_m2": 1.12,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.3304,
+   "covered_within_2m": 0.3304,
+   "in_polycam_model": 0.3214,
+   "nearest_distance_m": {
+    "p50": 0.7174,
+    "p90": 1.2347
+   }
+  },
+  {
+   "name": "wall 8 (1.6 m wide)",
+   "kind": "wall",
+   "area_m2": 4.76,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.6786,
+   "covered_within_2m": 0.6765,
+   "in_polycam_model": 0.6408,
+   "nearest_distance_m": {
+    "p50": 0.8173,
+    "p90": 1.0621
+   }
+  },
+  {
+   "name": "floor",
+   "kind": "floor",
+   "area_m2": 4.2,
+   "excluded_under_objects_m2": 3.6,
+   "covered": 0.5333,
+   "covered_within_2m": 0.4738,
+   "in_polycam_model": 0.5286,
+   "nearest_distance_m": {
+    "p50": 1.477,
+    "p90": 2.4304
+   }
+  },
+  {
+   "name": "ceiling",
+   "kind": "ceiling",
+   "area_m2": 7.8,
+   "excluded_under_objects_m2": 0.0,
+   "covered": 0.3564,
+   "covered_within_2m": 0.3513,
+   "in_polycam_model": 0.3346,
+   "nearest_distance_m": {
+    "p50": 0.8943,
+    "p90": 1.1482
+   }
+  }
+ ],
+ "roomplan": {
+  "walls": 8,
+  "doors": 0,
+  "windows": 1,
+  "openings": 0,
+  "objects": {
+   "refrigerator": 1,
+   "storage": 6,
+   "chair": 1,
+   "sink": 1
+  },
+  "floor_area_m2": 7.7,
+  "wall_height_m": 2.76,
+  "rooms": [
+   "kitchen"
+  ]
+ },
+ "checks": [
+  {
+   "id": "usable_keyframes",
+   "level": "ok",
+   "value": 1.0,
+   "threshold": 0.95,
+   "message": "410 of 410 keyframes have photo, pose and depth."
+  },
+  {
+   "id": "tracking",
+   "level": "warning",
+   "value": {
+    "gaps": 2,
+    "not_normal": 0
+   },
+   "threshold": 2.0,
+   "message": "Phone tracking: 2 gap(s) over 2 s (longest 10.3 s). Check that part of the model."
+  },
+  {
+   "id": "depth_neighbours",
+   "level": "ok",
+   "value": 0.9941,
+   "threshold": 0.97,
+   "message": "Neighbouring photos agree: 99.4% of depth within 5 %."
+  },
+  {
+   "id": "depth_revisits",
+   "level": "ok",
+   "value": 0.8901,
+   "threshold": 0.85,
+   "message": "Revisited areas line up: 89.0% within 5 %."
+  },
+  {
+   "id": "glb_fit",
+   "level": "ok",
+   "value": 0.8489,
+   "threshold": 0.6,
+   "message": "LiDAR depth sits on the 3D model: 85% within 2 cm."
+  },
+  {
+   "id": "roomplan_fit",
+   "level": "ok",
+   "value": {
+    "wall_height_m": 2.76,
+    "floor": {
+     "offset_m": 0.015,
+     "glb_points": 54010,
+     "inside_outline": 0.8108
+    },
+    "ceiling": {
+     "offset_m": -0.005,
+     "glb_points": 52012,
+     "inside_outline": 0.9996
+    }
+   },
+   "threshold": 0.05,
+   "message": "RoomPlan's room matches the model (floor 0.015 m, ceiling -0.005 m)."
+  }
+ ],
+ "status": "ready",
+ "seconds": 5.1
+}

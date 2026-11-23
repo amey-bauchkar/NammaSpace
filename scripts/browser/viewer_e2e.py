@@ -91,11 +91,20 @@ def run_checks(c, url, out, bench_seconds=15, label="viewer"):
     s = state(c)
     check("V-06", "R resets to the start view in walk mode", s["mode"] == "walk" and dist(s["pos"], start) < 1e-3 * eye,
           f"mode {s['mode']}, distance to start {dist(s['pos'], start):.4f}")
-    # photo viewpoint
+    # Verify the actual target, not movement: the first photo may equal the start view.
+    cameras = c.eval("window.__nammaScene.ctx.data.cameras")
     c.key("BracketRight", key="]")
     c.pump(1.5)
     s = state(c)
-    check("V-07", "] jumps to a photo viewpoint", dist(s["pos"], start) > 1e-3, f"moved to {[round(v, 3) for v in s['pos']]}")
+    if cameras:
+        target = cameras[0]['position']
+        check("V-07", "] reaches the first photo viewpoint", dist(s['pos'], target) < 1e-3 * eye,
+              {'actual': s['pos'], 'expected': target})
+    else:
+        disabled = c.eval("document.getElementById('cam-next').disabled && document.getElementById('cam-prev').disabled")
+        check("V-07", "absent photo viewpoints are disabled", disabled and dist(s['pos'], start) < 1e-3 * eye,
+              "No photo positions in package; controls must be disabled and camera must stay put")
+        res['photo_viewpoint_jump'] = {'status': 'not_applicable', 'reason': 'package has no photo positions'}
     res["screens"].append(c.screenshot(out / f"{label}_04_photo_viewpoint.png"))
     c.key("KeyR")
     # full detail (if the package has it and the viewer upgrades automatically)

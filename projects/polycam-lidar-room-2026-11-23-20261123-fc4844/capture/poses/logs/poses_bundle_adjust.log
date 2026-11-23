@@ -1,0 +1,13 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe bundle_adjuster --input_path projects\polycam-lidar-room-2026-11-23-20261123-fc4844\capture\poses\work\tri --output_path projects\polycam-lidar-room-2026-11-23-20261123-fc4844\capture\poses\work\ba --BundleAdjustment.refine_focal_length 0 --BundleAdjustment.refine_principal_point 0 --BundleAdjustment.refine_extra_params 0 --BundleAdjustmentCeres.max_num_iterations 200
+
+I20261123 07:30:08.478660 22252 bundle_adjustment.cc:46] === Global bundle adjustment ===
+I20261123 07:30:56.855224 22252 bundle_adjustment_ceres.cc:1167] Bundle adjustment report
+    Residuals : 1208254
+   Parameters : 442400
+   Iterations : 201
+         Time : 47.6455 [s]
+ Initial cost : 0.678559 [px]
+   Final cost : 0.627503 [px]
+  Termination : NO_CONVERGENCE
+
+I20261123 07:30:56.911962 22252 timer.cc:90] Elapsed time: 0.807 [minutes]

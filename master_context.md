@@ -3,16 +3,125 @@
 **Purpose:** Master context and handoff file for technical advisory and continuing development of Namma Space. This document integrates the original architecture notes, decision history, hardware profiles, experimental findings, test results, and current operational status.
 
 **Source session:** `db3cb469-40bb-46e7-9ba9-8327c32c9db4.jsonl` and subsequent iterations through `ccb8dd58-b087-46f2-ab92-fa4198ac3d27`  
-**Transcript span:** 2026-10-20 through 2026-11-01 (§0 updated 2026-11-01; §0.1 describes 2026-10-26; §1–§13 describe 2026-10-21).  
+**Transcript span:** 2026-10-20 through 2026-11-22 (§0.0 updated 2026-11-22; §0 describes 2026-11-01; §0.1 describes 2026-10-26; §1–§13 describe 2026-10-21).  
 **Working repo:** `C:\Users\Tanmay\OneDrive\Desktop\NammaSpace`  
 **Remote:** `https://github.com/amey-bauchkar/NammaSpace.git` (branch `main`)  
-**Session state (2026-11-01):** Clean working tree (at commit `4b84f60`), all recent features (Dual Splat Engine, Neo-Brutalism UI redesign, built-in demonstration projects, and Round 1 submission documents) are committed and pushed to `origin/main`.
+**Session state (2026-11-22):** `main` at `1a5dd08` (merge of PR #1 `quality-mirrors`). Large UNCOMMITTED working tree — see §0.0 "Git state".
 
 > This is the operational master context, not a byte-for-byte replay of every shell output. The original JSONL remains the exact source for individual tool calls and large intermediate outputs. Hidden/internal reasoning is intentionally not reproduced. The conclusions, architecture, and user-facing decisions needed to advise and continue the work are captured here.
 
 ---
 
-## 0. Update 2026-11-01 — CURRENT STATE & ADVISOR HANDOFF (Read This First)
+## 0.0 Update 2026-11-22 — CURRENT STATE (Read This First)
+
+Session `ee06bf8e-bc8f-4510-b3d2-1a64d95ae910`, 2026-11-21 → 2026-11-22. Focus: why large / multi-room outputs look
+poor, capture strategy, and pipeline fixes. §0 below (2026-11-01) is still valid for architecture and the viewer.
+
+### Git state
+
+- `main` = `origin/main` at `1a5dd08` (merge of PR #1 from `amey-bauchkar/quality-mirrors`: mirror detection,
+  whole-flat mesh repair, spatial block splatting, model health audit). Pulled 2026-11-21 01:27.
+- **Uncommitted, pre-dating this session** (work from 2026-11-12 that was stashed and re-applied around that pull; the
+  user did not recognise it): 14 modified + 15 new files — `matching.strategy` override and experimental
+  `dense_selection = pose_spread_experimental` (`src/namma/recon/selection.py`), `regional_discrepancy` grid in
+  `splat_align.py`, PID-recycling guard in `jobs._alive`, Windows rename retry in `pipeline/release.py`, "Highlight
+  estimated surfaces" viewer button, QA scripts (`baseline_snapshot.py`, `compare_dense_selection.py`, `watch_run.py`,
+  `reuse_run_stages.py`, browser smoke tests) + tests, `docs/LARGE_SPACE_BASELINE.md` (+92 lines). Reviewed: all
+  defaults keep the earlier behaviour; none of it degrades output quality.
+- **Uncommitted, added in this session:**
+  - *Queue the photoreal view* — run page checkbox "Make the photoreal view automatically when this finishes".
+    `JobManager.queue_splat / unqueue_splat` (marker `<run>/65_splat/queued.json`), `POST|DELETE
+    /api/projects/<p>/runs/<r>/splat/queue`, worker trains it in-process after a SUCCESSFUL full reconstruction
+    (kept on fail/cancel so Resume still makes it; skipped if another splat is training). Only Studio-started runs
+    (incl. Resume) honour it, not QA scripts. Files: `jobs.py`, `worker.py`, `server.py`, `web/studio.html`,
+    `web/js/studio.js`, 4 tests in `tests/test_splat.py`. Browser-checked on port 8783.
+  - *Loop detection for sequential matching* — `colmap.match_features(..., vocab_tree=)` adds
+    `--SequentialMatching.loop_detection 1` with COLMAP's vocabulary tree whenever
+    `tools/colmap-vocab/vocab_tree_faiss_flickr100K_words32K.bin` exists (9.5 MB, official COLMAP 3.11.1 release
+    asset, downloaded 2026-11-22; `tools/` is git-ignored, so a fresh machine needs it re-downloaded). Disable with
+    `matching.loop_detection: false`. The sfm stage result now records `matching` and `loop_detection`. 2 tests in
+    `tests/test_matching_strategy.py`. Profile dicts / config hashes unchanged.
+  - `.claude/launch.json`: `namma-studio-dev` (port 8783, `--no-lan`) for testing beside the user's Studio on 8780.
+- Only the new targeted tests were run (8 pass). **The full Python / web suites were not re-run.** The user's Studio on
+  8780 must be restarted to serve the new endpoints.
+- Earlier rule still in force: commit messages without a Claude co-author line (user request, §0.1). Ask before
+  committing.
+
+### Capture devices seen so far (do not generalise one capture's device to "the team's phone")
+
+| Capture | Device (source of the claim) | LiDAR |
+|---|---|---|
+| 3D Scan walk `3d-scan-2026-11-21-01-47-…` | **iPhone 15 Plus** — EXIF `LensModel` of all 1,286 keyframes ("iPhone 15 Plus back camera 5.96mm f/1.6"), copied into the project's device field | No. Its export still holds 1,283 depth maps, but they are not LiDAR |
+| Testing Room `testing-room-20261123-40dd72` (`.nammacap`) | **iPhone18,1** — `manifest.device.model_identifier`; the user states it is an **iPhone 17 Pro** (the identifier-to-model mapping is from general knowledge, not in the file) | Yes — scene depth on all 201 frames |
+| Older Polycam "New room" / Record3D exports (§0.1, §1+) | iPhone 14 per the user at the time | No |
+
+Which phone each capture used is recorded per capture; the team evidently uses more than one phone. An earlier
+version of this section called the 15 Plus "the team's phone" and said the team had no LiDAR — that was wrong.
+
+### Finding 1 — the 3D Scan import (`3d-scan-2026-11-21-01-47-…`, shot on an iPhone 15 Plus, "3D Scan" app)
+
+28 × 11 m multi-room, 1,286 keyframes, ~1,029 m² surface. Splat view was smeared/needly. Cause mostly pipeline + capture:
+- COLMAP pose refinement weak: 1,073 registered, 319 dropped "far", centre residual median 0.42 m / p90 3.7 m → fell
+  back to phone (ARKit) poses. Splat↔mesh line-up median 14.5 cm, 17 % within 2 cm.
+- Splat budget far too small for the area: 600 k trained, 188 k shipped (~180 per m²); photos downscaled to 1024 px.
+- Capture: floor coverage 0.5 %, 11 large openings, 3 suspected mirrors.
+- Re-run of the splat stage with `splat_options` {block_mode on, mesh_pose_refine, large_init_points, robust_align}
+  (set in that project's `project.json`; previous result backed up in `runs/…/65_splat_prev/`) gave 198 k splats,
+  median 10.7 cm, 30.6 % within 5 cm — **no real improvement; block mode did not raise the splat count. Not yet
+  investigated why.**
+
+### Finding 2 — public multi-room test: Zip-NeRF "NYC" (CC-BY 4.0)
+
+- Undistorted set, 990 photos + reference COLMAP model (`storage.googleapis.com/gresearch/refraw360/zipnerf-undistorted/nyc.zip`,
+  2.67 GB). Berlin 1,511 / Alameda 1,734 / London 1,874 photos (over the user's 1,000 limit). The zip was later
+  deleted (Recycle Bin); the reference poses are kept in the session scratchpad
+  `…\ee06bf8e-…\scratchpad\ref\nyc\sparse\0\` (temporary — copy somewhere durable if needed).
+- Imported by the user as project `photo-scan-2026-11-22-03-58-20261122-75d0af`.
+- **Run `run-20261122-040325-7c00` (High, default):** sequential matching (990 > 400 photos), global mapper. Mapper found 4
+  components; the main 960-photo model was 4 internally correct pieces (0.03 % error) joined in the WRONG places →
+  one room misplaced. Unplaced photos (DSC2609–2617, DSC2795–2822) were the doorway transitions. Black ceiling patches:
+  dense stage clamped to 180 images at 960 px (low free disk: 11.8 GB) and the splat trained on the same 180 photos.
+- **Run `run-20261122-170243-bd5f`:** exhaustive matching → failed: matching hit the 2 h limit at ~65 %. Exhaustive on
+  990 photos at High features ≈ 3.5–4 h, CPU-bound (GPU ~0 %).
+- **Run `run-20261122-201610-449d`:** exhaustive with 6 h limit — cancelled (too slow).
+- **Run `run-20261122-214129-ed53` (High + loop detection, matching limit 6 h / mapper 4 h overrides):** camera
+  placement in < 1 h, **990/990 photos in one model; vs the reference 986/990 cameras consistent, median error 0.04 %
+  of scene size (was 34 %)** — misplaced room fixed. Dense stage running at 22:44; the photoreal step is chained to
+  start automatically if the run succeeds (scratchpad `py/chain.py`). Quality of the final mesh/splat not yet checked.
+
+### Known pipeline weaknesses (open, in priority order)
+
+1. Splat for photo runs trains only on the dense subset (180 photos), not all placed photos.
+2. Multi-component SfM output is merged silently; should fail/retry when the mapper reports > 1 component.
+3. Large-space splat budget / block mode ineffective on the 3D Scan import (see Finding 1).
+4. Dense resolution clamps silently on low disk — free ≥ 40 GB before big High runs.
+5. The 4 cameras still off on NYC (DSC2232–2233, 2689, 3080) — not investigated.
+
+### Capture strategy discussion (decisions not yet made)
+
+- Free apps researched (not hands-on tested): KIRI Engine (iOS + Android, "Camera pose" export works without LiDAR per
+  Nerfstudio docs; free-tier limits disputed), Scaniverse (free, no raw photos/poses — competitor reference only),
+  Voxelio (vendor claims pose+video export), open-source Voxelio ARKit capture demo on GitHub (writes Nerfstudio
+  `transforms.json`; licence not checked). A `transforms.json` importer was proposed, not built.
+- Own iPhone app: input gaps that only a custom app fixes are live coverage map, doorway/loop prompts, drift warning,
+  mirror marking, locked exposure, per-frame quality gate, our own export format, capture log. LiDAR needs a Pro
+  iPhone or iPad (the Testing Room was captured on a LiDAR-capable iPhone18,1 / 17 Pro; the 15 Plus used for the 3D Scan
+  walk has none) and a Mac. Estimate 3–4 weeks MVP, 6–8 weeks with guidance.
+  **Advice given: fix the pipeline first, re-scan one real space, build the app only if the export is then the
+  bottleneck.**
+- Public datasets considered: ARKitScenes, ScanNet++ (access request), Matterport3D, MuSHRoom; INRIA `tandt_db.zip`
+  was downloaded but only duplicated Dr Johnson (since deleted).
+
+### Lessons from this session (do not repeat)
+
+- Check the profile's stage time limits before launching a long experiment; exhaustive matching cost was badly
+  underestimated twice.
+- Python on Windows cannot open Git-Bash paths (`/c/...`); pass `C:\...` paths.
+- Chain follow-up jobs to the exact run they depend on (new run id detected by diffing `runs/`), not "latest run".
+
+---
+
+## 0. Update 2026-11-01 — Previous state & advisor handoff (see §0.0 for the latest)
 
 **Round 1 completed (deadline was 2026-10-31); Round 2 preparation underway.**
 This section provides Claude (acting as Technical Advisor) with the immediate, authoritative snapshot of the project architecture, operational state, recent major developments, and open technical questions for next-phase planning.

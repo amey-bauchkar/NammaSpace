@@ -68,14 +68,15 @@
         aria-label="Drop 3D model, scan, or photo files or choose them">
         <p style="margin:0;font-size:16px"><strong>Drop your 3D model, scan, or photos here</strong> or <a href="#"
             id="polycam-pick">choose files</a></p>
-        <p class="small" style="margin:6px 0 0;font-weight:600;color:var(--ink-secondary)">GLTF/GLB 3D scan (.glb or .zip)
-          OR raw photos (.zip archive or JPEG/PNG images).
+        <p class="small" style="margin:6px 0 0;font-weight:600;color:var(--ink-secondary)"><strong>Polycam LiDAR scan:</strong>
+          drop all files together – the .glb, the raw data .zip, mesh_info.json and roomplan.json.<br>
+          Also: Namma Capture app scan (.nammacap), GLTF/GLB 3D scan (.glb or .zip) OR raw photos (.zip archive or JPEG/PNG images).
           Namma Space adds the floor, start view, walking and labels.<br>
-          <span style="display:inline-block;margin-top:4px;font-size:12px;font-weight:500;opacity:0.85">* Note: Accepts 3D scans
-            or raw photo sets without phone sensor metadata.</span>
+          <span style="display:inline-block;margin-top:4px;font-size:12px;font-weight:500;opacity:0.85">* A .nammacap keeps the phone's camera
+            positions and depth; drop it on its own. Other 3D scans and photo sets are used without phone sensor data.</span>
         </p>
       </div>
-      <input type="file" id="polycam-input" accept=".zip,.glb,.jpg,.jpeg,.png" multiple hidden>
+      <input type="file" id="polycam-input" accept=".nammacap,.zip,.glb,.json,.jpg,.jpeg,.png" multiple hidden>
       <div class="progress" id="polycam-progress" hidden>
         <div></div>
       </div>
@@ -270,6 +271,12 @@
       <div class="row" style="gap:10px;margin-top:10px">
         <button type="button" class="danger" data-f="cancel">Cancel</button>
         <button type="button" class="secondary" data-f="resume" hidden>Resume</button>
+      </div>
+      <div data-f="queue-box" hidden style="margin-top:12px">
+        <label class="row small" style="gap:8px;justify-content:flex-start;font-weight:600;cursor:pointer">
+          <input type="checkbox" data-f="queue-splat" style="flex:none;width:auto"> Make the photoreal view automatically when this finishes
+        </label>
+        <p class="small muted" data-f="queue-note" style="margin:4px 0 0"></p>
       </div>
       <ul class="stage-list" data-f="stages"></ul>
       <details style="margin-top:14px">

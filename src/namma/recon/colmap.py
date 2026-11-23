@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
+from namma import PROJECT_ROOT
 from namma.recon.io import qvec_to_rotmat, read_colmap_cameras_txt
 from namma.recon.runner import run_step
 
@@ -40,13 +41,27 @@ def extract_features(tools, db, image_dir, log_dir, *, camera_model, single_came
                     on_line=_progress_cb(progress, "Finding features"))
 
 
+VOCAB_TREE = PROJECT_ROOT / "tools" / "colmap-vocab" / "vocab_tree_faiss_flickr100K_words32K.bin"
+
+
+def vocab_tree_path():
+    """COLMAP's 32K-word retrieval tree (meant for up to ~1,000s of photos), or None when it is not installed."""
+    return VOCAB_TREE if VOCAB_TREE.is_file() else None
+
+
 def match_features(tools, db, log_dir, *, mode, overlap=15, guided=True, timeout_s, cancel_file=None,
-                   progress=None, threads=-1, use_gpu=False, gpu_index=0):
+                   progress=None, threads=-1, use_gpu=False, gpu_index=0, vocab_tree=None):
+    """vocab_tree (sequential only): also match every 10th photo against the 50 most similar photos of the whole
+    capture (loop detection), so a room walked into again later is tied to its first visit. Without it, sequential
+    matching links only neighbours in time and a multi-room walk can be assembled with rooms misplaced
+    (NYC multi-room test, 2026-11-22: four internally correct pieces joined in the wrong places)."""
     gpu = int(bool(use_gpu))
     if mode == "sequential":
         argv = [tools.colmap, "sequential_matcher", "--database_path", db, "--FeatureMatching.use_gpu", gpu,
                 "--FeatureMatching.num_threads", threads, "--FeatureMatching.guided_matching", int(guided),
                 "--SequentialMatching.overlap", overlap, "--SequentialMatching.quadratic_overlap", 1]
+        if vocab_tree:
+            argv += ["--SequentialMatching.loop_detection", 1, "--SequentialMatching.vocab_tree_path", vocab_tree]
     elif mode == "exhaustive":
         argv = [tools.colmap, "exhaustive_matcher", "--database_path", db, "--FeatureMatching.use_gpu", gpu,
                 "--FeatureMatching.num_threads", threads, "--FeatureMatching.guided_matching", int(guided)]

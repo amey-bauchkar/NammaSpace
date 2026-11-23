@@ -1,5 +1,7 @@
 # Namma Space – Technical Abstract (Updated Specification: 3D Reconstruction & Roaming)
 
+> Historical working draft, not approved submission copy. Use [the current evidence-based demo brief](DEMO_BRIEF_CURRENT.md) for the active two-scene demonstration. Detailed claims below still require reconciliation with their source runs; the existing HTML/PDF have not been regenerated or approved.
+
 Techfest IIT Bombay 2026–27 · **Team Triple Musketeer** · November 2026
 
 **Code:** github.com/amey-bauchkar/NammaSpace · **Live Walkthrough:** amey-bauchkar.github.io/NammaSpace/demo/new-room/

@@ -1,0 +1,2 @@
+$ C:\Users\Tanmay\OneDrive\Desktop\NammaSpace\tools\colmap-4.2.1-cuda\bin\colmap.exe model_converter --input_path projects\polycam-lidar-room-2026-11-23-20261123-fc4844\capture\poses\work\tri --output_path projects\polycam-lidar-room-2026-11-23-20261123-fc4844\capture\poses\work\tri_txt --output_type TXT
+

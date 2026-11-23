@@ -20,6 +20,12 @@ projects/*/runs/*/30_undistorted/
 projects/*/runs/*/40_dense/
 projects/*/runs/*/50_mesh/
 projects/*/runs/*/65_splat/
+!projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/
+projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/*
+!projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/align.json
+!projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/room.json
+!projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/saved_depth_weight_0.1/
+projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/saved_depth_weight_0.1/*.ply
 projects/*/runs/*/60_texture/*_openmvs*
 projects/*/runs/*/60_texture/*.orig_bak
 projects/*/runs/*/60_texture/*_before_mirrors.glb
@@ -30,6 +36,16 @@ projects/*/capture/originals/*.png
 projects/*/capture/originals/*.zip
 projects/*/capture/thumbs/
 projects/*/published/*.zip
+
+# Polycam LiDAR reference kitchen: model, photoreal views (new + depth weight 0.1) and reports. Left out: the raw
+# Polycam export (GPS and a street address in it), Phase 2 / fusion work files and >100 MB splat PLYs (SPZ is kept)
+!projects/polycam-lidar-room-2026-11-23-20261123-fc4844/
+projects/polycam-lidar-room-2026-11-23-20261123-fc4844/capture/originals/
+projects/polycam-lidar-room-2026-11-23-20261123-fc4844/capture/poses/work/
+projects/polycam-lidar-room-2026-11-23-20261123-fc4844/capture/poses/model/
+projects/polycam-lidar-room-2026-11-23-20261123-fc4844/capture/lidar/*.ply
+projects/*/runs/*/60_texture/*_before_lidar_repair.glb
+projects/*/runs/*/65_splat/*.ply
 
 # evaluation runs and large generated artifacts (summaries are kept under docs/ and phase13_artifacts/results/)
 phase13_artifacts/projects/
@@ -46,6 +62,12 @@ test_output/
 /Images Polycam.zip
 /Iphone 14 Lidar/
 /Record3d EXR JPG ,n.r3d/
+/Polycam With Lidar/
+
+# Codex's LiDAR-fusion pilot on .nammacap data (kept locally, not part of the pipeline)
+scripts/qa/lidar_fusion_pilot.py
+tests/test_lidar_fusion_pilot.py
+pilot_lidar_fusion/
 
 # the team's own room / hall photos and their working reports (private: photos of a home)
 /own_capture/

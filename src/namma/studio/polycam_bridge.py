@@ -9,6 +9,8 @@ Files are recognised by CONTENT, not by name:
   - mesh: a .glb, or a .zip holding exactly one .glb (Polycam "GLTF" export)  -> namma.studio.mesh_import
   - raw:  a .zip with keyframes/cameras/*.json (Polycam "Images" export: photos, poses, depth) -> kept with the project
           (capture/originals/) for later use; its summary is written to capture/polycam_raw.json
+  - sidecar: mesh_info.json / roomplan.json / optimized_roomplan.json from the same Polycam scan (by name)
+          -> kept with the project; the capture report needs mesh_info.json to line the depth up with the model
 Exactly one mesh is needed. The originals are copied into the project unchanged.
 """
 import json
@@ -28,7 +30,11 @@ MAX_FILE_BYTES = 2 * 2**30
 MAX_FILES = 500
 STAGING_TTL_S = 6 * 3600
 IMAGE_EXTS = (".jpg", ".jpeg", ".png")
-ALLOWED_EXT = (".glb", ".zip", ".jpg", ".jpeg", ".png")
+ALLOWED_EXT = (".glb", ".zip", ".jpg", ".jpeg", ".png", ".nammacap", ".json")
+SIDECARS = ("mesh_info.json", "roomplan.json", "optimized_roomplan.json")    # the only .json files accepted
+SIDECAR_MAX_BYTES = 32 * 2**20
+NAMMACAP_EXT = ".nammacap"                 # Namma Capture iOS app archive (namma.capture.nammacap)
+NAMMACAP_MAX_BYTES = 32 * 2**30
 
 
 class BridgeError(Exception):
@@ -38,8 +44,14 @@ class BridgeError(Exception):
 
 
 def classify(path):
-    """-> ("mesh" | "raw" | "photos", details). Raises BridgeError for anything else."""
+    """-> ("mesh" | "raw" | "photos" | "sidecar", details). Raises BridgeError for anything else."""
     path = Path(path)
+    if path.name.lower() in SIDECARS:
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, UnicodeDecodeError) as e:
+            raise BridgeError(415, "POLYCAM-SIDECAR", f"{path.name}: not valid JSON ({e})") from e
+        return "sidecar", {"file": path.name.lower()}
     if path.suffix.lower() in IMAGE_EXTS:
         return "photos", {"file": path.name, "count": 1}
     with open(path, "rb") as f:
@@ -64,6 +76,16 @@ def classify(path):
     if photos:
         return "photos", {"photos": len(photos), "zip": path.name}
     raise BridgeError(415, "POLYCAM-UNKNOWN", f"{path.name}: no .glb model and no Polycam keyframes inside")
+
+
+def _is_lidar_export(path):
+    """A Polycam LiDAR raw export (corrected cameras, photos and depth): its mesh gets the gentle LiDAR repair."""
+    from namma.capture.polycam_raw import PolycamExport, PolycamFormatError
+    try:
+        with PolycamExport(path):
+            return True
+    except PolycamFormatError:
+        return False
 
 
 def raw_summary(path):
@@ -105,10 +127,13 @@ class PolycamStaging:
         from namma.studio.projects import safe_filename
         d = self._dir(iid)
         fname = safe_filename(name)
-        if not fname.lower().endswith(ALLOWED_EXT):
-            raise BridgeError(415, "IMPORT-TYPE", f"{fname}: only .zip, .glb, or photo files (.jpg, .jpeg, .png) are accepted")
-        if not 0 < nbytes <= MAX_FILE_BYTES:
-            raise BridgeError(413, "IMPORT-SIZE", f"{fname}: file must be 1 byte to {MAX_FILE_BYTES // 2**30} GB")
+        if not fname.lower().endswith(ALLOWED_EXT) or (fname.lower().endswith(".json") and fname.lower() not in SIDECARS):
+            raise BridgeError(415, "IMPORT-TYPE", f"{fname}: only .nammacap, .zip, .glb, photo files (.jpg, .jpeg, "
+                                                  ".png) or Polycam's mesh_info.json / roomplan.json are accepted")
+        limit = (NAMMACAP_MAX_BYTES if fname.lower().endswith(NAMMACAP_EXT)
+                 else SIDECAR_MAX_BYTES if fname.lower().endswith(".json") else MAX_FILE_BYTES)
+        if not 0 < nbytes <= limit:
+            raise BridgeError(413, "IMPORT-SIZE", f"{fname}: file must be 1 byte to {limit / 2**30:g} GB")
         if len([p for p in d.iterdir() if p.is_file() and not p.name.startswith(".")]) >= MAX_FILES:
             raise BridgeError(409, "IMPORT-FILES", f"at most {MAX_FILES} files per import")
         if shutil.disk_usage(d).free < nbytes + 2 * 2**30:
@@ -126,34 +151,55 @@ class PolycamStaging:
             tmp.unlink(missing_ok=True)
             raise BridgeError(400, "IMPORT-INCOMPLETE", f"{fname}: upload interrupted ({got} of {nbytes} bytes)")
         tmp.replace(d / fname)
-        return {"file": fname, "bytes": nbytes, "kind": classify(d / fname)[0]}
+        kind = "nammacap" if fname.lower().endswith(NAMMACAP_EXT) else classify(d / fname)[0]
+        return {"file": fname, "bytes": nbytes, "kind": kind}
 
     def finish(self, iid, *, title="", eye_height_m=1.6, log=None):
         from namma.studio.mesh_import import ImportError_, import_mesh
         d = self._dir(iid)
         files = sorted(p for p in d.iterdir() if p.is_file() and not p.name.startswith("."))
+        caps = [p for p in files if p.name.lower().endswith(NAMMACAP_EXT)]
+        if caps:                                                  # Namma Capture app archive: its own importer
+            if len(files) != 1:
+                raise BridgeError(400, "IMPORT-NAMMACAP-ALONE", "Import a .nammacap file on its own (one per import).")
+            from namma.capture import nammacap
+            from namma.studio.projects import ProjectStore
+            try:
+                res = nammacap.import_archive(ProjectStore(self.root.parent), caps[0],
+                                              title=" ".join(str(title or "").split())[:80] or None)
+            except nammacap.NammaCapError as e:
+                shutil.rmtree(d, ignore_errors=True)
+                raise BridgeError(e.status, e.code, str(e)) from e
+            shutil.rmtree(d, ignore_errors=True)
+            return res
         kinds = [(p, *classify(p)) for p in files]
         meshes = [k for k in kinds if k[1] == "mesh"]
         raws = [k for k in kinds if k[1] == "raw"]
         photos = [k for k in kinds if k[1] == "photos"]
+        sidecars = [k for k in kinds if k[1] == "sidecar"]
 
         # Case 1: Polycam / 3D scan with exactly one mesh
         if len(meshes) == 1:
             raw_info = [raw_summary(p) for p, _, _ in raws]
             device = next((r["device"] for r in raw_info if r["device"]), None) or "iPhone"
             title = " ".join(str(title or "").split())[:80] or f"3D scan {time.strftime('%Y-%m-%d %H:%M')}"
+            lidar = any(_is_lidar_export(p) for p, _, _ in raws)
+            from namma.studio.mesh_repair import LIDAR_OPTIONS
             try:
                 res = import_mesh(meshes[0][0], self.root.parent, title=title, app="3D Scan", device=device,
-                                  source_note=f"3D scan ({device})",
-                                  eye_height_m=eye_height_m, log=log)
+                                  source_note=f"3D scan ({device}{', LiDAR' if lidar else ''})",
+                                  eye_height_m=eye_height_m, log=log,
+                                  repair_options=LIDAR_OPTIONS if lidar else None)
             except ImportError_ as e:
                 raise BridgeError(422, "IMPORT-MESH", str(e)) from e
             pdir = Path(res["project_dir"])
             for p, _, _ in raws:                                  # raw keyframes travel with the project (for later steps)
                 shutil.copy2(p, pdir / "capture" / "originals" / p.name)
+            for p, _, info in sidecars:                           # mesh_info / roomplan: same scan, fixed names
+                shutil.copy2(p, pdir / "capture" / "originals" / info["file"])
             write_json(pdir / "capture" / "polycam_import.json", {
                 "imported_at": timefmt.now_iso(), "mesh": {"file": meshes[0][0].name, **meshes[0][2]}, "raw": raw_info,
-                "device": device})
+                "sidecars": sorted(i["file"] for _, _, i in sidecars), "device": device, "lidar": lidar})
             shutil.rmtree(d, ignore_errors=True)
             return {"project_id": res["project_id"], "run_id": res["run_id"], "device": device, "raw": raw_info,
                     "facts": res["facts"], "seconds": res["seconds"]}

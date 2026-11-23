@@ -359,6 +359,28 @@ def make_photoreal(project_dir, run_id, *, iters=None, max_side=1024, cap=None, 
             timeout_s=timeout_s, progress=progress, cancel_file=cancel_file, **kw
         )
 
+    # Polycam LiDAR scan (raw export with poses and depth kept with the project): its own recipe
+    # (implementation_plan.md Phase 3) - poses from the capture, LiDAR depth guide and start points.
+    # Marked mirrors need pixel masks, which only the large-space trainer has: then that route is kept.
+    from namma.capture.polycam_report import find_raw_zip
+    from namma.studio.splat_large import splat_options as _opts
+    _mp = Path(project_dir) / "mirrors.json"
+    _mirrors = _mp.exists() and any(r.get("run_id") in (None, run_id) for r in load_strict(_mp))
+    _force_large = _mirrors and _opts(Path(project_dir) / "runs" / run_id, project_dir)["mirrors_force_large"]
+    if find_raw_zip(project_dir) is not None and not _force_large:
+        from namma.studio import splat_lidar
+        progress("Photoreal profile: POLYCAM LIDAR (camera poses and depth from the scan)", 0.01)
+        res = splat_lidar.make_photoreal(project_dir, run_id, iters=iters or 30000, max_side=max_side,
+                                         cap=cap or 600_000, timeout_s=timeout_s, progress=progress,
+                                         cancel_file=cancel_file)
+        tex_json = Path(project_dir) / "runs" / run_id / "60_texture" / "splat.json"
+        data = load_strict(tex_json)
+        data["profile"] = "polycam_lidar"
+        write_json(tex_json, data)
+        _quality_note(project_dir, run_id, ("SPLAT-MIRRORS-NOT-MASKED", "Marked mirrors are NOT left out of the "
+                      "photoreal view (splat_options.mirrors_force_large = false).") if _mirrors else None)
+        return res
+
     profile, metrics = classify_room_profile(project_dir, run_id, cfg=cfg)
     # marked mirrors need pixel masks, which only the large-space trainer supports: switch to it (logged, reported in
     # the quality report; splat_options.mirrors_force_large = false keeps the small-room trainer, mirrors then NOT

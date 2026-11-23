@@ -387,3 +387,75 @@ def test_fast_depth_maps_are_identical_to_the_plain_loop(tmp_path):
         assert (a > 0).mean() > 0.1                                       # a real map, not an empty one
         assert np.array_equal(a, np.load(tmp_path / "cull" / f"c{i:02d}.npy"))
         assert np.array_equal(a, np.load(tmp_path / "procs" / f"c{i:02d}.npy"))
+
+
+def _queue_setup(tmp_path, monkeypatch, run_status):
+    from namma.core.jsonio import write_json
+    from namma.studio.jobs import JobManager
+    from namma.studio.projects import ProjectStore
+    store = ProjectStore(tmp_path / "projects")
+    pid = store.create(title="Queue Space")["project_id"]
+    rid = "run-20261122-120000"
+    rdir = store.path(pid) / "runs" / rid
+    rdir.mkdir(parents=True)
+    write_json(rdir / "config.json", {"config": {"profile": "standard"}})
+    write_json(rdir / "run.json", {"run_id": rid, "status": run_status, "stages": []})
+    monkeypatch.setattr(sp, "available", lambda: (True, None))
+    return store, JobManager(store), pid, rid, rdir
+
+
+def test_photoreal_can_be_queued_and_unqueued_while_reconstruction_runs(tmp_path, monkeypatch):
+    from namma.studio import jobs as jm
+    store, jobs, pid, rid, rdir = _queue_setup(tmp_path, monkeypatch, "failed")
+    assert jobs.splat_status(pid, rid)["queued"] is False
+    assert jobs.queue_splat(pid, rid) == {"queued": True}             # failed run: kept for a later Resume
+    assert (rdir / "65_splat" / jm.QUEUE_FILE).exists()
+    assert jobs.splat_status(pid, rid)["queued"] is True
+    assert jobs.unqueue_splat(pid, rid) == {"queued": False}
+    assert jobs.splat_status(pid, rid)["queued"] is False
+
+
+def test_queueing_a_finished_run_starts_the_photoreal_view_now(tmp_path, monkeypatch):
+    store, jobs, pid, rid, rdir = _queue_setup(tmp_path, monkeypatch, "succeeded")
+    monkeypatch.setattr(jobs, "start_splat", lambda p, r: {"pid": 123})
+    assert jobs.queue_splat(pid, rid) == {"queued": False, "pid": 123}
+
+
+def test_queueing_refused_without_the_splat_engine(tmp_path, monkeypatch):
+    from namma.studio.jobs import JobError
+    store, jobs, pid, rid, rdir = _queue_setup(tmp_path, monkeypatch, "running")
+    monkeypatch.setattr(sp, "available", lambda: (False, "no GPU environment"))
+    try:
+        jobs.queue_splat(pid, rid)
+        assert False, "expected JobError"
+    except JobError as e:
+        assert e.code == "SPLAT-UNAVAILABLE"
+
+
+def test_worker_starts_queued_photoreal_only_after_a_successful_full_run(tmp_path, monkeypatch):
+    import argparse
+    from namma.core.jsonio import write_json
+    from namma.studio import jobs as jm
+    from namma.studio import worker
+    from namma.studio import pipeline
+    from namma.studio import profiles
+    store, jobs, pid, rid, rdir = _queue_setup(tmp_path, monkeypatch, "running")
+    (rdir / "65_splat").mkdir()
+    write_json(rdir / "65_splat" / jm.QUEUE_FILE, {"queued_at": "x"})
+    started = []
+    monkeypatch.setattr(worker, "task_splat", lambda a: started.append(a.run) or 0)
+    monkeypatch.setattr(profiles, "get_profile", lambda name: {})
+    a = argparse.Namespace(project_dir=str(store.path(pid)), run=rid, profile="standard", stop_after=None)
+
+    monkeypatch.setattr(pipeline, "run_pipeline", lambda *x, **k: {"status": "failed"})
+    assert worker.task_reconstruct(a) == 1 and started == []
+    assert (rdir / "65_splat" / jm.QUEUE_FILE).exists()                # kept for Resume
+
+    a.stop_after = "sfm"                                                # partial run: not "finished"
+    monkeypatch.setattr(pipeline, "run_pipeline", lambda *x, **k: {"status": "succeeded"})
+    assert worker.task_reconstruct(a) == 0 and started == []
+
+    a.stop_after = None
+    assert worker.task_reconstruct(a) == 0 and started == [rid]
+    assert not (rdir / "65_splat" / jm.QUEUE_FILE).exists()            # consumed once
+    assert worker.task_reconstruct(a) == 0 and started == [rid]         # not started twice

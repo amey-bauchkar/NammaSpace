@@ -7,6 +7,8 @@ The source run is copied (never modified). The reused stages are only accepted w
 depend on is identical: the script compares the source run's config with the current profile and refuses if anything
 other than the listed later-stage keys differs. Each reused stage marker records `reused_from` so the provenance is
 visible; the remaining stages are then run by the normal pipeline (`studio_cli.py run --run <new id>`).
+For --set experiments, resume with run_with_override.py and exactly the same
+--profile and --set arguments. Config changes affecting copied stages are refused.
 """
 import argparse
 import json
@@ -20,7 +22,7 @@ from namma.core.jsonio import load_strict, write_json  # noqa: E402
 from namma.core import timefmt  # noqa: E402
 from namma.studio.profiles import config_sha256, get_profile  # noqa: E402
 
-LATER_ONLY = {"mesh.target_faces", "pipeline_version", "textures", "timeouts_s.mesh", "timeouts_s.texture", "fill", "exposure", "harmonize", "blend"}
+LATER_ONLY = {"mesh.target_faces", "textures", "timeouts_s.mesh", "timeouts_s.texture", "fill", "exposure", "harmonize", "blend"}
 STAGE_DIRS = {"prepare": "10_images", "sfm": "20_sfm", "undistort": "30_undistorted", "dense": "40_dense",
               "mesh": "50_mesh", "texture": "60_texture"}
 
@@ -32,34 +34,69 @@ def flat(d, p=""):
     return out
 
 
+def validate_reuse(old, cfg, reuse, status):
+    prefix = ['prepare', 'sfm', 'undistort', 'dense']
+    if not reuse or reuse != prefix[:len(reuse)] or len(reuse) > len(prefix):
+        raise ValueError('Reuse must be a contiguous prefix of prepare,sfm,undistort,dense')
+    if status.get('status') not in ('succeeded', 'failed', 'cancelled'):
+        raise ValueError('Source run must be terminal before copying stage outputs')
+    completed = {s['name'] for s in status['stages'] if s['status'] == 'done'}
+    if not set(reuse) <= completed:
+        raise ValueError('Every reused source stage must be completed')
+    allowed = LATER_ONLY | {'experiment_override'}
+    if 'undistort' not in reuse:
+        allowed |= {'dense_selection'}
+    old_flat, new_flat = flat(old), flat(cfg)
+    diff = {k for k in set(old_flat) | set(new_flat) if old_flat.get(k) != new_flat.get(k)}
+    bad = {k for k in diff if not any(k == x or k.startswith(x + '.') for x in allowed)}
+    if bad:
+        raise ValueError(f'Earlier-stage settings differ: {sorted(bad)}')
+    return diff
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--project-dir", required=True)
     ap.add_argument("--source-run", required=True)
     ap.add_argument("--profile", required=True)
     ap.add_argument("--reuse", default="prepare,sfm,undistort,dense")
+    ap.add_argument("--set", action="append", default=[], help='Recorded JSON configuration override, as in run_with_override.py')
     a = ap.parse_args()
     pdir = Path(a.project_dir)
     src = pdir / "runs" / a.source_run
     old = load_strict(src / "config.json")["config"]
     cfg = get_profile(a.profile)
-    diff = {k for k in set(flat(old)) | set(flat(cfg)) if flat(old).get(k) != flat(cfg).get(k)}
-    bad = {k for k in diff if not any(k == x or k.startswith(x + ".") for x in LATER_ONLY)}
-    if bad:
-        sys.exit(f"refused: earlier-stage settings differ: {sorted(bad)}")
+    for setting in a.set:
+        key, value = setting.split('=', 1)
+        node = cfg
+        *parents, leaf = key.split('.')
+        for part in parents:
+            node = node[part]
+        node[leaf] = json.loads(value)
+    if a.set:
+        cfg['experiment_override'] = a.set
+    reuse = a.reuse.split(',')
+    status = load_strict(src / 'run.json')
+    try:
+        diff = validate_reuse(old, cfg, reuse, status)
+        for stage in reuse:
+            marker = load_strict(src / STAGE_DIRS[stage] / 'stage.json')
+            if marker['config_sha256'] != config_sha256(old):
+                raise ValueError(f'Source marker configuration mismatch: {stage}')
+    except ValueError as error:
+        sys.exit(f'refused: {error}')
     sha = config_sha256(cfg)
     proj = load_strict(pdir / "project.json")
     rid = "run-" + timefmt.now_iso()[:19].replace("-", "").replace(":", "").replace("T", "-") + "-reuse"
     dst = pdir / "runs" / rid
     dst.mkdir(parents=True)
-    reuse = a.reuse.split(",")
     for st in reuse:
         shutil.copytree(src / STAGE_DIRS[st], dst / STAGE_DIRS[st])
         m = load_strict(dst / STAGE_DIRS[st] / "stage.json")
         m.update(config_sha256=sha, reused_from={"run": a.source_run, "config_sha256": m.get("config_sha256"),
                                                   "differing_later_stage_keys": sorted(diff)})
         write_json(dst / STAGE_DIRS[st] / "stage.json", m)
-    status = load_strict(src / "run.json")
+    write_json(dst / 'config.json', {'config': cfg, 'config_sha256': sha})
     stages = [{**s, "reused_from": a.source_run} if s["name"] in reuse else {"name": s["name"], "label": s["label"], "status": "pending"}
               for s in status["stages"]]
     write_json(dst / "run.json", {"run_id": rid, "profile": a.profile, "config_sha256": sha, "pipeline_version": cfg["pipeline_version"],

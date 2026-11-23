@@ -1,0 +1,31 @@
+{
+ "generated_at": "2026-11-23T10:21:36",
+ "run_id": "run-20261123-062748-ab78",
+ "model": "lod0.glb",
+ "poses": "refined",
+ "parameters": {
+  "voxel_m": 0.015,
+  "trunc_m": 0.045,
+  "depth_max_m": 4.0,
+  "min_confidence": 1,
+  "weight_threshold": 3.0,
+  "gap_m": 0.04,
+  "min_piece_m2": 0.01
+ },
+ "fused_triangles": 361702,
+ "fused_area_m2": 30.7,
+ "fused_within_2cm_of_model": 0.9329,
+ "gap_triangles": 1491,
+ "gap_area_m2": 0.113,
+ "gap_pieces": 7,
+ "gap_area_by_orientation_m2": {
+  "horizontal": 0.006,
+  "vertical": 0.063,
+  "sloped": 0.044
+ },
+ "gap_height_range_m": [
+  -1.26,
+  0.24
+ ],
+ "seconds": 12.5
+}

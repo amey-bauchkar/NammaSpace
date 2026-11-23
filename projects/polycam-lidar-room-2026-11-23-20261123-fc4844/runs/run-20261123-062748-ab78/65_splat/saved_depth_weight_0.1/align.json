@@ -1,0 +1,242 @@
+{
+ "T_mesh_from_splat": [
+  [
+   0.9629375622832356,
+   0.004294551913353674,
+   -0.006867287179621041,
+   -0.046293933122684226
+  ],
+  [
+   -0.004282178887277996,
+   0.9629605355858865,
+   0.001749334830449832,
+   -0.016863869933523443
+  ],
+  [
+   0.006875009439209402,
+   -0.0017187358148210627,
+   0.962945549793258,
+   1.4850099522431726
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "fit": {
+  "solid_splats": 25046,
+  "used": 25046,
+  "mesh_samples": 200000,
+  "yaw_deg": -0.41,
+  "tilt_deg": 15.64,
+  "within_2cm": 0.27,
+  "within_5cm": 0.614,
+  "median_m": 0.0376,
+  "regional_discrepancy": {
+   "grid_bins": 4,
+   "minimum_points": 50,
+   "bounds_xz": [
+    [
+     -5.295896114884211,
+     -13.393794790947128
+    ],
+    [
+     3.9898689341114273,
+     5.95519090703912
+    ]
+   ],
+   "cells": [
+    {
+     "cell_xz": [
+      0,
+      0
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      0,
+      1
+     ],
+     "points": 2,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      0,
+      2
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      0,
+      3
+     ],
+     "points": 0,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      1,
+      0
+     ],
+     "points": 10,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      1,
+      1
+     ],
+     "points": 21,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      1,
+      2
+     ],
+     "points": 4618,
+     "status": "sampled",
+     "median_scene_units": 0.03825295500904495,
+     "p90_scene_units": 0.1760700967316705
+    },
+    {
+     "cell_xz": [
+      1,
+      3
+     ],
+     "points": 648,
+     "status": "sampled",
+     "median_scene_units": 0.04595513703882759,
+     "p90_scene_units": 0.24609846246821074
+    },
+    {
+     "cell_xz": [
+      2,
+      0
+     ],
+     "points": 20,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      2,
+      1
+     ],
+     "points": 50,
+     "status": "sampled",
+     "median_scene_units": 2.8675311917894426,
+     "p90_scene_units": 3.2350473092526135
+    },
+    {
+     "cell_xz": [
+      2,
+      2
+     ],
+     "points": 15174,
+     "status": "sampled",
+     "median_scene_units": 0.038456625116100686,
+     "p90_scene_units": 0.13040580802478183
+    },
+    {
+     "cell_xz": [
+      2,
+      3
+     ],
+     "points": 4458,
+     "status": "sampled",
+     "median_scene_units": 0.03226293423951081,
+     "p90_scene_units": 0.11378997456377896
+    },
+    {
+     "cell_xz": [
+      3,
+      0
+     ],
+     "points": 4,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      3,
+      1
+     ],
+     "points": 11,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      3,
+      2
+     ],
+     "points": 24,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    },
+    {
+     "cell_xz": [
+      3,
+      3
+     ],
+     "points": 6,
+     "status": "insufficient_samples",
+     "median_scene_units": null,
+     "p90_scene_units": null
+    }
+   ],
+   "limitation": "Fit residuals against sampled imported mesh, not independent accuracy. Grid cells are not identified rooms. Unsampled areas and baked-in repairs are unknown. Scene units depend on imported scale; distances include mesh sampling error."
+  }
+ },
+ "T_from_poses": [
+  [
+   0.9629441442207123,
+   0.006154442037506925,
+   -0.003879383898573723,
+   -0.04005553954594705
+  ],
+  [
+   -0.006206129368956974,
+   0.9628644814870521,
+   -0.012956256493581913,
+   -0.017378865935295175
+  ],
+  [
+   0.0037961475323545074,
+   0.012980888208161623,
+   0.9628766470687845,
+   1.4822429076393009
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "icp_shift_m": 0.0068
+}

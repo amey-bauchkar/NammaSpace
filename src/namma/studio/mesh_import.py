@@ -341,8 +341,10 @@ def write_navgeom(nd, pn, *, run_id, app, units_m, pipeline_version, seed_xz=Non
 
 
 def import_mesh(source, projects_root, *, title, source_note, app="Polycam", device="iPhone",
-                eye_height_m=DEFAULT_EYE_HEIGHT_M, units_m=1.0, samples=600_000, log=print, repair=True):
-    """Create a Studio project + run from a finished mesh. Returns {"project_dir", "run_id", "package", ...}."""
+                eye_height_m=DEFAULT_EYE_HEIGHT_M, units_m=1.0, samples=600_000, log=print, repair=True,
+                repair_options=None):
+    """Create a Studio project + run from a finished mesh. Returns {"project_dir", "run_id", "package", ...}.
+    repair_options: keyword arguments for mesh_repair.repair (LiDAR scans: mesh_repair.LIDAR_OPTIONS)."""
     from namma.studio.package import build_scene_package
     from namma.studio.pipeline import RunContext
     from namma.studio.projects import ProjectStore
@@ -358,7 +360,9 @@ def import_mesh(source, projects_root, *, title, source_note, app="Polycam", dev
     unrepaired = glb
     if repair:                                      # wavy ceiling, hanging sheets, holes (namma.studio.mesh_repair)
         from namma.studio.mesh_repair import repair as repair_mesh
-        glb, repair_stats = repair_mesh(glb)
+        glb, repair_stats = repair_mesh(glb, **(repair_options or {}))
+        if repair_options:
+            repair_stats["options"] = dict(repair_options)
     else:
         repair_stats = {"applied": False, "skipped": "turned off"}
     lod1, lod1_stats = downscale_textures(glb, 2048)

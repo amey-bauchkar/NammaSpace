@@ -86,17 +86,23 @@ capture check enforces its limits and explains every warning.
 
 ## Known limitations (honest summary)
 
+Current large-space work uses **Large room (Polycam)** and **Dr Johnson (photos)** as the two demo scenes.
+See [the baseline evidence](docs/LARGE_SPACE_BASELINE.md) and [current demo brief](docs/round2/DEMO_BRIEF_CURRENT.md).
+The optimization work is in progress; historical Phase 13 metrics below are not measurements of these current outputs.
+
 - Not yet validated on the team's own iPhone 12 capture of a home (Round 1 dataset requirement OFF-34): all
   Phase 13 evidence uses **public datasets** (ETH3D, ARKitScenes, TUM RGB-D).
-- Accuracy is good where something is reconstructed (5–22 mm on held-out public scenes), but completeness depends
-  on the room: plain, dark or shiny floors and walls stay partly missing (reported and shown, never invented).
+- Historical held-out public scenes showed 5–22 mm accuracy where surfaces were reconstructed, but completeness
+  depends on the room. Plain, dark or shiny surfaces can remain missing. Optional estimated fills are a separate,
+  labelled layer and are not evidence that those surfaces were reconstructed.
 - Fast handheld video often fails to place most frames on CPU; photos or a slow video work better.
-- Scale is unknown unless calibrated; navigation geometry is automatic and **unverified** (no scene passed the
-  route criteria).
-- Processing is CPU-only: Preview takes minutes, Standard about 1–1.5 min per 24 MP photo; for more than about
-  40 photos run Preview first (a 44-photo hall at Standard needed 11.2 GB and exceeded the time limit).
-- When publishing photos that are not your own, add their source and licence (`studio_cli.py new --notice`); the
-  Studio page has no field for it yet.
+- Photo scale is unknown unless calibrated. Imported device-tracking scale is not independently verified.
+  Navigation status is reported per package; historical Phase 13 scenes failed the route-acceptance criteria.
+- CUDA builds can accelerate feature extraction, matching and dense reconstruction; CPU fallback remains available.
+  Memory use and turnaround depend on capture size and settings. An earlier 44-photo Standard hall run needed
+  11.2 GB and exceeded its time limit; higher profiles are not universally safe for large captures.
+- When publishing photos that are not your own, record their source and licence in the Studio's source field
+  or with `studio_cli.py new --notice`.
 
 ## Repository layout
 

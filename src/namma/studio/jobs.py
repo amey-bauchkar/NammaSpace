@@ -15,6 +15,7 @@ from namma.core import timefmt
 from namma.core.jsonio import load_strict, write_json
 from namma.studio.profiles import config_sha256, get_profile
 
+QUEUE_FILE = "queued.json"      # in <run>/65_splat: start the photoreal view when the reconstruction succeeds
 FLAGS = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
@@ -27,7 +28,12 @@ class JobError(RuntimeError):
 def _alive(pid):
     try:
         p = psutil.Process(int(pid))
-        return p.is_running() and p.status() != psutil.STATUS_ZOMBIE
+        if not (p.is_running() and p.status() != psutil.STATUS_ZOMBIE):
+            return False
+        # Guard against PID recycling on Windows: ensure process is python or reconstruction tool
+        name = p.name().lower()
+        valid = ("python", "colmap", "openmvs", "densify", "reconstruct", "texture")
+        return any(v in name for v in valid)
     except (psutil.Error, ValueError, TypeError):
         return False
 
@@ -89,7 +95,31 @@ class JobManager:
         s["available"] = ok and (has_kf or has_sfm)
         s["unavailable_reason"] = why or (None if s["available"] else
                                           "No photo keyframes or reconstruction cameras available for this space.")
+        s["queued"] = (work / QUEUE_FILE).exists()
+        s["can_queue"] = ok
         return s
+
+    def queue_splat(self, project_id, run_id):
+        """Make the photoreal view automatically once this run's reconstruction succeeds. A run that already
+        succeeded starts now; a failed / cancelled run keeps the request, so Resume still makes it afterwards."""
+        from namma.studio.splat import available
+        ok, why = available()
+        if not ok:
+            raise JobError("SPLAT-UNAVAILABLE", why, 400)
+        status = self.run_status(project_id, run_id)["status"]
+        if status == "succeeded":
+            return {"queued": False, **self.start_splat(project_id, run_id)}
+        work = self.store.run_dir(project_id, run_id) / "65_splat"
+        s = self.splat_status(project_id, run_id)
+        if s.get("status") in ("running", "starting"):
+            raise JobError("SPLAT-RUNNING", "The photoreal view is already being made.")
+        work.mkdir(parents=True, exist_ok=True)
+        write_json(work / QUEUE_FILE, {"queued_at": timefmt.now_iso(), "run_status": status})
+        return {"queued": True}
+
+    def unqueue_splat(self, project_id, run_id):
+        (self.store.run_dir(project_id, run_id) / "65_splat" / QUEUE_FILE).unlink(missing_ok=True)
+        return {"queued": False}
 
     def start_splat(self, project_id, run_id):
         s = self.splat_status(project_id, run_id)

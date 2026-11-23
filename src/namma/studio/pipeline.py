@@ -223,13 +223,14 @@ def stage_sfm(ctx):
     ctx.check_cancel()
     # For photo captures, exhaustive matching connects loops and turns across the room;
     # sequential matching easily fragments unless the frames are from continuous video.
-    max_exhaustive = cfg["matching"]["exhaustive_max_images"] if ctx.facts.get("mode") == "video" \
-        else max(cfg["matching"]["exhaustive_max_images"], 400)
-    mode = "sequential" if n > max_exhaustive else "exhaustive"
+    mode = matching_strategy(cfg["matching"], n, ctx.facts.get("mode"))
     overlap = cfg["matching"]["sequential_overlap"]
     if mode == "sequential" and n > 250:
         overlap = max(overlap, 25)
-    ctx.set_progress("sfm", f"Matching photos ({mode})", 0.0)
+    # loop detection: sequential matching also ties revisited rooms together (needs COLMAP's vocabulary tree)
+    vocab = colmap.vocab_tree_path() if mode == "sequential" and cfg["matching"].get("loop_detection", True) else None
+    ctx.facts["loop_detection"] = bool(vocab)
+    ctx.set_progress("sfm", f"Matching photos ({mode}{', loop detection' if vocab else ''})", 0.0)
     match_gpu = gpu and dev_features == "gpu"
     mthreads = match_threads(n_features, gpu=match_gpu)
     with _MatchProgress(db, n if mode == "exhaustive" else None,
@@ -241,7 +242,7 @@ def stage_sfm(ctx):
                                                  guided=cfg["matching"]["guided"], timeout_s=T["matching"],
                                                  cancel_file=ctx.cancel_file, progress=cb,
                                                  threads=mthreads if on_gpu == match_gpu else match_threads(n_features),
-                                                 use_gpu=on_gpu, gpu_index=gpu_index),
+                                                 use_gpu=on_gpu, gpu_index=gpu_index, vocab_tree=vocab),
             match_gpu)
         recs.append(rec)
     ctx.check_cancel()
@@ -378,7 +379,8 @@ def stage_sfm(ctx):
         raise StageError("sfm", f"Camera placement produced only {len(xyz)} 3D points for {len(imgs)} photos; the "
                                 "result is not reliable enough to build a surface.",
                          "Move more slowly, keep more overlap between photos / video frames, and avoid plain surfaces.")
-    return {"registered": len(imgs), "input": n, "rescue": rescue, "commands": len(recs)}
+    return {"registered": len(imgs), "input": n, "rescue": rescue, "commands": len(recs),
+            "matching": mode, "loop_detection": bool(vocab)}
 
 
 def sift_feature_budget(cfg, n_images):
@@ -428,6 +430,19 @@ def _sfm_model(ctx):
     return ctx.dir("sfm") / s["model_dir"], ctx.dir("sfm") / s["txt_dir"], s
 
 
+def matching_strategy(settings, image_count, capture_mode):
+    """Explicit experiment overrides; auto preserves the established photo-loop policy."""
+    requested = settings.get('strategy', 'auto')
+    if requested not in ('auto', 'exhaustive', 'sequential'):
+        raise ValueError('matching.strategy must be auto, exhaustive or sequential')
+    if requested != 'auto':
+        return requested
+    threshold = settings['exhaustive_max_images']
+    if capture_mode != 'video':
+        threshold = max(threshold, 400)
+    return 'sequential' if image_count > threshold else 'exhaustive'
+
+
 def dense_subset(names, sharpness, k):
     """Evenly spread subset of k registered images (in name order = capture order), sharpest in each bin."""
     names = sorted(names)
@@ -459,12 +474,20 @@ def stage_undistort(ctx):
     model_dir, txt_dir, _ = _sfm_model(ctx)
     imgs = colmap.read_images_txt(txt_dir / "images.txt")
     k = ctx.cfg.get("dense_max_images") or len(imgs)
-    result = {"registered": len(imgs), "dense_images": len(imgs), "subset": False}
+    selection = ctx.cfg.get("dense_selection", "name_bins")
+    if selection not in ("name_bins", "pose_spread_experimental"):
+        raise ValueError(f"Unknown dense_selection: {selection}")
+    result = {"registered": len(imgs), "dense_images": len(imgs), "subset": False,
+              "selection_method": selection}
     if len(imgs) > k:
         # MVS cost grows with every image; camera tracking benefits from dense frames, surfaces do not need all
         man = load_strict(ctx.project_dir / "capture" / "capture_manifest.json")
         sharp = {Path(x["name"]).stem.lower(): x.get("sharpness", 0.0) for x in man.get("per_input", [])}
-        keep = set(dense_subset(list(imgs), sharp, k))
+        if selection == "pose_spread_experimental":
+            from namma.recon.selection import pose_spread_subset
+            keep = set(pose_spread_subset(imgs, sharp, k))
+        else:
+            keep = set(dense_subset(list(imgs), sharp, k))
         sub = ctx.dir("sfm") / "dense_model"
         if sub.exists():
             shutil.rmtree(sub)
@@ -472,6 +495,7 @@ def stage_undistort(ctx):
         model_dir = sub
         result.update(dense_images=len(keep), subset=True)
         imgs = {n: v for n, v in imgs.items() if n in keep}
+    result["selected_images"] = sorted(imgs)
     sizes = []
     for n in imgs:
         with Image.open(ctx.dir("prepare") / n) as im:

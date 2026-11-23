@@ -459,6 +459,26 @@ async function loadEstimated(ctx) {
     window.__nammaScene.estimatedShown = group.visible;
     btn.textContent = group.visible ? 'Hide estimated surfaces' : 'Show estimated surfaces';
   };
+  const inspect = $('inspect-estimates');
+  inspect.hidden = false;
+  let highlighted = false;
+  inspect.onclick = () => {
+    highlighted = !highlighted;
+    group.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material.vertexColors = !highlighted;
+      o.material.color.set(highlighted ? 0xff8c00 : 0xffffff);
+      o.material.needsUpdate = true;
+    });
+    if (highlighted) {
+      group.visible = true;
+      window.__nammaScene.estimatedShown = true;
+      btn.textContent = 'Hide estimated surfaces';
+    }
+    inspect.setAttribute('aria-pressed', String(highlighted));
+    inspect.textContent = highlighted ? 'Restore estimated surface colours' : 'Highlight estimated surfaces';
+    $('estimate-legend').hidden = !highlighted;
+  };
   const est = ctx.data.estimated;
   const filled = (est.planes || []).filter((p) => p.filled_cells > 0).map((p) => p.plane.replace('_', ' '));
   const about = $('about');
@@ -1117,6 +1137,8 @@ function wireMinimap(ctx) {
 // ------------------------------------------------------------------ photo viewpoints
 function wireViewpoints(ctx, startPose) {
   const cams = ctx.data.cameras;
+  $('cam-next').disabled = cams.length === 0;
+  $('cam-prev').disabled = cams.length === 0;
   let i = -1;
   const show = (k) => {
     if (!cams.length) return;

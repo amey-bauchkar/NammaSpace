@@ -42,6 +42,13 @@ from namma.studio.mesh_tidy import _rebuild, glb_bytes
 
 UP = np.array([0.0, 1.0, 0.0])
 
+# LiDAR scans (Polycam LiDAR mode, implementation_plan.md Phase 4): the ceiling is already flat (6 mm median from
+# its plane on the reference kitchen) and the geometry is measured, so the photogrammetry fixes do harm - the plain
+# ceiling replacement threw away 1.9 m2 of real ceiling and straightening moved floor and walls up to 5 cm and cut
+# wall tops (LiDAR surface missing from the model: 0.11 m2 unrepaired, 2.29 with the default repair, 0.11 with
+# these options). Holes, backings and texture padding stay.
+LIDAR_OPTIONS = {"plain_ceiling": False, "flatten_below": 0.03, "straighten": False}
+
 
 def _faces_geometry(V, F):
     A, B, C = V[F[:, 0]], V[F[:, 1]], V[F[:, 2]]

@@ -1,0 +1,8 @@
+{
+ "run_id": "run-20261123-062748-ab78",
+ "status": "device_tracking",
+ "metres_per_unit": 1.0,
+ "relative_uncertainty": null,
+ "method": "3D Scan export (iPhone 17 Pro); units metres from the phone's motion tracking, not verified by Namma Space",
+ "evaluation_only": false
+}

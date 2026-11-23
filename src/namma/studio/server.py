@@ -609,7 +609,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._body_read = True
             return self._json(201, res)
         if len(seg) == 3 and seg[0] == "polycam" and seg[2] == "import" and method == "POST":
-            return self._json(201, st.polycam.finish(seg[1], title=self._body_json().get("title", "")))
+            res = st.polycam.finish(seg[1], title=self._body_json().get("title", ""))
+            # Polycam LiDAR scan with its raw data: start the capture report right away (Studio "Check" step)
+            from namma.capture.polycam_report import find_raw_zip
+            if res.get("project_id") and find_raw_zip(st.store.path(res["project_id"])) is not None:
+                try:
+                    st.jobs.start_ingest(res["project_id"])
+                    res["capture_check"] = "started"
+                except Exception as e:                       # noqa: BLE001 - the import itself succeeded
+                    res["capture_check"] = f"not started: {e}"
+            return self._json(201, res)
         if seg == ["phone", "qr.svg"] and method == "GET" and st.phone is not None:
             import io
 
@@ -684,6 +693,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         m = load_strict(man)
                         s["inputs"] = [{"name": x["name"], "flags": x["flags"], "thumb": f"/files/{pid}/capture/thumbs/"
                                         + Path(x["name"]).stem + ".jpg"} for x in m.get("per_input", [])]
+                    pr_rep = st.store.path(pid) / "capture" / "polycam_report.json"
+                    if s.get("status") == "done" and pr_rep.exists():
+                        s["polycam"] = load_strict(pr_rep)
                     return self._json(200, s)
             if rest == ["recommendation"] and method == "GET":
                 return self._json(200, st.recommendation(pid))
@@ -711,6 +723,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         return self._json(200, st.jobs.splat_status(pid, rid))
                     if method == "POST":
                         return self._json(202, st.jobs.start_splat(pid, rid))
+                if sub == ["splat", "queue"]:
+                    if method == "POST":
+                        return self._json(202, st.jobs.queue_splat(pid, rid))
+                    if method == "DELETE":
+                        return self._json(200, st.jobs.unqueue_splat(pid, rid))
                 if sub == ["splat", "cancel"] and method == "POST":
                     return self._json(200, st.jobs.cancel_splat(pid, rid))
                 if sub == ["pois"]:

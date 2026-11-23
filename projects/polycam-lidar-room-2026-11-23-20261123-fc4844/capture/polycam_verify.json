@@ -1,0 +1,357 @@
+{
+ "generated_at": "2026-11-23T06:57:55",
+ "zip": "Images.zip",
+ "parameters": {
+  "rel_tol": 0.05,
+  "occluded_rel": 0.12,
+  "confidence": "high only",
+  "seed": 0
+ },
+ "summary": {
+  "file": "Images.zip",
+  "keyframes": 410,
+  "corrected": 410,
+  "device": "iPhone 17 Pro",
+  "duration_s": 312.675251,
+  "folders": {
+   "anchor_updates": 26,
+   "arkit_motion": 10,
+   "cameras": 410,
+   "confidence": 820,
+   "corrected_cameras": 410,
+   "corrected_depth": 820,
+   "corrected_images": 410,
+   "depth": 820,
+   "images": 410,
+   "location": 410,
+   "motion": 32
+  },
+  "has_scene_mvs": true,
+  "tracking_segments": [
+   0
+  ]
+ },
+ "sfm_stats": {
+  "sfmTotalTracks": 33161,
+  "sfmTracks": 16527,
+  "sfmObservations": 47612,
+  "sfmImages": 410,
+  "sfmTracksPerImage": 40.3098,
+  "sfmViewsPerTrack": 2.88086,
+  "sfmRMS": 0.700263,
+  "sfmWeaklyConnectedImages": 269,
+  "sfmIsolatedImages": 10,
+  "sfmComponents": 15,
+  "sfmStrongComponents": 208,
+  "sfmPairs": 2092,
+  "sfmLineTracks": 0,
+  "sfmPlaneTracks": 0
+ },
+ "pairs": {
+  "neighbours": 1729,
+  "revisits": 5318
+ },
+ "depth_consistency": {
+  "arkit_pose+depth256": {
+   "neighbours": {
+    "pairs": 150,
+    "source_points": 2110816,
+    "in_target_view": 1245333,
+    "compared": 1006535,
+    "within_5pct": 0.9896,
+    "rel_error": {
+     "p50": 0.0063,
+     "p90": 0.0213
+    }
+   },
+   "revisits": {
+    "pairs": 100,
+    "source_points": 1558984,
+    "in_target_view": 333413,
+    "compared": 212000,
+    "within_5pct": 0.9373,
+    "rel_error": {
+     "p50": 0.0084,
+     "p90": 0.0376
+    }
+   }
+  },
+  "corrected_pose+depth256": {
+   "neighbours": {
+    "pairs": 150,
+    "source_points": 2110816,
+    "in_target_view": 1244286,
+    "compared": 1006881,
+    "within_5pct": 0.9928,
+    "rel_error": {
+     "p50": 0.0068,
+     "p90": 0.021
+    }
+   },
+   "revisits": {
+    "pairs": 100,
+    "source_points": 1558984,
+    "in_target_view": 330795,
+    "compared": 198587,
+    "within_5pct": 0.9079,
+    "rel_error": {
+     "p50": 0.0147,
+     "p90": 0.0482
+    }
+   }
+  },
+  "arkit_pose+depth512": {
+   "neighbours": {
+    "pairs": 150,
+    "source_points": 1664330,
+    "in_target_view": 1016174,
+    "compared": 794055,
+    "within_5pct": 0.9883,
+    "rel_error": {
+     "p50": 0.006,
+     "p90": 0.0191
+    }
+   },
+   "revisits": {
+    "pairs": 100,
+    "source_points": 1224020,
+    "in_target_view": 259130,
+    "compared": 145028,
+    "within_5pct": 0.9441,
+    "rel_error": {
+     "p50": 0.0104,
+     "p90": 0.0353
+    }
+   }
+  },
+  "corrected_pose+depth512": {
+   "neighbours": {
+    "pairs": 150,
+    "source_points": 1664330,
+    "in_target_view": 1014964,
+    "compared": 794798,
+    "within_5pct": 0.9942,
+    "rel_error": {
+     "p50": 0.0059,
+     "p90": 0.018
+    }
+   },
+   "revisits": {
+    "pairs": 100,
+    "source_points": 1224020,
+    "in_target_view": 256381,
+    "compared": 135632,
+    "within_5pct": 0.9406,
+    "rel_error": {
+     "p50": 0.0135,
+     "p90": 0.0411
+    }
+   }
+  }
+ },
+ "photo_consistency": {
+  "images+arkit_intr (corrected pose)": {
+   "pairs": 60,
+   "ncc_median": 0.6678,
+   "ncc_mean": 0.6159
+  },
+  "corrected_images+corrected_intr (corrected pose)": {
+   "pairs": 60,
+   "ncc_median": 0.6254,
+   "ncc_mean": 0.5856
+  },
+  "corrected_images+corrected_intr+depth512 (corrected pose)": {
+   "pairs": 60,
+   "ncc_median": 0.8122,
+   "ncc_mean": 0.7409
+  },
+  "images+arkit_intr (arkit pose)": {
+   "pairs": 60,
+   "ncc_median": 0.7107,
+   "ncc_mean": 0.656
+  },
+  "corrected_images+corrected_intr+depth512 (arkit pose)": {
+   "pairs": 60,
+   "ncc_median": 0.7184,
+   "ncc_mean": 0.6843
+  },
+  "images_vs_corrected_images_shift_px": {
+   "centre": {
+    "p50": 0.0188,
+    "p90": 0.0435
+   },
+   "corners": {
+    "p50": 1.2088,
+    "p90": 3.0643
+   }
+  }
+ },
+ "glb_alignment": {
+  "arkit_pose+depth256": {
+   "depth_points": 154557,
+   "glb_samples": 2000000,
+   "candidates": {
+    "identity": {
+     "within_2cm": 0.1721,
+     "within_5cm": 0.2852,
+     "median_m": 0.1281,
+     "after_icp": {
+      "within_2cm": 0.1345,
+      "median_m": 0.1073,
+      "icp_correction": {
+       "rotation_deg": 4.948,
+       "translation_m": 0.2502
+      }
+     }
+    },
+    "alignmentTransform": {
+     "within_2cm": 0.5037,
+     "within_5cm": 0.8585,
+     "median_m": 0.0198,
+     "after_icp": {
+      "within_2cm": 0.6408,
+      "median_m": 0.0142,
+      "icp_correction": {
+       "rotation_deg": 0.778,
+       "translation_m": 0.0241
+      }
+     }
+    },
+    "inverse(alignmentTransform)": {
+     "within_2cm": 0.0396,
+     "within_5cm": 0.1091,
+     "median_m": 0.4459,
+     "after_icp": {
+      "within_2cm": 0.0743,
+      "median_m": 0.1531,
+      "icp_correction": {
+       "rotation_deg": 18.123,
+       "translation_m": 1.1137
+      }
+     }
+    }
+   }
+  },
+  "corrected_pose+depth512": {
+   "depth_points": 480331,
+   "glb_samples": 2000000,
+   "candidates": {
+    "identity": {
+     "within_2cm": 0.1527,
+     "within_5cm": 0.3034,
+     "median_m": 0.1144,
+     "after_icp": {
+      "within_2cm": 0.1419,
+      "median_m": 0.0993,
+      "icp_correction": {
+       "rotation_deg": 6.331,
+       "translation_m": 0.2116
+      }
+     }
+    },
+    "alignmentTransform": {
+     "within_2cm": 0.8498,
+     "within_5cm": 0.9746,
+     "median_m": 0.0077,
+     "after_icp": {
+      "within_2cm": 0.8512,
+      "median_m": 0.0075,
+      "icp_correction": {
+       "rotation_deg": 0.12,
+       "translation_m": 0.0021
+      }
+     }
+    },
+    "inverse(alignmentTransform)": {
+     "within_2cm": 0.0466,
+     "within_5cm": 0.1023,
+     "median_m": 0.4226,
+     "after_icp": {
+      "within_2cm": 0.0861,
+      "median_m": 0.1467,
+      "icp_correction": {
+       "rotation_deg": 23.193,
+       "translation_m": 1.0201
+      }
+     }
+    }
+   }
+  }
+ },
+ "roomplan_frame": {
+  "roomplan": {
+   "candidates": {
+    "identity": {
+     "walls_with_surface": 7,
+     "walls": 8,
+     "width_weighted_median_offset_m": 0.015,
+     "wall_top_vs_glb_ceiling_m": 0.004,
+     "wall_bottom_vs_glb_floor_m": 0.004
+    },
+    "alignmentTransform": {
+     "walls_with_surface": 8,
+     "walls": 8,
+     "width_weighted_median_offset_m": 0.305,
+     "wall_top_vs_glb_ceiling_m": 0.004,
+     "wall_bottom_vs_glb_floor_m": 0.004
+    },
+    "inverse(alignmentTransform)": {
+     "walls_with_surface": 5,
+     "walls": 8,
+     "width_weighted_median_offset_m": 0.045,
+     "wall_top_vs_glb_ceiling_m": 0.004,
+     "wall_bottom_vs_glb_floor_m": 0.004
+    }
+   },
+   "best": "identity"
+  },
+  "optimized_roomplan": {
+   "candidates": {
+    "identity": {
+     "walls_with_surface": 6,
+     "walls": 8,
+     "width_weighted_median_offset_m": 0.065,
+     "wall_top_vs_glb_ceiling_m": 0.004,
+     "wall_bottom_vs_glb_floor_m": 0.004
+    },
+    "alignmentTransform": {
+     "walls_with_surface": 8,
+     "walls": 8,
+     "width_weighted_median_offset_m": 0.355,
+     "wall_top_vs_glb_ceiling_m": 0.004,
+     "wall_bottom_vs_glb_floor_m": 0.004
+    },
+    "inverse(alignmentTransform)": {
+     "walls_with_surface": 5,
+     "walls": 8,
+     "width_weighted_median_offset_m": 0.115,
+     "wall_top_vs_glb_ceiling_m": 0.004,
+     "wall_bottom_vs_glb_floor_m": 0.004
+    }
+   },
+   "best": "identity"
+  }
+ },
+ "arkit_track": {
+  "samples": 9023,
+  "span_s": 314.84,
+  "rate_hz": 30.0,
+  "max_gap_s": 10.329,
+  "tracking_states": {
+   "Normal": 9023
+  },
+  "nearest_sample_time_gap_s": {
+   "p50": 0.0,
+   "p90": 0.0
+  },
+  "keyframe_vs_track_position_m": {
+   "p50": 0.0,
+   "p90": 0.0
+  },
+  "keyframe_vs_track_rotation_deg": {
+   "p50": 0.0,
+   "p90": 0.0345
+  }
+ },
+ "seconds": 140.5
+}

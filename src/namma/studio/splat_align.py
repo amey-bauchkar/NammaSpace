@@ -30,6 +30,42 @@ def _rot_y(a):
     return np.array([[np.cos(a), 0, np.sin(a)], [0, 1, 0], [-np.sin(a), 0, np.cos(a)]])
 
 
+def regional_discrepancy(points, distances, *, bins=4, min_points=50):
+    """XZ grid diagnostics in the mesh frame, not an accuracy or coverage score.
+
+    Distances are to sampled mesh points, not exact triangle distances. Empty
+    cells and cells with few points remain explicitly unassessed. Report all
+    cells so a dense room cannot conceal a poorly supported adjacent room.
+    """
+    points = np.asarray(points, dtype=float)
+    distances = np.asarray(distances, dtype=float)
+    if (points.ndim != 2 or points.shape[1] != 3 or
+            distances.shape != (len(points),) or not len(points) or
+            not np.isfinite(points).all() or not np.isfinite(distances).all() or
+            (distances < 0).any()):
+        raise ValueError('Expected finite Nx3 points and N nonnegative distances')
+    if not isinstance(bins, int) or bins < 1 or not isinstance(min_points, int) or min_points < 1:
+        raise ValueError('bins and min_points must be positive integers')
+    xz = points[:, [0, 2]]
+    low, high = xz.min(axis=0), xz.max(axis=0)
+    span = high - low
+    indices = np.minimum((bins * (xz - low) / np.where(span > 0, span, 1)).astype(int), bins - 1)
+    cells = []
+    for ix in range(bins):
+        for iz in range(bins):
+            dd = distances[(indices[:, 0] == ix) & (indices[:, 1] == iz)]
+            supported = len(dd) >= min_points
+            cells.append({'cell_xz': [ix, iz], 'points': len(dd),
+                          'status': 'sampled' if supported else 'insufficient_samples',
+                          'median_scene_units': float(np.median(dd)) if supported else None,
+                          'p90_scene_units': float(np.percentile(dd, 90)) if supported else None})
+    return {'grid_bins': bins, 'minimum_points': min_points,
+            'bounds_xz': [low.tolist(), high.tolist()], 'cells': cells,
+            'limitation': 'Fit residuals against sampled imported mesh, not independent accuracy. '
+                          'Grid cells are not identified rooms. Unsampled areas and baked-in repairs are unknown. '
+                          'Scene units depend on imported scale; distances include mesh sampling error.'}
+
+
 def _icp(X, Q, tree, iters, keep, yaw_only, radius):
     R_tot, t_tot = np.eye(3), np.zeros(3)
     for _ in range(iters):
@@ -127,9 +163,15 @@ def align_points_to_mesh(P, glb, *, init_T=None, samples=200_000, samples_per_m2
     T = np.eye(4)
     T[:3, :3], T[:3, 3] = Rf, tf
     # second-best turn far from the best: how unambiguous the answer is
+    # init_T may carry a scale (Polycam LiDAR: phone tracking -> Polycam's frame is 0.97x): angles from the rotation
+    # alone, or a 0.963 scale reads as a 15.6 degree tilt
+    sc = float(np.cbrt(abs(np.linalg.det(Rf)))) or 1.0
+    Rn = Rf / sc
     stats = {"used": int(len(P)), "mesh_samples": int(samples),
-             "yaw_deg": round(float(np.degrees(np.arctan2(Rf[0, 2], Rf[0, 0]))), 2),
-             "tilt_deg": round(float(np.degrees(np.arccos(np.clip(Rf[1, 1], -1, 1)))), 2),
+             "yaw_deg": round(float(np.degrees(np.arctan2(Rn[0, 2], Rn[0, 0]))), 2),
+             "tilt_deg": round(float(np.degrees(np.arccos(np.clip(Rn[1, 1], -1, 1)))), 2),
+             "scale": round(sc, 5),
              "within_2cm": round(float((dd < 0.02).mean()), 3), "within_5cm": round(float((dd < 0.05).mean()), 3),
-             "median_m": round(float(np.median(dd)), 4)}
+             "median_m": round(float(np.median(dd)), 4),
+             "regional_discrepancy": regional_discrepancy(X, dd)}
     return T, stats

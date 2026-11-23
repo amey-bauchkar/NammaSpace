@@ -1,0 +1,558 @@
+{
+ "mode": "polycam_lidar",
+ "inputs": [],
+ "per_input": [
+  {
+   "name": "10897922197",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "10957365510",
+   "flags": [
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "10992651531",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "10992984732",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "10994484136",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "10996916503",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11025705040",
+   "flags": [
+    "few tracking features",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11027704244",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11028603886",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11032469014",
+   "flags": [
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11033302015",
+   "flags": [
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11034101696",
+   "flags": [
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11034701457",
+   "flags": [
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11035234578",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11035701059",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11037833543",
+   "flags": [
+    "tracking limited",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11038533264",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11039166345",
+   "flags": [
+    "tracking limited",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11039666145",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11040065986",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11040465827",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11040865667",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11041365468",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11041798628",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11042065189",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11042298429",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11042498349",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11042731590",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11043031470",
+   "flags": [
+    "tracking limited",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11043597910",
+   "flags": [
+    "tracking limited",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11044097711",
+   "flags": [
+    "tracking limited",
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11045130632",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11090046001",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11090479161",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11092078520",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11092345079",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11092544999",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11092844879",
+   "flags": [
+    "tracking limited",
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11093144759",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11093644558",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11094144357",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11094744116",
+   "flags": [
+    "tracking limited",
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11095277236",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11095943635",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11096476754",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11097343073",
+   "flags": [
+    "tracking limited",
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11099908709",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11110671051",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11125831625",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11126264784",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11126631303",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11127064463",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11144390817",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11144657376",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11146989769",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11147689487",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11147956046",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11148189285",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11149088922",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11149288841",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11149555400",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11150821556",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11155719578",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11156052776",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11156452615",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11156685854",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11156952413",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11157152332",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11157385571",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11157585491",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11157752090",
+   "flags": [
+    "turned fast (possible motion blur)",
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11158085289",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11164182822",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11167748046",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11168181204",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11170147074",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11171846385",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11172212904",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11172646061",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11172945939",
+   "flags": [
+    "turned fast (possible motion blur)"
+   ]
+  },
+  {
+   "name": "11173345777",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11174545291",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11174945128",
+   "flags": [
+    "not linked to other photos"
+   ]
+  },
+  {
+   "name": "11195969945",
+   "flags": [
+    "tracking limited",
+    "few tracking features"
+   ]
+  },
+  {
+   "name": "11196603023",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11197069501",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11197369379",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11197669258",
+   "flags": [
+    "tracking limited"
+   ]
+  },
+  {
+   "name": "11198169056",
+   "flags": [
+    "tracking limited"
+   ]
+  }
+ ]
+}

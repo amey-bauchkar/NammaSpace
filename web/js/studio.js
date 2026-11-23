@@ -144,11 +144,36 @@ function wirePolycamDrop() {
   input.onchange = () => { importPolycam([...input.files]); input.value = ''; };
 }
 
+// A Polycam LiDAR scan is several files exported together: the model (.glb), the raw data (.zip with photos,
+// camera positions and LiDAR depth) and mesh_info.json / roomplan.json. Missing ones cannot be added later
+// without importing again, so ask before uploading an incomplete set.
+function missingPolycamFiles(files) {
+  const names = files.map((f) => f.name.toLowerCase());
+  const glb = names.some((n) => n.endsWith('.glb'));
+  const zip = names.some((n) => n.endsWith('.zip'));
+  const json = names.some((n) => n.endsWith('.json'));
+  const rawZip = names.some((n) => n.endsWith('.zip') && /image|raw|keyframe/.test(n));
+  if (!glb && !json && !rawZip) return [];            // photos, a .nammacap, or a GLTF .zip on its own: not this route
+  const missing = [];
+  if (!glb && !(zip && !rawZip)) missing.push('the 3D model (.glb) – without it nothing can be imported');
+  if (!zip) missing.push('the raw data .zip (photos, camera positions, LiDAR depth) – no capture report, no photoreal view');
+  if (!names.includes('mesh_info.json')) missing.push('mesh_info.json – the depth cannot be lined up with the model');
+  if (!names.includes('roomplan.json')) missing.push('roomplan.json – no walls, room size or surface coverage');
+  return missing;
+}
+
 async function importPolycam(files) {
   const msg = $('#polycam-msg');
   const bar = $('#polycam-progress');
   if (!files.length) return;
   msg.className = 'small';
+  const missing = missingPolycamFiles(files);
+  if (missing.length && !confirm(`This Polycam scan is missing:\n\n• ${missing.join('\n• ')}\n\n`
+      + 'Drop all files from the same scan together. Import anyway?')) {
+    msg.className = 'small callout warn';
+    msg.textContent = `Not imported. Missing: ${missing.map((m) => m.split(' – ')[0]).join(', ')}. Drop all files of the scan together.`;
+    return;
+  }
   try {
     const { import_id: iid } = await api('/polycam', { method: 'POST', body: '{}' });
     bar.hidden = false;
@@ -171,7 +196,9 @@ async function importPolycam(files) {
       });
       done += f.size;
     }
-    msg.textContent = 'Importing: finding the floor, start view and walkable area…';
+    const cap = files.some((f) => f.name.toLowerCase().endsWith('.nammacap'));
+    msg.textContent = cap ? 'Checking and importing the Namma Capture scan (camera positions, depth)…'
+      : 'Importing: finding the floor, start view and walkable area…';
     const r = await api(`/polycam/${iid}/import`, { method: 'POST', body: '{}' });
     if (r.run_id) {
       location.hash = `#/project/${r.project_id}/run/${r.run_id}`;
@@ -484,6 +511,7 @@ function showCheck(pid, s) {
   const r = s.report;
   const st = r.stats;
   const ready = r.status === 'ready';
+  if (st.mode === 'polycam_lidar') { showPolycamCheck(box, s); return; }
   box.append(el('div', { class: `callout ${ready ? (r.warnings.length ? 'warn' : 'ok') : 'bad'}` },
     ready ? `Ready to reconstruct: ${st.inputs_accepted} ${st.mode === 'video' ? 'frames from the video' : 'photos'} accepted${r.warnings.length ? `, ${r.warnings.length} things to be aware of` : ''}.`
       : 'This capture cannot be processed yet – fix the problems below.'));
@@ -501,6 +529,65 @@ function showCheck(pid, s) {
     box.append(grid);
   }
   $('#run-btn').disabled = !ready || (st.inputs_accepted || 0) < 2;
+}
+
+// Polycam LiDAR scan: capture report (namma.capture.polycam_report). The 3D model came with the import, so
+// "Reconstruct from photos" does not apply.
+function showPolycamCheck(box, s) {
+  const r = s.report;
+  const p = s.polycam || {};
+  const pct = (x) => (x === null || x === undefined ? '–' : `${Math.round(100 * x)}%`);
+  const ok = r.status === 'ready';
+  const nWarn = r.warnings.length;
+  box.append(el('div', { class: `callout ${ok ? (nWarn ? 'warn' : 'ok') : 'bad'}` },
+    ok ? `Polycam LiDAR scan checked: ${r.stats.inputs_accepted} keyframes${nWarn ? `, ${nWarn} things to improve next time` : ', no problems found'}.`
+      : 'This scan has problems the pipeline cannot work around – see below.'));
+  box.append(messageList([...r.errors, ...r.warnings]));
+
+  if (p.checks) {
+    const icon = { ok: '✓', warning: '⚠', error: '✕' };
+    const ul = el('ul', { class: 'list small', style: 'margin:8px 0' });
+    for (const c of p.checks) ul.append(el('li', {}, `${icon[c.level] || '•'} ${c.message}`));
+    box.append(el('details', { style: 'margin-top:8px' }, el('summary', { style: 'font-weight:700' }, 'Data checks'), ul));
+  }
+
+  if (p.coverage) {
+    const tbl = el('table', { class: 'small', style: 'border-collapse:collapse;width:100%;margin-top:6px' });
+    tbl.append(el('tr', {}, ...['Surface', 'Area', 'Measured by LiDAR', 'In Polycam model'].map((h) =>
+      el('th', { style: 'text-align:left;padding:3px 6px;border-bottom:1px solid currentColor' }, h))));
+    const order = { ceiling: 0, floor: 1, wall: 2 };
+    for (const c of [...p.coverage].sort((a, b) => order[a.kind] - order[b.kind])) {
+      const bar = el('div', { style: 'height:8px;background:rgba(0,0,0,.12);border-radius:4px;min-width:80px' },
+        el('div', { style: `height:8px;width:${Math.round(100 * (c.covered || 0))}%;border-radius:4px;background:${(c.covered || 0) >= 0.7 ? 'var(--ok, #2e7d32)' : (c.covered || 0) >= 0.4 ? 'var(--warn, #b7791f)' : 'var(--bad, #c62828)'}` }));
+      tbl.append(el('tr', {},
+        el('td', { style: 'padding:3px 6px' }, c.name + (c.excluded_under_objects_m2 ? ` (minus ${c.excluded_under_objects_m2} m² under furniture)` : '')),
+        el('td', { style: 'padding:3px 6px' }, `${c.area_m2} m²`),
+        el('td', { style: 'padding:3px 6px' }, el('div', { class: 'row', style: 'gap:6px;align-items:center' }, bar, pct(c.covered))),
+        el('td', { style: 'padding:3px 6px' }, pct(c.in_polycam_model))));
+    }
+    box.append(el('h3', { style: 'margin:14px 0 2px;font-size:15px' }, 'What the LiDAR saw'), tbl,
+      el('p', { class: 'small muted' }, 'Share of each RoomPlan surface (10 cm cells) hit by LiDAR depth. Walls behind cabinets cannot be seen; a low ceiling or floor share means those surfaces were not scanned.'));
+  }
+
+  const rp = p.roomplan;
+  const cp = p.capture || {};
+  const facts = [];
+  if (rp) facts.push(`Room: ${rp.rooms && rp.rooms.length ? rp.rooms.join(', ') : 'unlabelled'}, ${rp.floor_area_m2} m² floor, ${rp.wall_height_m} m high; ${rp.walls} walls, ${rp.windows} window${rp.windows === 1 ? '' : 's'}, ${rp.doors} door${rp.doors === 1 ? '' : 's'}; objects: ${Object.entries(rp.objects).map(([k, n]) => `${n} ${k}`).join(', ') || 'none'}.`);
+  if (p.summary) facts.push(`Scan: ${p.summary.device || 'iPhone'}, ${Math.round(p.summary.duration_s)} s, ${p.summary.usable} keyframes; median ISO ${cp.iso_median ? Math.round(cp.iso_median) : '–'}.`);
+  if (p.photos) facts.push(`Photos flagged: ${p.photos.flagged} of ${p.photos.count}` + (Object.keys(p.photos.flag_counts).length ? ` (${Object.entries(p.photos.flag_counts).map(([k, n]) => `${n} ${k}`).join('; ')})` : '') + '.');
+  for (const t of facts) box.append(el('p', { class: 'small', style: 'margin:6px 0' }, t));
+
+  if (s.inputs && s.inputs.length) {
+    box.append(el('h3', { style: 'margin:14px 0 6px;font-size:15px' }, 'Flagged photos'));
+    const grid = el('div', { class: 'thumbs' });
+    for (const x of s.inputs.slice(0, 240)) {
+      grid.append(el('figure', { class: 'flagged' }, el('img', { src: x.thumb, alt: x.name, loading: 'lazy' }),
+        el('figcaption', {}, x.flags.join(', '))));
+    }
+    box.append(grid);
+  }
+  const run = $('#run-btn');
+  if (run) { run.disabled = true; run.title = 'This space came from a Polycam scan: its 3D model is already imported.'; }
 }
 
 // ------------------------------------------------------------------ run
@@ -526,6 +613,21 @@ async function runPage(pid, rid) {
       pollTimer = setInterval(tick, 1500);
       tick();
     } catch (e) { f('detail').textContent = e.message; }
+  };
+  // photoreal view queued behind the reconstruction (fetched once here and after each change, not every tick)
+  let queue = await api(`/projects/${pid}/runs/${rid}/splat`).catch(() => null);
+  f('queue-splat').onchange = async (e) => {
+    const box = f('queue-splat');
+    box.disabled = true;
+    try {
+      await api(`/projects/${pid}/runs/${rid}/splat/queue`, { method: e.target.checked ? 'POST' : 'DELETE', body: '{}' });
+      queue = await api(`/projects/${pid}/runs/${rid}/splat`);
+    } catch (err) {
+      f('queue-note').textContent = err.message;
+      box.checked = !e.target.checked;
+    }
+    box.disabled = false;
+    tick();
   };
   let shownResult = false;
   const tick = async () => {
@@ -554,6 +656,14 @@ async function runPage(pid, rid) {
     if (resume && !['running', 'queued'].includes(st.status)) f('state').textContent = 'Resuming…';
     f('cancel').hidden = !active;
     f('resume').hidden = active || !['failed', 'cancelled', 'interrupted'].includes(st.status);
+    if (queue) {
+      const show = queue.can_queue && st.status !== 'succeeded';
+      f('queue-box').hidden = !show;
+      f('queue-splat').checked = !!queue.queued;
+      f('queue-note').textContent = !queue.queued ? ''
+        : active ? 'Queued: it starts on its own after the last stage.'
+          : 'Still queued: it starts after a resumed run finishes.';
+    }
     // the technical log is fetched only while its section is open (it was a second request every 1.5 s)
     if (f('log').closest('details').open) {
       const log = await api(`/projects/${pid}/runs/${rid}/log`).catch(() => null);

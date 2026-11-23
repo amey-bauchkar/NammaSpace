@@ -1,0 +1,52 @@
+{
+ "status": "ready",
+ "mode": "polycam_lidar",
+ "errors": [],
+ "warnings": [
+  {
+   "code": "POLYCAM-PHOTOS-TRACKING",
+   "severity": "warning",
+   "message": "63 of 410 photos: tracking limited.",
+   "images": [
+    "10992651531",
+    "10992984732",
+    "10994484136",
+    "10996916503",
+    "11035234578",
+    "11035701059",
+    "11037833543",
+    "11038533264",
+    "11039166345",
+    "11039666145",
+    "11040065986",
+    "11040465827"
+   ]
+  },
+  {
+   "code": "POLYCAM-DIM",
+   "severity": "warning",
+   "message": "Dim light: 85% of photos at high ISO (median 2997). Switch on all lights - sharper photos, better colour."
+  },
+  {
+   "code": "POLYCAM-HOT",
+   "severity": "warning",
+   "message": "The phone was hot ('serious') for 410 of 410 photos; iOS may lower camera quality. Let it cool between scans."
+  },
+  {
+   "code": "POLYCAM-COVER-CEILING",
+   "severity": "warning",
+   "message": "The LiDAR measured only 36% of the ceiling. Sweep the ceiling from closer, pointing the phone up."
+  },
+  {
+   "code": "POLYCAM-CHECK-TRACKING",
+   "severity": "warning",
+   "message": "Phone tracking: 2 gap(s) over 2 s (longest 10.3 s). Check that part of the model."
+  }
+ ],
+ "stats": {
+  "inputs_accepted": 410,
+  "mode": "polycam_lidar",
+  "flagged": 89
+ },
+ "generated_at": "2026-11-23T07:13:12"
+}

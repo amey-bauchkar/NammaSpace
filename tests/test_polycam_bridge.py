@@ -74,6 +74,32 @@ def test_import_keeps_raw_and_names_the_device(exports, tmp_path):
     assert "3D scan (iPhone 14)" in notices[0]
 
 
+def test_mesh_info_and_roomplan_travel_with_the_scan(exports, tmp_path):
+    mi, rp = tmp_path / "mesh_info.json", tmp_path / "RoomPlan.json"
+    mi.write_text(json.dumps({"alignmentTransform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]}))
+    rp.write_text(json.dumps({"walls": []}))
+    st = pb.PolycamStaging(tmp_path / "projects")
+    iid = stage(st, [exports["gltf_zip"], exports["raw"], mi, rp])
+    r = st.finish(iid, title="Kitchen")
+    orig = tmp_path / "projects" / r["project_id"] / "capture" / "originals"
+    assert (orig / "mesh_info.json").exists() and (orig / "roomplan.json").exists()     # fixed lowercase names
+    meta = json.loads((orig.parent / "polycam_import.json").read_text())
+    assert meta["sidecars"] == ["mesh_info.json", "roomplan.json"]
+
+
+def test_only_polycam_json_files_are_accepted(exports, tmp_path):
+    st = pb.PolycamStaging(tmp_path / "projects")
+    iid = st.start()
+    other = tmp_path / "notes.json"
+    other.write_text("{}")
+    with pytest.raises(pb.BridgeError, match="mesh_info.json"), open(other, "rb") as fh:
+        st.save(iid, other.name, fh, other.stat().st_size)
+    bad = tmp_path / "roomplan.json"
+    bad.write_text("not json")
+    with pytest.raises(pb.BridgeError, match="not valid JSON"), open(bad, "rb") as fh:
+        st.save(iid, bad.name, fh, bad.stat().st_size)
+
+
 def test_raw_only_or_bad_names_are_refused(exports, tmp_path):
     st = pb.PolycamStaging(tmp_path / "projects")
     iid = stage(st, [exports["raw"]])
