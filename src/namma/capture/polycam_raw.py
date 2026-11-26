@@ -11,6 +11,9 @@ Two consistent sets per keyframe (docs/polycam_lidar/phase0_results.md):
     images/<id>.jpg               1024x768 as captured
     depth/<id>.Clean.png          256x192 LiDAR depth matching images/
     used by: the photoreal view (Phase 3 ablation: raw photos + raw poses scored best)
+  Exports with NO corrected_* folders (not processed on a Mac): the phone's own raw set stands in for the corrected
+  one everywhere (`PolycamExport.corrected` is False); depth is then depth/<id>.png, enlarged 2x to the corrected grid.
+  Measured on a 1501-photo home: raw poses + alignmentTransform put 89 % of the LiDAR within 5 cm of the GLB.
   confidence/<id>.png             256x192 ARKit confidence, PNG levels 0/54/255 = low/medium/high
   mesh_info.json alignmentTransform   GLB point = T @ corrected-frame point
   roomplan.json                 into the GLB with the same alignmentTransform (floor / ceiling then within 1.5 / 0.5 cm)
@@ -114,7 +117,8 @@ def project(points, K, T_arkit_c2w):
 # ------------------------------------------------------------------------------------------------ the export
 class PolycamExport:
     """Read-only view of a Polycam raw export zip. Use as a context manager or call close().
-    `ids`: keyframes that have the full input set (corrected camera + image + depth + confidence)."""
+    `ids`: keyframes that have the full input set (corrected camera + image + depth + confidence; the raw files
+    instead when the export has no corrected cameras at all)."""
 
     def __init__(self, path):
         self.path = Path(path)
@@ -129,14 +133,17 @@ class PolycamExport:
         if not all_ids:
             self._z.close()
             raise PolycamFormatError(f"{self.path.name}: no keyframes/cameras/*.json - not a Polycam raw export")
-        need = ("corrected_cameras/{}.json", "corrected_images/{}.jpg", "corrected_depth/{}.Clean.png",
-                "confidence/{}.png")
+        self.corrected = any(n.startswith(KF + "corrected_cameras/") for n in self._names)
+        self._pose_folder = "corrected_cameras" if self.corrected else "cameras"
+        need = (("corrected_cameras/{}.json", "corrected_images/{}.jpg", "corrected_depth/{}.Clean.png",
+                 "confidence/{}.png") if self.corrected else ("images/{}.jpg", "confidence/{}.png"))
         self.all_ids = all_ids
-        self.ids = [k for k in all_ids if all(KF + p.format(k) in self._names for p in need)]
+        self.ids = [k for k in all_ids if all(KF + p.format(k) in self._names for p in need)
+                    and (self.corrected or self._raw_depth_member(k) in self._names)]
         self.incomplete = [k for k in all_ids if k not in set(self.ids)]
         if not self.ids:
             self._z.close()
-            raise PolycamFormatError(f"{self.path.name}: no keyframe has corrected camera + image + depth "
+            raise PolycamFormatError(f"{self.path.name}: no keyframe has camera + image + depth "
                                      "(export 'Raw data' from a LiDAR scan)")
         self._cam = {}
 
@@ -181,6 +188,10 @@ class PolycamExport:
             raise PolycamFormatError(f"bad keyframe id {kid!r}")
         return kid
 
+    def _raw_depth_member(self, kid):
+        clean = f"{KF}depth/{self._id(kid)}.Clean.png"
+        return clean if clean in self._names else f"{KF}depth/{self._id(kid)}.png"
+
     def _camera(self, kid, folder):
         key = (kid, folder)
         if key not in self._cam:
@@ -190,10 +201,10 @@ class PolycamExport:
     # ------------------------------------------------------------------ the input set
     def pose(self, kid):
         """Camera->world (ARKit axes), Polycam's corrected pose. The GLB is built from these."""
-        return _rows(self._camera(kid, "corrected_cameras"))
+        return _rows(self._camera(kid, self._pose_folder))
 
     def intrinsics(self, kid):
-        d = self._camera(kid, "corrected_cameras")
+        d = self._camera(kid, self._pose_folder)
         try:
             out = {k: float(d[k]) for k in ("fx", "fy", "cx", "cy")}
             out.update(width=int(d["width"]), height=int(d["height"]))
@@ -202,7 +213,7 @@ class PolycamExport:
         return out
 
     def image_member(self, kid):
-        return f"{KF}corrected_images/{self._id(kid)}.jpg"
+        return f"{KF}{'corrected_images' if self.corrected else 'images'}/{self._id(kid)}.jpg"
 
     def image(self, kid, gray=False):
         from PIL import Image
@@ -211,6 +222,11 @@ class PolycamExport:
 
     def depth(self, kid):
         """LiDAR depth in metres (float32, 512x384, matches image()), NaN where Polycam marked it unreliable."""
+        if not self.corrected:
+            d, _ = self.raw_depth(kid)
+            if DEPTH_SHAPE[0] % d.shape[0] or DEPTH_SHAPE[1] % d.shape[1]:
+                raise PolycamFormatError(f"depth {kid}: unexpected shape {d.shape}")
+            return np.repeat(np.repeat(d, DEPTH_SHAPE[0] // d.shape[0], 0), DEPTH_SHAPE[1] // d.shape[1], 1)
         a = self._png(f"{KF}corrected_depth/{self._id(kid)}.Clean.png")
         if a.dtype != np.uint16 or a.shape != DEPTH_SHAPE:
             raise PolycamFormatError(f"depth {kid}: expected 16-bit {DEPTH_SHAPE}, got {a.dtype} {a.shape}")
@@ -227,7 +243,7 @@ class PolycamExport:
         return np.repeat(np.repeat(c, ry, 0), rx, 1)
 
     def neighbors(self, kid):
-        return [str(n) for n in (self._camera(kid, "corrected_cameras").get("neighbors") or [])
+        return [str(n) for n in (self._camera(kid, self._pose_folder).get("neighbors") or [])
                 if ID_RE.fullmatch(str(n))]
 
     def photo_bytes(self, kid):
@@ -271,7 +287,7 @@ class PolycamExport:
 
     def raw_depth(self, kid):
         """256x192 LiDAR depth in metres matching the raw photo (NaN = unreliable / none) and its confidence 0-2."""
-        a = self._png(f"{KF}depth/{self._id(kid)}.Clean.png")
+        a = self._png(self._raw_depth_member(kid))
         if a.dtype != np.uint16 or a.ndim != 2:
             raise PolycamFormatError(f"raw depth {kid}: expected a 16-bit single-channel PNG, got {a.dtype} {a.shape}")
         d = a.astype(np.float32) / 1000.0
@@ -285,7 +301,7 @@ class PolycamExport:
         """Polycam's own per-photo capture measurements (None where a field is absent)."""
         d = self._camera(kid, "cameras")
         q = {k: d.get(k) for k in QUALITY_FIELDS}
-        c = self._camera(kid, "corrected_cameras")
+        c = self._camera(kid, self._pose_folder)
         q.update(timestamp_s=_seconds(kid), weakly_connected=c.get("weakly_connected"),
                  neighbors=len(c.get("neighbors") or []))
         return q
@@ -326,7 +342,7 @@ class PolycamExport:
                 "rotation_rate": np.array([r["rotationRate"] for r in rows], float)}
 
     def summary(self):
-        return {"file": self.path.name, "keyframes": len(self.all_ids), "usable": len(self.ids),
+        return {"file": self.path.name, "keyframes": len(self.all_ids), "usable": len(self.ids), "corrected": self.corrected,
                 "incomplete": self.incomplete[:20], "device": self.device(),
                 "duration_s": round(_seconds(self.all_ids[-1]) - _seconds(self.all_ids[0]), 2),
                 "tracking_segments": sorted({self._camera(k, "cameras").get("tracking_segment") for k in self.ids},

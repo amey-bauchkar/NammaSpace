@@ -67,7 +67,9 @@ def test_pairs_include_neighbours_sequence_and_revisits(tmp_path):
 def test_model_text_round_trip(tmp_path):
     cam = {"fx": 700.0, "fy": 700.0, "cx": 512.0, "cy": 384.0, "width": 1024, "height": 768}
     poses = {"111": _pose([0, 1, 0], 15, [0.1, 0.2, 0.3]), "222": _pose([1, 1, 0], -30, [1, 0, -1])}
-    pp._write_model(tmp_path / "m", cam, {"111.jpg": (1, 1), "222.jpg": (2, 1)}, poses)
+    cam2 = {**cam, "fx": 724.5, "fy": 724.5}                       # autofocus: each photo its own focal length
+    pp._write_model(tmp_path / "m", {"111": cam, "222": cam2}, {"111.jpg": (1, 1), "222.jpg": (2, 2)}, poses)
     back, stats = pp._read_model(tmp_path / "m")
     assert set(back) == set(poses) and all(np.allclose(back[k], poses[k]) for k in poses)
-    assert "1 PINHOLE 1024 768 700.0 700.0 512.0 384.0" in (tmp_path / "m" / "cameras.txt").read_text()
+    txt = (tmp_path / "m" / "cameras.txt").read_text()
+    assert "1 PINHOLE 1024 768 700.0 700.0 512.0 384.0" in txt and "2 PINHOLE 1024 768 724.5 724.5" in txt

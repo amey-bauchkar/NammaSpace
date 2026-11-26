@@ -191,6 +191,23 @@ def main(argv=None):
     ap.add_argument("--full-res-crops", action="store_true",
                     help="after --coarse-until, train on random --crop-size windows of the FULL-resolution photos "
                          "(read from a disk cache; no full photo on the GPU). Before that: whole photos at --max-side")
+    ap.add_argument("--opacity-reg", type=float, default=0.01, help="penalty that fades splats the photos do not need")
+    ap.add_argument("--reg-until", type=float, default=1.0,
+                    help="fraction of steps with the opacity penalty (splats are only recycled until 0.8)")
+    ap.add_argument("--scale-reg", type=float, default=0.01, help="penalty on splat size")
+    ap.add_argument("--strategy", choices=["mcmc", "default", "none"], default="mcmc",
+                    help="default: the original 3DGS densify / prune / opacity reset (no splat cap); none: keep the start set")
+    ap.add_argument("--sparse-cams", action="store_true",
+                    help="update only the current photo's camera / colour correction (plain Adam also keeps moving "
+                         "every other camera from its momentum, ~0.2 deg per visit: blur)")
+    ap.add_argument("--reset-every", type=int, default=3000,
+                    help="--strategy default: opacity reset interval (large scans see each photo rarely: reset less)")
+    ap.add_argument("--app-reg", type=float, default=0.0,
+                    help="pull the per-photo colour correction towards none, so the splats keep the true colours")
+    ap.add_argument("--pose-lr", type=float, default=1e-4)
+    ap.add_argument("--means-lr-mult", type=float, default=1.0, help="position step size (a dense start needs less)")
+    ap.add_argument("--reg-visible", action="store_true",
+                    help="opacity / size penalties only on the splats each photo sees (large scans)")
     ap.add_argument("--crop-size", type=int, default=1024)
     ap.add_argument("--coarse-until", type=float, default=0.3, help="fraction of steps on whole photos at --max-side")
     ap.add_argument("--photo-cache", help="folder for the decoded full-resolution photos (uncompressed; ~36 MB each "
@@ -206,6 +223,8 @@ def main(argv=None):
     # (one goes to the GPU per step) and the full-resolution photo goes to a disk cache read window by window.
     full_res = a.full_res_crops
     cache_dir = Path(a.photo_cache) if a.photo_cache else Path(a.out).with_suffix(".photo_cache")
+    # a big scan (1,500 photos at 1024 px = 3.5 GB) would leave a 6 GB card no room for the splats
+    photos_on_cpu = full_res or len(imgs) * a.max_side ** 2 * 0.75 * 3 > 1.2e9
     views = []
     for im in imgs:
         f = Path(a.images) / im["name"]
@@ -229,7 +248,7 @@ def main(argv=None):
         if a.depth_dir and (Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").exists():
             dep = torch.from_numpy(np.load(Path(a.depth_dir) / f"{Path(im['name']).stem}.npy").astype(np.float32))
         img = torch.from_numpy(np.asarray(pic))
-        views.append({"img": (img.pin_memory() if dev == "cuda" else img) if full_res else img.to(dev), "K": torch.from_numpy(K),
+        views.append({"img": (img.pin_memory() if dev == "cuda" else img) if photos_on_cpu else img.to(dev), "K": torch.from_numpy(K),
                       "viewmat": torch.from_numpy(V), "name": im["name"], "depth": dep, "full": full})
     if len(views) < 3:
         raise SystemExit("fewer than 3 photos with cameras")
@@ -269,9 +288,14 @@ def main(argv=None):
     # start: one splat per SfM point, size from the distance to its 3 nearest neighbours
     pts = torch.from_numpy(xyz).to(dev)
     # mean distance to the 3 nearest neighbours, in chunks on the GPU (150 k points: 150 k x 150 k at once won't fit)
-    ch = max(256, min(2048, int(3e8 // max(1, len(pts)))))
-    knn = torch.cat([torch.cdist(pts[i:i + ch], pts).topk(4, largest=False).values[:, 1:].mean(1)
-                     for i in range(0, len(pts), ch)])
+    if len(pts) > 300_000:                              # a dense start (millions): brute force would not finish
+        from scipy.spatial import cKDTree
+        dk = cKDTree(xyz).query(xyz, k=4, workers=-1)[0][:, 1:].mean(1)
+        knn = torch.from_numpy(dk.astype(np.float32)).to(dev)
+    else:
+        ch = max(256, min(2048, int(3e8 // max(1, len(pts)))))
+        knn = torch.cat([torch.cdist(pts[i:i + ch], pts).topk(4, largest=False).values[:, 1:].mean(1)
+                         for i in range(0, len(pts), ch)])
     n = len(pts)
     params = torch.nn.ParameterDict({
         "means": torch.nn.Parameter(pts.clone()),
@@ -281,22 +305,35 @@ def main(argv=None):
         "sh0": torch.nn.Parameter(((torch.from_numpy(rgb).to(dev) - 0.5) / C0)[:, None, :]),
         "shN": torch.nn.Parameter(torch.zeros(n, (a.sh_degree + 1) ** 2 - 1, 3, device=dev)),
     })
-    lrs = {"means": 1.6e-4 * scene_scale, "scales": 5e-3, "quats": 1e-3, "opacities": 5e-2, "sh0": 2.5e-3,
+    lrs = {"means": 1.6e-4 * scene_scale * a.means_lr_mult, "scales": 5e-3, "quats": 1e-3, "opacities": 5e-2, "sh0": 2.5e-3,
            "shN": 2.5e-3 / 20}
     opts = {k: torch.optim.Adam([{"params": params[k], "lr": lr, "name": k}], eps=1e-15) for k, lr in lrs.items()}
     sched = torch.optim.lr_scheduler.ExponentialLR(opts["means"], gamma=0.01 ** (1.0 / a.iters))
-    strategy = MCMCStrategy(cap_max=a.cap, refine_stop_iter=int(a.iters * 0.8))
-    strategy.check_sanity(params, opts)
-    state = strategy.initialize_state()
+    if a.strategy == "mcmc":
+        strategy = MCMCStrategy(cap_max=a.cap, refine_stop_iter=int(a.iters * 0.8))
+        strategy.check_sanity(params, opts)
+        state = strategy.initialize_state()
+    elif a.strategy == "default":
+        from gsplat.strategy import DefaultStrategy
+        strategy = DefaultStrategy(refine_stop_iter=int(a.iters * 0.5), reset_every=a.reset_every, refine_every=200)
+        strategy.check_sanity(params, opts)
+        state = strategy.initialize_state(scene_scale=scene_scale)
+    else:
+        strategy, state = None, None
     extra = []
     pose_d = torch.zeros(len(views), 6, device=dev, requires_grad=True)
     pose_opt = None
     if a.pose_opt:                                       # small, regularised corrections (gsplat's pose_opt recipe)
-        pose_opt = torch.optim.Adam([pose_d], lr=1e-4, weight_decay=1e-6)
+        pose_opt = (torch.optim.SparseAdam([pose_d], lr=a.pose_lr) if a.sparse_cams
+                    else torch.optim.Adam([pose_d], lr=a.pose_lr, weight_decay=1e-6))
         extra.append(pose_opt)
     app = torch.zeros(len(views), 6, device=dev, requires_grad=True)          # log-gain (3) + offset (3)
     if a.appearance:
-        extra.append(torch.optim.Adam([app], lr=1e-3))
+        extra.append(torch.optim.SparseAdam([app], lr=1e-3) if a.sparse_cams else torch.optim.Adam([app], lr=1e-3))
+
+    def cam_row(table, i):
+        """Row i of a per-photo parameter table (a sparse gradient with --sparse-cams)."""
+        return Fn.embedding(torch.tensor([i], device=dev), table, sparse=True) if a.sparse_cams else table[i:i + 1]
 
     walls = json.loads(Path(a.walls).read_text(encoding="utf-8"))["walls"] if a.walls else []
     for w in walls:
@@ -344,28 +381,34 @@ def main(argv=None):
         H, W = gt.shape[1:3]
         V = v["viewmat"].to(dev)
         if a.pose_opt:
-            V = se3_exp(pose_d[vi:vi + 1])[0] @ V
+            V = se3_exp(cam_row(pose_d, vi))[0] @ V
         use_depth = a.depth_dir is not None and v["depth"] is not None
         out, alpha, info = render(params, V, K, W, H, min(step // 1000, a.sh_degree),
                                   "RGB+ED" if use_depth else "RGB")
         if use_depth:
             out, rd = out[..., :3], out[..., 3]
         if a.appearance:
-            out = out * torch.exp(app[vi, :3]) + app[vi, 3:]
-        strategy.step_pre_backward(params, opts, state, step, info)
+            av = cam_row(app, vi)[0]
+            out = out * torch.exp(av[:3]) + av[3:]
+            app_penalty = a.app_reg * (av ** 2).sum()
+        if strategy is not None:
+            strategy.step_pre_backward(params, opts, state, step, info)
         l1 = (out - gt).abs().mean()
         loss = 0.8 * l1 + 0.2 * (1 - ssim(out.permute(0, 3, 1, 2), gt.permute(0, 3, 1, 2)))
-        if fine:
+        if a.appearance and a.app_reg > 0:
+            loss = loss + app_penalty
+        o_reg = a.opacity_reg if step < a.reg_until * a.iters else 0.0
+        if fine or a.reg_visible:
             # a full-resolution window sees ~1/12 of the photo: penalising EVERY splat's opacity / size each step while
             # only the visible ones get pulled back by the photo made almost all splats transparent and tiny (Namma
             # Capture kitchen 2026-11-24: 1,452 of 600,000 splats opaque, median size 0, 10 % within 5 cm of the model).
             # In windows the penalties apply to the splats this window can see.
             vis = (info["radii"] > 0).reshape(len(params["means"]), -1).any(dim=1) if info["radii"].numel() else None
             if vis is not None and vis.any():
-                loss = loss + 0.01 * torch.sigmoid(params["opacities"][vis]).mean() \
-                    + 0.01 * torch.exp(params["scales"][vis]).mean()
+                loss = loss + o_reg * torch.sigmoid(params["opacities"][vis]).mean() \
+                    + a.scale_reg * torch.exp(params["scales"][vis]).mean()
         else:
-            loss = loss + 0.01 * torch.sigmoid(params["opacities"]).mean() + 0.01 * torch.exp(params["scales"]).mean()
+            loss = loss + o_reg * torch.sigmoid(params["opacities"]).mean() + a.scale_reg * torch.exp(params["scales"]).mean()
         if use_depth:                                    # relative depth error where the mesh is seen
             md = v["depth"].to(dev)
             if dwin is not None:                         # the depth pixels under this window (aligned by crop_box)
@@ -393,7 +436,12 @@ def main(argv=None):
                   f" deg, shift median {float(dd[:, 3:].norm(dim=1).median()):.4f}; frozen for the full-resolution windows",
                   flush=True)
         sched.step()
-        strategy.step_post_backward(params, opts, state, step, info, lr=sched.get_last_lr()[0])
+        if a.strategy == "mcmc":
+            strategy.step_post_backward(params, opts, state, step, info, lr=sched.get_last_lr()[0])
+        elif a.strategy == "default":
+            if len(params["means"]) >= a.cap:               # no cap of its own: stop adding, keep pruning
+                strategy.grow_grad2d = float("inf")
+            strategy.step_post_backward(params, opts, state, step, info, packed=False)
         if a.max_splat_scale > 0:
             with torch.no_grad():
                 params["scales"].data.clamp_(max=math.log(a.max_splat_scale))

@@ -191,3 +191,40 @@ def test_raw_photos_zip_and_images_import(tmp_path):
     assert (p / "capture" / "originals" / "photo_2.jpg").exists()
     assert not (tmp_path / "projects" / "_incoming" / iid).exists()
 
+
+
+def _import(tmp_path, *paths):
+    st = pb.PolycamStaging(tmp_path / "projects")
+    iid = st.start()
+    for p in paths:
+        with open(p, "rb") as f:
+            st.save(iid, p.name, f, p.stat().st_size)
+    res = st.finish(iid, title="Zipped scan")
+    return tmp_path / "projects" / res["project_id"] / "capture" / "originals", res
+
+
+def test_sidecars_inside_the_raw_zip_are_used(exports, tmp_path):
+    with zipfile.ZipFile(exports["raw"], "a") as z:
+        z.writestr("mesh_info.json", '{"a": 1}')
+        z.writestr("roomplan.json", '{"walls": []}')
+    orig, res = _import(tmp_path, exports["gltf_zip"], exports["raw"])
+    assert json.loads((orig / "mesh_info.json").read_text()) == {"a": 1}
+    assert (orig / "roomplan.json").exists() and res["raw"][0]["keyframes"] == 3
+
+
+def test_one_zip_with_model_and_raw_data(exports, tmp_path):
+    with zipfile.ZipFile(exports["raw"], "a") as z:
+        z.write(exports["glb"], "room.glb")
+        z.writestr("mesh_info.json", "{}")
+    orig, res = _import(tmp_path, exports["raw"])
+    assert res["raw"][0]["keyframes"] == 3 and (orig / "mesh_info.json").exists()
+
+
+def test_zip_of_zips_is_unpacked(exports, tmp_path):
+    outer = tmp_path / "everything.zip"
+    with zipfile.ZipFile(outer, "w") as z:
+        z.write(exports["gltf_zip"], "scan/gltf.zip")
+        z.write(exports["raw"], "scan/raw.zip")
+        z.writestr("scan/mesh_info.json", "{}")
+    orig, res = _import(tmp_path, outer)
+    assert res["raw"][0]["keyframes"] == 3 and (orig / "mesh_info.json").exists() and (orig / "raw.zip").exists()

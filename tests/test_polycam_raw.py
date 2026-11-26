@@ -128,9 +128,29 @@ def test_streams_and_sidecar_transforms(export):
         pr.glb_from_camera({})
 
 
-def test_export_without_the_corrected_set_is_refused(tmp_path):
-    with pytest.raises(pr.PolycamFormatError, match="no keyframe has corrected"):
-        pr.PolycamExport(write_export(tmp_path / "x.zip", skip=("corrected_cameras",)))
+def test_export_without_the_corrected_set_uses_the_raw_one(tmp_path):
+    """Exports not processed on a Mac: no corrected_* folders, raw depth named <id>.png."""
+    src = write_export(tmp_path / "full.zip")
+    with zipfile.ZipFile(src) as a, zipfile.ZipFile(tmp_path / "raw.zip", "w") as b:
+        for n in a.namelist():
+            if "corrected" not in n:
+                b.writestr(n.replace(".Clean.png", ".png"), a.read(n))
+    with pr.PolycamExport(tmp_path / "raw.zip") as ex:
+        k = ex.ids[1]
+        assert not ex.corrected and len(ex.ids) == 2
+        assert np.allclose(ex.pose(k), ex.raw_pose(k)) and ex.intrinsics(k) == ex.raw_intrinsics(k)
+        assert ex.depth(k).shape == ex.confidence(k).shape == pr.DEPTH_SHAPE and np.allclose(ex.depth(k), 2.0)
+        assert ex.image(k).shape == (48, 64, 3) and ex.neighbors(k) == [] and ex.quality(k)["neighbors"] == 0
+
+
+def test_export_without_depth_is_refused(tmp_path):
+    src = write_export(tmp_path / "full.zip")
+    with zipfile.ZipFile(src) as a, zipfile.ZipFile(tmp_path / "nodepth.zip", "w") as b:
+        for n in a.namelist():
+            if "corrected" not in n and "/depth/" not in n:
+                b.writestr(n, a.read(n))
+    with pytest.raises(pr.PolycamFormatError, match="no keyframe has"):
+        pr.PolycamExport(tmp_path / "nodepth.zip")
 
 
 def test_not_a_polycam_export(tmp_path):

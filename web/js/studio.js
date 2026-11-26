@@ -147,18 +147,46 @@ function wirePolycamDrop() {
 // A Polycam LiDAR scan is several files exported together: the model (.glb), the raw data (.zip with photos,
 // camera positions and LiDAR depth) and mesh_info.json / roomplan.json. Missing ones cannot be added later
 // without importing again, so ask before uploading an incomplete set.
-function missingPolycamFiles(files) {
+// File names inside a .zip, read from its directory at the end of the file (the photos are not loaded).
+// null = could not be read here (the server checks it anyway).
+async function zipNames(file) {
+  try {
+    const tail = new DataView(await file.slice(Math.max(0, file.size - 65557)).arrayBuffer());
+    let e = tail.byteLength - 22;
+    while (e >= 0 && tail.getUint32(e, true) !== 0x06054b50) e -= 1;
+    if (e < 0) return null;
+    const size = tail.getUint32(e + 12, true);
+    const start = tail.getUint32(e + 16, true);
+    if (size === 0xffffffff || start === 0xffffffff || size > 64 * 1024 * 1024) return null;
+    const dir = new DataView(await file.slice(start, start + size).arrayBuffer());
+    const names = [];
+    for (let p = 0; p + 46 <= dir.byteLength && dir.getUint32(p, true) === 0x02014b50;) {
+      const n = dir.getUint16(p + 28, true);
+      names.push(new TextDecoder().decode(new Uint8Array(dir.buffer, p + 46, n)).toLowerCase());
+      p += 46 + n + dir.getUint16(p + 30, true) + dir.getUint16(p + 32, true);
+    }
+    return names.filter((x) => !x.includes('__macosx'));
+  } catch { return null; }
+}
+
+async function missingPolycamFiles(files) {
   const names = files.map((f) => f.name.toLowerCase());
-  const glb = names.some((n) => n.endsWith('.glb'));
-  const zip = names.some((n) => n.endsWith('.zip'));
-  const json = names.some((n) => n.endsWith('.json'));
-  const rawZip = names.some((n) => n.endsWith('.zip') && /image|raw|keyframe/.test(n));
-  if (!glb && !json && !rawZip) return [];            // photos, a .nammacap, or a GLTF .zip on its own: not this route
+  let packed = [];
+  for (const f of files.filter((x) => x.name.toLowerCase().endsWith('.zip'))) {
+    const inside = await zipNames(f);
+    if (!inside || inside.some((n) => n.endsWith('.zip'))) return [];   // unreadable here or a zip of zips: server decides
+    packed = packed.concat(inside);
+  }
+  const all = names.concat(packed);
+  const has = (file) => all.some((n) => n.split('/').pop() === file);
+  const glb = all.some((n) => n.endsWith('.glb'));
+  const raw = packed.some((n) => n.includes('keyframes/cameras/'));
+  if (!raw && !names.some((n) => n.endsWith('.glb') || n.endsWith('.json'))) return [];   // photos, .nammacap, GLTF .zip
   const missing = [];
-  if (!glb && !(zip && !rawZip)) missing.push('the 3D model (.glb) – without it nothing can be imported');
-  if (!zip) missing.push('the raw data .zip (photos, camera positions, LiDAR depth) – no capture report, no photoreal view');
-  if (!names.includes('mesh_info.json')) missing.push('mesh_info.json – the depth cannot be lined up with the model');
-  if (!names.includes('roomplan.json')) missing.push('roomplan.json – no walls, room size or surface coverage');
+  if (!glb) missing.push('the 3D model (.glb) – without it nothing can be imported');
+  if (!raw) missing.push('the raw data .zip (photos, camera positions, LiDAR depth) – no capture report, no photoreal view');
+  if (!has('mesh_info.json')) missing.push('mesh_info.json – the depth cannot be lined up with the model');
+  if (!has('roomplan.json')) missing.push('roomplan.json – no walls, room size or surface coverage');
   return missing;
 }
 
@@ -167,7 +195,7 @@ async function importPolycam(files) {
   const bar = $('#polycam-progress');
   if (!files.length) return;
   msg.className = 'small';
-  const missing = missingPolycamFiles(files);
+  const missing = await missingPolycamFiles(files);
   if (missing.length && !confirm(`This Polycam scan is missing:\n\n• ${missing.join('\n• ')}\n\n`
       + 'Drop all files from the same scan together. Import anyway?')) {
     msg.className = 'small callout warn';

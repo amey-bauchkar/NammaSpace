@@ -1,4 +1,4 @@
-"""Camera poses for a Polycam LiDAR scan (implementation_plan.md, Phase 2).
+﻿"""Camera poses for a Polycam LiDAR scan (implementation_plan.md, Phase 2).
 
 Starts from Polycam's corrected poses instead of solving camera placement from scratch (which misplaced a whole
 room on the NYC dataset), then refines them with COLMAP:
@@ -130,13 +130,30 @@ def _db_images(db):
     return {name: (int(iid), int(cid)) for iid, name, cid in rows}
 
 
-def _write_model(folder, cam, db_ids, poses):
-    """COLMAP text model with known poses and no points."""
+def _set_db_cameras(db, db_ids, intr):
+    """Give every image's camera in the COLMAP database its own known pinhole intrinsics (the phone's autofocus
+    changes the focal length by up to 3.5 % between photos; one shared camera would bend the solution)."""
+    con = sqlite3.connect(str(db))
+    try:
+        for k, c in intr.items():
+            _, cid = db_ids[f"{k}.jpg"]
+            params = np.array([c["fx"], c["fy"], c["cx"], c["cy"]], np.float64).tobytes()
+            con.execute("UPDATE cameras SET model=1, width=?, height=?, params=?, prior_focal_length=1 WHERE camera_id=?",
+                        (int(c["width"]), int(c["height"]), params, cid))
+        con.commit()
+    finally:
+        con.close()
+
+
+def _write_model(folder, intr, db_ids, poses):
+    """COLMAP text model with known poses and no points. intr: keyframe id -> intrinsics (one camera per photo)."""
     folder.mkdir(parents=True, exist_ok=True)
-    cids = sorted({c for _, c in db_ids.values()})
-    (folder / "cameras.txt").write_text("".join(
-        f"{c} PINHOLE {cam['width']} {cam['height']} {cam['fx']} {cam['fy']} {cam['cx']} {cam['cy']}\n" for c in cids),
-        encoding="utf-8")
+    cams = {}
+    for k in poses:
+        _, cid = db_ids[f"{k}.jpg"]
+        c = intr[k]
+        cams[cid] = f"{cid} PINHOLE {c['width']} {c['height']} {c['fx']} {c['fy']} {c['cx']} {c['cy']}\n"
+    (folder / "cameras.txt").write_text("".join(cams[c] for c in sorted(cams)), encoding="utf-8")
     lines = []
     for k, T in poses.items():
         iid, cid = db_ids[f"{k}.jpg"]
@@ -208,19 +225,17 @@ def refine(project_dir, *, progress=None, timeout_s=3600, cancel_file=None, keep
         progress("Writing the photos", 0.02)
         for k in ex.ids:
             (work / "images" / f"{k}.jpg").write_bytes(ex.photo_bytes(k))
-        cams = {json.dumps(ex.intrinsics(k), sort_keys=True) for k in ex.ids}
-        if len(cams) != 1:
-            raise pr.PolycamFormatError(f"expected one camera for all keyframes, found {len(cams)} intrinsics sets")
-        cam = json.loads(cams.pop())
+        has_corrected = ex.corrected
+        intr = {k: ex.intrinsics(k) for k in ex.ids}
         corrected = {k: ex.pose(k) for k in ex.ids}
 
         progress("Finding features (COLMAP)", 0.05)
         db = work / "database.db"
         run_step("poses_features", [colmap, "feature_extractor", "--database_path", db, "--image_path", work / "images",
-                                    "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera", 1,
-                                    "--ImageReader.camera_params", f"{cam['fx']},{cam['fy']},{cam['cx']},{cam['cy']}",
+                                    "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera", 0,
                                     "--FeatureExtraction.use_gpu", 1, "--SiftExtraction.max_num_features", MAX_FEATURES],
                  logs, **kw)
+        _set_db_cameras(db, _db_images(db), intr)                   # each photo's own known intrinsics
         progress("Matching chosen photo pairs (COLMAP)", 0.2)
         pairs, pair_stats = choose_pairs(ex)
         rep["pairs"] = pair_stats
@@ -230,7 +245,7 @@ def refine(project_dir, *, progress=None, timeout_s=3600, cancel_file=None, keep
                                     "--FeatureMatching.guided_matching", 1], logs, **kw)
 
         progress("Triangulating with Polycam's poses fixed (COLMAP)", 0.45)
-        _write_model(work / "known", cam, _db_images(db), corrected)
+        _write_model(work / "known", intr, _db_images(db), corrected)
         (work / "tri").mkdir()
         run_step("poses_triangulate", [colmap, "point_triangulator", "--database_path", db, "--image_path",
                                        work / "images", "--input_path", work / "known", "--output_path", work / "tri",
@@ -303,7 +318,7 @@ def refine(project_dir, *, progress=None, timeout_s=3600, cancel_file=None, keep
         model = out / "model"
         shutil.rmtree(model, ignore_errors=True)
         shutil.rmtree(work / "final", ignore_errors=True)
-        _write_model(work / "chosen", cam, _db_images(db), chosen)
+        _write_model(work / "chosen", intr, _db_images(db), chosen)
         (work / "final").mkdir()
         run_step("poses_final_triangulate", [colmap, "point_triangulator", "--database_path", db, "--image_path",
                                              work / "images", "--input_path", work / "chosen", "--output_path",
@@ -318,9 +333,9 @@ def refine(project_dir, *, progress=None, timeout_s=3600, cancel_file=None, keep
         rep["model"] = final_stats
 
     write_json(out / "poses.json", {
-        "frame": "polycam_corrected", "axes": "ARKit camera->world (+X right, +Y up, -Z view)", "source": rep["chosen"],
+        "frame": "polycam_corrected" if has_corrected else "arkit", "axes": "ARKit camera->world (+X right, +Y up, -Z view)", "source": rep["chosen"],
         "glb_from_frame": glb_from_frame.tolist() if glb_from_frame is not None else None,
-        "intrinsics": cam, "images": "corrected_images", "depth": "corrected_depth .Clean",
+        "intrinsics": intr, "images": "corrected_images" if has_corrected else "images", "depth": "corrected_depth .Clean" if has_corrected else "depth",
         "poses": {k: np.round(T, 9).tolist() for k, T in chosen.items()}})
     rep["seconds"] = round(time.time() - t0, 1)
     write_json(out / "report.json", rep)

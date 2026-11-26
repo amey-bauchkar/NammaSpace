@@ -122,7 +122,12 @@ def prepare(project_dir, work, *, photos="corrected", poses="chosen", start="lid
         held = holdout_ids(ids, holdout_every)
         train = [k for k in ids if k not in set(held)]
         doc = load_poses(d)
-        if poses == "chosen":
+        if isinstance(poses, dict):                            # explicit poses (experiments): id -> 4x4 ARKit c2w
+            P = {k: np.asarray(v, float) for k, v in poses.items()}
+            missing = [k for k in ids if k not in P]
+            if missing:
+                raise ValueError(f"{len(missing)} keyframes have no pose")
+        elif poses == "chosen":
             if doc is None:
                 raise FileNotFoundError("capture/poses/poses.json missing: run namma.capture.polycam_poses first")
             P = doc["poses"]
@@ -163,7 +168,7 @@ def prepare(project_dir, work, *, photos="corrected", poses="chosen", start="lid
         if depth:
             write_depth_maps(ex, train, work / "depth", raw=(photos == "raw"))
         (work / "holdout.txt").write_text("\n".join(f"{k}.jpg" for k in held) + "\n", encoding="utf-8")
-    return {"photos": photos, "poses": poses, "start": start, "depth": depth, "keyframes": len(ids),
+    return {"photos": photos, "poses": "explicit" if isinstance(poses, dict) else poses, "start": start, "depth": depth, "keyframes": len(ids),
             "train": len(train), "held_out": len(held), "start_points": int(len(Ps)),
             "glb_from_frame": (doc["glb_from_frame"].tolist() if doc is not None and poses == "chosen"
                                and doc.get("glb_from_frame") is not None else None)}
@@ -207,6 +212,38 @@ def glb_from_poses(project_dir, poses, *, cancel_file=None, progress=None):
 # -0.2 dB on held-out photos (scripts/qa/lidar_splat_ablation.py runs I-K, docs/polycam_lidar/phase3_results.md)
 DEPTH_WEIGHT = 1.0
 
+# Large scans (a whole home): each photo sees a small part, so penalising every splat each step faded the unseen
+# ones (1501 photos, 30,000 steps: 9 % within 5 cm of the model; 41 % after 7,000 steps with visible-only).
+LARGE_SCAN_PHOTOS = 600
+
+# Large scans use the "dense" recipe (splat_journal.md, 2026-11-26: the MCMC growth blurred every earlier model):
+# COLMAP-refined camera positions, a start point for every 1.4 cm of LiDAR surface, gsplat's splitting growth up to
+# DENSE_CAP splats, no fading penalty. On a 6 GB card 2.6 M splats used 3.9 GB (570 photos, 40k steps, 102 min).
+# splat_options.lidar_recipe: "dense" | "mcmc" forces one or the other.
+DENSE_VOXEL_M = 0.014
+DENSE_SEEDS = 1_500_000
+DENSE_CAP = 2_000_000
+
+
+def dense_steps(photos):
+    return int(min(40_000, max(20_000, 30 * photos)))
+
+
+def use_dense(project_dir, photos):
+    forced = lidar_options(project_dir).get("lidar_recipe")
+    return forced == "dense" if forced in ("dense", "mcmc") else photos > LARGE_SCAN_PHOTOS
+
+
+def dense_start(lidar_in):
+    """Replace the start points with the dense LiDAR ones (scripts/splat/dense_seed.py) -> their number."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts" / "splat"))
+    import dense_seed
+    P, C = dense_seed.dense_points(lidar_in / "model", lidar_in / "images", lidar_in / "depth", voxel=DENSE_VOXEL_M,
+                                   max_points=DENSE_SEEDS)
+    dense_seed.write_points(lidar_in / "model" / "points3D.txt", P, C)
+    return len(P)
+
 # Training resolution.
 # Namma Capture photos (4032x3024) are trained at FULL resolution: train_splat.py --full-res-crops trains on whole
 # photos at 1024 px for the first 30 % of the steps (shape), then on random 1024x1024 windows of the full-resolution
@@ -219,6 +256,7 @@ DEPTH_WEIGHT = 1.0
 #   lidar_full_res: "auto" | true | false     lidar_crop_size: 1024     lidar_iters: N
 #   lidar_max_side: N  (photo size when not training at full resolution / for the coarse phase)
 #   lidar_cap: N       (maximum splats; 600,000 is the measured-safe value on the 6 GB card)
+#   lidar_poses: arkit (phone tracking, default) | fine_tuned (nudged by COLMAP) | photo_only (full COLMAP solve)
 FULL_RES_MIN_SIDE = 1920
 FULL_RES_PASSES = 12.0
 
@@ -283,6 +321,7 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     from namma.studio.pipeline import RunContext
     from namma.studio.splat_align import align_splat_to_mesh
     from namma.studio.splat_claude import MIN_SPLAT_OPACITY, MIN_WITHIN_5CM, SplatError, available
+    from namma.studio.splat_large import ALIGN_SAMPLES_PER_M2
     from namma.studio.splat_spz import ply_to_spz
 
     progress = progress or (lambda *_: None)
@@ -299,20 +338,52 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     work.mkdir(parents=True, exist_ok=True)
 
     # 1. camera poses and where their frame sits in the model (Polycam's GLB frame)
+    poses_src, recipe = lidar_options(pdir).get("lidar_poses", RECIPE["poses"]), dict(RECIPE)
+    zp = rpt.find_raw_zip(pdir)
+    if zp is None:
+        raise SplatError("no Polycam LiDAR raw export with this project")
+    with pr.PolycamExport(zp) as ex:
+        dense = use_dense(pdir, len(ex.ids))
+    if dense and "lidar_poses" not in lidar_options(pdir):
+        poses_src = "fine_tuned"                           # a home-sized scan drifts a few cm: refine the positions
     try:
-        T0 = glb_from_poses(pdir, RECIPE["poses"], cancel_file=cancel_file,
-                            progress=lambda lbl, f: progress(lbl, 0.01 + 0.09 * f))
+        if poses_src == "fine_tuned":                         # phone poses nudged by COLMAP (polycam_poses.refine)
+            if load_poses(pdir) is None:
+                glb_from_poses(pdir, "chosen", cancel_file=cancel_file,
+                               progress=lambda lbl, f: progress(lbl, 0.01 + 0.09 * f))
+            T0 = load_poses(pdir).get("glb_from_frame")           # Polycam's corrected frame; no re-fit stored ->
+            T0 = np.asarray(T0, float) if T0 is not None else glb_from_poses(pdir, "corrected")  # mesh_info's
+            recipe["poses"] = {k: v for k, v in load_poses(pdir)["poses"].items()}
+        elif poses_src == "photo_only":                       # full COLMAP solve, in the ARKit frame
+            sfm = pdir / "capture" / "sfm_experiment" / "poses.json"
+            if not sfm.exists():
+                raise FileNotFoundError("capture/sfm_experiment/poses.json missing: run scripts/qa/sfm_poses_experiment.py")
+            T0 = glb_from_poses(pdir, "arkit")
+            solved = load_strict(sfm)["poses"]
+            with pr.PolycamExport(rpt.find_raw_zip(pdir)) as ex:   # unregistered photos keep the phone's pose
+                recipe["poses"] = {k: np.array(solved[k], float) if k in solved else ex.raw_pose(k) for k in ex.ids}
+        else:
+            T0 = glb_from_poses(pdir, poses_src, cancel_file=cancel_file,
+                                progress=lambda lbl, f: progress(lbl, 0.01 + 0.09 * f))
+            recipe["poses"] = poses_src
     except (FileNotFoundError, pr.PolycamFormatError) as e:
         raise SplatError(f"{e}. Import the scan again with all its files (.glb, raw .zip, mesh_info.json).") from e
-    poses_src = RECIPE["poses"]
 
     # 2. inputs
     progress("Preparing photos, LiDAR depth and start points", 0.10)
     lidar_in = work / "lidar_input"
-    prep = prepare(pdir, lidar_in, holdout_every=0, **RECIPE)
+    prep = prepare(pdir, lidar_in, holdout_every=0, **recipe)
     ply = work / "room.ply"
+    if dense:
+        progress("Placing the start points from every LiDAR reading", 0.11)
+        prep["start_points"] = dense_start(lidar_in)
+        iters, cap = dense_steps(prep["train"]), int(lidar_options(pdir).get("lidar_cap", DENSE_CAP))
+        timeout_s = max(timeout_s, 5 * 3600)
     plan = lidar_training_plan(pdir, lidar_in / "images", iters=iters, max_side=max_side, cap=cap)
     iters, max_side, cap = plan["iters"], plan["max_side"], plan["cap"]
+    if dense:
+        iters, cap = int(lidar_options(pdir).get("lidar_iters", dense_steps(prep["train"]))), \
+            int(lidar_options(pdir).get("lidar_cap", DENSE_CAP))
 
     # 3. training
     label = (f"Training the photoreal view ({prep['train']} photos at FULL resolution "
@@ -326,16 +397,20 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
         if m:
             progress(label, 0.12 + 0.80 * int(m.group(1)) / int(m.group(2)))
     try:
+        large = ["--reg-visible"] if prep["train"] > LARGE_SCAN_PHOTOS else []
+        if dense:
+            large = ["--strategy", "default", "--opacity-reg", "0", "--scale-reg", "0", "--sparse-cams"]
         run_step("splat_train", train_argv(lidar_in, ply, iters=iters, max_side=max_side, cap=cap,
                                            depth=RECIPE["depth"], depth_weight=depth_weight, holdout=False,
-                                           full_res=plan["full_res"], crop_size=plan["crop_size"]),
+                                           full_res=plan["full_res"], crop_size=plan["crop_size"]) + large,
                  logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
     except StepFailed as e:
         raise SplatError(str(e)) from e
 
     # 4. line-up: known transform, checked / fine-tuned by ICP against the imported model
     progress("Lining it up with the 3D model", 0.93)
-    T, fit = align_splat_to_mesh(ply, glb, init_T=T0)
+    # samples by area: a fixed 200 k are 6 cm apart on a 650 m2 home and read a 47 % fit as 33 %
+    T, fit = align_splat_to_mesh(ply, glb, init_T=T0, samples_per_m2=ALIGN_SAMPLES_PER_M2)
     moved = float(np.linalg.norm(T[:3, 3] - T0[:3, 3]))
     write_json(work / "align.json", {"T_mesh_from_splat": T.tolist(), "fit": fit, "T_from_poses": T0.tolist(),
                                      "icp_shift_m": round(moved, 4)})
@@ -351,7 +426,7 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     write_json(tex / "splat.json", {
         "file": "splat.spz", "T_mesh_from_splat": T.tolist(), "splats": spz["splats_out"], "compression": spz,
         "fit": fit, "created_at": timefmt.now_iso(), "poses": f"Polycam LiDAR scan, {poses_src} poses",
-        "method": (f"3D Gaussian splat (gsplat, MCMC, {train['iters']} steps, pose and colour correction"
+        "method": (f"3D Gaussian splat (gsplat, {'dense LiDAR start' if dense else 'MCMC'}, {train['iters']} steps, pose and colour correction"
                    f"{', LiDAR depth guide' if RECIPE['depth'] else ''}, LiDAR start points) from {prep['train']} "
                    f"Polycam {RECIPE['photos']} keyframes; placed on the model with Polycam's alignment transform, "
                    "checked by ICP"),

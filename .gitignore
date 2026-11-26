@@ -105,3 +105,6 @@ precapture_qa/**/*.png
 scratch/
 submission_round2/
 
+
+# Kaggle uploads: photos of a home, never committed
+kaggle/

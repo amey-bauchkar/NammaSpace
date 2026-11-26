@@ -9,7 +9,8 @@ Files are recognised by CONTENT, not by name:
   - mesh: a .glb, or a .zip holding exactly one .glb (Polycam "GLTF" export)  -> namma.studio.mesh_import
   - raw:  a .zip with keyframes/cameras/*.json (Polycam "Images" export: photos, poses, depth) -> kept with the project
           (capture/originals/) for later use; its summary is written to capture/polycam_raw.json
-  - sidecar: mesh_info.json / roomplan.json / optimized_roomplan.json from the same Polycam scan (by name)
+  - sidecar: mesh_info.json / roomplan.json / optimized_roomplan.json from the same Polycam scan (by name),
+          dropped loose or packed inside one of the zips
           -> kept with the project; the capture report needs mesh_info.json to line the depth up with the model
 Exactly one mesh is needed. The originals are copied into the project unchanged.
 """
@@ -65,10 +66,12 @@ def classify(path):
     glbs = [n for n in names if n.lower().endswith(".glb")]
     cams = [n for n in names if "/cameras/" in n and n.endswith(".json")]
     if len(glbs) == 1:
-        return "mesh", {"glb": glbs[0]}
+        return "mesh", {"glb": glbs[0], **({"keyframes": len(cams)} if cams else {})}
     if cams:
         folders = Counter(n.rsplit("/", 2)[-2] for n in names if n.count("/") >= 2)
         return "raw", {"keyframes": len(cams), "folders": dict(folders)}
+    if any(n.lower().endswith(".zip") for n in names):
+        return "bundle", {"zip": path.name}                       # unpacked by unpack_bundle when importing
     if any(n.lower().endswith(".gltf") for n in names):
         raise BridgeError(415, "POLYCAM-GLTF-FILES", f"{path.name}: a .gltf with separate files; choose GLTF/GLB export "
                                                      "so Polycam packs one .glb")
@@ -76,6 +79,68 @@ def classify(path):
     if photos:
         return "photos", {"photos": len(photos), "zip": path.name}
     raise BridgeError(415, "POLYCAM-UNKNOWN", f"{path.name}: no .glb model and no Polycam keyframes inside")
+
+
+def _visible(z):
+    return [i for i in z.infolist() if not i.is_dir() and "__MACOSX" not in i.filename
+            and not Path(i.filename).name.startswith(".")]
+
+
+def unpack_bundle(d, files):
+    """A .zip that only wraps the scan's own files (.zip / .glb): put those beside it in the staging folder and drop
+    the wrapper. One level; every other zip is left as it is. -> the files to import."""
+    from namma.studio.projects import safe_filename
+    out = []
+    for p in files:
+        if p.suffix.lower() != ".zip" or not zipfile.is_zipfile(p):
+            out.append(p)
+            continue
+        with zipfile.ZipFile(p) as z:
+            inner = _visible(z)
+            zips = [i for i in inner if i.filename.lower().endswith(".zip")]
+            if not zips or any("keyframes/" in i.filename for i in inner):
+                out.append(p)
+                continue
+            take = zips + [i for i in inner if i.filename.lower().endswith(".glb")
+                           or Path(i.filename).name.lower() in SIDECARS]
+            if len(take) > MAX_FILES:
+                raise BridgeError(409, "IMPORT-FILES", f"{p.name}: at most {MAX_FILES} files per import")
+            for i in take:
+                name = safe_filename(Path(i.filename).name)
+                limit = SIDECAR_MAX_BYTES if name.lower().endswith(".json") else MAX_FILE_BYTES
+                if i.file_size > limit:
+                    raise BridgeError(413, "IMPORT-SIZE", f"{name}: larger than {limit / 2**30:g} GB")
+                if shutil.disk_usage(d).free < i.file_size + 2 * 2**30:
+                    raise BridgeError(507, "DISK", "not enough free disk space on the computer")
+                t = d / name
+                if t.exists():                                    # a file dropped loose (or seen first) wins
+                    continue
+                with z.open(i) as src, open(t, "wb") as dst:
+                    shutil.copyfileobj(src, dst, 1 << 20)
+                out.append(t)
+        p.unlink()
+    return sorted(set(out))
+
+
+def zip_sidecars(path):
+    """{name: bytes} of the mesh_info / roomplan files inside an uploaded zip (the outermost one of each name)."""
+    if not zipfile.is_zipfile(path):
+        return {}
+    out = {}
+    with zipfile.ZipFile(path) as z:
+        for i in sorted(_visible(z), key=lambda i: i.filename.count("/")):
+            name = Path(i.filename).name.lower()
+            if name not in SIDECARS or name in out or "keyframes/" in i.filename:
+                continue
+            if i.file_size > SIDECAR_MAX_BYTES:
+                raise BridgeError(413, "IMPORT-SIZE", f"{name} in {Path(path).name}: too large")
+            data = z.read(i)
+            try:
+                json.loads(data)
+            except (ValueError, UnicodeDecodeError) as e:
+                raise BridgeError(415, "POLYCAM-SIDECAR", f"{name} in {Path(path).name}: not valid JSON ({e})") from e
+            out[name] = data
+    return out
 
 
 def _is_lidar_export(path):
@@ -172,15 +237,18 @@ class PolycamStaging:
                 raise BridgeError(e.status, e.code, str(e)) from e
             shutil.rmtree(d, ignore_errors=True)
             return res
+        files = unpack_bundle(d, files)
         kinds = [(p, *classify(p)) for p in files]
         meshes = [k for k in kinds if k[1] == "mesh"]
         raws = [k for k in kinds if k[1] == "raw"]
+        raws += [k for k in meshes if k[2].get("keyframes")]      # model and raw data in one zip
         photos = [k for k in kinds if k[1] == "photos"]
         sidecars = [k for k in kinds if k[1] == "sidecar"]
 
         # Case 1: Polycam / 3D scan with exactly one mesh
         if len(meshes) == 1:
             raw_info = [raw_summary(p) for p, _, _ in raws]
+            zipped = [(p, zip_sidecars(p)) for p in dict.fromkeys(k[0] for k in raws + meshes)]
             device = next((r["device"] for r in raw_info if r["device"]), None) or "iPhone"
             title = " ".join(str(title or "").split())[:80] or f"3D scan {time.strftime('%Y-%m-%d %H:%M')}"
             lidar = any(_is_lidar_export(p) for p, _, _ in raws)
@@ -197,16 +265,13 @@ class PolycamStaging:
                 shutil.copy2(p, pdir / "capture" / "originals" / p.name)
             for p, _, info in sidecars:                           # mesh_info / roomplan: same scan, fixed names
                 shutil.copy2(p, pdir / "capture" / "originals" / info["file"])
-            if not any(i["file"] == "mesh_info.json" for _, _, i in sidecars):
-                # Namma Capture's raw export carries mesh_info.json at the top of the zip (Polycam ships it separately)
-                for p, _, _ in raws:
-                    with zipfile.ZipFile(p) as z:
-                        if "mesh_info.json" in z.namelist():
-                            data = z.read("mesh_info.json")
-                            json.loads(data)                          # must be JSON, like an uploaded sidecar
-                            (pdir / "capture" / "originals" / "mesh_info.json").write_bytes(data)
-                            sidecars.append((p, "sidecar", {"file": "mesh_info.json"}))
-                            break
+            have = {i["file"] for _, _, i in sidecars}
+            for p, inside in zipped:                              # the same files packed inside the uploaded zips
+                for name, data in inside.items():
+                    if name not in have:
+                        (pdir / "capture" / "originals" / name).write_bytes(data)
+                        have.add(name)
+                        sidecars.append((p, "sidecar", {"file": name}))
             write_json(pdir / "capture" / "polycam_import.json", {
                 "imported_at": timefmt.now_iso(), "mesh": {"file": meshes[0][0].name, **meshes[0][2]}, "raw": raw_info,
                 "sidecars": sorted(i["file"] for _, _, i in sidecars), "device": device, "lidar": lidar})
