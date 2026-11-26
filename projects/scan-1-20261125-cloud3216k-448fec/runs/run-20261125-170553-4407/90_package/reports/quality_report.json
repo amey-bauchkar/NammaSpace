@@ -1,0 +1,116 @@
+{
+ "verdict": "usable_with_warnings",
+ "warnings": [
+  {
+   "code": "IMPORTED-MESH",
+   "severity": "warning",
+   "message": "Geometry and textures were made by 3D Scan, not by Namma Space; Namma Space only measured them. Holes, merged furniture and texture seams are the app's."
+  },
+  {
+   "code": "EYE-HEIGHT-ASSUMED",
+   "severity": "info",
+   "message": "Walking eye height is an assumed 1.6 m (the export has no camera heights)."
+  },
+  {
+   "code": "NO-PHOTO-VIEWPOINTS",
+   "severity": "info",
+   "message": "The export has no photo positions, so 'jump to photo viewpoint' is unavailable."
+  },
+  {
+   "code": "LARGE-OPEN-AREAS",
+   "severity": "info",
+   "cause": "capture",
+   "message": "18 large opening(s) in the scan (largest outline 56.7 m) are left open, not invented. Recapture: walk slowly along that wall / floor area and point the phone at it from 1-2 m."
+  }
+ ],
+ "facts": {
+  "source": "imported_mesh",
+  "app": "3D Scan",
+  "device": "iPhone 17 Pro",
+  "file": "gltf1.zip",
+  "glb": "25_11_2026.glb",
+  "mesh_faces": 708126,
+  "mesh_vertices": 455559,
+  "textures": [
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    4096
+   ],
+   [
+    4096,
+    3168
+   ]
+  ],
+  "surface_area_m2": 1176.82,
+  "extent_m_p1_p99": [
+   15.749,
+   2.794,
+   17.39
+  ],
+  "floor_detected": true,
+  "floor_coverage": 0.8411,
+  "scale_status": "device_tracking",
+  "fragments_removed": 1214,
+  "fragments_removed_area_m2": 46.578,
+  "lods": 2,
+  "model_health": {
+   "mesh_before_repair": {
+    "triangles": 528764,
+    "degenerate_faces": 1,
+    "non_manifold_edges": 0,
+    "boundary_edges": 19465,
+    "flipped_edge_share": 0.0,
+    "holes": 592,
+    "largest_hole_perimeter_m": 56.725,
+    "large_holes": 10,
+    "hole_perimeter_total_m": 834.499,
+    "open_boundary_m": 0.0
+   },
+   "mesh": {
+    "triangles": 708126,
+    "degenerate_faces": 5,
+    "non_manifold_edges": 74,
+    "boundary_edges": 14107,
+    "flipped_edge_share": 0.0037,
+    "holes": 133,
+    "largest_hole_perimeter_m": 56.725,
+    "large_holes": 18,
+    "hole_perimeter_total_m": 696.556,
+    "open_boundary_m": 0.0
+   },
+   "texture": {
+    "texels_per_m": 258.8,
+    "texels_per_m_p10": 109.9,
+    "textured_area_m2": 639.1
+   },
+   "floor_tilt_deg": 0.239,
+   "mirror_suggestions": []
+  }
+ },
+ "thresholds": {},
+ "created_at": "2026-11-25T17:06:00+05:30"
+}

@@ -1,0 +1,393 @@
+{
+ "contract": "IF-13",
+ "contract_version": "1.3.0",
+ "package_id": "pkg-kitchen-namma-capture-textured-mesh-20261124-8f2ff7-run-20261124-031453-eddd",
+ "project": {
+  "project_id": "kitchen-namma-capture-textured-mesh-20261124-8f2ff7",
+  "title": "Kitchen - Namma Capture (textured mesh)"
+ },
+ "run_id": "run-20261124-031453-eddd",
+ "created_at": "2026-11-24T04:38:24+05:30",
+ "model_frame": {
+  "frame_id": "model:run-20261124-031453-eddd",
+  "units": "model",
+  "handedness": "right",
+  "up_axis": "+Y",
+  "floor_detected": true,
+  "up_source": "floor_plane",
+  "datum": "origin on the floor plane below the centroid of the capture cameras; +X along the principal horizontal axis of the floor; units = reconstruction units"
+ },
+ "scale": {
+  "status": "device_tracking",
+  "metres_per_unit": 1.0,
+  "relative_uncertainty": null,
+  "method": "3D Scan export (iPhone18,1); units metres from the phone's motion tracking, not verified by Namma Space",
+  "evaluation_only": false
+ },
+ "appearance": {
+  "representation": "textured_mesh",
+  "to_model": {
+   "matrix_row_major": [
+    -0.9994326695065204,
+    0.0,
+    -0.03367995135196103,
+    -0.8026822738262815,
+    0.0,
+    1.0,
+    0.0,
+    1.768812326383297,
+    0.03367995135196103,
+    0.0,
+    -0.9994326695065204,
+    -0.2261684012475222,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "method": "rigid SfM -> model frame (floor plane / camera orientation), see 70_frame/frame.json"
+  },
+  "lods": [
+   {
+    "lod": 0,
+    "path": "scene/lod0.glb",
+    "format": "glb",
+    "bytes": 102724480,
+    "sha256": "a68e4436b3762cedc5f2a1bdff0152f105048ba812be979164c61484785fe5fc",
+    "faces": 432348
+   },
+   {
+    "lod": 1,
+    "path": "scene/lod1.glb",
+    "format": "glb",
+    "bytes": 86927212,
+    "sha256": "f33cdda8581afa8160344585a111ad7bfbe2662750c67bb89cabce5698ca9b2c",
+    "faces": 432348
+   }
+  ],
+  "splat": {
+   "path": "scene/splat.spz",
+   "format": "spz",
+   "bytes": 5505628,
+   "sha256": "a58910c4c842590c0995546c682a56779a12a5aa9f41a53369d01feafb99bc00",
+   "splats": 232118,
+   "method": "3D Gaussian splat (gsplat, MCMC, 57608 steps, pose and colour correction, LiDAR depth guide, LiDAR start points) from 289 Polycam raw keyframes; placed on the model with Polycam's alignment transform, checked by ICP",
+   "to_model": {
+    "matrix_row_major": [
+     -0.9994889088694091,
+     0.0014745518579875791,
+     -0.031933473720389245,
+     -0.8185080356278986,
+     0.0015548359036392345,
+     0.9999956926347301,
+     -0.0024894170594359547,
+     1.7657549106290094,
+     0.03192966539670379,
+     -0.002537796051924331,
+     -0.9994868963917701,
+     -0.2322266402269918,
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "method": "splat frame -> mesh frame (fitted, see fit) -> model frame (as the mesh)",
+    "fit": {
+     "solid_splats": 30337,
+     "used": 30337,
+     "mesh_samples": 200000,
+     "yaw_deg": -0.1,
+     "tilt_deg": 0.17,
+     "scale": 1.0,
+     "within_2cm": 0.376,
+     "within_5cm": 0.706,
+     "median_m": 0.0278,
+     "regional_discrepancy": {
+      "grid_bins": 4,
+      "minimum_points": 50,
+      "bounds_xz": [
+       [
+        -7.381382387281191,
+        -6.09478646844813
+       ],
+       [
+        5.897488923990976,
+        1.2422940669194762
+       ]
+      ],
+      "cells": [
+       {
+        "cell_xz": [
+         0,
+         0
+        ],
+        "points": 0,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         0,
+         1
+        ],
+        "points": 1,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         0,
+         2
+        ],
+        "points": 516,
+        "status": "sampled",
+        "median_scene_units": 0.07090553596416338,
+        "p90_scene_units": 0.3266742922243081
+       },
+       {
+        "cell_xz": [
+         0,
+         3
+        ],
+        "points": 657,
+        "status": "sampled",
+        "median_scene_units": 0.04872921307179649,
+        "p90_scene_units": 0.20149632454191024
+       },
+       {
+        "cell_xz": [
+         1,
+         0
+        ],
+        "points": 0,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         1,
+         1
+        ],
+        "points": 1,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         1,
+         2
+        ],
+        "points": 8716,
+        "status": "sampled",
+        "median_scene_units": 0.02654044273775196,
+        "p90_scene_units": 0.23198085335000596
+       },
+       {
+        "cell_xz": [
+         1,
+         3
+        ],
+        "points": 10105,
+        "status": "sampled",
+        "median_scene_units": 0.027212498435866626,
+        "p90_scene_units": 0.128429330921891
+       },
+       {
+        "cell_xz": [
+         2,
+         0
+        ],
+        "points": 0,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         2,
+         1
+        ],
+        "points": 3,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         2,
+         2
+        ],
+        "points": 2127,
+        "status": "sampled",
+        "median_scene_units": 0.02584244392423366,
+        "p90_scene_units": 0.06233964392124103
+       },
+       {
+        "cell_xz": [
+         2,
+         3
+        ],
+        "points": 8206,
+        "status": "sampled",
+        "median_scene_units": 0.027578077735506502,
+        "p90_scene_units": 0.09091203304834958
+       },
+       {
+        "cell_xz": [
+         3,
+         0
+        ],
+        "points": 1,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         3,
+         1
+        ],
+        "points": 0,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         3,
+         2
+        ],
+        "points": 1,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       },
+       {
+        "cell_xz": [
+         3,
+         3
+        ],
+        "points": 3,
+        "status": "insufficient_samples",
+        "median_scene_units": null,
+        "p90_scene_units": null
+       }
+      ],
+      "limitation": "Fit residuals against sampled imported mesh, not independent accuracy. Grid cells are not identified rooms. Unsampled areas and baked-in repairs are unknown. Scene units depend on imported scale; distances include mesh sampling error."
+     }
+    }
+   }
+  }
+ },
+ "eye_height_units": 1.6,
+ "bounds": {
+  "min": [
+   -1.7388104731918994,
+   -0.006600393148792274,
+   -1.1844791934057175
+  ],
+  "max": [
+   3.6252756212516686,
+   2.773789780014262,
+   1.0999083915704386
+  ]
+ },
+ "start_view": {
+  "position": [
+   -0.6892,
+   1.6,
+   -0.271
+  ],
+  "target": [
+   0.8801,
+   1.52,
+   0.0411
+  ],
+  "source": "imported mesh: floor spot with the most clearance, looking along the longest free line"
+ },
+ "cameras": "views/cameras.json",
+ "roam": "nav/roam_grid.json",
+ "navigation": {
+  "status": "unverified",
+  "geometry": "nav/geometry.if04.json",
+  "scale_basis": "device_tracking",
+  "metres_per_unit": 1.0,
+  "note": "Automatic floor / obstacle map from the reconstruction. NOT verified: unobserved floor is treated as blocked, missing obstacles cannot be detected without a reference, and the scale comes from device_tracking.",
+  "route_grid": "nav/route_grid.json"
+ },
+ "pois": "poi/pois.json",
+ "quality": {
+  "verdict": "usable_with_warnings",
+  "report": "reports/quality_report.json",
+  "capture_report": "reports/capture_report.json",
+  "warnings": [
+   "IMPORTED-MESH",
+   "EYE-HEIGHT-ASSUMED",
+   "NO-PHOTO-VIEWPOINTS",
+   "LARGE-OPEN-AREAS",
+   "NON-MANIFOLD",
+   "MIRROR-SUSPECTED"
+  ]
+ },
+ "notices": [
+  "3D scan (iPhone18,1, LiDAR)",
+  "Scale from the capture device's tracking (3D Scan export (iPhone18,1); units metres from the phone's motion tracking, not verified by Namma Space); not checked against a measured length - use 'Set scale' in the viewer with one known distance to verify it.",
+  "Reconstruction quality: usable with warnings (1 warnings)."
+ ],
+ "files": [
+  {
+   "path": "nav/geometry.if04.json",
+   "sha256": "301f25ab5b498b00853a0de2ab612473b3a48c6ea48162d1a75455ff52b30b00",
+   "bytes": 23560
+  },
+  {
+   "path": "nav/roam_grid.json",
+   "sha256": "3240c99b516ca2af6146e001e587a19b1cf8f5cb989792527fac5f33f9d643b4",
+   "bytes": 2905
+  },
+  {
+   "path": "nav/route_grid.json",
+   "sha256": "9fd69d82d67e285e36572f9df0208c08881da2b18ac6cb3f1f680781a2072b19",
+   "bytes": 1371
+  },
+  {
+   "path": "poi/pois.json",
+   "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+   "bytes": 3
+  },
+  {
+   "path": "reports/capture_report.json",
+   "sha256": "5c0242647d76c97a7935126d9b0e2f6dbf86ac3f5de310393de8cfcbfb5712b9",
+   "bytes": 205
+  },
+  {
+   "path": "reports/quality_report.json",
+   "sha256": "22b317107a4c65a9212cdfe364af9350cbeba7e8aec8095f8a0298da251cce4d",
+   "bytes": 3479
+  },
+  {
+   "path": "scene/lod0.glb",
+   "sha256": "a68e4436b3762cedc5f2a1bdff0152f105048ba812be979164c61484785fe5fc",
+   "bytes": 102724480
+  },
+  {
+   "path": "scene/lod1.glb",
+   "sha256": "f33cdda8581afa8160344585a111ad7bfbe2662750c67bb89cabce5698ca9b2c",
+   "bytes": 86927212
+  },
+  {
+   "path": "scene/splat.spz",
+   "sha256": "a58910c4c842590c0995546c682a56779a12a5aa9f41a53369d01feafb99bc00",
+   "bytes": 5505628
+  },
+  {
+   "path": "views/cameras.json",
+   "sha256": "ab2013851c2ebd8167e6dd93cb141c9b1a1984d6ebcc9e3fd3a0db8f89dac731",
+   "bytes": 19
+  }
+ ]
+}

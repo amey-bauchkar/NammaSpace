@@ -6,3 +6,7 @@ phase8_artifacts/** -text
 # published packages and project data: byte-exact hashes checked by the web viewer
 projects/** -text
 projects/testing-room-20261123-40dd72/**/scene/*.glb filter=lfs diff=lfs merge=lfs -text
+
+# Published scan meshes and splats
+projects/scan-*/runs/*/90_package/scene/* filter=lfs diff=lfs merge=lfs -text
+projects/kitchen-*/runs/*/90_package/scene/* filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,16 @@
+{
+ "project_id": "kitchen-namma-capture-textured-mesh-20261124-8f2ff7",
+ "title": "Kitchen - Namma Capture (textured mesh)",
+ "created_at": "2026-11-24T03:14:53+05:30",
+ "notices": [
+  "3D scan (iPhone18,1, LiDAR)"
+ ],
+ "runs": [
+  {
+   "run_id": "run-20261124-031453-eddd",
+   "profile": "import",
+   "created_at": "2026-11-24T03:14:53+05:30",
+   "config_sha256": "75d3932ff53d08167af230003f2f8026783dea273ef2f577d55c1258febcf278"
+  }
+ ]
+}

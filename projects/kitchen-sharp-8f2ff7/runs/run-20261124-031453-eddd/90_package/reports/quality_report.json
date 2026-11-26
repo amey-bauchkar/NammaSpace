@@ -1,0 +1,145 @@
+{
+ "verdict": "usable_with_warnings",
+ "warnings": [
+  {
+   "code": "IMPORTED-MESH",
+   "severity": "warning",
+   "message": "Geometry and textures were made by 3D Scan, not by Namma Space; Namma Space only measured them. Holes, merged furniture and texture seams are the app's."
+  },
+  {
+   "code": "EYE-HEIGHT-ASSUMED",
+   "severity": "info",
+   "message": "Walking eye height is an assumed 1.6 m (the export has no camera heights)."
+  },
+  {
+   "code": "NO-PHOTO-VIEWPOINTS",
+   "severity": "info",
+   "message": "The export has no photo positions, so 'jump to photo viewpoint' is unavailable."
+  },
+  {
+   "code": "LARGE-OPEN-AREAS",
+   "severity": "info",
+   "cause": "capture",
+   "message": "9 large opening(s) in the scan (largest outline 42.0 m) are left open, not invented. Recapture: walk slowly along that wall / floor area and point the phone at it from 1-2 m."
+  },
+  {
+   "code": "NON-MANIFOLD",
+   "severity": "info",
+   "cause": "capture",
+   "message": "533 edges are shared by more than two triangles (overlapping scan layers). Usually invisible; walking maps are not affected."
+  },
+  {
+   "code": "MIRROR-SUSPECTED",
+   "severity": "info",
+   "cause": "capture",
+   "message": "1 area(s) of surface lie behind a wall - a mirror (reflected room) or a real window / door. If it is a mirror, mark it in the viewer ('Mark a mirror') and apply: nothing is changed automatically."
+  }
+ ],
+ "facts": {
+  "source": "imported_mesh",
+  "app": "3D Scan",
+  "device": "iPhone18,1",
+  "file": "Kitchen-fused-LiDAR-mesh-gltf.zip",
+  "glb": "kitchen-fused.glb",
+  "mesh_faces": 432348,
+  "mesh_vertices": 3684346,
+  "textures": [
+   [
+    4096,
+    3288
+   ],
+   [
+    4096,
+    3288
+   ],
+   [
+    4096,
+    3036
+   ]
+  ],
+  "surface_area_m2": 91.52,
+  "extent_m_p1_p99": [
+   5.364,
+   2.78,
+   2.284
+  ],
+  "floor_detected": true,
+  "floor_coverage": 0.5007,
+  "scale_status": "device_tracking",
+  "fragments_removed": 38,
+  "fragments_removed_area_m2": 0.451,
+  "lods": 2,
+  "model_health": {
+   "mesh_before_repair": {
+    "triangles": 401435,
+    "degenerate_faces": 7268,
+    "non_manifold_edges": 109,
+    "boundary_edges": 22481,
+    "flipped_edge_share": 0.0,
+    "holes": 798,
+    "largest_hole_perimeter_m": 41.996,
+    "large_holes": 4,
+    "hole_perimeter_total_m": 240.333,
+    "open_boundary_m": 35.33
+   },
+   "mesh": {
+    "triangles": 432348,
+    "degenerate_faces": 7270,
+    "non_manifold_edges": 533,
+    "boundary_edges": 15946,
+    "flipped_edge_share": 0.0056,
+    "holes": 64,
+    "largest_hole_perimeter_m": 41.996,
+    "large_holes": 9,
+    "hole_perimeter_total_m": 223.061,
+    "open_boundary_m": 35.33
+   },
+   "texture": {
+    "texels_per_m": 327.3,
+    "texels_per_m_p10": 327.3,
+    "textured_area_m2": 35.25
+   },
+   "floor_tilt_deg": 0.582,
+   "mirror_suggestions": [
+    {
+     "kind": "suggestion",
+     "wall_offset_m": 0.544,
+     "behind_m_min": 0.15,
+     "area_m2": 7.91,
+     "width_m": 1.5,
+     "height_m": 2.1,
+     "centre": [
+      -0.25,
+      1.133,
+      -0.246
+     ],
+     "corners": [
+      [
+       -0.3095,
+       0.0806,
+       0.4981
+      ],
+      [
+       -0.1728,
+       0.085,
+       -0.9957
+      ],
+      [
+       -0.1902,
+       2.1849,
+       -0.991
+      ],
+      [
+       -0.3268,
+       2.1805,
+       0.5027
+      ]
+     ],
+     "note": "surface behind this wall: a mirror, or a real window / door / alcove - check it"
+    }
+   ]
+  }
+ },
+ "thresholds": {},
+ "created_at": "2026-11-24T03:15:08+05:30"
+}

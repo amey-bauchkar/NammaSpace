@@ -1,0 +1,23 @@
+{
+ "project_id": "kitchen-sharp-8f2ff7",
+ "title": "Kitchen sharp",
+ "created_at": "2026-11-24T03:14:53+05:30",
+ "notices": [
+  "3D scan (iPhone18,1, LiDAR)"
+ ],
+ "runs": [
+  {
+   "run_id": "run-20261124-031453-eddd",
+   "profile": "import",
+   "created_at": "2026-11-24T03:14:53+05:30",
+   "config_sha256": "75d3932ff53d08167af230003f2f8026783dea273ef2f577d55c1258febcf278"
+  }
+ ],
+ "splat_options": {
+  "lidar_recipe": "dense",
+  "lidar_full_res": false,
+  "lidar_max_side": 1600,
+  "lidar_iters": 30000,
+  "lidar_cap": 1500000
+ }
+}
