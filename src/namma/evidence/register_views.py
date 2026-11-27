@@ -45,7 +45,8 @@ def register_final(archive, reference, output, candidate, protocol):
         json.dump({"candidate": sha256_file(candidate / "manifest.json"), "protocol": protocol,
                    "split": split["final_test"]}, stream, allow_nan=False)
     report = _register(archive, reference, output, "final_test", None)
-    write_json(output / "final_evaluation_claim.json", load_strict(claim))
+    write_json(output / "final_evaluation_claim.json", {
+        **load_strict(claim), "registration_sha256": sha256_file(output / "final_test_registration.json")})
     return report
 
 

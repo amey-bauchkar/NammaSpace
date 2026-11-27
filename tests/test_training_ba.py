@@ -86,7 +86,8 @@ def test_private_train_to_dev_render(registered_scene, tmp_path, monkeypatch):
     import numpy as np
     from PIL import Image
     from namma.evidence import train_reference as tr
-    from scripts.splat.render_development import render_development
+    from scripts.splat.render_development import render_development, render_registered
+    from scripts.splat.score_registered import score_registered
     from scripts.splat.eval_views import raw_metrics
     from tests import test_train_splat_crops as mock_render
     torch = pytest.importorskip("torch")
@@ -115,6 +116,15 @@ def test_private_train_to_dev_render(registered_scene, tmp_path, monkeypatch):
     archive = reference.parent / "scene.zip"
     result = register_final(archive, reference, tmp_path / "final", version, protocol)
     assert set(result["poses_arkit"]) == {"109"}
+    final_renders = tmp_path / "final_renders"
+    render_registered(version, tmp_path / "final", final_renders, role="final_test", device="cpu")
+    scores = score_registered(tmp_path / "final", final_renders, tmp_path / "scores")
+    assert scores["role"] == "final_test" and set(scores["frames"]) == {"109"}
+    assert isinstance(scores["aggregate"]["raw_psnr_db"], float) and not scores["acceptance_evaluated"]
+    with (final_renders / "109.png").open("ab") as stream:
+        stream.write(b"tampered")
+    with pytest.raises(ValueError, match="digest mismatch"):
+        score_registered(tmp_path / "final", final_renders, tmp_path / "tampered")
     with pytest.raises(FileExistsError):
         register_final(archive, reference, tmp_path / "repeat", version, protocol)
     assert not (tmp_path / "repeat").exists()

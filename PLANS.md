@@ -56,3 +56,65 @@ verified synthetic pipeline uses mock Gaussian rendering and real COLMAP.
 Next: add final scoring against the frozen protocol, expand development
 overlap diagnostics, and execute the exact pinned GPU baseline on suitable
 captures.
+
+P1 follow-up: digest-bound raw development and final-test PSNR/SSIM scoring
+is exercised on a synthetic scene using real COLMAP and mocked rasterization.
+The raw score report records missing registrations and does not grant acceptance.
+CPU observability checks require measured depth, qualified development poses,
+four sharp views and sufficient parallax across capture passes. The checks
+are standalone. AFE integration and real calibration remain open.
+
+## Handoff to the other Codex
+
+Share these code changes and this plan through an approved repo copy or local
+patch. Keep the capture archives at their current authorised locations.
+
+> Continue NammaSpace in the supplied repo. Read AGENTS.md, PLANS.md,
+> NAMMASPACE_CODEX_MASTER_HANDOFF.md and docs/phase_reports/P1.md. The supplied
+> changes extend branch codex/fidelity-p1, whose prior checkpoint was c2b1b87.
+> Verify git status, inspect actual code and preserve local changes.
+>
+> On the NVIDIA machine, check driver, CUDA, Python and GPU memory. Use
+> requirements-splat.txt, Python 3.10, Torch 2.4.1/cu124 and
+> gsplat 1.5.3+pt24cu124 in the separate splat environment. Run real CUDA
+> training, checkpoint load and development renders. Use the P1 commands and
+> then run `py -3.14 scripts/splat/score_registered.py PRIVATE_DEV PRIVATE_RENDERS PRIVATE_SCORES`.
+> Use approved local Kitchen, LiDAR room and Scan 1 captures, if available.
+> Record missing assets, actual registration coverage, seeds, raw metrics,
+> time, peak memory, versions and hashes. Run S2/S3 before comparing recipes
+> or enabling any quality feature.
+>
+> Audit licences for model code, checkpoint and dependencies. Pin and hash
+> every approved checkpoint. Use separate environments for incompatible
+> models. Validate genuine PromptDA, VGGT-1B-Commercial, DINOv2, LPIPS and
+> AnchorSplat 1x/20x on approved local development data. Treat PromptDA as an
+> estimated prior and AnchorSplat as a proposal. Run AnchorSplat in a
+> separately pinned Linux/CUDA environment if its published dependencies
+> cannot run on Windows. Record VRAM, time and failures. Do not install
+> dependencies into the existing gsplat environment or send private data
+> to cloud services without explicit permission.
+>
+> Use development observations for tuning. Complete acceptance wiring and
+> freeze the candidate, controls and protocol before running the one-shot final
+> command. Run the handoff's equal-budget, extra-training and density-matched
+> controls, frozen-context equivalence and unsupported-content gates. Collect
+> viewer frame times and load times on both reference GPU classes. A CUDA
+> smoke result or raw PSNR/SSIM alone is not an acceptance decision.
+>
+> If a Mac and ARKit LiDAR device are available, build the iOS app with Xcode,
+> exercise -NammaSavedStillGate, verify stale depth handling, capture a separate
+> evaluation pass and run the native vs Polycam A/B. If the NVIDIA machine
+> lacks Apple hardware, report the iOS work as blocked there.
+>
+> Save phase reports under docs/phase_reports and experiment results under
+> docs/experiments. Update PLANS.md with precise results and keep experimental
+> features disabled until the required gates pass. Preserve navigation,
+> geometry, scale and source captures. No pushes, deployments or data transfer
+> without permission.
+
+Hardware/data work for the handoff: real CUDA/gsplat baseline and restoration
+comparisons, approved private multi-scene captures, genuine model inference,
+target GPU viewer measurements, Xcode and physical ARKit capture validation.
+Remaining implementation also includes model orchestration, two-store
+optimisation, the full acceptance and rollback path, and Studio integration.
+These are engineering tasks as well as validation dependencies.

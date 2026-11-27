@@ -31,22 +31,41 @@ def load_parameters(path, device):
 
 
 def render_development(version, registration, output, *, device="cuda"):
+    return render_registered(version, registration, output, role="dev", device=device)
+
+
+def render_registered(version, registration, output, *, role, device="cuda"):
     import torch
     from train_splat import render
+    if role not in {"dev", "final_test"}:
+        raise ValueError("invalid observation role")
     verify_checkpoint(version)
     reference = load_strict(version / "training_ba.json")
-    reg = load_strict(registration / "dev_registration.json")
+    registration_path = registration / f"{role}_registration.json"
+    reg = load_strict(registration_path)
     split = load_strict(version / "splits.json")
+    checkpoint_hash = sha256_file(version / "manifest.json")
+    registration_hash = sha256_file(registration_path)
+    claim_hash = None
+    if role == "final_test":
+        claim_path = registration / "final_evaluation_claim.json"
+        claim = load_strict(claim_path)
+        if (claim["candidate"] != checkpoint_hash or claim["split"] != split[role]
+                or claim["registration_sha256"] != registration_hash
+                or set(reg["poses_arkit"]) | set(reg["unregistered"]) != set(split[role])):
+            raise ValueError("final test registration does not match frozen claim")
+        claim_hash = sha256_file(claim_path)
     ids = set(reg["poses_arkit"])
-    if (reg["role"] != "dev" or reg["reference"] != reference["frozen_model"]
-            or ids - set(split["dev"]) or ids & (set(split["train"]) | set(split["final_test"]))):
-        raise ValueError("development registration does not match the checkpoint")
+    if (reg["role"] != role or reg["reference"] != reference["frozen_model"]
+            or ids - set(split[role]) or ids & set(split["train"]) or ids & set(reg["unregistered"])):
+        raise ValueError("observation registration does not match the checkpoint")
     if not ids:
-        raise ValueError("no independently registered development observations")
+        raise ValueError("no independently registered observations")
     cfg = load_strict(version / "config.json")
     degree = min((cfg["iters"] - 1) // 1000, cfg["sh_degree"])
     params = load_parameters(version / "splat.ply", device)
     output.mkdir(parents=True, exist_ok=False)
+    hashes = {}
     with torch.no_grad():
         for k in sorted(ids):
             if not k.isascii() or not k.isdigit():
@@ -61,9 +80,12 @@ def render_development(version, registration, output, *, device="cuda"):
             rgb = render(params, tensor(V), tensor(K), c["width"], c["height"], degree)[0][0]
             if not torch.isfinite(rgb).all():
                 raise ValueError("non-finite development render")
-            Image.fromarray(rgb.clamp(0, 1).mul(255).round().byte().cpu().numpy()).save(output / f"{k}.png")
-    write_json(output / "renders.json", {"role": "dev", "registered": sorted(ids), "unregistered": reg["unregistered"],
-               "checkpoint_sha256": sha256_file(version / "manifest.json"), "sh_degree": degree,
+            path = output / f"{k}.png"
+            Image.fromarray(rgb.clamp(0, 1).mul(255).round().byte().cpu().numpy()).save(path)
+            hashes[k] = sha256_file(path)
+    write_json(output / "renders.json", {"role": role, "registered": sorted(ids), "unregistered": reg["unregistered"],
+               "checkpoint_sha256": checkpoint_hash, "registration_sha256": registration_hash,
+               "claim_sha256": claim_hash, "image_sha256": hashes, "sh_degree": degree,
                "colour_fit": False, "pose_fit": False})
 
 
@@ -71,5 +93,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("checkpoint", "registration", "output"):
         parser.add_argument(name, type=Path)
+    parser.add_argument("--final", action="store_true")
     args = parser.parse_args()
-    render_development(args.checkpoint, args.registration, args.output)
+    render_registered(args.checkpoint, args.registration, args.output, role="final_test" if args.final else "dev")
