@@ -14,7 +14,7 @@ from namma.core.jsonio import sha256_file, write_json
 from namma.studio.splat_lidar import SEED_MAX_DEPTH_M, _write_points
 
 
-def prepare(archive, output, coordinate_frame):
+def prepare(archive, output, coordinate_frame, *, bundle_adjust=False):
     report = validate(archive, keep_records=True)
     if not report["ok"]:
         raise ValueError(report["errors"])
@@ -68,8 +68,16 @@ def prepare(archive, output, coordinate_frame):
     if not points or not sum(map(len, points)):
         raise ValueError("no supported same-frame native depth seeds")
     _write_points(model, np.concatenate(points), np.concatenate(colours))
+    if bundle_adjust:
+        from namma.evidence.training_ba import adjust
+        intr = {Path(name(f)).stem: f["camera"]["intrinsics"] for f in train}
+        cameras = {Path(name(f)).stem: np.asarray(f["camera"]["T_world_from_camera"]) for f in train}
+        adjust(output, intr, cameras)
+        # Keep the BA sparse model and the independently measured LiDAR seed model separate.
+        model = output / "model"
     write_json(output / "capture_ref.json", {"sha256": sha256_file(archive), "coordinate_frame": coordinate_frame,
-               "model": str(model.relative_to(output)), "poses": "ARKit priors", "ba_verified": False,
+               "model": str(model.relative_to(output)), "poses": "training BA" if bundle_adjust else "ARKit priors",
+               "ba_verified": bundle_adjust,
                "image_to_frame": {name(f): f["frame_id"] for f in train}})
     return model
 
@@ -79,5 +87,6 @@ if __name__ == "__main__":
     parser.add_argument("archive", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--coordinate-frame", required=True, type=int)
+    parser.add_argument("--bundle-adjust", action="store_true", help="refine training poses using local CPU COLMAP")
     args = parser.parse_args()
-    print(prepare(args.archive, args.output, args.coordinate_frame))
+    print(prepare(args.archive, args.output, args.coordinate_frame, bundle_adjust=args.bundle_adjust))

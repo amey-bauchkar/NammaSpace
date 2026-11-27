@@ -181,6 +181,8 @@ def main(argv=None):
                     help="clamp each Gaussian axis to this many metres (0 = no limit)")
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed-radius-multiplier", type=float, default=10,
+                    help="maximum seed distance as a multiple of camera spread; 0 uses the prepared seed inventory")
     ap.add_argument("--pose-opt", action="store_true", help="correct each camera's pose while training")
     ap.add_argument("--appearance", action="store_true", help="per-photo colour gain + offset (auto exposure)")
     ap.add_argument("--holdout", type=int, default=0, help="hold out every N-th photo and score the splat on them")
@@ -268,8 +270,13 @@ def main(argv=None):
     views = [v for v, k in zip(views, keep) if k]
     scene_scale = max(float(np.percentile(dist[keep], 90)) * 1.1, 0.01)
     # start points far outside the cameras' reach are the same kind of outlier
-    near = np.linalg.norm(xyz - np.median(centres[keep], axis=0), axis=1) <= 10 * scene_scale
-    xyz, rgb = xyz[near], rgb[near]
+    if not math.isfinite(a.seed_radius_multiplier) or a.seed_radius_multiplier < 0:
+        ap.error("--seed-radius-multiplier must be finite and nonnegative")
+    if a.seed_radius_multiplier and len(xyz):
+        near = np.linalg.norm(xyz - np.median(centres[keep], axis=0), axis=1) <= a.seed_radius_multiplier * scene_scale
+        xyz, rgb = xyz[near], rgb[near]
+    if len(xyz) < 4:
+        raise SystemExit("fewer than four usable seed points")
     if a.holdout_names:
         hn = set(Path(a.holdout_names).read_text(encoding="utf-8").split())
         test = [v for v in views if v["name"] in hn]

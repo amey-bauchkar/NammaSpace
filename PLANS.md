@@ -45,3 +45,14 @@ tests then passed with zero skips. On Windows set OMP_NUM_THREADS=2 and
 MKL_NUM_THREADS=2 for the mocked CPU trainer. See P3 report for the new native
 CLI and saved-still switch. Photo checkpoints now inventory original and
 training files, and record the trainer hash and git revision.
+
+P1 progress on codex/fidelity-p1: train-only Polycam BA, optional native
+training BA, fixed-reference development registration, private Gaussian
+baseline runner, raw development rendering, exclusive final-registration claim.
+See docs/phase_reports/P1.md and docs/experiments/corridor-training-ba.md.
+Real CPU COLMAP verified a small reference and the synthetic held-out pose
+path. Corridor development coverage was 0/2 on the small reference. The
+verified synthetic pipeline uses mock Gaussian rendering and real COLMAP.
+Next: add final scoring against the frozen protocol, expand development
+overlap diagnostics, and execute the exact pinned GPU baseline on suitable
+captures.

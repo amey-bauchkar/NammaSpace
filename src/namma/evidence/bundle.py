@@ -36,7 +36,8 @@ def seal_checkpoint(version, transform, fit):
     for name in ("splat.ply", "cameras.json", "config.json", "provenance.json", "splat.json"):
         if not (version / name).is_file():
             raise ValueError(f"incomplete evidence checkpoint: {name}")
-    write_json(version / "transforms.json", {"T_mesh_from_splat": transform.tolist(), "fit": fit})
+    write_json(version / "transforms.json", {"T_mesh_from_splat": transform.tolist() if transform is not None else None,
+                                            "fit": fit})
     repo = Path(__file__).resolve().parents[3]
     rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=False)
     trainer = repo / "scripts/splat/train_splat.py"
