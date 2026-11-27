@@ -70,7 +70,7 @@ def fake_gsplat(calls):
         img = base.expand(1, H, W, 3)
         if render_mode == "RGB+ED":
             img = torch.cat([img, (means[:, 2].abs().mean() + 1.0).expand(1, H, W, 1)], -1)
-        return img, torch.ones(1, H, W, 1), {"means2d": means}
+        return img, torch.ones(1, H, W, 1), {"means2d": means, "radii": torch.ones(1, len(means), 2)}
 
     class MCMCStrategy:
         def __init__(self, **kw): pass
@@ -129,3 +129,31 @@ def test_trainer_runs_coarse_then_full_res_windows_on_cpu(tmp_path, monkeypatch)
         assert abs(float(K[0, 0]) - 3000) < 1e-3
         assert -1100 < 2016 - float(K[0, 2]) + 0 <= 4032 and float(K[0, 2]) <= 2016
     assert not out.with_suffix(".photo_cache").exists()                          # decoded cache removed
+
+
+def test_checkpoint_sidecars_preserve_spz(tmp_path, monkeypatch):
+    global torch
+    torch = pytest.importorskip("torch")
+    plyfile = pytest.importorskip("plyfile")
+    from namma.studio.splat_spz import ply_to_spz
+    from importlib import metadata
+    actual_version = metadata.version
+    monkeypatch.setattr(metadata, "version", lambda name: "mock" if name == "gsplat" else actual_version(name))
+    g, s = fake_gsplat([])
+    monkeypatch.setitem(sys.modules, "gsplat", g)
+    monkeypatch.setitem(sys.modules, "gsplat.strategy", s)
+    monkeypatch.setenv("NAMMA_SPLAT_DEVICE", "cpu")
+    ts = importlib.reload(importlib.import_module("train_splat"))
+    write_dataset(tmp_path, W=64, H=48)
+    for name in ("legacy", "evidence"):
+        ply = tmp_path / f"{name}.ply"
+        args = ["--model", str(tmp_path / "model"), "--images", str(tmp_path / "images"),
+                "--out", str(ply), "--iters", "2", "--cap", "100", "--pose-opt", "--appearance"]
+        if name == "evidence":
+            args.extend(["--camera-table", str(tmp_path / "cameras.json")])
+        ts.main(args)
+        ply_to_spz(ply, ply.with_suffix(".spz"))
+    assert (tmp_path / "legacy.spz").read_bytes() == (tmp_path / "evidence.spz").read_bytes()
+    rows = plyfile.PlyData.read(tmp_path / "evidence.ply")["vertex"]
+    assert np.array_equal(rows["row_id"], np.arange(len(rows.data)))
+    assert len(json.loads((tmp_path / "cameras.json").read_text())) == 4

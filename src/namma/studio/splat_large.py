@@ -497,6 +497,7 @@ LARGE_MEANS_LR_SCENE_CAP_M = 3.0
 # as before (tests/test_splat_options.py compares the commands). Set in the run's config.json "config" or in
 # project.json, key "splat_options" (project.json wins).
 SPLAT_OPTION_DEFAULTS = {
+    "evidence": False,
     "large_init_points": False,     # >150 photos: mesh start points scaled to the surface area (up to 600 k)
     "mirrors_force_large": True,    # marked mirrors: use this trainer (pixel masks) even for a small room
     "block_mode": "off",            # "off" | "auto" (blocks when the floor is large) | "on" (namma.studio.splat_blocks)

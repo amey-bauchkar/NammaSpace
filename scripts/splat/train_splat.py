@@ -85,7 +85,7 @@ def ssim(a, b, win=11):
 
 
 # --------------------------------------------------------------------------------------------- output
-def save_ply(path, p):
+def save_ply(path, p, *, stable_ids=False):
     means = p["means"].detach().cpu().numpy()
     n = len(means)
     sh0 = p["sh0"].detach().cpu().numpy().reshape(n, -1)                       # (n, 3)
@@ -95,9 +95,14 @@ def save_ply(path, p):
         [f"rot_{i}" for i in range(4)]
     data = np.concatenate([means, np.zeros_like(means), sh0, shn, p["opacities"].detach().cpu().numpy()[:, None],
                            p["scales"].detach().cpu().numpy(), p["quats"].detach().cpu().numpy()], axis=1)
-    arr = np.empty(n, dtype=[(f, "f4") for f in fields])
+    if stable_ids and n > 2**24:
+        raise ValueError("row_id exceeds the exact integer range of the float32 PLY reader")
+    props = fields + (["row_id"] if stable_ids else [])
+    arr = np.empty(n, dtype=[(f, "f4") for f in props])
     for i, f in enumerate(fields):
         arr[f] = data[:, i]
+    if stable_ids:
+        arr["row_id"] = np.arange(n, dtype=np.uint32)
     PlyData([PlyElement.describe(arr, "vertex")]).write(str(path))
 
 
@@ -168,6 +173,7 @@ def main(argv=None):
     ap.add_argument("--model", required=True, help="COLMAP text model (PINHOLE cameras)")
     ap.add_argument("--images", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--camera-table", help="private per-view training calibration output")
     ap.add_argument("--iters", type=int, default=7000)
     ap.add_argument("--max-side", type=int, default=1280)
     ap.add_argument("--cap", type=int, default=500_000, help="maximum number of splats (GPU memory)")
@@ -175,6 +181,8 @@ def main(argv=None):
                     help="clamp each Gaussian axis to this many metres (0 = no limit)")
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed-radius-multiplier", type=float, default=10,
+                    help="maximum seed distance as a multiple of camera spread; 0 uses the prepared seed inventory")
     ap.add_argument("--pose-opt", action="store_true", help="correct each camera's pose while training")
     ap.add_argument("--appearance", action="store_true", help="per-photo colour gain + offset (auto exposure)")
     ap.add_argument("--holdout", type=int, default=0, help="hold out every N-th photo and score the splat on them")
@@ -262,8 +270,13 @@ def main(argv=None):
     views = [v for v, k in zip(views, keep) if k]
     scene_scale = max(float(np.percentile(dist[keep], 90)) * 1.1, 0.01)
     # start points far outside the cameras' reach are the same kind of outlier
-    near = np.linalg.norm(xyz - np.median(centres[keep], axis=0), axis=1) <= 10 * scene_scale
-    xyz, rgb = xyz[near], rgb[near]
+    if not math.isfinite(a.seed_radius_multiplier) or a.seed_radius_multiplier < 0:
+        ap.error("--seed-radius-multiplier must be finite and nonnegative")
+    if a.seed_radius_multiplier and len(xyz):
+        near = np.linalg.norm(xyz - np.median(centres[keep], axis=0), axis=1) <= a.seed_radius_multiplier * scene_scale
+        xyz, rgb = xyz[near], rgb[near]
+    if len(xyz) < 4:
+        raise SystemExit("fewer than four usable seed points")
     if a.holdout_names:
         hn = set(Path(a.holdout_names).read_text(encoding="utf-8").split())
         test = [v for v in views if v["name"] in hn]
@@ -456,7 +469,29 @@ def main(argv=None):
                   flush=True)
     out_path = Path(a.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    save_ply(out_path, params)
+    save_ply(out_path, params, stable_ids=bool(a.camera_table))
+    if a.camera_table:
+        import platform
+        from importlib.metadata import version
+        checkpoint_dir = Path(a.camera_table).parent
+        for filename, payload in [
+            ("config.json", vars(a)),
+            ("provenance.json", {"torch": str(torch.__version__), "gsplat": version("gsplat"),
+                                 "cuda": torch.version.cuda, "python": platform.python_version(),
+                                 "gpu": torch.cuda.get_device_name() if dev == "cuda" else None})]:
+            with (checkpoint_dir / filename).open("x", encoding="utf-8") as stream:
+                json.dump(payload, stream, allow_nan=False)
+        rows = []
+        for i, view in enumerate(views):
+            colour = app[i].detach()
+            rows.append({"name": view["name"], "width": view["img"].shape[1],
+                         "height": view["img"].shape[0], "K": view["K"].tolist(),
+                         "T_camera_from_world": view["viewmat"].tolist(),
+                         "train_delta_se3": pose_d[i].detach().tolist(),
+                         "colour_gain": colour[:3].exp().tolist(),
+                         "colour_offset": colour[3:].tolist()})
+        with Path(a.camera_table).open("x", encoding="utf-8") as stream:
+            json.dump(rows, stream, allow_nan=False)
     if full_res:                                         # the cache is a decoded copy of the photos: free the disk
         import shutil
         for v in views:

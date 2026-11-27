@@ -52,6 +52,19 @@ def test_default_recipe_raw_photos_arkit_poses(tmp_path):
     assert s["train"] == 9
 
 
+def test_reserved_blocks_absent_from_training_inputs(tmp_path):
+    import json
+    work = tmp_path / "isolated"
+    split_path = tmp_path / "splits.json"
+    s = sl.prepare(_project(tmp_path), work, **sl.RECIPE, holdout_every=0, reserved_splits=split_path)
+    split = json.loads(split_path.read_text())
+    assert s["train"] == 8
+    for directory in ("depth", "images"):
+        assert {p.stem for p in (work / directory).iterdir()} == set(split["train"])
+    camera_list = (work / "model/images.txt").read_text()
+    assert all(f" {k}.jpg" not in camera_list for k in split["dev"] + split["final_test"])
+
+
 def test_placement_of_arkit_frame(tmp_path):
     import json
     d = _project(tmp_path)

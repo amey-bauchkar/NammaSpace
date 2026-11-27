@@ -118,3 +118,12 @@ The optimization work is in progress; historical Phase 13 metrics below are not 
 | `src/namma/navigation/`, `src/namma/poi/` | Navigation grid, A* planner, independent route validator; place search (reference) |
 | `tests/`, `web/tests/` | Python and Node test suites (run on every push: [.github/workflows/ci.yml](.github/workflows/ci.yml)) |
 | `architecture/` | Contracts IF-01..IF-13 (schemas, examples), architecture, decisions |
+
+## Experimental fidelity checkpoints
+
+For photo reconstruction and Polycam LiDAR training, set the project.json
+option `splat_options.evidence` to true to retain a private, numbered checkpoint
+under the run's evidence directory. Each checkpoint contains training camera
+corrections, Gaussian rows, trainer arguments, runtime versions, alignment and
+a hashed inventory. These checkpoints currently carry `afe_eligible: false`.
+The default is off. See PLANS.md and docs/phase_reports/P0.md for validation status.
