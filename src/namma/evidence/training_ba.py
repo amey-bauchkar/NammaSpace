@@ -41,7 +41,7 @@ def prepare_archive(archive, output, train_limit=None, train_start=0):
     return intr, priors
 
 
-def adjust(output, intr, priors):
+def adjust(output, intr, priors, *, loop_candidates=False):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -65,10 +65,16 @@ def adjust(output, intr, priors):
         raise ValueError("incomplete feature database or shared intrinsics")
     poses._set_db_cameras(db, db_ids, intr)
     pairs = output / "pairs.txt"
+    if loop_candidates:
+        from namma.evidence.pairs import propose_pairs
+        proposals, pair_report = propose_pairs(priors, window=poses.SEQ_WINDOW)
+    else:
+        proposals = [(k, neighbour) for i, k in enumerate(ids) for neighbour in ids[i+1:i+1+poses.SEQ_WINDOW]]
+        pair_report = {"sequential": len(proposals), "revisit_candidates": 0, "total": len(proposals)}
+    write_json(output / "pair_proposals.json", pair_report)
     with pairs.open("x", encoding="utf-8") as stream:
-        for i, k in enumerate(ids):
-            for neighbour in ids[i+1:i+1+poses.SEQ_WINDOW]:
-                stream.write(f"{k}.jpg {neighbour}.jpg\n")
+        for k, neighbour in proposals:
+            stream.write(f"{k}.jpg {neighbour}.jpg\n")
     run("matching", "matches_importer", "--database_path", db, "--match_list_path", pairs,
         "--match_type", "pairs", "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
     def triangulate(tag, cameras):
@@ -118,5 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("output", type=Path)
     parser.add_argument("--train-limit", type=int, help="bounded training-only smoke test")
     parser.add_argument("--train-start", type=int, default=0, help="window offset within training block")
+    parser.add_argument("--loop-candidates", action="store_true", help="propose spatial revisits for geometric verification")
     args = parser.parse_args()
-    print(adjust(args.output, *prepare_archive(args.archive, args.output, args.train_limit, args.train_start)))
+    print(adjust(args.output, *prepare_archive(args.archive, args.output, args.train_limit, args.train_start),
+                 loop_candidates=args.loop_candidates))

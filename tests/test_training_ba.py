@@ -65,7 +65,8 @@ def registered_scene(tmp_path):
             for field in ("confidence", "depth"):
                 export.writestr(f"keyframes/{field}/{name}.png", b"unused")
     path = tmp_path / "train"
-    adjust(path, *prepare_archive(archive, path))
+    adjust(path, *prepare_archive(archive, path), loop_candidates=True)
+    assert load_strict(path / "pair_proposals.json")["total"] > 0
     result = register_dev(archive, path, tmp_path / "dev")
     assert result["unregistered"] == []
     assert set(result["poses_arkit"]) == {"108"}

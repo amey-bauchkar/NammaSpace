@@ -1,5 +1,45 @@
 # Fidelity programme execution
 
+## Active roadmap — 28 November 2026
+
+The master specification's reconstruction-foundations revision supersedes the
+historical phase order below. Preserve the P0/P1 commits and their tests.
+Current branch codex/reconstruction-foundations derives from 71ab51c.
+
+| Milestone | Prerequisites | Completion evidence | Current state |
+|---|---|---|---|
+| R1 native capture/evidence | P0/P1 checkpoints | Studio consumes full-resolution images, calibrated same-frame depth and all frame groups; crop budget and device gate verified | Offline preparation and optional iOS gate implemented; integration/device tests open |
+| R2 learned correspondences | R1 split and provenance | Approved pinned ALIKED/DISK + LightGlue, geometric verification, cross-pass graph and SIFT comparison | Source/licence audit started; optional spatial pair proposals implemented; learned inference open |
+| R3 global training poses | R2 verified loop edges | All routes use versioned shared metric cameras; frozen independent registration and scale/loop checks | Sequential BA exists; loop proposal integration added; no real loop-closed quality claim |
+| R4 single-variable training trials | R1/R3 and baseline seed spread | Separate dense/default/absgrad/sparse/appearance/depth/blur/crop outcomes and memory peaks | GPU/data gates outstanding |
+| R5 visibility/overlap blocks | R3/R4 baseline | Shared poses, occlusion assignment, overlap ownership and monolith seam comparison | Open |
+| R6 viewer LOD and independent evaluation | R4/R5 models | Same-camera PLY/SPZ/browser errors, adaptive budgets, iGPU/RTX frame-time and load benchmarks | Raw scoring implemented; LOD and complete acceptance open |
+| R7 optional AI/AFE | Reproducible R1–R6 evidence | Degradation-matched and controlled regional trials with full rejection/rollback gates | Experimental, disabled |
+
+Next executable task: complete R1 native Studio orchestration in an isolated
+opt-in route, with resource guards and per-coordinate-frame evidence. In
+parallel with that development, finish R2 extractor/checkpoint licence pinning
+and COLMAP database import plus geometric verification. Never mark model matches
+as verified merely because a learned matcher gave high confidence.
+
+This iteration added src/namma/evidence/pairs.py and --loop-candidates in
+training_ba.py. It proposes bounded spatial revisits solely from supplied
+training priors. COLMAP's existing matches_importer verifies the candidate pairs.
+It cannot retrieve drifted loops outside its radius. Defaults preserve the
+sequential baseline. Test run: pair proposal and real COLMAP/training integration
+tests, 4 passed, two existing PyTorch warnings. No weights downloaded or production
+trainer defaults changed. docs/ANTIGRAVITY_REVIEW.md records claim corrections,
+primary-source links and the single-variable experiment matrix.
+
+Audit interpretation: corrected-image BA poses need verified raw camera
+propagation; global ICP yaw does not isolate relative drift; source preservation
+and training consumption are separate checks. Performance percentages and
+hardware estimates await reproduction. PromptDA, VGGT, AFE and AnchorSplat
+keep their experimental gates. A failed dependency licence check blocks a
+specific configuration and is recorded for alternatives.
+
+## Historical execution record
+
 Base 79cca81 on codex-handoff. Programme specification in NAMMASPACE_CODEX_MASTER_HANDOFF.md, amended by the user's binding corrections.
 
 | Phase | Dependency and exit | State |

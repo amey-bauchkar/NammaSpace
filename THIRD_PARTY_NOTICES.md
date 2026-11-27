@@ -62,3 +62,11 @@ The full registry with URLs, sizes, checksums and intended experiments is `datas
 ## 3. Earlier project material
 Phase 8–12 artifacts in this repository are the team's own work; the Phase 12 ETH3D kicker results are
 derived from CC BY-NC-SA 4.0 data and inherit its terms.
+# Reconstruction foundations review — 28 November 2026
+
+No new third-party code or weights were bundled by this revision.
+LightGlue upstream declares Apache-2.0, ALIKED declares BSD-3-Clause,
+AnchorSplat repository declares MIT, and the PromptDA ViT-L publisher card
+declares Apache-2.0. These source declarations do not complete the checkpoint
+and transitive dependency audit. The selected VGGT checkpoint licence remains
+gated. See docs/ANTIGRAVITY_REVIEW.md for primary links and unresolved checks.

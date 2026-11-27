@@ -1,5 +1,67 @@
 # NAMMASPACE CODEX MASTER HANDOFF
 
+## Revision 28 November 2026 — reconstruction foundations
+
+This revision governs execution order where earlier sections conflict. Preserve
+the implemented P0/P1 evidence infrastructure on codex/fidelity-p1 (71ab51c).
+The original phases remain useful acceptance specifications. Execute the revised
+dependency order below before enabling local AI restoration. Production defaults
+change only after controlled development experiments and frozen final evaluation.
+
+1. **R1 capture and evidence.** Connect native-resolution .nammacap data to Studio
+   with complete camera/depth provenance, coordinate-frame isolation, measured
+   same-frame depth and full-resolution crop training. Preserve every original.
+   Remove the 300-frame training selection in the new path only after resource
+   scheduling is implemented. Keep the legacy path available. Verify saved-still
+   quality and focus policy on an actual device. Reserve whole independent pass
+   segments with spatial overlap before any reconstruction. Log registration and
+   region coverage. Missing overlap is insufficient evidence.
+2. **R2 correspondences.** Evaluate pinned ALIKED + LightGlue and DISK + LightGlue
+   against SIFT with identical train-only pairs. Pin extractor, matcher and weight
+   hashes and audit each licence. Export pixel-coordinate keypoints and matches
+   into COLMAP, preserving per-frame intrinsics. Use geometric verification,
+   repeated-texture checks and verified graph connectivity. Compare sequential
+   pairs, spatial revisit proposals and visual retrieval individually.
+3. **R3 global poses.** Optimise one shared training reconstruction using verified
+   sequential and loop edges. Global BA is joint adjustment of the graph, distinct
+   from selecting COLMAP's global mapper. Compare mapper choices separately.
+   Propagate the selected pose version, cameras, frame and metric gauge to every
+   seed/depth/block/trainer path. Use rigid/Sim3 frame alignment only where valid.
+   Corrected-image BA poses require verified registration to raw RGB intrinsics
+   and coordinates. A rigid ICP yaw angle alone cannot establish trajectory drift.
+   Read back saved cameras, check metric scale, track connectivity and depth
+   agreement, then register held-out observations with reference geometry frozen.
+4. **R4 training ablations.** Separate dense seed spacing, MCMC vs DefaultStrategy,
+   absolute-gradient densification, sparse camera optimisation, opacity/scale
+   regularisation, appearance gauge, bilateral appearance, edge-aware depth,
+   blur/shutter modelling and crop sampling/budget into individual experiments.
+   Enable absgrad on both rasterizer and strategy together and calibrate its
+   threshold on development data. Aspect-ratio clamps can damage legitimate
+   surfaces. Treat them as experiments. Measure peak allocation during growth,
+   proposal generation and export. Derive thresholds from S3 variance.
+5. **R5 blocks.** Share globally verified metric poses. Assign cameras using
+   visibility, projected detail and occlusion. Train overlapping context halos
+   and test ownership/deduplication and boundary residuals against a monolith.
+   Measure duplication, holes, colour steps, memory and runtime. Tune halo size
+   separately from block count. Navigation geometry and scale stay protected.
+6. **R6 viewer and evaluation.** Compare full PLY, SPZ and browser renders at the
+   same camera and resolution. Evaluate adaptive LOD, streaming, DPR, rasterizer
+   settings and antialiasing separately. Preserve mesh/navigation behaviour.
+   Record iGPU and RTX frame times and load time. Audit SPZ antialias provenance
+   against the exact trainer and Spark version before changing flags.
+7. **R7 optional AI.** PromptDA, VGGT diagnostics, DINOv2 detection, AFE and
+   AnchorSplat remain experimental. First establish reproducible R1–R6 baselines.
+   Retain ordinary regional optimisation. AnchorSplat remains eligible for the
+   degradation-matched test, equal-budget, extra-training and density controls.
+   Reject unsupported proposals per region. Licence/hardware failures are explicit
+   blockers. Permanent model rejection requires recorded evidence.
+
+See docs/ANTIGRAVITY_REVIEW.md for verified claims, corrections, sources and
+remaining uncertainty. Audit percentages, VRAM estimates, performance gains and
+E1–E5 thresholds are hypotheses. Its E1/E3 bundles change multiple variables.
+Use one-variable experiments with frozen data, seeds and evaluation settings,
+then test interactions among individually justified improvements.
+
 Self-contained engineering handoff for an implementation agent (Codex) with **no prior context**. Written 27 Nov 2026
 against repository `main` at commit `0c15121`. This file is the single source of truth for the fidelity programme.
 The repository README is **out of date**; trust executable code over README text.
