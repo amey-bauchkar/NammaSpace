@@ -157,3 +157,61 @@ def test_checkpoint_sidecars_preserve_spz(tmp_path, monkeypatch):
     rows = plyfile.PlyData.read(tmp_path / "evidence.ply")["vertex"]
     assert np.array_equal(rows["row_id"], np.arange(len(rows.data)))
     assert len(json.loads((tmp_path / "cameras.json").read_text())) == 4
+
+
+@pytest.mark.parametrize("mode", ["bilateral", "blur"])
+def test_experimental_appearance_and_blur_train_on_cpu(tmp_path, monkeypatch, mode):
+    global torch
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("plyfile")
+    calls = []
+    g, s = fake_gsplat(calls)
+    monkeypatch.setitem(sys.modules, "gsplat", g)
+    monkeypatch.setitem(sys.modules, "gsplat.strategy", s)
+    monkeypatch.setenv("NAMMA_SPLAT_DEVICE", "cpu")
+    ts = importlib.reload(importlib.import_module("train_splat"))
+    write_dataset(tmp_path, W=64, H=48)
+    output = tmp_path / "candidate.ply"
+    args = ["--model", str(tmp_path/"model"), "--images", str(tmp_path/"images"),
+            "--out", str(output), "--iters", "2", "--strategy", "none", "--depth-dir", str(tmp_path/"depth"),
+            "--depth-edge-mask"]
+    if mode == "bilateral":
+        args += ["--bilateral-appearance"]
+    else:
+        motion = tmp_path / "motion.json"
+        motion.write_text(json.dumps({f"{i:04d}.jpg": [0,0,0,.01,0,0] for i in range(4)}))
+        args += ["--blur-motion", str(motion)]
+    ts.main(args)
+    assert output.is_file()
+    if mode == "bilateral":
+        assert np.isfinite(np.load(output.with_suffix(".bilateral.npy"))).all()
+    else:
+        assert len(calls) == 8
+        assert output.with_suffix(".blur.json").is_file()
+
+
+def test_absgrad_is_enabled_on_renderer_and_strategy_together(tmp_path, monkeypatch):
+    global torch
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("plyfile")
+    g, s = fake_gsplat([])
+    raster = g.rasterization
+    observed = {}
+    def raster_with_absgrad(*args, **kw):
+        observed["raster"] = kw.pop("absgrad", False)
+        return raster(*args, **kw)
+    class Default(s.MCMCStrategy):
+        def __init__(self, **kw):
+            observed["strategy"] = kw
+        def initialize_state(self, scene_scale):
+            return {}
+    g.rasterization, s.DefaultStrategy = raster_with_absgrad, Default
+    monkeypatch.setitem(sys.modules, "gsplat", g)
+    monkeypatch.setitem(sys.modules, "gsplat.strategy", s)
+    monkeypatch.setenv("NAMMA_SPLAT_DEVICE", "cpu")
+    ts = importlib.reload(importlib.import_module("train_splat"))
+    write_dataset(tmp_path, W=64, H=48)
+    ts.main(["--model",str(tmp_path/"model"),"--images",str(tmp_path/"images"),"--out",str(tmp_path/"out.ply"),
+             "--iters","1","--strategy","default","--absgrad"])
+    assert observed["raster"] and observed["strategy"]["absgrad"]
+    assert observed["strategy"]["grow_grad2d"] == .0008

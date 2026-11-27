@@ -1,5 +1,56 @@
 # Fidelity programme execution
 
+## Implementation continuation — 28 November 2026
+
+Current work adds functional learned extraction/matching and COLMAP raw import,
+visual retrieval, verified graph connectivity, native Studio private training,
+AbsGS/depth-edge/bilateral/blur flags, depth-tested camera assignment and
+opt-in in-memory viewer LoD. Full integration evidence and remaining limitations
+are in docs/phase_reports/R2_R4_IMPLEMENTATION.md.
+
+Real ALIKED and DISK + LightGlue CPU inference passed. Weights downloaded only
+from upstream public URLs into ignored tools/learned-matching. The CPU venv uses
+read-only system Torch and installs Kornia 0.8.2/kornia_rs 0.2.0 in that venv.
+The Studio and gsplat packages were not modified. Source revision and weight
+digests are checked during inference. Full package lock lives in approval.json.
+
+Real corridor learned BA on ten selected training cameras completed, 38 verified
+edges, connected graph, 2659 points, median reprojection 0.4941 px. No independent
+fidelity improvement established. Full-scene and native evaluation are pending.
+
+Python full snapshot 521 passed / 7 skipped. Later focused tests additionally
+cover raw import, bilateral/blur training, AbsGS coupling, occlusion and grid
+gradients. Node 51 passed. Final regression verification is pending below.
+
+Next executable tasks: exercise a native real archive through the Studio worker,
+wire measured camera visibility and overlap ownership into the complete block
+job, calibrate learned retrieval on independent passes, and execute CUDA
+training ablations. GPU validation requires the pinned splat runtime and an
+NVIDIA machine. Real iOS capture requires Xcode and an ARKit device.
+R7 remains gated by incomplete global baseline, verification and dataset evidence.
+
+Current status by requirement: learned inference implemented and CPU-smoked;
+COLMAP integration implemented and small-window real-data tested; native private
+job implemented with synthetic preparation tests, awaiting device/GPU; training
+controls CPU-tested with mocked rasterization; block visibility primitive tested,
+full overlap orchestration open; viewer LoD controller unit-tested, live GPU
+behaviour open; advanced AI/AFE/restoration not implemented.
+
+Follow-up validation: real ALIKED corridor BA produced a connected 38-edge
+training graph from 45 proposals. DISK inference also passed. The pinned source
+is 5a650c444718caffc2669dc0094cde908f42dd73. Both model families' weights are
+recorded in THIRD_PARTY_NOTICES.md. Native worker integrity/archive orchestration
+test passed with mocked BA/training. Block visibility is wired into the existing
+block trainer through block_visibility, and block_freeze_cameras retains shared
+poses. Both default false. Boundary reconciliation remains experimental work.
+
+Final regression snapshot in this continuation: 527 Python passed, 7 skipped,
+two existing PyTorch warnings, 219.14 seconds. The newer native-worker
+orchestration test passed independently. Latest focused native/block/control
+selection passed 18 tests. Updated BA/registration selection passed four.
+Node passed 51 tests with zero skips. GPU rasterization, native capture quality,
+block seam equivalence and live adaptive LoD performance remain unverified.
+
 ## Active roadmap — 28 November 2026
 
 The master specification's reconstruction-foundations revision supersedes the

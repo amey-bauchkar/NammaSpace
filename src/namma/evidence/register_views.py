@@ -54,6 +54,8 @@ def _register(archive, reference, output, role, limit):
     split = load_strict(reference / "splits.json")
     source = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
+    if summary.get("learned_approval") and sha256_file(summary["learned_approval"]) != summary.get("learned_approval_sha256"):
+        raise ValueError("learned matching approval changed since training")
     model = reference / "model"
     if ({p.name: sha256_file(p) for p in model.iterdir()} != summary["frozen_model"]
             or sha256_file(archive) != source["sha256"]
@@ -87,13 +89,47 @@ def _register(archive, reference, output, role, limit):
     if len({cid for _, cid in db_ids.values()}) != len(db_ids):
         raise ValueError("development registration requires individual fixed intrinsics")
     poses._set_db_cameras(db, db_ids, intr)
+    match_type = "pairs"
     pairs = output / "pairs.txt"
     with pairs.open("x", encoding="utf-8") as stream:
         for k in selected:
             for t in train:
                 stream.write(f"{k}.jpg {t}.jpg\n")
+    if summary.get("feature_backend", "sift") != "sift":
+        from namma.evidence.learned_matching import infer, import_keypoints
+        import sqlite3
+        learned_images = output / "learned_images"
+        learned_images.mkdir()
+        for k in train:
+            shutil.copyfile(reference / "images" / f"{k}.jpg", learned_images / f"{k}.jpg")
+        for k in selected:
+            shutil.copyfile(images / f"{k}.jpg", learned_images / f"{k}.jpg")
+        cache = output / "learned"
+        infer(learned_images, train+selected, [(k,t) for k in selected for t in train],
+              cache, summary["learned_approval"], extractor=summary["feature_backend"],
+              device=summary.get("matching_device","cpu"))
+        # Frozen tracks index training keypoints. Their coordinates and order must stay exact.
+        with sqlite3.connect(str(db)) as connection:
+            for k in train:
+                raw = connection.execute("SELECT data FROM keypoints WHERE image_id=?",
+                                         (db_ids[f"{k}.jpg"][0],)).fetchone()[0]
+                with np.load(cache / f"{k}.npz", allow_pickle=False) as features:
+                    points = np.ascontiguousarray(features["keypoints"][0]+.5, dtype=np.float32)
+                if points.tobytes() != raw:
+                    raise ValueError("learned training keypoints changed during registration")
+        connection.close()
+        # Import only new camera points, retaining the training graph and track indices.
+        with sqlite3.connect(str(db)) as connection:
+            for k in selected:
+                with np.load(cache / f"{k}.npz", allow_pickle=False) as features:
+                    points = np.ascontiguousarray(features["keypoints"][0]+.5, dtype=np.float32)
+                connection.execute("INSERT OR REPLACE INTO keypoints(image_id,rows,cols,data) VALUES(?,?,?,?)",
+                                   (db_ids[f"{k}.jpg"][0], len(points), 2, points.tobytes()))
+                connection.execute("DELETE FROM descriptors WHERE image_id=?", (db_ids[f"{k}.jpg"][0],))
+        connection.close()
+        pairs, match_type = cache / "matches.txt", "raw"
     run("match", "matches_importer", "--database_path", db, "--match_list_path", pairs,
-        "--match_type", "pairs", "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
+        "--match_type", match_type, "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
     result = output / "registered"
     result.mkdir()
     run("register", "image_registrator", "--database_path", db, "--input_path", model,

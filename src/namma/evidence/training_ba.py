@@ -41,7 +41,8 @@ def prepare_archive(archive, output, train_limit=None, train_start=0):
     return intr, priors
 
 
-def adjust(output, intr, priors, *, loop_candidates=False):
+def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
+           learned_approval=None, extractor="aliked", matching_device="cpu"):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -71,12 +72,47 @@ def adjust(output, intr, priors, *, loop_candidates=False):
     else:
         proposals = [(k, neighbour) for i, k in enumerate(ids) for neighbour in ids[i+1:i+1+poses.SEQ_WINDOW]]
         pair_report = {"sequential": len(proposals), "revisit_candidates": 0, "total": len(proposals)}
+    if retrieval_k:
+        from namma.evidence.retrieval import visual_pairs
+        retrieved = visual_pairs(images, ids, top_k=retrieval_k)
+        pair_report["visual_candidates"] = len(retrieved)
+        order = {name: i for i, name in enumerate(ids)}
+        proposals = sorted(set(proposals) | set(retrieved), key=lambda p: (order[p[0]], order[p[1]]))
+        pair_report["total"] = len(proposals)
     write_json(output / "pair_proposals.json", pair_report)
     with pairs.open("x", encoding="utf-8") as stream:
         for k, neighbour in proposals:
             stream.write(f"{k}.jpg {neighbour}.jpg\n")
+    match_type = "pairs"
+    if learned_approval:
+        from namma.evidence.learned_matching import infer, import_keypoints
+        cache = output / "learned"
+        infer(images, ids, proposals, cache, learned_approval, extractor=extractor, device=matching_device)
+        import_keypoints(db, db_ids, cache)
+        pairs, match_type = cache / "matches.txt", "raw"
     run("matching", "matches_importer", "--database_path", db, "--match_list_path", pairs,
-        "--match_type", "pairs", "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
+        "--match_type", match_type, "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
+    import sqlite3
+    with sqlite3.connect(str(db)) as connection:
+        edges = connection.execute("SELECT pair_id, rows FROM two_view_geometries WHERE rows >= 8").fetchall()
+    connection.close()
+    adjacency = {image_id: set() for image_id, _ in db_ids.values()}
+    for pair_id, count in edges:
+        a, b = divmod(pair_id, 2147483647)
+        if a not in adjacency or b not in adjacency:
+            raise ValueError("verified edge outside training image set")
+        adjacency[a].add(b)
+        adjacency[b].add(a)
+    visited, pending = set(), [next(iter(adjacency))]
+    while pending:
+        image_id = pending.pop()
+        if image_id not in visited:
+            visited.add(image_id)
+            pending.extend(adjacency[image_id] - visited)
+    write_json(output / "verified_graph.json", {"edges": len(edges), "connected": len(visited) == len(ids),
+                                                "image_degrees": {str(k): len(v) for k, v in adjacency.items()}})
+    if len(visited) != len(ids):
+        raise ValueError("geometrically verified training graph is disconnected")
     def triangulate(tag, cameras):
         prior = output / (tag + "_priors")
         poses._write_model(prior, intr, db_ids, cameras)
@@ -111,6 +147,10 @@ def adjust(output, intr, priors, *, loop_candidates=False):
             not np.allclose(saved[k], aligned[k], atol=1e-5, rtol=0) for k in ids):
         raise ValueError("frozen triangulation failed metric camera integrity check")
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
+              "feature_backend": extractor if learned_approval else "sift",
+              "matching_device": matching_device,
+              "learned_approval": str(Path(learned_approval).resolve()) if learned_approval else None,
+              "learned_approval_sha256": sha256_file(learned_approval) if learned_approval else None,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),
               "metric_similarity_scale": scale, "frozen_model": {p.name: sha256_file(p) for p in model.iterdir()}}
@@ -125,6 +165,11 @@ if __name__ == "__main__":
     parser.add_argument("--train-limit", type=int, help="bounded training-only smoke test")
     parser.add_argument("--train-start", type=int, default=0, help="window offset within training block")
     parser.add_argument("--loop-candidates", action="store_true", help="propose spatial revisits for geometric verification")
+    parser.add_argument("--retrieval-k", type=int, default=0)
+    parser.add_argument("--learned-approval", type=Path)
+    parser.add_argument("--extractor", choices=["aliked", "disk"], default="aliked")
+    parser.add_argument("--matching-device", choices=["cpu", "cuda"], default="cpu")
     args = parser.parse_args()
     print(adjust(args.output, *prepare_archive(args.archive, args.output, args.train_limit, args.train_start),
-                 loop_candidates=args.loop_candidates))
+                 loop_candidates=args.loop_candidates, retrieval_k=args.retrieval_k,
+                 learned_approval=args.learned_approval, extractor=args.extractor, matching_device=args.matching_device))

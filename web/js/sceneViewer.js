@@ -13,6 +13,7 @@ import { arUnavailableReason, startArWalk, startChoices } from './arNav.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
 import { levelStartTarget, Walker } from './walker.js';
+import { updateSplatBudget } from './adaptiveSplatBudget.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -297,6 +298,10 @@ async function main() {
   const tick = (now) => {
     if (app.paused) { last = now; app.raf = requestAnimationFrame(tick); return; }      // AR Walk is showing
     const dt = Math.min(0.1, (now - last) / 1000);
+    if (app.splatBudget && app.spark && app.splat?.visible) {
+      app.splatBudget = updateSplatBudget(app.splatBudget, now-last);
+      app.spark.lodSplatCount = app.splatBudget.budget;
+    }
     app.frameTimes.push(now - last);
     if (app.frameTimes.length > 600) app.frameTimes.shift();
     last = now;
@@ -412,6 +417,13 @@ async function loadSplat(ctx, requested = false) {
   const type = s.format === 'spz' ? 'spz' : 'ply';
   const mesh = new spark.SplatMesh({ fileBytes: bytes, fileType: spark.SplatFileType ? spark.SplatFileType[type.toUpperCase()] : type });
   await mesh.initialized;
+  if (params.get('adaptiveSplats') === '1') {
+    await mesh.createLodSplats({ quality: true });
+    mesh.enableLod = true;
+    const maximum = Math.min(s.splats, Number.isFinite(splatLimit(app)) ? splatLimit(app) : 2_500_000);
+    app.splatBudget = { min: Math.min(250_000, maximum), max: maximum, budget: maximum };
+    app.spark.lodSplatCount = maximum;
+  }
   mesh.matrixAutoUpdate = false;
   mesh.matrix.set(...s.to_model.matrix_row_major);             // splat frame -> model frame, applied once
   mesh.matrixWorldNeedsUpdate = true;

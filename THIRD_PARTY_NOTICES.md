@@ -70,3 +70,24 @@ AnchorSplat repository declares MIT, and the PromptDA ViT-L publisher card
 declares Apache-2.0. These source declarations do not complete the checkpoint
 and transitive dependency audit. The selected VGGT checkpoint licence remains
 gated. See docs/ANTIGRAVITY_REVIEW.md for primary links and unresolved checks.
+
+## Learned matching runtime verification
+
+LightGlue source 5a650c444718caffc2669dc0094cde908f42dd73, with upstream
+LICENSE and README licensing section inspected. The publisher expressly covers
+pretrained LightGlue weights with Apache-2.0 and identifies ALIKED BSD-3-Clause
+and DISK Apache-2.0. Kornia 0.8.2 and kornia_rs 0.2.0 are installed in an isolated
+CPU environment. Redistribution of their binaries requires retaining their
+bundled notices. The repository includes our integration, with weights and
+third-party source held in ignored tools directories.
+
+Observed SHA-256 checkpoint digests:
+
+| Upstream weight | Digest |
+|---|---|
+| ALIKED aliked-n16.pth | 5be8704840ed662d9d8c561bf7279c222092674e7eb05fd0feab94899e9d82f2 |
+| LightGlue aliked_lightglue.pth | d975e965b105311a6143194852297dff4f02aea5cc2e10cecfed966ca0e22503 |
+| DISK depth-save.pth | 9c2ee4ded238892dfa51569941372601e35e4a74aa6f84ea80053d2ab1c07abe |
+| LightGlue disk_lightglue.pth | b5b21d47ea24f2c5e501aec9c91b9716e4c8c3429a4dc1e615c133c4c9378335 |
+
+[Publisher licensing declaration](https://github.com/cvg/LightGlue#license)

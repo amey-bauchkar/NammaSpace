@@ -139,11 +139,14 @@ def read_text_model(sparse_dir):
     return cams, imgs
 
 
-def assign_cameras(cams, imgs, blocks, surface_pts, *, min_visible=0.02, max_depth_m=12.0, seed=0):
+def assign_cameras(cams, imgs, blocks, surface_pts, *, min_visible=0.02, max_depth_m=12.0, seed=0,
+                   depth_maps=None, depth_tolerance_m=.05):
     """Cameras per block: those standing in the block's training region, plus those whose view contains at least
     min_visible of the block's surface samples (in front, inside the picture, within max_depth_m; walls are not
     tested, so a camera may be counted through a wall - more context, never less). Every block gets at least
     MIN_BLOCK_CAMERAS (the best-seeing ones). -> [[image names], ...] in block order."""
+    if depth_maps is not None and (not np.isfinite(depth_tolerance_m) or depth_tolerance_m <= 0):
+        raise ValueError("visibility depth tolerance must be positive and finite")
     rng = np.random.default_rng(seed)
     S = np.asarray(surface_pts, float)
     out = []
@@ -162,14 +165,25 @@ def assign_cameras(cams, imgs, blocks, surface_pts, *, min_visible=0.02, max_dep
                 uv = X[ok] @ K.T
                 uv = uv[:, :2] / uv[:, 2:3]
                 vis = (uv[:, 0] >= 0) & (uv[:, 0] < w) & (uv[:, 1] >= 0) & (uv[:, 1] < h)
+                if depth_maps is not None:
+                    if im["name"] not in depth_maps:
+                        vis[:] = False
+                    else:
+                        depth = np.asarray(depth_maps[im["name"]])
+                        if depth.ndim != 2 or not depth.size or depth_tolerance_m <= 0:
+                            raise ValueError("invalid block visibility depth")
+                        dx = np.clip((uv[:,0]*depth.shape[1]/w).astype(int),0,depth.shape[1]-1)
+                        dy = np.clip((uv[:,1]*depth.shape[0]/h).astype(int),0,depth.shape[0]-1)
+                        measured = depth[dy,dx]
+                        vis &= np.isfinite(measured) & (measured > 0) & (np.abs(measured-X[ok,2]) <= depth_tolerance_m)
                 frac = float(vis.sum()) / max(1, len(pts))
             standing = bool(inside(im["C"][None, [0, 2]], grow(r))[0])
             cx = min(max(im["C"][0], r[0]), r[1])
             cz = min(max(im["C"][2], r[2]), r[3])
             dist = float(np.hypot(im["C"][0] - cx, im["C"][2] - cz))           # 0 when standing in the block
-            score.append((standing or frac >= min_visible, frac, dist, im["name"]))
+            score.append(((standing if depth_maps is None else False) or frac >= min_visible, frac, dist, im["name"]))
         chosen = [n for keep, _, _, n in score if keep]
-        if len(chosen) < MIN_BLOCK_CAMERAS:
+        if len(chosen) < MIN_BLOCK_CAMERAS and depth_maps is None:
             # top up with the cameras that see most of it, then the nearest ones (never far cameras by list order)
             best = [n for _, _, _, n in sorted(score, key=lambda s: (-s[1], s[2]))[:MIN_BLOCK_CAMERAS]]
             chosen = list(dict.fromkeys(chosen + best))

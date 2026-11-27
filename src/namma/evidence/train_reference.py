@@ -10,7 +10,8 @@ from namma.recon.runner import run_step
 from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
 
 
-def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000):
+def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000,
+                    native_crops=False, depth=False, cancel_file=None, training_options=None):
     ref = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     split = load_strict(reference / "splits.json")
@@ -30,15 +31,56 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
         raise FileNotFoundError(f"gsplat Python unavailable: {executable}")
     if min(iters, cap) < 1:
         raise ValueError("positive training budget required")
+    training_options = training_options or {}
+    flag_options = {"absgrad", "depth-edge-mask", "sparse-cams", "bilateral-appearance"}
+    value_options = {"strategy", "grow-grad2d", "opacity-reg", "scale-reg", "blur-motion", "blur-samples"}
+    if set(training_options) - flag_options - value_options:
+        raise ValueError("unsupported experimental training option")
+    if native_crops:
+        from PIL import Image
+        cache_bytes = 0
+        for image in images.iterdir():
+            with Image.open(image) as pic:
+                cache_bytes += pic.width*pic.height*3
+        if shutil.disk_usage(reference).free < cache_bytes + 2*2**30:
+            raise ValueError("insufficient disk space for native-resolution decoded photo cache")
+        import sys
+        sys.path.insert(0, str(Path(TRAINER).parent))
+        from splat_crops import default_crop_steps
+        with Image.open(next(iter(images.iterdir()))) as pic:
+            iters = max(iters, int(default_crop_steps(len(allowed),pic.width,pic.height,1024,12)/.7)+1)
     version = allocate_version(run_dir)
     for name in ("capture_ref.json", "splits.json", "training_ba.json"):
         shutil.copyfile(reference / name, version / name)
     shutil.copytree(model, version / "ba")
+    if summary.get("learned_approval"):
+        approval = Path(summary["learned_approval"])
+        if sha256_file(approval) != summary["learned_approval_sha256"]:
+            raise ValueError("learned approval changed")
+        shutil.copyfile(approval, version / "matching_approval.json")
     cmd = [executable, TRAINER, "--model", version / "ba", "--images", images,
            "--out", version / "splat.ply", "--camera-table", version / "cameras.json",
            "--iters", iters, "--max-side", 1024, "--cap", cap, "--seed", seed, "--pose-opt", "--appearance",
            "--seed-radius-multiplier", 0]
-    run_step("train_reference", cmd, version / "logs", timeout_s=5*3600)
+    for key, value in training_options.items():
+        if key in flag_options:
+            if not isinstance(value, bool):
+                raise ValueError("experimental flag requires boolean")
+            if value:
+                cmd.append("--"+key)
+        else:
+            cmd.extend(["--"+key, str(value)])
+    if training_options.get("bilateral-appearance"):
+        cmd.remove("--appearance")
+    if native_crops:
+        cmd.extend(["--full-res-crops", "--crop-size", 1024])
+    if depth:
+        depths = reference / "depth"
+        if not depths.is_dir() or not list(depths.glob("*.npy")):
+            raise ValueError("measured depth supervision unavailable")
+        shutil.copytree(depths, version / "depth")
+        cmd.extend(["--depth-dir", version / "depth", "--depth-weight", 1])
+    run_step("train_reference", cmd, version / "logs", timeout_s=5*3600, cancel_file=cancel_file)
     rows = load_strict(version / "cameras.json")
     if {row["name"] for row in rows} != {f"{k}.jpg" for k in allowed} or len(rows) != len(allowed):
         raise ValueError("trainer did not retain the complete frozen camera set")
