@@ -210,6 +210,14 @@ def publish_static_site(package_dir, out_dir, web_dir=None, max_file_mb=None, in
     include_lods: list of LOD levels to publish (e.g. [1] to stay below a host's per-file limit).
     """
     package_dir, out_dir = Path(package_dir), Path(out_dir)
+    pkg = load_strict(package_dir / "scene_package.json")
+    for entry in pkg["files"]:
+        rel = Path(entry["path"])
+        target = (package_dir / rel).resolve()
+        if (rel.anchor or ".." in rel.parts or not target.is_relative_to(package_dir.resolve())
+                or "evidence" in {part.casefold() for part in rel.parts}
+                or "evidence" in {part.casefold() for part in target.relative_to(package_dir.resolve()).parts}):
+            raise PackageError("private or external file in publication manifest")
     web_dir = Path(web_dir or PROJECT_ROOT / "web")
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -222,7 +230,6 @@ def publish_static_site(package_dir, out_dir, web_dir=None, max_file_mb=None, in
             shutil.copy2(src, out_dir / name)
     data = out_dir / "data"
     data.mkdir()
-    pkg = load_strict(package_dir / "scene_package.json")
     for f in pkg["files"]:                      # only what the package lists (and verifies) is published
         dst = data / f["path"]
         dst.parent.mkdir(parents=True, exist_ok=True)

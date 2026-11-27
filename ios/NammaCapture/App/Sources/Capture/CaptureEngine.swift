@@ -611,8 +611,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
                         self.storeKeyframe(fid: fid, index: index, image: hi.capturedImage, camera: hi.camera, t: hi.timestamp,
                                            mapping: hi.worldMappingStatus, exposure: FrameEncoding.exposure(hi),
                                            source: "high_resolution_capture",
-                                           depth: hiDepth.map { ($0, hi.camera, hi.timestamp, "same_frame") }
-                                               ?? streamDepth.map { ($0, streamCamera, streamT, "stream_frame_before_still") },
+                                           depth: hiDepth.map { ($0, hi.camera, hi.timestamp, "same_frame") },
                                            trigger: trigger, decision: decision, metrics: metrics, gate: gate, thumb: thumb,
                                            extraFlags: n > 0 ? ["high_resolution_capture_retried"] : [], annotation: annotation)
                     } else if n == 0, !self.finished {
@@ -654,6 +653,40 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
                                depth: (FrameEncoding.DepthCopy, ARCamera, TimeInterval, String)?,
                                trigger: String, decision: CandidateDecision, metrics: QualityMetrics, gate: GateDecision,
                                thumb: [UInt8], extraFlags: [String], annotation: PendingAnnotation?) {
+        var metrics = metrics
+        var gate = gate
+        var thumb = thumb
+        if ProcessInfo.processInfo.arguments.contains("-NammaSavedStillGate") {
+            let tracking = FrameEncoding.trackingQuality(camera.trackingState)
+            var reasons: [String] = []
+            if let luma = FrameEncoding.luma(image) {
+                metrics = QualityMetrics.measure(luma)
+                metrics.angularSpeedDegPerS = motion.angularDegPerS
+                metrics.linearSpeedMPerS = motion.linearMPerS
+                thumb = luma.thumbnail()
+                if let previous = lastThumb {
+                    metrics.differenceFromLastKeyframe = QualityMetrics.thumbnailDifference(previous, thumb)
+                }
+                gate = QualityGate.evaluate(GateInput(metrics: metrics, tracking: tracking,
+                    trackingReason: FrameEncoding.trackingStrings(camera.trackingState).1,
+                    secondsSinceLastAccept: selector.secondsSinceAccept(t), override: false), settings.quality)
+                reasons = gate.rejectReasons
+            } else {
+                reasons = ["still_luma_unavailable"]
+            }
+            if let r = relocalizedAt, t - r < 3 { reasons.append("shortly_after_relocalization") }
+            if !reasons.isEmpty {
+                let rejection = RejectionRecord(candidateIndex: candidateIndex, timestampS: t,
+                    coordinateFrameId: coordFrame, trigger: trigger, reasons: reasons, metrics: metrics)
+                io { try? await $0.writeRejection(rejection) }
+                snapshot.rejected += 1
+                snapshot.lastRejectReasons = reasons
+                captureInFlight = false
+                if trigger != "auto" { warn("Requested photo rejected by saved-still quality gate.") }
+                publish(force: true)
+                return
+            }
+        }
         let pose = Pose(camera.transform)
         let kSource = FrameEncoding.intrinsics(camera)
         let stored = FrameEncoding.storedSize(width: kSource.width, height: kSource.height)
@@ -699,6 +732,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
         let quality = jpegQuality
         let w = writer
         let depthData = depth?.0
+        let acceptedThumb = thumb
         let model = caps.modelIdentifier
         encodeQueue.async {
             let jpeg = FrameEncoding.jpeg(image, quality: quality, size: stored, intrinsics: k, model: model, exposure: exposure)
@@ -715,7 +749,7 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
                     await w.cancelWrite()
                     message = "JPEG encoding failed"
                 }
-                self.queue.async { self.keyframeWritten(rec, ok: ok, message: message, thumb: thumb, pose: pose, annotation: annotation) }
+                self.queue.async { self.keyframeWritten(rec, ok: ok, message: message, thumb: acceptedThumb, pose: pose, annotation: annotation) }
             }
         }
         // a new candidate may be considered while this one is encoding; the pending limit bounds memory

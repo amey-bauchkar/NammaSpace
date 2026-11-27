@@ -225,7 +225,13 @@ def make_photoreal_from_recon(project_dir, run_id, *, iters=None, max_side=1024,
     work = run_dir / "65_splat"
     work.mkdir(parents=True, exist_ok=True)
     ply = work / "room.ply"
-    ply.unlink(missing_ok=True)
+    from namma.studio.splat_large import splat_options
+    evidence = splat_options(run_dir, pdir)["evidence"] is True
+    if evidence:
+        from namma.evidence.bundle import allocate_version
+        ply = allocate_version(run_dir) / "splat.ply"
+    else:
+        ply.unlink(missing_ok=True)
 
     n_photos = len(list(img_dir.glob("*.jpg")))
     train_iters = iters or 15000
@@ -253,6 +259,8 @@ def make_photoreal_from_recon(project_dir, run_id, *, iters=None, max_side=1024,
         "--appearance",
     ]
 
+    if evidence:
+        cmd.extend(["--camera-table", str(ply.parent / "cameras.json")])
     try:
         run_step("splat_train_recon", cmd, logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
     except StepFailed as e:
@@ -267,7 +275,7 @@ def make_photoreal_from_recon(project_dir, run_id, *, iters=None, max_side=1024,
     tex_dir = run_dir / "60_texture"
     glb_path = tex_dir / "lod0.glb"
     T_mesh_from_splat = np.eye(4)
-    fit = {"within_5cm": 1.0, "median_cm": 0.0}
+    fit = {"status": "not_measured", "reason": "mesh_missing"}
     if glb_path.exists():
         try:
             glb_bytes = glb_path.read_bytes()
@@ -275,10 +283,16 @@ def make_photoreal_from_recon(project_dir, run_id, *, iters=None, max_side=1024,
             if fit_stats.get("within_5cm", 0) > 0.3:
                 T_mesh_from_splat = T_fit
                 fit = fit_stats
+            else:
+                fit = {"status": "candidate_rejected", "candidate_fit": fit_stats}
         except Exception:
-            pass
+            fit = {"status": "not_measured", "reason": "alignment_failed"}
 
     # 6. Compress to SPZ
+    if evidence:
+        from namma.evidence.bundle import record_photo_inputs, seal_checkpoint
+        record_photo_inputs(ply.parent, pdir / "capture/originals", txt_sparse, img_dir)
+        seal_checkpoint(ply.parent, T_mesh_from_splat, fit)
     progress("Compressing splat (SPZ)", 0.95)
     spz_path = tex_dir / "splat.spz"
     spz = ply_to_spz(ply, spz_path, min_opacity=MIN_SPLAT_OPACITY)

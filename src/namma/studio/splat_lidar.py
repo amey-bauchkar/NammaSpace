@@ -105,12 +105,17 @@ def write_depth_maps(ex, ids, out, raw=False):
         np.save(out / f"{k}.npy", d)
 
 
-def prepare(project_dir, work, *, photos="corrected", poses="chosen", start="lidar", depth=True, holdout_every=8):
+def prepare(project_dir, work, *, photos="corrected", poses="chosen", start="lidar", depth=True, holdout_every=8,
+            reserved_splits=None):
     """Write work/images, work/model (COLMAP text), work/depth, work/holdout.txt for train_splat.py.
     photos: corrected | raw; poses: chosen (Phase 2) | corrected | arkit; start: lidar | sparse (Phase 2 model points)
     -> summary dict."""
     d = Path(project_dir)
     work = Path(work)
+    if reserved_splits is not None and (poses != "arkit" or photos != "raw" or start != "lidar" or holdout_every):
+        raise ValueError("isolated preparation requires raw ARKit poses, raw images, LiDAR seeds and no trainer holdout")
+    if reserved_splits is not None and (work.exists() or Path(reserved_splits).exists()):
+        raise FileExistsError("isolated preparation requires a fresh work directory and split path")
     for sub in ("images", "model", "depth"):
         shutil.rmtree(work / sub, ignore_errors=True)
     (work / "images").mkdir(parents=True)
@@ -119,6 +124,14 @@ def prepare(project_dir, work, *, photos="corrected", poses="chosen", start="lid
         raise pr.PolycamFormatError("no Polycam LiDAR raw export in this project")
     with pr.PolycamExport(zp) as ex:
         ids = ex.ids
+        if reserved_splits is not None:
+            from namma.evidence.splits import time_blocks
+            from namma.core.jsonio import write_json
+            split = time_blocks(ids, ex.incomplete)
+            if Path(reserved_splits).exists():
+                raise FileExistsError(reserved_splits)
+            write_json(reserved_splits, split)
+            ids = split["train"]
         held = holdout_ids(ids, holdout_every)
         train = [k for k in ids if k not in set(held)]
         doc = load_poses(d)
@@ -374,6 +387,11 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     lidar_in = work / "lidar_input"
     prep = prepare(pdir, lidar_in, holdout_every=0, **recipe)
     ply = work / "room.ply"
+    from namma.studio.splat_large import splat_options
+    evidence = splat_options(run_dir, pdir)["evidence"] is True
+    if evidence:
+        from namma.evidence.bundle import allocate_version
+        ply = allocate_version(run_dir) / "splat.ply"
     if dense:
         progress("Placing the start points from every LiDAR reading", 0.11)
         prep["start_points"] = dense_start(lidar_in)
@@ -381,9 +399,6 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
         timeout_s = max(timeout_s, 5 * 3600)
     plan = lidar_training_plan(pdir, lidar_in / "images", iters=iters, max_side=max_side, cap=cap)
     iters, max_side, cap = plan["iters"], plan["max_side"], plan["cap"]
-    if dense:
-        iters, cap = int(lidar_options(pdir).get("lidar_iters", dense_steps(prep["train"]))), \
-            int(lidar_options(pdir).get("lidar_cap", DENSE_CAP))
 
     # 3. training
     label = (f"Training the photoreal view ({prep['train']} photos at FULL resolution "
@@ -400,6 +415,8 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
         large = ["--reg-visible"] if prep["train"] > LARGE_SCAN_PHOTOS else []
         if dense:
             large = ["--strategy", "default", "--opacity-reg", "0", "--scale-reg", "0", "--sparse-cams"]
+        if evidence:
+            large += ["--camera-table", str(ply.parent / "cameras.json")]
         run_step("splat_train", train_argv(lidar_in, ply, iters=iters, max_side=max_side, cap=cap,
                                            depth=RECIPE["depth"], depth_weight=depth_weight, holdout=False,
                                            full_res=plan["full_res"], crop_size=plan["crop_size"]) + large,
@@ -412,6 +429,12 @@ def make_photoreal(project_dir, run_id, *, iters=30000, max_side=1024, cap=600_0
     # samples by area: a fixed 200 k are 6 cm apart on a 650 m2 home and read a 47 % fit as 33 %
     T, fit = align_splat_to_mesh(ply, glb, init_T=T0, samples_per_m2=ALIGN_SAMPLES_PER_M2)
     moved = float(np.linalg.norm(T[:3, 3] - T0[:3, 3]))
+    if evidence:
+        from namma.evidence.bundle import seal_checkpoint
+        from namma.core.jsonio import sha256_file
+        write_json(ply.parent / "capture_ref.json", {"archive": str(zp), "bytes": zp.stat().st_size,
+                                                     "sha256": sha256_file(zp)})
+        seal_checkpoint(ply.parent, T, fit)
     write_json(work / "align.json", {"T_mesh_from_splat": T.tolist(), "fit": fit, "T_from_poses": T0.tolist(),
                                      "icp_shift_m": round(moved, 4)})
     if fit["within_5cm"] < MIN_WITHIN_5CM:

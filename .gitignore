@@ -20,6 +20,7 @@ projects/*/runs/*/30_undistorted/
 projects/*/runs/*/40_dense/
 projects/*/runs/*/50_mesh/
 projects/*/runs/*/65_splat/
+projects/*/runs/*/evidence/
 !projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/
 projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/*
 !projects/polycam-lidar-room-2026-11-23-20261123-fc4844/runs/*/65_splat/align.json
