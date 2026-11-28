@@ -80,6 +80,11 @@ class RegionalBaselineTest(unittest.TestCase):
             batch = load_strict(root/"renders/renders.json")
             self.assertEqual(batch["model_sha256"],control["candidate_sha256"])
             self.assertEqual(batch["edit_sha256"],sha256_file(root/"control/ledger.json"))
+            render_registered(version, registration, root/"spz", role="dev", spz_roundtrip=True)
+            compressed = load_strict(root/"spz/renders.json")
+            self.assertEqual(compressed["spz_roundtrip"]["splats_out"], 2)
+            self.assertEqual(compressed["model_sha256"], sha256_file(root/"spz/diagnostic.spz"))
+            self.assertEqual(batch["registration_sha256"], compressed["registration_sha256"])
             verify_checkpoint(version)
 
 

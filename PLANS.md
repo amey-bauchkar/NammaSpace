@@ -4,13 +4,13 @@ Base 79cca81 on codex-handoff. Programme specification in NAMMASPACE_CODEX_MASTE
 
 | Phase | Dependency and exit | State |
 |---|---|---|
-| P0 | Camera rows, private PLY, honest fit, unchanged SPZ | In progress on photo route |
-| P1 | P0; manifests, splits, evaluator, private publishing, three complete scenes | Pending |
-| P2 | P1; S1 readiness, S2 baselines, S3 seed spread | Intel graphics; training runtime absent |
-| P2a | Independent; pinned licences, genuine AI inference and resource measurements | Pending |
-| P3 | Independent; saved-still QA, coverage, native depth ingest, device A/B | Pending |
+| P0 | Camera rows, private PLY, honest fit, unchanged SPZ | Photo and Polycam checkpoints implemented and tested |
+| P1 | P0; manifests, splits, evaluator, private publishing, three complete scenes | Evidence tools exercised on Kitchen; three-scene exit open |
+| P2 | P1; S1 readiness, S2 baselines, S3 seed spread | RTX 4050 verified; Kitchen window scored across three seeds |
+| P2a | Independent; pinned licences, genuine AI inference and resource measurements | AnchorSplat weights verified; runtime and dependency audit open |
+| P3 | Independent; saved-still QA, coverage, native depth ingest, device A/B | Private Studio native training verified on synthetic capture; device A/B open |
 | X2/X3/X5/X6 and P4 | S3; recipe, BA, export, depth experiments and parity | Pending |
-| P5 | P1/S3; two-store, context equivalence, controls, rejection and one-shot evaluation | Pending |
+| P5 | P1/S3; two-store, context equivalence, controls, rejection and one-shot evaluation | Regional training and controls exercised; real-scene equivalence and acceptance open |
 | P6 | P5; localisation, observability, rollback, multi-region | Pending |
 | P7 | P5/P6; Studio, export, viewer benchmarks, large spaces | Pending |
 
@@ -253,3 +253,68 @@ tests: 2 passed. The comparison reports diagnostics only.
 
 Frozen reference registration now also verifies that every original camera's
 intrinsics are unchanged. Real COLMAP targeted suite: 2 passed, 1 skipped.
+
+Kitchen 400-step control completed. Its parent checkpoint and frozen-row
+digest match the 200-step run. Started training seeds 1 and 2 at 1,000
+steps each on the same 26-view reference for a diagnostic variance estimate
+once development registration completes.
+
+All three 26-view Kitchen training seeds sealed and passed checkpoint
+verification. Each produced 2,180 splats at 0.25 GiB peak allocated GPU
+memory. Trainer times for seeds 0, 1 and 2 were 61.4, 42.6 and 40.6 s.
+Development registration still gates any quality or variance calculation.
+
+Kitchen development registration completed with 12 of 29 development
+images registered. Checked identical frozen intrinsics for all 26 reference
+cameras against the output. Started raw scoring for seed 0, both regional
+training budgets and seeds 1 and 2. 17 unregistered views remain in the report.
+
+Kitchen diagnostic development results are recorded in
+docs/experiments/kitchen-development-diagnostic.md. The regional trainer now
+enforces the parent scale cap. The regional CUDA regression passed and the
+400-step bounded rerun is in progress.
+
+Fixed projected region scoring ran on all three Kitchen seeds and the
+bounded 400-step control. Four development views intersected the cube.
+Control gain +0.03006 dB versus 0.59931 dB seed range. Added projection
+and paired region regression coverage (3 raw scoring tests passed).
+
+Scan 2 initial training window had tracks in 24 of 26 cameras. The reference
+guard rejected the two unsupported views. Retrying the contiguous supported
+21-view training window, followed by a 1,000-step private diagnostic if BA
+passes. X5 now has a development-only SPZ round-trip render option. The CUDA
+fixture passed. The Kitchen grade-0 export retained 1,286 of 2,180 Gaussians
+and was 18,977 bytes; raw scoring is running. Higher SH degrees and scene
+coverage remain open.
+
+Scan 2's supported 21-view window sealed with 481 points, 0.6833 px
+median reprojection error and a 1.18517 metric similarity scale. Real CUDA
+training used 1,000 steps and produced 530 splats in 37.4 s, at 0.24 GiB peak
+allocated GPU memory. Development registration has started. Kitchen degree-zero
+SPZ lost 0.01904 dB; degree-three training is in progress. PromptDA Small
+upstream checkpoint revision bdc8715134ff95362ffd0402748c6f08071bc1e4,
+SHA-256 51b99fef5e3c467f3ccd12f2f4687220e7f1e88f6a07fe21f7a66adffca2af99.
+Git clone timed out; trying codeload. Weight CDN reported a connection timeout.
+
+Scan 2 registered zero of 160 development views against the 21-view
+training window. The private baseline is reproducible, but this window
+has no usable independent coverage and cannot supply quality metrics.
+Kitchen's degree-three source scored 13.25479 dB and 0.49797 SSIM across
+12 development views. SPZ comparison in progress.
+
+PromptDA Small has a private local CLI, namma.evidence.prompt_depth.
+It verifies the pinned checkpoint and native training RGB/depth hashes,
+rejects reserved observations, and records estimate provenance separately
+from measured depth. Four targeted tests passed across input guards and
+raw scoring. GitHub clone and codeload both timed out. The checkpoint CDN
+also timed out after retries. Genuine inference and X6 remain pending.
+
+Kitchen degree-three export lost 0.04959 dB and 0.001389 SSIM on development.
+An SPZ diagnostic with zero cutoff is running. Raw scoring now processes
+256-row strips with a five-row SSIM halo to bound memory for native-resolution
+images. The strip-boundary regression passed (5 targeted CPU tests total).
+The refreshed regional CUDA integration including SPZ also passed.
+
+Kitchen degree-three no-prune export lost 0.04707 dB relative to PLY.
+Default pruning accounts for roughly 0.00252 dB additional loss on this
+window. Current settings stay in place pending the real-scene X5 gate.

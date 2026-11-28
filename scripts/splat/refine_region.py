@@ -1,6 +1,7 @@
 """Experimental fixed-density regional baseline on private training photos."""
 import argparse
 import json
+import math
 import random
 from pathlib import Path
 
@@ -18,6 +19,9 @@ from train_splat import save_ply, ssim
 def refine(checkpoint, images, output, center, extent, steps, seed, target_count=None, tile=None):
     verify_checkpoint(checkpoint)
     cfg = load_strict(checkpoint / "config.json")
+    max_scale = float(cfg.get("max_splat_scale", .2))
+    if not math.isfinite(max_scale) or max_scale <= 0:
+        raise ValueError("invalid checkpoint Gaussian scale limit")
     split = load_strict(checkpoint / "splits.json")
     summary = load_strict(checkpoint / "training_ba.json")
     cams = load_strict(checkpoint / "cameras.json")
@@ -92,6 +96,8 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
         for opt in optimizers:
             opt.step()
             opt.zero_grad(set_to_none=True)
+        with torch.no_grad():
+            trainable["scales"].clamp_(max=math.log(max_scale))
     if tile is not None:
         xyz = trainable["means"].detach().cpu().numpy()
         if not np.all((xyz >= core_lo) & ((xyz < core_hi) | ((xyz == core_hi) & tile["include_upper"]))):
@@ -102,6 +108,7 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
     ledger = merge_region(parent,patch,output/"candidate.ply",ids,lo,hi)
     ledger.update(parent_manifest=sha256_file(checkpoint/"manifest.json"), arm="C4" if target_count is not None else "B0-R",
                   target_count=target_count, original_count=len(ids), tile=tile,
+                  max_splat_scale_m=max_scale,
                   status="unverified", steps=steps, seed=seed, center=center, extent_m=extent,
                   candidate_sha256=sha256_file(output/"candidate.ply"),training_views=len(views))
     (output/"ledger.json").write_text(json.dumps(ledger,allow_nan=False),encoding="utf-8")
