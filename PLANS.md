@@ -118,3 +118,58 @@ target GPU viewer measurements, Xcode and physical ARKit capture validation.
 Remaining implementation also includes model orchestration, two-store
 optimisation, the full acceptance and rollback path, and Studio integration.
 These are engineering tasks as well as validation dependencies.
+
+## RTX workstation readiness (2026-11-28)
+
+Working branch codex/fidelity-p2-readiness, based on c636c3e. The local project
+directories include Kitchen, Scan 1 and Scan 2 raw archives; capture eligibility
+and independent observation coverage still need checking. Node baseline: 50/50.
+Studio Python is available as python; the py launcher failed discovery.
+Python baseline command: python -m pytest -q -p no:cacheprovider tests.
+
+Real CUDA probe: tools/splat-env/Scripts/python.exe scripts/splat/probe_regional_cuda.py.
+RTX 4050 Laptop, torch 2.4.1+cu124, gsplat 1.5.3+pt24cu124. An antialiased
+64x64 render and Adam update preserved the frozen row exactly, changed the
+trainable row and produced a trainable projected absolute gradient sum of
+81.47067. This verifies concatenation/autograd only. Next verify DefaultStrategy
+statistics and growth on regional rows and establish data coverage before S2.
+
+Follow-up: scripts/splat/regional_strategy.py maps unpacked projected absolute
+gradients and radii to regional row indices after backward. The CUDA probe
+exercised DefaultStrategy pre/post hooks and forced duplication: one regional
+row became two and the frozen position stayed exactly equal. This covers
+duplication only, with synthetic parameters. It does not establish scene-level
+integrity or equivalence. Sandbox baseline first Studio failure: WinError 10013
+connecting to localhost. Full suite rerun with local sockets allowed.
+
+The restricted Python baseline completed with 453 passed, 9 skipped, 62 failed
+and 6 setup errors in 318.48 s. Confirmed both localhost denial and excessive
+sandbox temporary path length. Unrestricted baseline is running. Kitchen
+training-only BA started from the kitchen-sharp raw archive into the ignored
+scratch/fidelity/kitchen-ba directory: 231 train, 29 development, 29 reserved.
+
+Real CUDA synthetic window check: 100 deterministic camera translations over
+1,000 anisotropic Gaussians; 143–260 rows retained, maximum RGB/alpha absolute
+error 0.0. Reproduce with tools/splat-env/Scripts/python.exe
+tests/test_regional_window_cuda.py (1 passed). The checkpoint CLI
+scripts/splat/check_window_context.py tests 100 distinct training cameras with
+stored pose corrections at the saved SH degree. Per-scene evidence pending.
+The expanded CUDA strategy probe exercised duplication, splitting and pruning;
+regional counts were 2/2/0, with frozen means/scales/quats/opacities equal.
+
+Regression baseline with localhost available: 521 passed, 9 skipped in
+469.35 s. This count predates the two new regional CUDA tests. The
+fixed-density regional baseline now reads verified checkpoint cameras and
+hashed training photos, applies saved pose and colour corrections, supervises
+region windows, anchors the inner boundary, and writes a separate unverified
+candidate plus replacement ledger. Private candidate serialization checks
+all frozen row bytes. Synthetic GPU integration (3 Adam steps, two cameras):
+tools/splat-env/Scripts/python.exe tests/test_regional_baseline_cuda.py passed.
+Real-scene quality, controls, acceptance, rollback and Studio integration remain open.
+
+C4 density control now accepts an explicit target count within the 2x budget,
+splits evenly selected parents along their longest axes, and uses the B0-R
+training budget and sampling sequence. The GPU fixture checked target count,
+equal step budget, fresh IDs and identical frozen-row digest. Development
+rendering can load a digest-bound regional candidate with --edit; raw metrics
+retain its model and ledger hashes. Phase evidence: docs/phase_reports/P2.md.

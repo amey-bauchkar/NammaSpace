@@ -49,6 +49,7 @@ def score_registered(registration, renders, output):
     mse = sum(r["pixels"] * r["mse"] for r in rows.values()) / pixels
     report = {"role": role, "renders_sha256": sha256_file(renders / "renders.json"),
               "checkpoint_sha256": batch["checkpoint_sha256"], "frames": rows,
+              "model_sha256": batch.get("model_sha256"), "edit_sha256": batch.get("edit_sha256"),
               "unregistered": batch["unregistered"], "acceptance_evaluated": False,
               "aggregate": {"pixels": pixels, "mse": mse, "perfect_match": mse == 0,
                             "raw_psnr_db": float(-10*np.log10(mse)) if mse else None,

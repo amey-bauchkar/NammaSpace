@@ -34,7 +34,7 @@ def render_development(version, registration, output, *, device="cuda"):
     return render_registered(version, registration, output, role="dev", device=device)
 
 
-def render_registered(version, registration, output, *, role, device="cuda"):
+def render_registered(version, registration, output, *, role, device="cuda", edit=None):
     import torch
     from train_splat import render
     if role not in {"dev", "final_test"}:
@@ -63,7 +63,18 @@ def render_registered(version, registration, output, *, role, device="cuda"):
         raise ValueError("no independently registered observations")
     cfg = load_strict(version / "config.json")
     degree = min((cfg["iters"] - 1) // 1000, cfg["sh_degree"])
-    params = load_parameters(version / "splat.ply", device)
+    model = version / "splat.ply"
+    edit_hash = None
+    if edit is not None:
+        if role != "dev":
+            raise ValueError("regional candidates require development evaluation")
+        ledger = load_strict(edit / "ledger.json")
+        model = edit / "candidate.ply"
+        if (ledger["parent_manifest"] != checkpoint_hash
+                or ledger["candidate_sha256"] != sha256_file(model)):
+            raise ValueError("regional candidate or parent digest mismatch")
+        edit_hash = sha256_file(edit / "ledger.json")
+    params = load_parameters(model, device)
     output.mkdir(parents=True, exist_ok=False)
     hashes = {}
     with torch.no_grad():
@@ -86,6 +97,7 @@ def render_registered(version, registration, output, *, role, device="cuda"):
     write_json(output / "renders.json", {"role": role, "registered": sorted(ids), "unregistered": reg["unregistered"],
                "checkpoint_sha256": checkpoint_hash, "registration_sha256": registration_hash,
                "claim_sha256": claim_hash, "image_sha256": hashes, "sh_degree": degree,
+               "edit_sha256": edit_hash, "model_sha256": sha256_file(model),
                "colour_fit": False, "pose_fit": False})
 
 
@@ -94,5 +106,6 @@ if __name__ == "__main__":
     for name in ("checkpoint", "registration", "output"):
         parser.add_argument(name, type=Path)
     parser.add_argument("--final", action="store_true")
+    parser.add_argument("--edit", type=Path, help="private regional candidate for development scoring")
     args = parser.parse_args()
-    render_registered(args.checkpoint, args.registration, args.output, role="final_test" if args.final else "dev")
+    render_registered(args.checkpoint, args.registration, args.output, role="final_test" if args.final else "dev", edit=args.edit)
