@@ -536,3 +536,20 @@ keeps the earlier candidate pairs between retained cameras in its fresh
 matching run. It verifies the prior training images against the capture
 and rejects pair lists that include any reserved frames. Extraction is
 underway. The native tests passed (2 passed, 1 opt-in CUDA test skipped).
+
+The full Python suite passed with loopback enabled (540 passed, 12 skipped).
+The opt-in native CUDA, raw scorer and regional screen suite passed all 12
+tests using a short Windows scratch path and the repository's src path.
+
+The registered scorer now supports offline LPIPS 0.1 with the official
+AlexNet and calibration weights pinned by SHA-256. The LPIPS, torchvision
+and OpenCV wheels live in scratch and share the existing PyTorch runtime.
+The protocol samples at most 32 native 128-pixel square patches per view
+from inside the projected region. It matched upstream CPU inference within
+6e-8 on a synthetic patch. The Kitchen parent scored 0.785403789 and the
+capped edit 0.787404860 over the same 192 patches from six views. This
+metric is currently available for development. It has yet to be admitted
+to a frozen final-test protocol.
+
+[LPIPS source and license](https://github.com/richzhang/PerceptualSimilarity)
+and [torchvision AlexNet weights](https://github.com/pytorch/vision/blob/v0.19.1/torchvision/models/alexnet.py)

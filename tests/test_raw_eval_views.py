@@ -36,6 +36,12 @@ def test_development_comparison_requires_matching_registration():
     with pytest.raises(ValueError, match="different observations"):
         compare_development(base_variant, {**other_variant, "training_reference_sha256": "other"},
                             training_variants=True)
+    perceptual = {"protocol": {"method": "fixture"}, "frames": {"1": {"patches": 1}}, "patches": 1, "mean": .2}
+    base_lpips = {**baseline, "lpips": perceptual}
+    candidate_lpips = {**candidate, "lpips": {**perceptual, "mean": .3}}
+    assert compare_development(base_lpips, candidate_lpips)["delta_lpips"] == pytest.approx(.1)
+    with pytest.raises(ValueError, match="different LPIPS protocols or coverage"):
+        compare_development(base_lpips, {**candidate, "lpips": {**perceptual, "frames": {}}})
 
 
 def test_region_projection_respects_registered_camera():

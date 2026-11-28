@@ -1,4 +1,4 @@
-"""Score a digest-bound observation batch in the Studio CPU environment."""
+"""Score a digest-bound observation batch with optional offline LPIPS."""
 import argparse
 import sys
 from pathlib import Path
@@ -14,8 +14,10 @@ from namma.afe.screen import screen_development
 
 if __package__:
     from .eval_views import boundary_metrics, depth_metrics, detail_metrics, raw_metrics, summarize_detail
+    from .perceptual import PerceptualScorer
 else:
     from eval_views import boundary_metrics, depth_metrics, detail_metrics, raw_metrics, summarize_detail
+    from perceptual import PerceptualScorer
 
 
 def projected_region(center, extent, pose, camera):
@@ -67,7 +69,7 @@ def aggregate_depth(rows):
 
 
 def score_registered(registration, renders, output, *, region=None, region_ledger=None,
-                     integrity_baseline=None, detail=False):
+                     integrity_baseline=None, detail=False, lpips_alexnet=None, lpips_device="cuda"):
     batch = load_strict(renders / "renders.json")
     role = batch["role"]
     region_ledger_hash = None
@@ -81,6 +83,8 @@ def score_registered(registration, renders, output, *, region=None, region_ledge
         raise ValueError("outside-region integrity requires the rendered edit's own region ledger")
     if region is not None and role != "dev":
         raise ValueError("experimental region scoring requires development observations")
+    if lpips_alexnet is not None and role != "dev":
+        raise ValueError("experimental LPIPS scoring requires development observations")
     if role not in {"dev", "final_test"} or batch["pose_fit"] is not False or batch["colour_fit"] is not False:
         raise ValueError("expected a raw development or final-test render batch")
     reg_path = registration / f"{role}_registration.json"
@@ -119,6 +123,8 @@ def score_registered(registration, renders, output, *, region=None, region_ledge
     integrity_rows = {}
     detail_rows = {}
     boundary_rows = {}
+    perceptual = PerceptualScorer(lpips_alexnet, lpips_device) if lpips_alexnet is not None else None
+    perceptual_rows = {}
     for frame in sorted(ids):
         if not frame.isascii() or not frame.isdigit():
             raise ValueError("invalid Polycam frame ID")
@@ -164,6 +170,8 @@ def score_registered(registration, renders, output, *, region=None, region_ledge
                 mask = mask[y0:y1, x0:x1]
             pred_rgb, obs_rgb = np.asarray(pred.convert("RGB")), np.asarray(observed.convert("RGB"))
             rows[frame] = raw_metrics(pred_rgb, obs_rgb, mask)
+            if perceptual is not None:
+                perceptual_rows[frame] = perceptual.score(pred_rgb, obs_rgb, mask)
             if detail:
                 detail_rows[frame] = summarize_detail([detail_metrics(pred_rgb, obs_rgb, mask)])
                 if mask is not None:
@@ -202,6 +210,11 @@ def score_registered(registration, renders, output, *, region=None, region_ledge
             report["boundary_metrics"] = {"method": "raw_rgb_4_neighbor_step_residual_v1", "frames": boundary_rows,
                                           "pairs": pairs,
                                           "mean_rgb_step_error": error / (3 * 255 * pairs) if pairs else None}
+    if perceptual is not None:
+        count = sum(row["patches"] for row in perceptual_rows.values())
+        total = sum(row["patches"] * row["mean"] for row in perceptual_rows.values() if row["patches"])
+        report["lpips"] = {"protocol": perceptual.protocol, "frames": perceptual_rows,
+                           "patches": count, "mean": total / count if count else None}
     output.mkdir(parents=True, exist_ok=False)
     write_json(output / "raw_metrics.json", report)
     return report
@@ -241,6 +254,13 @@ def compare_development(baseline, candidate, *, training_variants=False):
             raise ValueError("development scores cover different measured depth")
         result["depth"] = {f"delta_{key}": depth_b[key] - depth_a[key]
                            for key in ("coverage", "within_2cm", "within_5cm")}
+    lpips_a, lpips_b = baseline.get("lpips"), candidate.get("lpips")
+    if lpips_a is not None or lpips_b is not None:
+        if (lpips_a is None or lpips_b is None or lpips_a["protocol"] != lpips_b["protocol"]
+                or {key: row["patches"] for key, row in lpips_a["frames"].items()} !=
+                   {key: row["patches"] for key, row in lpips_b["frames"].items()}):
+            raise ValueError("development scores use different LPIPS protocols or coverage")
+        result["delta_lpips"] = lpips_b["mean"] - lpips_a["mean"] if lpips_a["patches"] else None
     return result
 
 
@@ -254,12 +274,15 @@ if __name__ == "__main__":
     parser.add_argument("--region-ledger", type=Path, help="use this development edit's fixed scoring cube")
     parser.add_argument("--integrity-baseline", type=Path, help="check outside-region RGB against original renders")
     parser.add_argument("--detail-metrics", action="store_true", help="score raw edge agreement and high-frequency energy")
+    parser.add_argument("--lpips-alexnet", type=Path, help="local pinned AlexNet weights for development LPIPS")
+    parser.add_argument("--lpips-device", choices=("cpu", "cuda"), default="cuda")
     parser.add_argument("--point-support", type=Path, help="screen this development edit against its point support report")
     args = parser.parse_args()
     if args.compare_training_variants and args.compare_to is None:
         parser.error("--compare-training-variants requires --compare-to")
     report = score_registered(args.registration, args.renders, args.output, region_ledger=args.region_ledger,
-                              integrity_baseline=args.integrity_baseline, detail=args.detail_metrics)
+                              integrity_baseline=args.integrity_baseline, detail=args.detail_metrics,
+                              lpips_alexnet=args.lpips_alexnet, lpips_device=args.lpips_device)
     if args.point_support:
         screening = screen_development(report, load_strict(args.point_support))
         write_json(args.output / "screening.json", {

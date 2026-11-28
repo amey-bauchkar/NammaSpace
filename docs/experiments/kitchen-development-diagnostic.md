@@ -176,3 +176,9 @@ produced a different PLY digest, the same SPZ size, and the same result
 that all 17 edited centres fell outside the registered development views.
 Its exact pixel comparison found changes in 24,720,631 of 115,779,685
 outside-region pixels.
+
+Offline AlexNet LPIPS 0.1 measured 0.785403789 for the parent and
+0.787404860 for the capped edit. It used 192 matched native 128 × 128
+patches inside the projected region across six development views. Lower
+LPIPS is better. The score increased by 0.002001071 while regional raw
+PSNR increased by 0.02142 dB.
