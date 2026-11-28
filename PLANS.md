@@ -173,3 +173,46 @@ training budget and sampling sequence. The GPU fixture checked target count,
 equal step budget, fresh IDs and identical frozen-row digest. Development
 rendering can load a digest-bound regional candidate with --edit; raw metrics
 retain its model and ledger hashes. Phase evidence: docs/phase_reports/P2.md.
+
+Kitchen attempt 1 extracted all 231 training images (12.09 minutes) but
+COLMAP reused two EXIF camera records. The guard rejected this database.
+Changed experimental training and registration to explicitly request
+ImageReader.single_camera_per_image=1. Fresh run: scratch/fidelity/kitchen-ba-per-image.
+Privacy checks now refuse stable-ID checkpoint PLYs even if renamed and known
+regional candidate/ledger filenames during publication. Privacy and legacy
+package regressions both passed. AnchorSplat source, Pointcept revision and
+checkpoint LFS digests recorded in THIRD_PARTY_NOTICES.md.
+
+AnchorSplat 1x/20x verified locally against both pinned SHA-256 hashes.
+Unmodified upstream inference imports a GPLv3+ PLY dependency; see notices.
+No Linux distribution was listed by wsl --list --quiet. Runtime qualification
+and real inference remain open. Added metric defect tiling with frozen context,
+disjoint ownership and explicit experimental extents; four CPU tests passed.
+The regional trainer can select a planned tile with --defect-bounds and --tile-index.
+
+Native BA references now feed the real gsplat trainer with --measured-depth.
+Training uses only hash-checked, same-frame ARKit depth at confidence level 2.
+The synthetic archive integration passed on actual COLMAP/CUDA (2 tests passed,
+384 splats, 3 steps, 7.3 trainer seconds). See P3 report. Tiled GPU control
+test also passed, including private candidate render and unchanged frozen rows.
+
+Studio private native baseline: added opt-in run-page action, coordinate-frame
+selection, worker dispatch, status and cancellation. Existing native imports
+supply integrity-indexed training members without needing the original ZIP.
+Imported synthetic archive through both job subprocesses on real COLMAP/CUDA:
+2 passed, 36.92 s. Node regressions: 50 passed. See P3 for activation.
+
+Kitchen corrected run: 231/231 distinct camera records, feature extraction
+654.44 s, peak process-tree RSS 8746.4 MiB. Matching started. Studio native
+opt-in, coordinate selection and cancellation marker regression passed.
+Corrected texture healing and embedded an atlas provenance mask. Four
+existing texture regressions and one targeted coplanar-support regression
+passed. Full Python regression with CUDA native training started.
+
+Full Python regression with native GPU integration: 528 passed, 11 skipped
+(333.95 s). The subsequent texture provenance assertion passed with all four
+blendtex tests. Kitchen full training BA returned 231 camera rows, but only
+153 had at least three triangulated tracks. COLMAP reported NO_CONVERGENCE at
+101 iterations. The guard refused to seal the reference. A training-only
+diagnostic rerun on the longest contiguous 26-view supported window is in
+scratch/fidelity/kitchen-ba-diagnostic. It cannot qualify the full Kitchen scene.

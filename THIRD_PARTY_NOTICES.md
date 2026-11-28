@@ -62,3 +62,27 @@ The full registry with URLs, sizes, checksums and intended experiments is `datas
 ## 3. Earlier project material
 Phase 8–12 artifacts in this repository are the team's own work; the Phase 12 ETH3D kicker results are
 derived from CC BY-NC-SA 4.0 data and inherit its terms.
+
+## Experimental model audit (2026-11-28)
+
+AnchorSplat source at 7a15ce68fdf426ab16d87087c10f8102abb03da1 carries the
+[MIT license](https://github.com/zhude233/AnchorSplat/blob/7a15ce68fdf426ab16d87087c10f8102abb03da1/LICENSE).
+Its Pointcept fork at c4aa232bfbc24dc0f3d6699dff03632f9d0ff595 also carries
+the [MIT license](https://github.com/ChenYutongTHU/Pointcept/blob/c4aa232bfbc24dc0f3d6699dff03632f9d0ff595/LICENSE).
+The [checkpoint repository](https://huggingface.co/de233/AnchorSplat/tree/aa36b63fba0a362fbf926d5e3066b134e8868c6c)
+reports these SHA-256 LFS digests:
+
+| Factor | Bytes | SHA-256 |
+|---|---:|---|
+| 1x | 192152479 | 85899b43ca8954fa470398232076aa18c9e32812fb1e097e0e28ccb37247e7b0 |
+| 20x | 192735263 | ad05f8b965c002c1f62cea53e4ce10ed4804bbc433375afa5f411f236d1b79a3 |
+
+These are upstream digests. Download verification and the transitive dependency
+audit are pending. PromptDA source uses [Apache-2.0](https://github.com/DepthAnything/PromptDA/blob/9161547ca7151e14fcc8f490ad3cc02fa9437483/LICENSE).
+
+Local checkpoint SHA-256 verification succeeded for both AnchorSplat files.
+The pinned upstream environment imports plyfile 1.0.3 in its inference entry
+point and PLY exporter. Its [PyPI metadata](https://pypi.org/project/plyfile/1.0.3/)
+declares GPLv3-or-later, outside the programme's permissive-only dependency
+policy. A compatible permissive PLY implementation and an audit of the other
+runtime dependencies are required before enabling this environment.

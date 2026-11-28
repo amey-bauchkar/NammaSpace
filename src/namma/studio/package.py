@@ -29,6 +29,31 @@ class PackageError(RuntimeError):
     pass
 
 
+def _check_public_member(root, relative):
+    root = Path(root).resolve()
+    relative = Path(relative)
+    resolved = (root / relative).resolve()
+    if relative.anchor or ".." in relative.parts or not resolved.is_relative_to(root):
+        raise PackageError("private or external file in publication manifest")
+    for path in (relative, resolved.relative_to(root)):
+        if ("evidence" in {part.casefold() for part in path.parts}
+                or path.name.casefold() in {"candidate.ply", "region.ply", "ledger.json",
+                                            "training_ba.json", "capture_ref.json", "splits.json"}):
+            raise PackageError("private or external file in publication manifest")
+    if resolved.suffix.lower() == ".ply" and resolved.exists():
+        # Legacy viewer PLYs predate stable IDs. Evidence PLYs carry row_id.
+        with resolved.open("rb") as stream:
+            header = stream.read(65536).splitlines()
+        for line in header:
+            if line.strip() == b"end_header":
+                break
+            parts = line.split()
+            if parts[:1] == [b"property"] and parts[-1:] == [b"row_id"]:
+                raise PackageError("private or external file in publication manifest")
+        else:
+            raise PackageError("invalid PLY header in publication manifest")
+
+
 def _route_grid(ctx, out, metres_per_unit):
     """nav/route_grid.json: the conservative navigation layer (floor fully reconstructed, obstacles inflated by the
     agent radius) in MODEL units and the roam-grid run-length format, so a published static site can plan walking
@@ -74,6 +99,7 @@ def build_scene_package(ctx, out):
     scale = current_scale(ctx)
     lods = []
     for t in tex["lods"]:
+        _check_public_member(ctx.dir("texture"), t["file"])
         dst = out / "scene" / t["file"]
         shutil.copy2(ctx.dir("texture") / t["file"], dst)
         lods.append({"lod": t["lod"], "path": f"scene/{t['file']}", "format": "glb", "bytes": dst.stat().st_size,
@@ -83,6 +109,7 @@ def build_scene_package(ctx, out):
     sj = ctx.dir("texture") / "splat.json"
     if sj.exists():
         sd = load_strict(sj)
+        _check_public_member(ctx.dir("texture"), sd["file"])
         src = ctx.dir("texture") / sd["file"]
         if src.exists():
             dst = out / "scene" / sd["file"]
@@ -212,12 +239,7 @@ def publish_static_site(package_dir, out_dir, web_dir=None, max_file_mb=None, in
     package_dir, out_dir = Path(package_dir), Path(out_dir)
     pkg = load_strict(package_dir / "scene_package.json")
     for entry in pkg["files"]:
-        rel = Path(entry["path"])
-        target = (package_dir / rel).resolve()
-        if (rel.anchor or ".." in rel.parts or not target.is_relative_to(package_dir.resolve())
-                or "evidence" in {part.casefold() for part in rel.parts}
-                or "evidence" in {part.casefold() for part in target.relative_to(package_dir.resolve()).parts}):
-            raise PackageError("private or external file in publication manifest")
+        _check_public_member(package_dir, entry["path"])
     web_dir = Path(web_dir or PROJECT_ROOT / "web")
     if out_dir.exists():
         shutil.rmtree(out_dir)

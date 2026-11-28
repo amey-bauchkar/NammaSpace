@@ -22,7 +22,10 @@ def test_publisher_refuses_private_content_before_replacing_site(tmp_path):
     site.mkdir()
     marker = site / "existing"
     marker.touch()
-    for path in ("evidence/v1/cameras.json", "../capture/photo.jpg"):
+    (tmp_path / "renamed.ply").write_bytes(
+        b"ply\nformat binary_little_endian 1.0\nelement vertex 0\nproperty float row_id\nend_header\n")
+    for path in ("evidence/v1/cameras.json", "../capture/photo.jpg", "scene/candidate.ply",
+                 "reports/ledger.json", "renamed.ply"):
         write_json(tmp_path / "scene_package.json", {"files": [{"path": path}]})
         with pytest.raises(PackageError, match="private or external"):
             publish_static_site(tmp_path, site)
