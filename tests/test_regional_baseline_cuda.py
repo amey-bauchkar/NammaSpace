@@ -48,10 +48,19 @@ class RegionalBaselineTest(unittest.TestCase):
                                "training_ba":{"training_images":hashes,"frozen_model":{"fixture":"synthetic"}},"cameras":rows}.items():
                 write_json(version/(name+".json"),data)
             seal_checkpoint(version,None,{"status":"not_measured"})
-            refine(version,images,root/"edit",[0.,0.,2.],.5,3,1,contain_support=True)
+            from check_window_context import validate
+            context_report = root / "context.json"
+            write_json(context_report, validate(version, 0, 24, diagnostic_repeated_cameras=True))
+            with self.assertRaisesRegex(ValueError, "context report does not qualify"):
+                refine(version, images, root/"unqualified", [0.,0.,2.], .5, 3, 1,
+                       context_report=context_report)
+            refine(version,images,root/"edit",[0.,0.,2.],.5,3,1,contain_support=True,
+                   context_report=context_report, diagnostic_context=True)
             ledger = load_strict(root/"edit/ledger.json")
             self.assertEqual(ledger["replaced_ids"],[0])
             self.assertEqual(ledger["added_ids"],[2])
+            self.assertEqual(ledger["context"]["mode"], "culled")
+            self.assertEqual(ledger["context"]["max_window_error"], 0)
             original = PlyData.read(str(version/"splat.ply"),mmap=False)["vertex"].data
             result = PlyData.read(str(root/"edit/candidate.ply"),mmap=False)["vertex"].data
             self.assertEqual(result[0].tobytes(),original[1].tobytes())

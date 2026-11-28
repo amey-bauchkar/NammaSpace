@@ -96,3 +96,21 @@ The three-sigma support constraint selected two trainable rows. After 400
 steps, the rendered edit changed none of the 115,779,685 outside pixels and
 produced zero change in the regional RGB scores. Integrity passed on this
 window, but there is no measured fidelity gain.
+
+## Window context equivalence
+
+On the degree-three Kitchen checkpoint, 100 deterministic 256-pixel windows
+over 26 distinct training cameras produced a maximum absolute RGB or alpha
+difference of 0 between full-context and culled renders. The culling mask
+retained 70–713 of 5,772 Gaussians per window (mean 264). This is a repeated
+camera diagnostic. The qualification path still requires 100 distinct cameras.
+
+    tools/splat-env/Scripts/python.exe scripts/splat/check_window_context.py PRIVATE_CHECKPOINT PRIVATE_REPORT --diagnostic-repeated-cameras
+
+A matched 50-step optimization used two Kitchen training windows. The
+preflight RGB and alpha error was zero, and culling kept 538 and 2,111
+frozen rows. Both exports preserved the same frozen-row digest and IDs.
+Trainable parameters differed by at most 2.39e-7, and 135 RGB pixels across
+four of twelve development views differed by one channel level. Exact
+training equivalence therefore remains unverified even though preflight
+forward renders matched. Timings overlapped other jobs and are diagnostic.

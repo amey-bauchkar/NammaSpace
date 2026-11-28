@@ -408,3 +408,23 @@ track support are unverified until the live retry finishes.
 Native end-to-end verification after the evaluation updates: 7 passed in
 79.88 s with real COLMAP and CUDA. A modified predicted depth member was
 rejected before scoring. No real final-test data was extracted.
+
+Kitchen degree-three window culling reproduced RGB and alpha exactly across
+100 windows from 26 cameras. This report is ineligible for qualification
+because of repeated cameras. The regular CLI still requires 100 distinct
+training views. The synthetic CUDA regression passed again.
+
+Regional training now accepts a checkpoint-bound context report. Normal
+culling requires a passing report from 100 distinct cameras. For each
+actual training window it compares full and culled RGB/alpha before caching
+eligible frozen indices, retaining every trainable row. It falls back to
+full context if any window exceeds 1e-6 error. Explicit provisional mode
+was verified by the CUDA integration. A matched Kitchen diagnostic is
+running; it cannot qualify the production path.
+
+Matched Kitchen context training preserved frozen hashes. Forward preflight
+matched, but independent optimization yielded differences of up to 2.39e-7
+in trainable parameters and one channel level in 135 development pixels.
+Culling remains opt-in. A GPU regression verifies that the regular mode
+rejects a repeated-camera report. Native retry finished feature extraction
+and moved into geometric matching.

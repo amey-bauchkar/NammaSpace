@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from check_window_context import crop_K, render, se3_exp
+from check_window_context import compare_window, crop_K, render, se3_exp
 from density_control import uniform_split
 from merge_region import _vertices, merge_region
 from render_development import load_parameters, load_strict, sha256_file, verify_checkpoint
@@ -17,7 +17,7 @@ from train_splat import save_ply, ssim
 
 
 def refine(checkpoint, images, output, center, extent, steps, seed, target_count=None, tile=None,
-           contain_support=False):
+           contain_support=False, context_report=None, diagnostic_context=False):
     verify_checkpoint(checkpoint)
     cfg = load_strict(checkpoint / "config.json")
     max_scale = float(cfg.get("max_splat_scale", .2))
@@ -100,13 +100,43 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
     if len(views)<2:
         raise ValueError("insufficient training views of region")
     degree = min((cfg["iters"]-1)//1000,cfg["sh_degree"])
+    contexts = {}
+    context = {"mode": "full"}
+    if context_report is not None:
+        report = load_strict(context_report)
+        distinct = {row["camera"] for row in report["views"]}
+        if (report["checkpoint"] != sha256_file(checkpoint / "manifest.json")
+                or report.get("equivalent") is not True or len(report["views"]) != 100
+                or not all(0 <= row["max_abs_error"] <= 1e-6 for row in report["views"])
+                or distinct - {cam["name"] for cam in cams}
+                or (not diagnostic_context and
+                    (len(distinct) < 100 or report.get("qualification_eligible") is not True))):
+            raise ValueError("context report does not qualify this checkpoint")
+        frozen_count = len(frozen["means"])
+        with torch.no_grad():
+            full = {k: torch.cat([frozen[k], v]) for k, v in trainable.items()}
+            errors = []
+            for cam, V, K, (x0, y0, x1, y1), _, _ in views:
+                selected, check = compare_window(full, V, K, x1-x0, y1-y0, degree, keep_from=frozen_count)
+                contexts[cam["name"]] = selected[:frozen_count].nonzero().flatten()
+                errors.append(check["max_abs_error"])
+            del full
+        if max(errors) > 1e-6:
+            contexts.clear()
+        context = {"mode": "culled" if contexts else "full_fallback", "diagnostic": diagnostic_context,
+                   "report_sha256": sha256_file(context_report), "max_window_error": max(errors),
+                   "frozen_rows_per_view": {name: len(indices) for name, indices in contexts.items()}}
+    elif diagnostic_context:
+        raise ValueError("diagnostic culling requires a context report")
     rng = random.Random(seed)
     for step in range(steps):
         cam,V,K,box,gain,offset = rng.choice(views)
         with Image.open(images / cam["name"]) as im:
             rgb = im.convert("RGB").resize((cam["width"],cam["height"]), Image.Resampling.LANCZOS).crop(box)
             target = torch.tensor(np.asarray(rgb), device="cuda").float()[None]/255
-        combined = {k: torch.cat([frozen[k],v]) for k,v in trainable.items()}
+        indices = contexts.get(cam["name"])
+        combined = {k: torch.cat([frozen[k] if indices is None else frozen[k][indices], v])
+                    for k, v in trainable.items()}
         result = render(combined,V,K,target.shape[2],target.shape[1],degree)[0]*gain+offset
         loss = .8*(result-target).abs().mean()+.2*(1-ssim(result.permute(0,3,1,2),target.permute(0,3,1,2)))
         if boundary.any():
@@ -130,6 +160,7 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
                   target_count=target_count, original_count=len(ids), tile=tile,
                   max_splat_scale_m=max_scale,
                   support_sigma_limit=3 if contain_support else None,
+                  context=context,
                   status="unverified", steps=steps, seed=seed, center=center, extent_m=extent,
                   candidate_sha256=sha256_file(output/"candidate.ply"),training_views=len(views))
     (output/"ledger.json").write_text(json.dumps(ledger,allow_nan=False),encoding="utf-8")
@@ -146,6 +177,8 @@ if __name__ == "__main__":
     p.add_argument("--target-count",type=int,help="run the density-matched control with this regional row count")
     p.add_argument("--contain-support", action="store_true",
                    help="restrict training to Gaussians with nominal three-sigma support inside the edit core")
+    p.add_argument("--context-report", type=Path, help="use scene-qualified frozen context culling")
+    p.add_argument("--diagnostic-context", action="store_true", help="permit provisional context reports")
     p.add_argument("--defect-bounds", nargs=6, type=float, metavar=("X0","Y0","Z0","X1","Y1","Z1"),
                    help="plan tiles from defect bounds and optimize the specified tile")
     p.add_argument("--tile-index",type=int,default=0)
