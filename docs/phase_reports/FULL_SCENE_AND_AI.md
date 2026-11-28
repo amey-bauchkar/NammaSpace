@@ -24,6 +24,9 @@ accuracy. The different extractor budgets prevent an isolated quality comparison
 DISK/LightGlue is running at the same bounded learned feature/resolution budget,
 reusing the SIFT feature database's validated image inventory in a new directory.
 The original failed experiments remain intact. No graph check was relaxed.
+All 1,025 DISK feature caches now exist and pair matching has started. Its graph
+and BA outcome remain pending. Do not report extraction completion as scene
+reconstruction success.
 graph_diagnostics.py reads each database read-only and records component members,
 isolated observations, keypoint counts, rejected cross-component pairs and
 temporal boundaries. Full private reports stay beside the experiment databases.
@@ -240,3 +243,9 @@ Native PromptDA accepts an explicit inference side without conflating it with
 output/native resolution. The focused regional/block/native suite passed 25
 tests after these changes. Validated implementation commits are e485d81 and
 3cf1df2; the final safeguards are committed as fd9a812.
+
+Subsequent learned jobs emit atomic feature/pair progress and flush their match
+streams at checkpoints. Genuine ALIKED inference on two training images and one
+pair passed with this instrumentation (tools/learned-matching/progress-smoke).
+The running DISK job predates the instrumentation and must not be restarted to
+obtain that file. Its process handle in this session is 75468, PID 17632.

@@ -47,25 +47,30 @@ def infer(images, ids, pairs, output, approval, *, extractor="aliked", device="c
         matcher = LightGlue(features=extractor).eval().to(device)
     output.mkdir(parents=True, exist_ok=False)
     with torch.inference_mode():
-        for name in ids:
+        for index,name in enumerate(ids,1):
             features = feature_model.extract(load_image(images / f"{name}.jpg").to(device),resize=max_side)
             np.savez(output / f"{name}.npz", **{k: v.cpu().numpy() for k, v in features.items() if torch.is_tensor(v)})
+            if index%10==0 or index==len(ids):
+                write_json(output/"progress.json",{"stage":"features","completed":index,"total":len(ids)})
         with (output / "matches.txt").open("x", encoding="utf-8") as stream:
-            for a, b in pairs:
+            for index,(a, b) in enumerate(pairs,1):
                 def load(name):
                     with np.load(output / f"{name}.npz", allow_pickle=False) as cache:
                         return {k: torch.from_numpy(cache[k]).to(device) for k in cache.files}
                 result = matcher({"image0": load(a), "image1": load(b)})
                 matches = result["matches"][0].cpu().numpy()
-                if not len(matches):
-                    continue
-                stream.write(f"{a}.jpg {b}.jpg\n")
-                for i, j in matches:
-                    stream.write(f"{i} {j}\n")
-                stream.write("\n")
+                if len(matches):
+                    stream.write(f"{a}.jpg {b}.jpg\n")
+                    for i, j in matches:
+                        stream.write(f"{i} {j}\n")
+                    stream.write("\n")
+                if index%100==0 or index==len(pairs):
+                    stream.flush()
+                    write_json(output/"progress.json",{"stage":"matching","completed":index,"total":len(pairs)})
     write_json(output / "provenance.json", {"extractor": extractor, "source": commit,
                "approval_sha256": sha256_file(approval), "used_checkpoints": sorted(used),
                "torch": str(torch.__version__), "device": device, "max_keypoints": max_keypoints,"max_side":max_side})
+    write_json(output/"progress.json",{"stage":"complete","images":len(ids),"pairs":len(pairs)})
 
 
 def import_keypoints(db, db_ids, cache):

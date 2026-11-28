@@ -57,13 +57,20 @@ without downloading RGB; no README/licence/terms filenames were present in the
 two central directories, so photo permission remains unresolved. Viewer
 reproduction instructions include foreground and feature-state validation.
 
-Prioritise completing the DISK run (989/1025 extracted at the last checkpoint;
-PID 17632), then record geometric verification and graph diagnostics. Existing
+Prioritise completing the DISK run (1025/1025 features extracted; pair matching
+started, PID 17632), then record geometric verification and graph diagnostics. Existing
 private paths above must be retained. The next GPU session should follow
 docs/RECONSTRUCTION_GPU_EXECUTION.md for exact commands and required inputs.
 Full AFE orchestration, complete evidence collectors, regional densification,
 pixel-equivalence/seam gates and controlled restoration experiments remain open.
 Preserve the pre-existing pipeline.py change.
+
+Future learned jobs now emit atomic progress.json records for feature and pair
+counts, flushing the match stream at checkpoints. A genuine ALIKED two-image /
+one-pair CPU smoke passed after this instrumentation. The already-running DISK
+process loaded the older function and will not produce those new progress
+records; monitor its liveness/matches file and final outputs instead. Do not
+restart it just because progress.json is absent.
 
 ## Implementation continuation — 28 November 2026
 
