@@ -770,12 +770,19 @@ async function showSplat(pid, rid) {
   let timer = null;
   const paint = (s) => {
     if (!f('splat')) { clearInterval(timer); return false; }
-    if (!s.available && s.status === 'not_started') {
+    if (!s.available && !s.native_frames?.length && s.status === 'not_started') {
       f('splat').hidden = true;
       return false;
     }
     f('splat').hidden = false;
     const running = ['running', 'starting'].includes(s.status);
+    const frames = s.native_frames || [];
+    const selector = f('native-frame');
+    const previous = selector.value;
+    selector.replaceChildren(...frames.map(id => el('option', { value: String(id) }, String(id))));
+    if (frames.map(String).includes(previous)) selector.value = previous;
+    f('native-frame-label').hidden = running || frames.length < 2;
+    f('native-baseline').hidden = running || frames.length === 0;
     f('splat-barbox').hidden = !running;
     f('splat-bar').style.width = `${Math.round(100 * (s.fraction || 0))}%`;
     f('splat-cancel').hidden = !running;
@@ -786,7 +793,9 @@ async function showSplat(pid, rid) {
     if (running) box.append(el('p', { class: 'small' }, `${s.label || 'Working'}… ${Math.round(100 * (s.fraction || 0))}%`));
     else if (s.status === 'done') {
       const r = s.result || {};
-      box.append(el('div', { class: 'callout ok' }, `Ready: ${(r.splats || 0).toLocaleString()} splats from ${r.keyframes} photos. Open the 3D walkthrough to see it.`));
+      if (r.kind === 'private_native_checkpoint') {
+        box.append(el('div', { class: 'callout ok' }, 'Private LiDAR baseline ready for evaluation.'));
+      } else box.append(el('div', { class: 'callout ok' }, `Ready: ${(r.splats || 0).toLocaleString()} splats from ${r.keyframes} photos. Open the 3D walkthrough to see it.`));
     } else if (s.status === 'error') box.append(el('div', { class: 'callout bad' }, s.error || 'Failed.'));
     else if (s.status === 'cancelled') box.append(el('p', { class: 'small muted' }, 'Cancelled.'));
     else if (!s.available) box.append(el('p', { class: 'small muted' }, s.unavailable_reason || 'Not available for this space.'));
@@ -795,14 +804,16 @@ async function showSplat(pid, rid) {
   const poll = async () => {
     try { if (!paint(await api(url))) clearInterval(timer); } catch (e) { clearInterval(timer); }
   };
-  f('splat-go').onclick = async () => {
+  const start = async (endpoint, body) => {
     try {
-      await api(url, { method: 'POST', body: '{}' });
+      await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
       clearInterval(timer);
       timer = setInterval(poll, 3000);
       poll();
     } catch (e) { f('splat-state').replaceChildren(el('div', { class: 'callout bad' }, e.message)); }
   };
+  f('splat-go').onclick = () => start(url, {});
+  f('native-baseline').onclick = () => start(url + '/native-baseline', { coordinate_frame: Number(f('native-frame').value) });
   f('splat-cancel').onclick = () => api(`${url}/cancel`, { method: 'POST', body: '{}' }).then(poll);
   const s = await api(url);
   if (paint(s)) timer = setInterval(poll, 3000);

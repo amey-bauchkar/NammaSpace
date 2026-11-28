@@ -58,7 +58,7 @@ def adjust(output, intr, priors):
         path.mkdir()
         return path
     run("features", "feature_extractor", "--database_path", db, "--image_path", images,
-        "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera", 0,
+        "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
         "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
     db_ids = poses._db_images(db)
     if set(db_ids) != names or len({cid for _, cid in db_ids.values()}) != len(ids):

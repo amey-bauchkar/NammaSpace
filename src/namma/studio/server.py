@@ -723,6 +723,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         return self._json(200, st.jobs.splat_status(pid, rid))
                     if method == "POST":
                         return self._json(202, st.jobs.start_splat(pid, rid))
+                if sub == ["splat", "native-baseline"] and method == "POST":
+                    frame = self._body_json().get("coordinate_frame")
+                    if type(frame) is not int:
+                        raise ApiError(400, "NATIVE-FRAME", "An integer coordinate_frame is required.")
+                    return self._json(202, st.jobs.start_splat(pid, rid, native_frame=frame))
                 if sub == ["splat", "queue"]:
                     if method == "POST":
                         return self._json(202, st.jobs.queue_splat(pid, rid))

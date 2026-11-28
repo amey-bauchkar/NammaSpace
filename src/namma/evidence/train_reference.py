@@ -10,7 +10,7 @@ from namma.recon.runner import run_step
 from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
 
 
-def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000):
+def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000, measured_depth=False):
     ref = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     split = load_strict(reference / "splits.json")
@@ -30,6 +30,18 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
         raise FileNotFoundError(f"gsplat Python unavailable: {executable}")
     if min(iters, cap) < 1:
         raise ValueError("positive training budget required")
+    if measured_depth:
+        inventory = ref.get("measured_depth", {})
+        folder = reference / "depth"
+        if (ref.get("format") != "nammacap" or ref.get("ba_verified") is not True
+                or not inventory or set(inventory) - {f"{k}.npy" for k in allowed}
+                or set(inventory) != {p.name for p in folder.iterdir()}):
+            raise ValueError("requires measured depth from the native training split")
+        for name, entry in inventory.items():
+            if (entry["source"] != "arkit_scene_depth" or entry["pairing"] != "same_frame"
+                    or entry["confidence_level"] != 2 or not entry["confidence_member"]
+                    or sha256_file(folder / name) != entry["sha256"]):
+                raise ValueError("invalid training depth provenance or digest")
     version = allocate_version(run_dir)
     for name in ("capture_ref.json", "splits.json", "training_ba.json"):
         shutil.copyfile(reference / name, version / name)
@@ -38,6 +50,12 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
            "--out", version / "splat.ply", "--camera-table", version / "cameras.json",
            "--iters", iters, "--max-side", 1024, "--cap", cap, "--seed", seed, "--pose-opt", "--appearance",
            "--seed-radius-multiplier", 0]
+    if measured_depth:
+        shutil.copytree(folder, version / "measured_depth")
+        if any(sha256_file(version / "measured_depth" / name) != entry["sha256"]
+               for name, entry in inventory.items()):
+            raise ValueError("copied depth digest mismatch")
+        cmd.extend(["--depth-dir", version / "measured_depth", "--depth-weight", 1.0])
     run_step("train_reference", cmd, version / "logs", timeout_s=5*3600)
     rows = load_strict(version / "cameras.json")
     if {row["name"] for row in rows} != {f"{k}.jpg" for k in allowed} or len(rows) != len(allowed):
@@ -55,5 +73,6 @@ if __name__ == "__main__":
     parser.add_argument("--python", type=Path)
     parser.add_argument("--iters", type=int, default=15000)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--measured-depth", action="store_true", help="use verified native training LiDAR")
     args = parser.parse_args()
-    print(train_reference(args.reference, args.private_run, python=args.python, iters=args.iters, seed=args.seed))
+    print(train_reference(args.reference, args.private_run, python=args.python, iters=args.iters, seed=args.seed, measured_depth=args.measured_depth))

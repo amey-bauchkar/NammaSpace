@@ -96,6 +96,12 @@ class JobManager:
         s["unavailable_reason"] = why or (None if s["available"] else
                                           "No photo keyframes or reconstruction cameras available for this space.")
         s["queued"] = (work / QUEUE_FILE).exists()
+        project = self.store.path(project_id)
+        native = project / "capture/nammacap/manifest.json"
+        if ok and native.is_file() and self.store.get(project_id).get("splat_options", {}).get("native_baseline") is True:
+            manifest = load_strict(native)
+            if manifest.get("depth", {}).get("available"):
+                s["native_frames"] = [c["id"] for c in manifest["coordinate_frames"]]
         s["can_queue"] = ok
         return s
 
@@ -121,11 +127,21 @@ class JobManager:
         (self.store.run_dir(project_id, run_id) / "65_splat" / QUEUE_FILE).unlink(missing_ok=True)
         return {"queued": False}
 
-    def start_splat(self, project_id, run_id):
+    def start_splat(self, project_id, run_id, *, native_frame=None):
         s = self.splat_status(project_id, run_id)
         if s.get("status") in ("running", "starting"):
             raise JobError("SPLAT-RUNNING", "The photoreal view is already being made.")
-        if not s["available"]:
+        if native_frame is not None:
+            from namma.studio.splat import available
+            manifest = self.store.path(project_id) / "capture/nammacap/manifest.json"
+            if type(native_frame) is not int or not manifest.is_file():
+                raise JobError("NATIVE-INPUT", "Select a coordinate frame from an imported native capture.", 400)
+            if native_frame not in s.get("native_frames", []):
+                raise JobError("NATIVE-FRAME", "Enable the native baseline and select an available LiDAR coordinate frame.", 400)
+            ok, why = available()
+            if not ok:
+                raise JobError("SPLAT-UNAVAILABLE", why, 400)
+        elif not s["available"]:
             raise JobError("SPLAT-UNAVAILABLE", s["unavailable_reason"], 400)
         act = self.active()
         if act:
@@ -142,7 +158,8 @@ class JobManager:
         work.mkdir(parents=True, exist_ok=True)
         write_json(work / "status.json", {"status": "starting", "started_at": timefmt.now_iso(), "label": "Starting",
                                           "fraction": 0})
-        p = _spawn(["splat", "--project-dir", str(self.store.path(project_id)), "--run", run_id],
+        extra = ["--native-frame", str(native_frame)] if native_frame is not None else []
+        p = _spawn(["splat", "--project-dir", str(self.store.path(project_id)), "--run", run_id, *extra],
                    work / "worker.log")
         return {"pid": p.pid}
 
