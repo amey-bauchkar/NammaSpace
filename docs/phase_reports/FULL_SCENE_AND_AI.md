@@ -222,3 +222,11 @@ follow-up. No full-suite count is inferred from targeted results.
 
 No component has established a measured reconstruction fidelity improvement in
 this continuation. Experimental features stay disabled by default.
+
+Follow-up safeguards: regional refinement and AnchorSplat share a 2 m default
+extent limit; explicit experimental overrides are bounded at 2.5 m. Invalid and
+nonfinite overrides are rejected. Overlap support counts must be finite integers.
+Native PromptDA accepts an explicit inference side without conflating it with
+output/native resolution. The focused regional/block/native suite passed 25
+tests after these changes. Validated implementation commits are e485d81 and
+3cf1df2, with these final safeguards recorded in the next commit.

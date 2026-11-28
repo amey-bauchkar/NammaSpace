@@ -28,10 +28,8 @@ def propose(source, python, checkpoint, approval, input_ply, region, output, fac
     if (factor not in (1,20) or factor!=spec["multiply_factor"] or spec["licence"]!="MIT"
             or not spec.get("dependency_licences_reviewed")):
         raise ValueError("unapproved AnchorSplat source, checkpoint or dependency configuration")
-    lower,upper = np.asarray(region["lower"],float),np.asarray(region["upper"],float)
-    if lower.shape!=(3,) or upper.shape!=(3,) or not np.isfinite([lower,upper]).all() or (
-            upper<=lower).any() or (upper-lower).max()>max_extent or max_extent>2.5:
-        raise ValueError("AnchorSplat region exceeds experiment extent limit")
+    from namma.afe.region_limits import check
+    lower,upper = check(region,max_extent)
     original = PlyData.read(str(input_ply))
     vertices = original["vertex"].data
     points = np.c_[vertices["x"],vertices["y"],vertices["z"]]

@@ -56,7 +56,7 @@ def run(project, run_id, options, *, cancel_file=None, progress=None):
             run_step("promptda_"+sensor.stem, [config["python"],PROJECT_ROOT/"scripts/depth/promptda_export.py",
                      config["source"],config["checkpoint"],config["approval"],
                      reference/"images"/(sensor.stem+".jpg"),sensor,stage,
-                     "--device",config.get("device","cpu")],version/"logs",timeout_s=3600,cancel_file=cancel_file)
+                     "--device",config.get("device","cpu"),"--side",config.get("side",504)],version/"logs",timeout_s=3600,cancel_file=cancel_file)
             shutil.copyfile(stage/"estimated_depth_m.npy",prior_dir/sensor.name)
     progress("Training native-resolution private checkpoint", .35)
     checkpoint = train_reference(reference, run_dir, iters=int(options.get("native_iters", 15000)),

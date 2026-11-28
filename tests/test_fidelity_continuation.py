@@ -5,6 +5,16 @@ import numpy as np
 import pytest
 
 
+def test_regional_limits_require_explicit_bounded_experimental_override():
+    from namma.afe.region_limits import check
+    region = dict(lower=[0,0,0],upper=[2.2,1,1])
+    with pytest.raises(ValueError):
+        check(region)
+    assert check(region,2.3)[1][0]==2.2
+    with pytest.raises(ValueError):
+        check(region,3.)
+
+
 def test_two_store_optimisation_has_no_frozen_gradients_and_preserves_rows():
     torch = pytest.importorskip("torch")
     from namma.afe.two_store import TwoStore
@@ -253,6 +263,9 @@ def test_overlap_merge_keeps_distinct_detail_and_rejects_unsupported_halo(tmp_pa
     assert result["status"]=="candidate_requires_seam_validation"
     assert result["splats"]==3  # one duplicate and the unsupported halo removed
     assert np.max(merged["f_dc_0"])==.5
+    with pytest.raises(ValueError):
+        merge_blocks(paths,[(-1,1,-1,1),(1,2,-1,1)],tmp_path/"invalid.ply",
+                     support_counts=[np.array([3.5,1]),np.array([3,3,3])])
 
 
 def test_acceptance_fails_for_missing_or_unsupported_evidence():

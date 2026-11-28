@@ -16,7 +16,9 @@ def reconcile(parts, cores, support, *, tolerance_m=.002):
     points = np.concatenate([np.asarray(p["means"],float) for p in parts])
     colours = np.concatenate([np.asarray(p["colour"],float) for p in parts])
     scales = np.concatenate([np.asarray(p["scales"],float) for p in parts])
-    counts = np.concatenate([np.asarray(s,int) for s in support])
+    counts = np.concatenate([np.asarray(s,float) for s in support])
+    if counts.ndim!=1 or not np.isfinite(counts).all() or (counts!=np.floor(counts)).any():
+        raise ValueError("overlap support requires measured integer observation counts")
     if points.shape!=(len(counts),3) or colours.shape!=points.shape or scales.shape!=points.shape or not all(
             np.isfinite(a).all() for a in (points,colours,scales)) or (counts<0).any():
         raise ValueError("invalid Gaussian overlap data")

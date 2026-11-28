@@ -13,7 +13,7 @@ from namma.core.jsonio import load_strict,sha256_file,write_json
 from namma.evidence.bundle import verify_checkpoint
 
 
-def refine(checkpoint, images, region, output, steps=1000, proposal=None, measured_depth_weight=0.):
+def refine(checkpoint, images, region, output, steps=1000, proposal=None, measured_depth_weight=0.,max_extent=2.):
     import torch
     if not torch.cuda.is_available():
         raise RuntimeError("regional reconstruction validation requires genuine CUDA gsplat")
@@ -21,6 +21,8 @@ def refine(checkpoint, images, region, output, steps=1000, proposal=None, measur
     from namma.afe.two_store import TwoStore
     from render_development import load_parameters
     from train_splat import render,se3_exp,ssim
+    from namma.afe.region_limits import check
+    check(region,max_extent)
     if steps<1 or not np.isfinite(measured_depth_weight) or measured_depth_weight<0:
         raise ValueError("positive regional step budget required")
     verify_checkpoint(checkpoint)
@@ -127,6 +129,7 @@ def refine(checkpoint, images, region, output, steps=1000, proposal=None, measur
     write_json(output/"ledger.json",{"status":"candidate_only","acceptance":"pending independent verification",
         "base_sha256":sha256_file(checkpoint/"manifest.json"),"candidate_sha256":sha256_file(output/"candidate.ply"),
         "region":region,"replaced_row_indices":store.ids.cpu().tolist(),
+        "max_extent_m":max_extent,
         "added_row_indices":selected.tolist() if proposal else [],
         "proposal_sha256":sha256_file(proposal) if proposal else None,
         "measured_depth_weight":measured_depth_weight,"measured_depth_views":len(sensors),
@@ -143,5 +146,6 @@ if __name__ == "__main__":
     parser.add_argument("--steps",type=int,default=1000)
     parser.add_argument("--proposal",type=Path)
     parser.add_argument("--measured-depth-weight",type=float,default=0.)
+    parser.add_argument("--max-extent",type=float,default=2.)
     args = parser.parse_args()
-    refine(args.checkpoint,args.images,load_strict(args.region),args.output,args.steps,args.proposal,args.measured_depth_weight)
+    refine(args.checkpoint,args.images,load_strict(args.region),args.output,args.steps,args.proposal,args.measured_depth_weight,args.max_extent)
