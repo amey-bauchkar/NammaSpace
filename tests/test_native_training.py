@@ -112,6 +112,17 @@ def test_native_exclusion_diagnostic_preserves_one_shot_final_claim(tmp_path, mo
     assert not (tmp_path / "final").exists()
     assert not (tmp_path / ".private-evaluation").exists()
 
+def test_native_depth_weight_requires_measured_depth(tmp_path):
+    import pytest
+    from namma.evidence.train_reference import train_reference
+
+    for measured, weight in ((False, .3), (True, 0.), (True, float("nan"))):
+        with pytest.raises(ValueError, match="depth weight requires measured depth"):
+            train_reference(tmp_path / "unopened", tmp_path / "run",
+                            measured_depth=measured, depth_weight=weight)
+    assert not (tmp_path / "run").exists()
+
+
 def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path, monkeypatch):
     """Opt-in synthetic archive -> native BA -> real CUDA depth training."""
     import os

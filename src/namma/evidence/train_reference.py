@@ -1,5 +1,6 @@
 """Train the ordinary Gaussian baseline on a frozen Polycam training reference."""
 import argparse
+import math
 import shutil
 from pathlib import Path
 
@@ -11,7 +12,10 @@ from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
 
 
 def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000,
-                    measured_depth=False, strategy="mcmc", dense_seeds=False, full_res_crops=False):
+                    measured_depth=False, strategy="mcmc", dense_seeds=False, full_res_crops=False,
+                    depth_weight=None):
+    if depth_weight is not None and (not measured_depth or not math.isfinite(depth_weight) or depth_weight <= 0):
+        raise ValueError("depth weight requires measured depth and a finite positive value")
     ref = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     split = load_strict(reference / "splits.json")
@@ -64,7 +68,7 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
                for name, entry in inventory.items()):
             raise ValueError("copied depth digest mismatch")
     if measured_depth:
-        cmd.extend(["--depth-dir", depth_snapshot, "--depth-weight", 1.0])
+        cmd.extend(["--depth-dir", depth_snapshot, "--depth-weight", 1.0 if depth_weight is None else depth_weight])
     if dense_seeds:
         seeds = version / "dense_seeds.points3D.txt"
         script = Path(TRAINER).with_name("dense_seed.py")
@@ -93,7 +97,9 @@ if __name__ == "__main__":
     parser.add_argument("--dense-seeds", action="store_true", help="initialize from verified native LiDAR")
     parser.add_argument("--full-res-crops", action="store_true", help="train on native-resolution photo windows")
     parser.add_argument("--measured-depth", action="store_true", help="use verified native training LiDAR")
+    parser.add_argument("--depth-weight", type=float, help="override the measured-depth loss weight")
     args = parser.parse_args()
     print(train_reference(args.reference, args.private_run, python=args.python, iters=args.iters,
                           seed=args.seed, measured_depth=args.measured_depth, strategy=args.strategy,
-                          dense_seeds=args.dense_seeds, full_res_crops=args.full_res_crops))
+                          dense_seeds=args.dense_seeds, full_res_crops=args.full_res_crops,
+                          depth_weight=args.depth_weight))

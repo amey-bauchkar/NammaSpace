@@ -595,3 +595,22 @@ and RMSE. It only produces deltas for those errors where both renderers
 have identical pixel support, and reports coverage and tolerance-rate
 deltas on all measured samples. Twelve targeted tests passed, including
 CUDA native training and registration.
+
+The initial 155-camera CUDA subset had one weak camera. A targeted retry
+added 32 previously untested overlaps for it and sealed all 155 retained
+training cameras with 19,675 frozen points and 1.3824 px median
+reprojection error. Training has 155 verified same-frame depth grids.
+Started independent registration of the 21 development views and a
+matched 3,500-step, seed-zero RGB-only and measured-LiDAR comparison.
+
+Development admitted 15/21 cameras. Both arms predicted depth at the
+same 468,647 measured pixels. LiDAR at weight 1.0 reduced mean depth
+error from 10.45 cm to 3.25 cm and raised 5 cm agreement from 26.73% to
+82.24%. RGB-only measured 15.464 dB and 0.60957 LPIPS against LiDAR's
+15.404 dB and 0.61367 LPIPS. Weight 0.3 reduced mean depth error to
+3.82 cm and reached 76.54% within 5 cm, with 15.471 dB, 0.60936 LPIPS,
+and 0.67440 SSIM. Both LiDAR arms improved depth on all 15 views.
+Weight 0.3 is the balanced development choice for this room. The
+reference omits four weak training views and is ineligible for final
+evaluation. Twelve targeted tests passed with one opt-in test skipped
+after addition of explicit measured-depth weight validation.
