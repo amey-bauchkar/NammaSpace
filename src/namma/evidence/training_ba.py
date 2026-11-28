@@ -78,7 +78,7 @@ def _extend_weak_camera_matches(retry, images, ids, priors, database):
                                "additional_pairs": len(extra)}
 
 
-def adjust(output, intr, priors, *, retry_matching_from=None):
+def adjust(output, intr, priors, *, retry_matching_from=None, prior_pairs=()):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -110,7 +110,9 @@ def adjust(output, intr, priors, *, retry_matching_from=None):
     local_pairs = {(i, j) for i in range(len(ids))
                    for j in range(i+1, min(len(ids), i+1+poses.SEQ_WINDOW))}
     revisit_pairs = poses.pose_revisit_pairs([priors[k] for k in ids])
-    match_pairs = local_pairs | revisit_pairs | additional
+    index = {f"{key}.jpg": i for i, key in enumerate(ids)}
+    retained_pairs = {tuple(sorted((index[a], index[b]))) for a, b in prior_pairs if a in index and b in index}
+    match_pairs = local_pairs | revisit_pairs | additional | retained_pairs
     with pairs.open("x", encoding="utf-8") as stream:
         for i, j in sorted(match_pairs):
             stream.write(f"{ids[i]}.jpg {ids[j]}.jpg\n")
@@ -153,6 +155,7 @@ def adjust(output, intr, priors, *, retry_matching_from=None):
         raise ValueError("frozen reference lacks triangulated tracks for every training view")
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
               "local_pairs": len(local_pairs), "revisit_pairs": len(revisit_pairs - local_pairs),
+              "retained_prior_pairs": len(retained_pairs - local_pairs - revisit_pairs - additional),
               "matching_retry": retry,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),

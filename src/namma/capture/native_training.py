@@ -99,6 +99,7 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
     keyed, split = split_native_views(records, coordinate_frame)
     excluded = []
     exclusion_report = None
+    prior_pairs = ()
     if exclude_unresolved_from is not None:
         from namma.recon.colmap import read_images_txt
 
@@ -111,15 +112,19 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
             raise ValueError("exclusion diagnostic does not match the frozen native split")
         for key in split["train"]:
             count = rows.get(f"{key}.jpg", {}).get("n_triangulated", 0)
-            if count >= 3:
-                continue
             rgb = read(keyed[key]["image"]["path"])
             if hashlib.sha256(rgb).hexdigest() != sha256_file(failed / "images" / f"{key}.jpg"):
                 raise ValueError("exclusion diagnostic used a different training image")
-            excluded.append({"id": key, "triangulated_tracks": count})
+            if count < 3:
+                excluded.append({"id": key, "triangulated_tracks": count})
         if not excluded or len(split["train"]) - len(excluded) < 3:
             raise ValueError("exclusion diagnostic requires weak and supported training cameras")
-        exclusion_report = {"adjusted_images_sha256": sha256_file(path), "excluded": excluded}
+        pair_bytes = (failed / "pairs.txt").read_bytes()
+        prior_pairs = [tuple(line.split()) for line in pair_bytes.decode("ascii").splitlines() if line.strip()]
+        if any(len(pair) != 2 or pair[0] == pair[1] or not set(pair) <= training for pair in prior_pairs):
+            raise ValueError("exclusion diagnostic contains invalid training pairs")
+        exclusion_report = {"adjusted_images_sha256": sha256_file(path), "excluded": excluded,
+                            "prior_pairs_sha256": hashlib.sha256(pair_bytes).hexdigest()}
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     for folder in ("images", "depth"):
@@ -164,7 +169,7 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
         from namma.evidence.training_ba import adjust
         intr = {Path(name(f)).stem: f["camera"]["intrinsics"] for f in train}
         cameras = {Path(name(f)).stem: np.asarray(f["camera"]["T_world_from_camera"]) for f in train}
-        adjust(output, intr, cameras, retry_matching_from=retry_matching_from)
+        adjust(output, intr, cameras, retry_matching_from=retry_matching_from, prior_pairs=prior_pairs)
         # Keep the BA sparse model and the independently measured LiDAR seed model separate.
         model = output / "model"
     write_json(output / "capture_ref.json", {**source_ref, "coordinate_frame": coordinate_frame,

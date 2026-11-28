@@ -526,3 +526,13 @@ The replay produced a distinct PLY digest, the same export size, and all
 17 edited centres again fell outside the registered development frusta.
 The measured memory covers the refinement process's PyTorch allocator.
 The CUDA fixture verified the resource report and rejected substituted IDs.
+
+The budget replay also failed exact exterior integrity, changing 24,720,631
+of 115,779,685 outside pixels. The native exclusion attempt completed
+matching and bundle adjustment but retained sufficient tracks for only
+152 of its 154 training views. Two newly weak cameras each had two tracks.
+The attempt stopped before sealing a reference. A follow-up diagnostic
+keeps the earlier candidate pairs between retained cameras in its fresh
+matching run. It verifies the prior training images against the capture
+and rejects pair lists that include any reserved frames. Extraction is
+underway. The native tests passed (2 passed, 1 opt-in CUDA test skipped).

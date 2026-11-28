@@ -174,3 +174,5 @@ training views took 151.0 s on the RTX 4050 Laptop GPU. Peak PyTorch
 allocation was 76.2 MB and peak reservation was 107.0 MB. The replay
 produced a different PLY digest, the same SPZ size, and the same result
 that all 17 edited centres fell outside the registered development views.
+Its exact pixel comparison found changes in 24,720,631 of 115,779,685
+outside-region pixels.

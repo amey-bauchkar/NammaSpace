@@ -7,7 +7,7 @@ from namma.capture.native_training import prepare
 from tests.test_nammacap import build
 
 
-def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path):
+def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path, monkeypatch):
     buf = io.BytesIO()
     Image.new("RGB", (64, 48), (10, 20, 30)).save(buf, "JPEG")
     def photos(members):
@@ -38,6 +38,31 @@ def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path):
     for filename, item in ref["measured_depth"].items():
         assert item["sha256"] == sha256_file(output/"depth"/filename)
         assert item["source"] == "arkit_scene_depth" and item["pairing"] == "same_frame"
+
+    import pytest
+    train = [f"{key}.jpg" for key in split["train"]]
+    prior_model = output / "adjusted_text"
+    prior_model.mkdir()
+    (prior_model / "images.txt").write_text("synthetic track inventory", encoding="ascii")
+    monkeypatch.setattr("namma.recon.colmap.read_images_txt",
+                        lambda _: {name: {"n_triangulated": 0 if i == 0 else 3}
+                                   for i, name in enumerate(train)})
+    pairs = output / "pairs.txt"
+    pairs.write_text(f"{train[1]} {split['dev'][0]}.jpg\n", encoding="ascii")
+    with pytest.raises(ValueError, match="invalid training pairs"):
+        prepare(archive, tmp_path / "invalid", 0, bundle_adjust=True, exclude_unresolved_from=output)
+
+    diagnostic = tmp_path / "exclusion"
+    pairs.write_text(f"{train[1]} {train[-1]}\n", encoding="ascii")
+    def adjust(path, intrinsics, cameras, *, retry_matching_from, prior_pairs):
+        assert path == diagnostic and set(intrinsics) == set(cameras) == set(split["train"][1:])
+        assert retry_matching_from is None and prior_pairs == [(train[1], train[-1])]
+        (path / "model").mkdir()
+    monkeypatch.setattr("namma.evidence.training_ba.adjust", adjust)
+    prepare(archive, diagnostic, 0, bundle_adjust=True, exclude_unresolved_from=output)
+    ref = json.loads((diagnostic / "capture_ref.json").read_text())
+    assert ref["training_exclusion_diagnostic"]["prior_pairs_sha256"] == sha256_file(pairs)
+    assert json.loads((diagnostic / "splits.json").read_text()) == split
 
 
 def test_native_exclusion_diagnostic_preserves_one_shot_final_claim(tmp_path, monkeypatch):
