@@ -12,9 +12,9 @@ from namma.core.jsonio import load_strict, sha256_file, write_json
 from namma.capture.polycam_raw import opencv_c2w
 
 if __package__:
-    from .eval_views import raw_metrics
+    from .eval_views import depth_metrics, raw_metrics
 else:
-    from eval_views import raw_metrics
+    from eval_views import depth_metrics, raw_metrics
 
 
 def projected_region(center, extent, pose, camera):
@@ -27,8 +27,23 @@ def projected_region(center, extent, pose, camera):
     xyz = corners @ view[:3, :3].T + view[:3, 3]
     width, height = camera["width"], camera["height"]
     mask = np.zeros((height, width), np.uint8)
-    if np.any(xyz[:, 2] <= 0):
+    # Match the renderer's near plane. For a cube that crosses it, retain
+    # the front vertices and clip its twelve edges before projection.
+    near = .01
+    front = xyz[:, 2] >= near
+    if not front.any():
         return mask
+    if not front.all():
+        intersections = []
+        for axis_bit in (1, 2, 4):
+            for i in range(8):
+                j = i ^ axis_bit
+                if i < j and front[i] != front[j]:
+                    a, b = xyz[i], xyz[j]
+                    point = a + (b - a) * ((near - a[2]) / (b[2] - a[2]))
+                    point[2] = near
+                    intersections.append(point)
+        xyz = np.vstack((xyz[front], intersections))
     pixels = xyz[:, :2] / xyz[:, 2:3]
     pixels = pixels * [camera["fx"], camera["fy"]] + [camera["cx"], camera["cy"]]
     if not np.isfinite(pixels).all() or np.max(np.abs(pixels)) > 2**24:
@@ -39,7 +54,18 @@ def projected_region(center, extent, pose, camera):
     return mask
 
 
-def score_registered(registration, renders, output, *, region=None):
+def aggregate_depth(rows):
+    totals = {key: sum(row[key] for row in rows.values()) for key in
+              ("measured_pixels", "matched_pixels", "count_within_2cm", "count_within_5cm")}
+    count = totals["measured_pixels"]
+    if not count:
+        return None
+    return {**totals, "frames": len(rows), "coverage": totals["matched_pixels"] / count,
+            "within_2cm": totals["count_within_2cm"] / count,
+            "within_5cm": totals["count_within_5cm"] / count}
+
+
+def score_registered(registration, renders, output, *, region=None, integrity_baseline=None):
     batch = load_strict(renders / "renders.json")
     role = batch["role"]
     if region is not None and role != "dev":
@@ -53,6 +79,19 @@ def score_registered(registration, renders, output, *, region=None):
             or ids != set(reg["poses_arkit"]) or ids != set(batch["image_sha256"])
             or set(batch["unregistered"]) != set(reg["unregistered"])):
         raise ValueError("render batch does not match registration")
+    baseline_batch = None
+    if integrity_baseline is not None:
+        baseline_manifest = integrity_baseline / "renders.json"
+        baseline_batch = load_strict(baseline_manifest)
+        if (region is None or role != "dev" or not batch.get("edit_sha256")
+                or baseline_batch.get("edit_sha256") or baseline_batch.get("spz_roundtrip")
+                or baseline_batch["role"] != role or baseline_batch["pose_fit"] is not False
+                or baseline_batch["colour_fit"] is not False
+                or baseline_batch["checkpoint_sha256"] != batch["checkpoint_sha256"]
+                or baseline_batch.get("sh_degree") != batch.get("sh_degree")
+                or baseline_batch["registration_sha256"] != batch["registration_sha256"]
+                or baseline_batch["image_sha256"].keys() != batch["image_sha256"].keys()):
+            raise ValueError("integrity check requires the matching unedited PLY development render")
     if role == "final_test":
         claim_path = registration / "final_evaluation_claim.json"
         claim = load_strict(claim_path)
@@ -61,6 +100,12 @@ def score_registered(registration, renders, output, *, region=None):
             raise ValueError("render batch does not match final claim")
     rows = {}
     outside_region = []
+    measured_depth = reg.get("measured_depth", {})
+    depth_hashes = batch.get("depth_sha256", {})
+    if depth_hashes.keys() != measured_depth.keys() or not depth_hashes.keys() <= ids:
+        raise ValueError("rendered depth inventory does not match registration")
+    depth_rows = {}
+    integrity_rows = {}
     for frame in sorted(ids):
         if not frame.isascii() or not frame.isdigit():
             raise ValueError("invalid Polycam frame ID")
@@ -68,6 +113,14 @@ def score_registered(registration, renders, output, *, region=None):
         photo = registration / "images" / f"{frame}.jpg"
         if sha256_file(render) != batch["image_sha256"][frame] or sha256_file(photo) != reg["image_sha256"][frame]:
             raise ValueError("observation or render digest mismatch")
+        if frame in measured_depth:
+            measured = registration / "measured_depth" / f"{frame}.npy"
+            predicted = renders / f"{frame}.depth.npy"
+            if (sha256_file(measured) != measured_depth[frame]["sha256"]
+                    or sha256_file(predicted) != depth_hashes[frame]):
+                raise ValueError("depth grid digest mismatch")
+            depth_rows[frame] = depth_metrics(np.load(predicted, allow_pickle=False),
+                                              np.load(measured, allow_pickle=False))
         with Image.open(render) as pred, Image.open(photo) as observed:
             mask = None
             if region is not None:
@@ -75,6 +128,17 @@ def score_registered(registration, renders, output, *, region=None):
                                         reg["intrinsics"][frame])
                 if pred.size != observed.size or pred.size != mask.shape[::-1]:
                     raise ValueError("region projection does not match image dimensions")
+                if baseline_batch is not None:
+                    baseline_image = integrity_baseline / f"{frame}.png"
+                    if sha256_file(baseline_image) != baseline_batch["image_sha256"][frame]:
+                        raise ValueError("integrity baseline render digest mismatch")
+                    with Image.open(baseline_image) as before:
+                        if before.size != pred.size:
+                            raise ValueError("integrity baseline dimensions differ")
+                        changed = np.any(np.asarray(before.convert("RGB")) != np.asarray(pred.convert("RGB")), axis=2)
+                    outside = mask == 0
+                    integrity_rows[frame] = {"outside_pixels": int(outside.sum()),
+                                             "changed_outside_pixels": int(np.count_nonzero(changed & outside))}
                 x, y, w, h = cv2.boundingRect(mask)
                 if not w or not h:
                     outside_region.append(frame)
@@ -93,22 +157,39 @@ def score_registered(registration, renders, output, *, region=None):
     report = {"role": role, "renders_sha256": sha256_file(renders / "renders.json"),
               "registration_sha256": batch["registration_sha256"],
               "checkpoint_sha256": batch["checkpoint_sha256"], "frames": rows,
+              "training_reference_sha256": batch.get("training_reference_sha256"),
               "region": region, "outside_region": outside_region,
+              "measured_depth_metrics": depth_rows, "depth_min_alpha": batch.get("depth_min_alpha"),
+              "measured_depth_aggregate": aggregate_depth(depth_rows),
               "model_sha256": batch.get("model_sha256"), "edit_sha256": batch.get("edit_sha256"),
               "unregistered": batch["unregistered"], "acceptance_evaluated": False,
               "aggregate": {"pixels": pixels, "mse": mse, "perfect_match": mse == 0,
                             "raw_psnr_db": float(-10*np.log10(mse)) if mse else None,
                             "raw_ssim": sum(r["pixels"] * r["raw_ssim"] for r in rows.values()) / pixels}}
+    if baseline_batch is not None:
+        outside_pixels = sum(row["outside_pixels"] for row in integrity_rows.values())
+        changed_pixels = sum(row["changed_outside_pixels"] for row in integrity_rows.values())
+        report["outside_region_integrity"] = {
+            "baseline_renders_sha256": sha256_file(baseline_manifest), "frames": integrity_rows,
+            "outside_pixels": outside_pixels, "changed_outside_pixels": changed_pixels,
+            "pixel_equal": changed_pixels == 0 if outside_pixels else None,
+        }
     output.mkdir(parents=True, exist_ok=False)
     write_json(output / "raw_metrics.json", report)
     return report
 
 
-def compare_development(baseline, candidate):
+def compare_development(baseline, candidate, *, training_variants=False):
     """Compare raw development scores on exactly the same observations."""
+    if training_variants:
+        reference = baseline.get("training_reference_sha256")
+        same_model_source = bool(reference and reference == candidate.get("training_reference_sha256")
+                                 and not baseline.get("edit_sha256") and not candidate.get("edit_sha256"))
+    else:
+        same_model_source = baseline["checkpoint_sha256"] == candidate["checkpoint_sha256"]
     if (baseline["role"] != "dev" or candidate["role"] != "dev"
             or baseline["registration_sha256"] != candidate["registration_sha256"]
-            or baseline["checkpoint_sha256"] != candidate["checkpoint_sha256"]
+            or not same_model_source
             or baseline.get("region") != candidate.get("region")
             or baseline["frames"].keys() != candidate["frames"].keys()):
         raise ValueError("development scores refer to different observations or parents")
@@ -116,11 +197,23 @@ def compare_development(baseline, candidate):
         if scores["pixels"] != candidate["frames"][frame]["pixels"]:
             raise ValueError("development scores cover different pixel counts")
     a, b = baseline["aggregate"], candidate["aggregate"]
-    return {"observations": len(baseline["frames"]),
+    result = {"observations": len(baseline["frames"]),
             "delta_mse": b["mse"] - a["mse"],
             "delta_ssim": b["raw_ssim"] - a["raw_ssim"],
             "delta_psnr_db": (b["raw_psnr_db"] - a["raw_psnr_db"]
                               if None not in (a["raw_psnr_db"], b["raw_psnr_db"]) else None)}
+    depth_a = baseline.get("measured_depth_aggregate")
+    depth_b = candidate.get("measured_depth_aggregate")
+    if depth_a is not None or depth_b is not None:
+        depths_a = baseline.get("measured_depth_metrics", {})
+        depths_b = candidate.get("measured_depth_metrics", {})
+        if (depth_a is None or depth_b is None or depths_a.keys() != depths_b.keys()
+                or baseline.get("depth_min_alpha") != candidate.get("depth_min_alpha")
+                or any(row["measured_pixels"] != depths_b[k]["measured_pixels"] for k, row in depths_a.items())):
+            raise ValueError("development scores cover different measured depth")
+        result["depth"] = {f"delta_{key}": depth_b[key] - depth_a[key]
+                           for key in ("coverage", "within_2cm", "within_5cm")}
+    return result
 
 
 if __name__ == "__main__":
@@ -128,16 +221,22 @@ if __name__ == "__main__":
     for field in ("registration", "renders", "output"):
         parser.add_argument(field, type=Path)
     parser.add_argument("--compare-to", type=Path, help="baseline development raw_metrics.json")
+    parser.add_argument("--compare-training-variants", action="store_true",
+                        help="compare two unedited checkpoints from the same training reference")
     parser.add_argument("--region-ledger", type=Path, help="use this development edit's fixed scoring cube")
+    parser.add_argument("--integrity-baseline", type=Path, help="check outside-region RGB against original renders")
     args = parser.parse_args()
+    if args.compare_training_variants and args.compare_to is None:
+        parser.error("--compare-training-variants requires --compare-to")
     region = None
     if args.region_ledger:
         ledger = load_strict(args.region_ledger)
         region = {key: ledger[key] for key in ("center", "extent_m")}
-    report = score_registered(args.registration, args.renders, args.output, region=region)
+    report = score_registered(args.registration, args.renders, args.output, region=region,
+                              integrity_baseline=args.integrity_baseline)
     if args.compare_to:
         baseline = load_strict(args.compare_to)
-        comparison = compare_development(baseline, report)
+        comparison = compare_development(baseline, report, training_variants=args.compare_training_variants)
         write_json(args.output / "comparison.json", {
             **comparison, "baseline_score_sha256": sha256_file(args.compare_to),
             "candidate_score_sha256": sha256_file(args.output / "raw_metrics.json"),

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from scripts.splat.eval_views import raw_metrics
-from scripts.splat.score_registered import compare_development, projected_region
+from scripts.splat.eval_views import depth_metrics, raw_metrics
+from scripts.splat.score_registered import aggregate_depth, compare_development, projected_region
 
 
 def test_raw_metrics_preserve_colour_bias_and_respect_mask():
@@ -30,6 +30,12 @@ def test_development_comparison_requires_matching_registration():
         compare_development(baseline, {**candidate, "registration_sha256": "different"})
     with pytest.raises(ValueError, match="different observations"):
         compare_development(baseline, {**candidate, "region": {"center": [0, 0, 2], "extent_m": 1}})
+    base_variant = {**baseline, "training_reference_sha256": "reference"}
+    other_variant = {**candidate, "checkpoint_sha256": "other", "training_reference_sha256": "reference"}
+    assert compare_development(base_variant, other_variant, training_variants=True)["delta_psnr_db"] == 3.
+    with pytest.raises(ValueError, match="different observations"):
+        compare_development(base_variant, {**other_variant, "training_reference_sha256": "other"},
+                            training_variants=True)
 
 
 def test_region_projection_respects_registered_camera():
@@ -39,6 +45,7 @@ def test_region_projection_respects_registered_camera():
     assert mask[24, 32] == 1 and mask[0, 0] == 0
     assert np.array_equal(mask, projected_region([0, 0, -3], 1, pose, camera))
     assert not projected_region([0, 0, 3], 1, pose, camera).any()
+    assert projected_region([0, 0, 0], 1, pose, camera).all()
 
 
 def test_scoring_strips_preserve_ssim_context_at_the_boundary():
@@ -52,3 +59,18 @@ def test_scoring_strips_preserve_ssim_context_at_the_boundary():
     crop = raw_metrics(pred[240:272], photo[240:272], mask[240:272])
     assert full["mse"] == pytest.approx(crop["mse"], abs=1e-14)
     assert full["raw_ssim"] == pytest.approx(crop["raw_ssim"], abs=1e-14)
+
+
+def test_missing_depth_counts_against_coverage_and_thresholds():
+    measured = np.array([[1., 1., 1., 0.]])
+    rendered = np.array([[0., 1.01, 1.04, 2.]])
+    score = depth_metrics(rendered, measured)
+    assert score["coverage"] == pytest.approx(2/3)
+    assert score["median_error_m"] == pytest.approx(.025)
+    assert score["within_2cm"] == pytest.approx(1/3)
+    assert score["within_5cm"] == pytest.approx(2/3)
+    extra = depth_metrics(np.array([[1.]]), np.array([[1.]]))
+    totals = aggregate_depth({"a": score, "b": extra})
+    assert totals["measured_pixels"] == 4
+    assert totals["coverage"] == .75
+    assert totals["within_2cm"] == .5

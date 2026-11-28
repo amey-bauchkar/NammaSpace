@@ -8,6 +8,26 @@ import numpy as np
 from PIL import Image
 
 
+def depth_metrics(predicted, measured):
+    if (predicted.shape != measured.shape or predicted.ndim != 2
+            or not np.isfinite(predicted).all() or not np.isfinite(measured).all()
+            or (predicted < 0).any() or (measured < 0).any()):
+        raise ValueError("invalid paired metric depth grids")
+    valid = measured > 0
+    matched = valid & (predicted > 0)
+    count = int(valid.sum())
+    if not count:
+        raise ValueError("no measured depth samples")
+    errors = np.abs(predicted[matched].astype(np.float64) - measured[matched])
+    within_2cm = int(np.count_nonzero(errors <= .02))
+    within_5cm = int(np.count_nonzero(errors <= .05))
+    return {"measured_pixels": count, "matched_pixels": len(errors),
+            "coverage": len(errors) / count,
+            "median_error_m": float(np.median(errors)) if len(errors) else None,
+            "count_within_2cm": within_2cm, "count_within_5cm": within_5cm,
+            "within_2cm": within_2cm / count, "within_5cm": within_5cm / count}
+
+
 def raw_metrics(render, photo, mask=None):
     if render.shape != photo.shape or render.ndim != 3 or render.shape[2] != 3:
         raise ValueError("expected aligned RGB images with identical dimensions")

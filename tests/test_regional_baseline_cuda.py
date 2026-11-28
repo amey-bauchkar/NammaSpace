@@ -48,7 +48,7 @@ class RegionalBaselineTest(unittest.TestCase):
                                "training_ba":{"training_images":hashes,"frozen_model":{"fixture":"synthetic"}},"cameras":rows}.items():
                 write_json(version/(name+".json"),data)
             seal_checkpoint(version,None,{"status":"not_measured"})
-            refine(version,images,root/"edit",[0.,0.,2.],.5,3,1)
+            refine(version,images,root/"edit",[0.,0.,2.],.5,3,1,contain_support=True)
             ledger = load_strict(root/"edit/ledger.json")
             self.assertEqual(ledger["replaced_ids"],[0])
             self.assertEqual(ledger["added_ids"],[2])
@@ -56,6 +56,9 @@ class RegionalBaselineTest(unittest.TestCase):
             result = PlyData.read(str(root/"edit/candidate.ply"),mmap=False)["vertex"].data
             self.assertEqual(result[0].tobytes(),original[1].tobytes())
             self.assertNotEqual(result[1]["f_dc_0"],original[0]["f_dc_0"])
+            centre = np.array([result[1][axis] for axis in "xyz"])
+            sigma = np.exp(max(result[1][f"scale_{axis}"] for axis in range(3)))
+            self.assertLessEqual(np.abs(centre - [0., 0., 2.]).max() + 3 * sigma, .25 + 1e-7)
             from namma.afe.regions import tile_defect
             tile, = tile_defect([-.15,-.15,1.85],[.15,.15,2.15])
             refine(version, images, root/"control", tile["center"], tile["extent_m"],

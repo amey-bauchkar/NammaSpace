@@ -65,10 +65,13 @@ def adjust(output, intr, priors):
         raise ValueError("incomplete feature database or shared intrinsics")
     poses._set_db_cameras(db, db_ids, intr)
     pairs = output / "pairs.txt"
+    local_pairs = {(i, j) for i in range(len(ids))
+                   for j in range(i+1, min(len(ids), i+1+poses.SEQ_WINDOW))}
+    revisit_pairs = poses.pose_revisit_pairs([priors[k] for k in ids])
+    match_pairs = local_pairs | revisit_pairs
     with pairs.open("x", encoding="utf-8") as stream:
-        for i, k in enumerate(ids):
-            for neighbour in ids[i+1:i+1+poses.SEQ_WINDOW]:
-                stream.write(f"{k}.jpg {neighbour}.jpg\n")
+        for i, j in sorted(match_pairs):
+            stream.write(f"{ids[i]}.jpg {ids[j]}.jpg\n")
     run("matching", "matches_importer", "--database_path", db, "--match_list_path", pairs,
         "--match_type", "pairs", "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
     def triangulate(tag, cameras):
@@ -107,6 +110,7 @@ def adjust(output, intr, priors):
     if any(view["n_triangulated"] < 3 for view in read_images_txt(model / "images.txt").values()):
         raise ValueError("frozen reference lacks triangulated tracks for every training view")
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
+              "local_pairs": len(local_pairs), "revisit_pairs": len(match_pairs - local_pairs),
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),
               "metric_similarity_scale": scale, "frozen_model": {p.name: sha256_file(p) for p in model.iterdir()}}

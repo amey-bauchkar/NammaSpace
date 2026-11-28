@@ -16,7 +16,8 @@ from render_development import load_parameters, load_strict, sha256_file, verify
 from train_splat import save_ply, ssim
 
 
-def refine(checkpoint, images, output, center, extent, steps, seed, target_count=None, tile=None):
+def refine(checkpoint, images, output, center, extent, steps, seed, target_count=None, tile=None,
+           contain_support=False):
     verify_checkpoint(checkpoint)
     cfg = load_strict(checkpoint / "config.json")
     max_scale = float(cfg.get("max_splat_scale", .2))
@@ -41,6 +42,10 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
                        ((positions == core_hi) & tile["include_upper"])), axis=1)
     else:
         core_lo, core_hi = lo, hi
+    if contain_support:
+        clearance = np.minimum(positions - core_lo, core_hi - positions).min(axis=1)
+        radius = 3 * params["scales"].amax(dim=1).exp().cpu().numpy()
+        mask &= clearance >= radius + .001
     if not mask.any():
         raise ValueError("empty region")
     ids = _vertices(parent)["row_id"][mask].astype(int)
@@ -50,6 +55,22 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
     trainable = {k: torch.nn.Parameter(v) for k, v in regional.items()}
     frozen = {k: v[~mask] for k, v in params.items()}
     del params
+    if contain_support:
+        lower = trainable["means"].new_tensor(core_lo)
+        upper = trainable["means"].new_tensor(core_hi)
+
+    @torch.no_grad()
+    def bound_trainable():
+        trainable["scales"].clamp_(max=math.log(max_scale))
+        if contain_support:
+            means = trainable["means"]
+            means.clamp_(min=lower + .001, max=upper - .001)
+            clearance = torch.minimum(means - lower, upper - means).amin(dim=1)
+            limits = (clearance / 3).log()
+            trainable["scales"].clamp_(max=limits[:, None])
+
+    if contain_support:
+        bound_trainable()
     anchor = {k: v.detach().clone() for k, v in trainable.items()}
     boundary = torch.as_tensor(np.minimum(positions[mask]-core_lo, core_hi-positions[mask]).min(axis=1) < .05, device="cuda")
     if target_count is not None:
@@ -96,8 +117,7 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
         for opt in optimizers:
             opt.step()
             opt.zero_grad(set_to_none=True)
-        with torch.no_grad():
-            trainable["scales"].clamp_(max=math.log(max_scale))
+        bound_trainable()
     if tile is not None:
         xyz = trainable["means"].detach().cpu().numpy()
         if not np.all((xyz >= core_lo) & ((xyz < core_hi) | ((xyz == core_hi) & tile["include_upper"]))):
@@ -109,6 +129,7 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
     ledger.update(parent_manifest=sha256_file(checkpoint/"manifest.json"), arm="C4" if target_count is not None else "B0-R",
                   target_count=target_count, original_count=len(ids), tile=tile,
                   max_splat_scale_m=max_scale,
+                  support_sigma_limit=3 if contain_support else None,
                   status="unverified", steps=steps, seed=seed, center=center, extent_m=extent,
                   candidate_sha256=sha256_file(output/"candidate.ply"),training_views=len(views))
     (output/"ledger.json").write_text(json.dumps(ledger,allow_nan=False),encoding="utf-8")
@@ -123,6 +144,8 @@ if __name__ == "__main__":
     p.add_argument("--steps",type=int,required=True)
     p.add_argument("--seed",type=int,default=0)
     p.add_argument("--target-count",type=int,help="run the density-matched control with this regional row count")
+    p.add_argument("--contain-support", action="store_true",
+                   help="restrict training to Gaussians with nominal three-sigma support inside the edit core")
     p.add_argument("--defect-bounds", nargs=6, type=float, metavar=("X0","Y0","Z0","X1","Y1","Z1"),
                    help="plan tiles from defect bounds and optimize the specified tile")
     p.add_argument("--tile-index",type=int,default=0)

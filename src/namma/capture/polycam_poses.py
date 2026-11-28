@@ -101,12 +101,18 @@ def choose_pairs(ex):
         for j in range(i + 1, min(len(ids), i + 1 + SEQ_WINDOW)):
             pairs.add((i, j))
     n_local = len(pairs)
-    C = np.array([ex.pose(k)[:3, 3] for k in ids])
-    D = np.array([-ex.pose(k)[:3, 2] for k in ids])
-    rev = 0
+    pairs.update(pose_revisit_pairs([ex.pose(k) for k in ids]))
+    return sorted(pairs), {"local": n_local, "revisit": len(pairs) - n_local, "total": len(pairs)}
+
+
+def pose_revisit_pairs(poses):
+    """Find likely revisits using only the camera priors available to this split."""
+    C = np.array([pose[:3, 3] for pose in poses])
+    D = np.array([-pose[:3, 2] for pose in poses])
+    pairs = set()
+    ids = np.arange(len(poses))
     for i in range(len(ids)):
-        far = np.arange(len(ids))
-        far = far[np.abs(far - i) >= REVISIT_GAP]
+        far = ids[np.abs(ids - i) >= REVISIT_GAP]
         if not len(far):
             continue
         dist = np.linalg.norm(C[far] - C[i], axis=1)
@@ -114,11 +120,8 @@ def choose_pairs(ex):
         ok = (dist <= REVISIT_MAX_DIST_M) & (dot >= REVISIT_MIN_DOT)
         cand = far[ok][np.argsort(dist[ok] - dot[ok])][:MAX_REVISITS_PER_IMAGE]
         for j in cand:
-            p = tuple(sorted((i, int(j))))
-            if p not in pairs:
-                pairs.add(p)
-                rev += 1
-    return sorted(pairs), {"local": n_local, "revisit": rev, "total": len(pairs)}
+            pairs.add(tuple(sorted((i, int(j)))))
+    return pairs
 
 
 def _db_images(db):

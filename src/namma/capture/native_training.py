@@ -53,7 +53,7 @@ def prepare(archive, output, coordinate_frame, *, bundle_adjust=False):
         return _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust)
 
 
-def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust):
+def split_native_views(records, coordinate_frame):
     frames = sorted((f for f in records if f["coordinate_frame_id"] == coordinate_frame),
                     key=lambda f: f["timestamp_s"])
     reserve = math.ceil(len(frames) / 10)
@@ -61,14 +61,42 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust)
         raise ValueError("insufficient frames for separate training, dev and final observation blocks")
     if any(a["timestamp_s"] >= b["timestamp_s"] for a, b in zip(frames, frames[1:])):
         raise ValueError("ambiguous native observation timestamps")
+    keyed = {f"{frame['index']:09d}": frame for frame in frames}
+    if len(keyed) != len(frames):
+        raise ValueError("duplicate native observation index")
+    ids = list(keyed)
+    return keyed, {"train": ids[:-2*reserve], "dev": ids[-2*reserve:-reserve],
+                   "final_test": ids[-reserve:]}
+
+
+def measured_depth_grid(frame, read, *, max_depth=np.inf):
+    dep = frame.get("depth") or {}
+    camera = frame["camera"]
+    if (dep.get("source") != "arkit_scene_depth" or dep.get("pairing") != "same_frame"
+            or dep.get("timestamp_s") != frame["timestamp_s"] or not dep.get("confidence_path")
+            or dep["T_world_from_camera"] != camera["T_world_from_camera"]):
+        return None
+    shape = (dep["height"], dep["width"])
+    raw = np.frombuffer(read(dep["path"]), "<f4").reshape(shape)
+    confidence = np.frombuffer(read(dep["confidence_path"]), np.uint8).reshape(shape)
+    mask = (confidence == 2) & np.isfinite(raw) & (raw > 0) & (raw < max_depth)
+    if not mask.any():
+        return None
+    intrinsics = scaled_K(dep["intrinsics"], shape)
+    if not np.allclose(intrinsics, scaled_K(camera["intrinsics"], shape), rtol=1e-4, atol=1e-3):
+        raise ValueError("depth grid requires calibrated reprojection")
+    return np.where(mask, raw, 0), intrinsics
+
+
+def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust):
+    keyed, split = split_native_views(records, coordinate_frame)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     for folder in ("images", "depth"):
         (output / folder).mkdir()
-    train = frames[:-2*reserve]
+    train = [keyed[k] for k in split["train"]]
     name = lambda f: f"{f['index']:09d}.jpg"
-    write_json(output / "splits.json", {role: [Path(name(f)).stem for f in group] for role, group in
-               [("train", train), ("dev", frames[-2*reserve:-reserve]), ("final_test", frames[-reserve:])]})
+    write_json(output / "splits.json", split)
     priors = write_colmap_priors(train, output / "priors", name)
     model = output / priors[coordinate_frame]["dir"]
     points, colours = [], []
@@ -76,29 +104,21 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust)
     for frame in train:
         photo = read(frame["image"]["path"])
         (output / "images" / name(frame)).write_bytes(photo)
-        dep = frame.get("depth") or {}
-        if (dep.get("source") != "arkit_scene_depth" or dep.get("pairing") != "same_frame"
-                or dep.get("timestamp_s") != frame["timestamp_s"] or not dep.get("confidence_path")
-                or dep["T_world_from_camera"] != frame["camera"]["T_world_from_camera"]):
+        measured = measured_depth_grid(frame, read, max_depth=SEED_MAX_DEPTH_M)
+        if measured is None:
             continue
-        shape = (dep["height"], dep["width"])
-        raw = np.frombuffer(read(dep["path"]), "<f4").reshape(shape)
-        confidence = np.frombuffer(read(dep["confidence_path"]), np.uint8).reshape(shape)
-        mask = (confidence == 2) & np.isfinite(raw) & (raw > 0) & (raw < SEED_MAX_DEPTH_M)
-        if not mask.any():
-            continue
-        kd = scaled_K(dep["intrinsics"], shape)
-        if not np.allclose(kd, scaled_K(frame["camera"]["intrinsics"], shape), rtol=1e-4, atol=1e-3):
-            raise ValueError("depth grid requires calibrated reprojection")
+        raw, kd = measured
+        shape = raw.shape
+        dep = frame["depth"]
         depth_path = output / "depth" / Path(name(frame)).with_suffix(".npy")
-        np.save(depth_path, np.where(mask, raw, 0))
+        np.save(depth_path, raw)
         measured_depth[depth_path.name] = {"sha256": sha256_file(depth_path),
             "frame_id": frame["frame_id"], "depth_member": dep["path"],
             "confidence_member": dep["confidence_path"], "confidence_level": 2,
             "source": dep["source"], "pairing": dep["pairing"]}
         # Bound seed sampling per view while retaining every valid depth pixel for supervision.
         stride = max(1, math.ceil(math.sqrt(raw.size / 1024)))
-        xyz, uv = backproject(raw, kd, frame["camera"]["T_world_from_camera"], mask=mask, stride=stride)
+        xyz, uv = backproject(raw, kd, frame["camera"]["T_world_from_camera"], mask=raw > 0, stride=stride)
         with Image.open(io.BytesIO(photo)) as im:
             if im.size != (frame["image"]["width"], frame["image"]["height"]):
                 raise ValueError("native image size disagrees with calibration")

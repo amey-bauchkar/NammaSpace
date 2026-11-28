@@ -62,3 +62,37 @@ The zero-cutoff export retained all 5,772 Gaussians. It lost 0.04707 dB and
 0.001236 SSIM relative to PLY. The default cutoff added about 0.00252 dB
 of loss in this sample. Neither measurement justifies changing production
 defaults without the remaining evaluation scenes.
+
+## Matched Gaussian growth diagnostic
+
+Both runs trained for 3,500 steps from the same frozen 26-view Kitchen
+reference and seed 0. The serialized configuration differed only in the
+growth strategy and output paths. The scores use the same 12 registered
+development views.
+
+| Strategy | Splats | Trainer seconds | PSNR (dB) | SSIM |
+|---|---:|---:|---:|---:|
+| MCMC | 5,772 | 127.4 | 13.25479 | 0.497970 |
+| Default | 5,708 | 102.7 | 13.22624 | 0.469393 |
+
+Default growth was faster on this run and scored lower on both metrics.
+The test isolates growth on sparse seeds. It does not compare full dense
+recipes or qualify X2 across scenes. MCMC remains the default.
+
+## Outside-region RGB integrity
+
+The scale-capped 400-step edit changed 28,998,024 of 134,560,247 pixels
+outside its projected cube across the 12 development views. The edit fails
+exact outside-region equality despite byte-identical frozen rows. This
+uses an unoccluded geometric mask and exact 8-bit RGB comparison. A no-op
+merge of the original regional rows is running to isolate row-order effects.
+
+The no-op merge changed zero outside pixels with the original mask. Near-plane
+clipping now handles cubes that cross the camera plane. This expanded Kitchen
+region scoring to six views, and the capped edit still changed 24,620,733 of
+115,779,685 outside pixels. The failure cannot be explained by row reordering.
+
+The three-sigma support constraint selected two trainable rows. After 400
+steps, the rendered edit changed none of the 115,779,685 outside pixels and
+produced zero change in the regional RGB scores. Integrity passed on this
+window, but there is no measured fidelity gain.

@@ -318,3 +318,93 @@ The refreshed regional CUDA integration including SPZ also passed.
 Kitchen degree-three no-prune export lost 0.04707 dB relative to PLY.
 Default pruning accounts for roughly 0.00252 dB additional loss on this
 window. Current settings stay in place pending the real-scene X5 gate.
+
+The private reference trainer exposes an explicit --strategy default for a
+matched growth comparison. The default remains MCMC. Kitchen's 3,500-step
+default-growth run uses the same 26 training views, seed, calibration, and
+evaluation registration as the earlier MCMC run. This isolates growth
+strategy; dense seeds and the final-test LPIPS gate of X2 remain separate.
+
+P3 finish review now requires an override reason for low coverage and stores
+it in the capture event log. Swift/Xcode and physical device validation are
+unavailable here. Kitchen default growth completed training (5,708 splats,
+102.7 s, 0.26 GiB); verified the same training reference digest and effective
+config apart from strategy and paths. Development scoring is in progress.
+
+Kitchen matched growth scores recorded. Default growth scored 13.22624 dB
+and 0.469393 SSIM, versus 13.25479 dB and 0.497970 for MCMC.
+Added an opt-in dense native LiDAR seed path. It uses only sealed training
+input hashes, preserves the frozen COLMAP model and retains the exact seed
+table in the private evidence. CUDA synthetic smoke and checkpoint
+verification passed. Targeted CPU tests: 8 passed, 2 skipped.
+
+The local testing-room Studio import contains 201 native frames and measured
+ARKit depth. All 159 training-frame records use same-frame pairing with
+matching timestamps. Full training-only BA is running. Development
+registration now supports native imports through their verified inventory.
+It derives the same chronological split as native preparation and reads only
+the selected development RGB members. A retained synthetic capture registered
+its reserved development frame using real COLMAP. CPU regression: 3 passed,
+2 skipped. Native final-test registration remains unavailable.
+
+Native final registration now shares the one-shot claim path. The original
+archive and its Studio import use the same integrity-manifest digest in
+the claim key. On the synthetic native import, real COLMAP and CUDA tests
+registered exactly the designated development and final images and rejected
+a second final registration (2 passed in 54.79 s). The real native room's
+final split remains reserved. Feature extraction reached 72/159 training
+images at last check. Full Python regression is running.
+
+Native registration now binds aligned, high-confidence measured depth grids
+to registered observations. The evaluator renders expected depth at the
+LiDAR grid resolution and scores visible-pixel median error, coverage, and
+2/5 cm agreement over all measured pixels. A 0.05 render alpha threshold
+marks predictions as missing and is included in the manifest. Real CUDA
+synthetic native final capture through registration, render and scoring:
+7 targeted tests passed in 88.88 s. No real final-test split was opened.
+
+The scorer now pools measured-depth coverage and threshold agreement by
+pixel count across views, with the per-view median errors still available.
+The private paired comparison can compare separate unedited checkpoints
+when their training-reference and registration digests match. Five scoring
+tests passed. Native room extraction completed and feature matching started.
+
+Added a paired outside-region RGB integrity diagnostic bound to the same
+registration and unedited checkpoint render. Kitchen's 400-step edit
+failed exact equality. A no-op merge diagnostic will separate serialization
+or ordering effects from the learned edit. Full regression and native room
+matching were still running.
+
+Python regression snapshot: 533 passed, 12 skipped in 561.79 s. Near-plane
+projection and integrity follow-up had five targeted scoring tests pass.
+Kitchen no-op serialization reproduced the unchanged render. The learned
+400-step edit still fails outside-region equality after correctly clipping
+the projection near the camera. Native matching is still running.
+
+The near-clipped no-op comparison also had zero changed outside pixels.
+Added an experimental three-sigma support constraint to regional training.
+It selects only parent rows contained by the core, bounds their centers
+and scales during optimization, and records the constraint. This alone
+does not prove pixel integrity because the renderer and camera geometry
+can still spread influence. The synthetic CUDA regression passed. The
+matched Kitchen 400-step diagnostic is running.
+
+The full native room adjustment returned 159 camera rows, with 148 meeting
+the minimum track requirement. Eleven views fell below it, and COLMAP did
+not converge. The guard rejected the reference. The training-only matcher
+now reuses the existing pose-revisit heuristic alongside temporal neighbors
+to seek additional overlap without using reserved views. A fresh 159-view
+retry has started in scratch/fidelity/native-room-revisit.
+
+The three-sigma experiment edited two rows and produced zero RGB metric
+change inside the projected Kitchen region. Outside-region results are in
+the same scored report. Targeted COLMAP and raw archive tests after adding
+revisit matching: 12 passed, 1 skipped.
+
+The native revisit planner proposes 810 additional training-only candidates
+and reaches all 11 previously weak cameras. Pair geometry and resulting
+track support are unverified until the live retry finishes.
+
+Native end-to-end verification after the evaluation updates: 7 passed in
+79.88 s with real COLMAP and CUDA. A modified predicted depth member was
+rejected before scoring. No real final-test data was extracted.

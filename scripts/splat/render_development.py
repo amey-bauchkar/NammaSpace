@@ -11,6 +11,8 @@ from namma.capture.polycam_raw import opencv_c2w
 from namma.core.jsonio import load_strict, sha256_file, write_json
 from namma.evidence.bundle import verify_checkpoint
 
+MIN_DEPTH_ALPHA = .05
+
 
 def load_parameters(path, device):
     from plyfile import PlyData
@@ -100,6 +102,7 @@ def render_registered(version, registration, output, *, role, device="cuda", edi
     else:
         params = load_parameters(model, device)
     hashes = {}
+    depth_hashes = {}
     with torch.no_grad():
         for k in sorted(ids):
             if not k.isascii() or not k.isdigit():
@@ -117,11 +120,24 @@ def render_registered(version, registration, output, *, role, device="cuda", edi
             path = output / f"{k}.png"
             Image.fromarray(rgb.clamp(0, 1).mul(255).round().byte().cpu().numpy()).save(path)
             hashes[k] = sha256_file(path)
+            measured = reg.get("measured_depth", {}).get(k)
+            if measured:
+                h, w = measured["shape"]
+                depth_rgb, alpha, _ = render(params, tensor(V), tensor(measured["K"]), w, h, degree, "RGB+ED")
+                depth = depth_rgb[0, ..., 3]
+                depth = torch.where(alpha[0, ..., 0] >= MIN_DEPTH_ALPHA, depth, 0)
+                if not torch.isfinite(depth).all() or (depth < 0).any():
+                    raise ValueError("invalid rendered depth")
+                path = output / f"{k}.depth.npy"
+                np.save(path, depth.float().cpu().numpy(), allow_pickle=False)
+                depth_hashes[k] = sha256_file(path)
     write_json(output / "renders.json", {"role": role, "registered": sorted(ids), "unregistered": reg["unregistered"],
                "checkpoint_sha256": checkpoint_hash, "registration_sha256": registration_hash,
+               "training_reference_sha256": sha256_file(version / "training_ba.json"),
                "claim_sha256": claim_hash, "image_sha256": hashes, "sh_degree": degree,
                "edit_sha256": edit_hash, "model_sha256": sha256_file(model),
                "spz_roundtrip": compression,
+               "depth_sha256": depth_hashes, "depth_min_alpha": MIN_DEPTH_ALPHA if depth_hashes else None,
                "colour_fit": False, "pose_fit": False})
 
 

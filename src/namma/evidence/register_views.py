@@ -1,8 +1,9 @@
-"""Register development photos against a frozen, train-only COLMAP model."""
+"""Register reserved photos against a frozen, train-only COLMAP model."""
 import argparse
 import hashlib
 import json
 import shutil
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -20,16 +21,39 @@ def register_dev(archive, reference, output, limit=None):
     return _register(archive, reference, output, "dev", limit)
 
 
+def _extract_polycam_views(archive, images, split, train, selected, intr):
+    with PolycamExport(archive) as export:
+        if split != time_blocks(export.ids, export.incomplete) or not set(train) <= set(split["train"]):
+            raise ValueError("reference split mismatch")
+        images.parent.mkdir(parents=True, exist_ok=False)
+        images.mkdir()
+        for k in selected:
+            (images / f"{k}.jpg").write_bytes(export.raw_photo_bytes(k))
+            intr[k] = export.raw_intrinsics(k)
+
+
 def register_final(archive, reference, output, candidate, protocol):
     """Consume this capture's final split once, including a failed attempt."""
     from namma.evidence.bundle import verify_checkpoint
     verify_checkpoint(candidate)
     split = load_strict(reference / "splits.json")
     source = load_strict(reference / "capture_ref.json")
+    native = source.get("format") == "nammacap"
+    if native and archive.is_dir():
+        capture_id = sha256_file(archive / "integrity.json")
+        capture_matches = capture_id == source.get("integrity_sha256")
+    else:
+        capture_id = sha256_file(archive)
+        capture_matches = capture_id == source.get("sha256")
+        if native and capture_matches:
+            # Studio retains this member byte-for-byte on import, so the
+            # same capture cannot be claimed again in its imported form.
+            with zipfile.ZipFile(archive) as capture:
+                capture_id = hashlib.sha256(capture.read("integrity.json")).hexdigest()
     if (load_strict(candidate / "splits.json") != split
             or load_strict(candidate / "capture_ref.json") != source
             or sha256_file(candidate / "training_ba.json") != sha256_file(reference / "training_ba.json")
-            or sha256_file(archive) != source["sha256"]):
+            or not capture_matches):
         raise ValueError("frozen candidate does not match the capture, split and reference")
     if not isinstance(protocol, dict) or not protocol.get("metrics") or not protocol.get("decision_rule"):
         raise ValueError("final protocol requires metrics and a decision rule")
@@ -39,7 +63,7 @@ def register_final(archive, reference, output, candidate, protocol):
     from namma.recon.tools import PROJECT_ROOT
     registry = PROJECT_ROOT / ".private-evaluation"
     registry.mkdir(exist_ok=True)
-    set_bytes = json.dumps([source["sha256"], sorted(split["final_test"])], separators=(",", ":")).encode()
+    set_bytes = json.dumps([capture_id, sorted(split["final_test"])], separators=(",", ":")).encode()
     claim = registry / (hashlib.sha256(set_bytes).hexdigest() + ".json")
     with claim.open("x", encoding="utf-8") as stream:
         json.dump({"candidate": sha256_file(candidate / "manifest.json"), "protocol": protocol,
@@ -55,8 +79,9 @@ def _register(archive, reference, output, role, limit):
     source = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     model = reference / "model"
+    native = source.get("format") == "nammacap"
     if ({p.name: sha256_file(p) for p in model.iterdir()} != summary["frozen_model"]
-            or sha256_file(archive) != source["sha256"]
+            or (not native and sha256_file(archive) != source["sha256"])
             or sha256_file(reference / "database.db") != summary["database_sha256"]):
         raise ValueError("reference model or capture digest mismatch")
     if limit is not None and limit < 1:
@@ -66,16 +91,34 @@ def _register(archive, reference, output, role, limit):
     colmap = find_tools(require_openmvs=False).colmap
     def run(tag, cmd, *args):
         run_step(tag, [colmap, cmd, *args], output / "logs", timeout_s=3600)
-    with PolycamExport(archive) as export:
-        if split != time_blocks(export.ids, export.incomplete) or not set(train) <= set(split["train"]):
-            raise ValueError("reference split mismatch")
-        output.mkdir(parents=True, exist_ok=False)
-        images = output / "images"
-        images.mkdir()
-        intr = {}
-        for k in selected:
-            (images / f"{k}.jpg").write_bytes(export.raw_photo_bytes(k))
-            intr[k] = export.raw_intrinsics(k)
+    images = output / "images"
+    intr = {}
+    depth_records = {}
+    if native:
+        from namma.capture.native_training import measured_depth_grid, split_native_views, training_source
+
+        with training_source(archive) as (records, read, provenance):
+            keyed, expected = split_native_views(records, source["coordinate_frame"])
+            if (expected != split or train != split["train"]
+                    or any(source.get(k) != v for k, v in provenance.items())):
+                raise ValueError("native capture or split digest mismatch")
+            output.mkdir(parents=True, exist_ok=False)
+            images.mkdir()
+            for k in selected:
+                frame = keyed[k]
+                (images / f"{k}.jpg").write_bytes(read(frame["image"]["path"]))
+                intr[k] = frame["camera"]["intrinsics"]
+                measured = measured_depth_grid(frame, read)
+                if measured is not None:
+                    depth, camera = measured
+                    path = output / "measured_depth" / f"{k}.npy"
+                    path.parent.mkdir(exist_ok=True)
+                    np.save(path, depth, allow_pickle=False)
+                    depth_records[k] = {"sha256": sha256_file(path), "K": camera.tolist(),
+                                        "shape": list(depth.shape), "source": "arkit_scene_depth",
+                                        "confidence_level": 2}
+    else:
+        _extract_polycam_views(archive, images, split, train, selected, intr)
     db = output / "registration.db"
     shutil.copyfile(reference / "database.db", db)
     if set(poses._db_images(db)) != {f"{k}.jpg" for k in train}:
@@ -85,7 +128,8 @@ def _register(archive, reference, output, role, limit):
         "--FeatureExtraction.use_gpu", 0,
         "--FeatureExtraction.num_threads", 4)
     db_ids = poses._db_images(db)
-    if len({cid for _, cid in db_ids.values()}) != len(db_ids):
+    if (set(db_ids) != {f"{k}.jpg" for k in [*train, *selected]}
+            or len({cid for _, cid in db_ids.values()}) != len(db_ids)):
         raise ValueError("development registration requires individual fixed intrinsics")
     poses._set_db_cameras(db, db_ids, intr)
     pairs = output / "pairs.txt"
@@ -141,6 +185,8 @@ def _register(archive, reference, output, role, limit):
     report = {"role": role, "poses_arkit": registered, "unregistered": [k for k in selected if k not in registered],
               "reference": summary["frozen_model"], "intrinsics": {k: intr[k] for k in registered},
               "image_sha256": {k: sha256_file(images / f"{k}.jpg") for k in registered}}
+    if native:
+        report["measured_depth"] = {k: depth_records[k] for k in registered if k in depth_records}
     write_json(output / f"{role}_registration.json", report)
     return report
 

@@ -39,7 +39,7 @@ def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path):
         assert item["sha256"] == sha256_file(output/"depth"/filename)
         assert item["source"] == "arkit_scene_depth" and item["pairing"] == "same_frame"
 
-def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path):
+def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path, monkeypatch):
     """Opt-in synthetic archive -> native BA -> real CUDA depth training."""
     import os
     import pytest
@@ -85,3 +85,33 @@ def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path):
     assert load_strict(version/"splat.json")["depth_weight"] == 1.0
     assert len(list((version/"measured_depth").glob("*.npy"))) == 8
     assert len(load_strict(version/"cameras.json")) == 8
+    from namma.evidence.register_views import register_dev
+    experiment = version.parent.parent
+    registered = register_dev(project / "capture/nammacap", experiment / "reference", tmp_path / "dev")
+    assert set(registered["poses_arkit"]) == {"000000009"}
+    assert {p.name for p in (tmp_path / "dev/images").iterdir()} == {"000000009.jpg"}
+    from namma.evidence.register_views import register_final
+    monkeypatch.setattr("namma.recon.tools.PROJECT_ROOT", tmp_path)
+    protocol = {"metrics": ["raw_psnr_db"], "decision_rule": "synthetic mechanics only"}
+    source = project / "capture/nammacap"
+    final = register_final(source, experiment / "reference", tmp_path / "final", version, protocol)
+    assert set(final["poses_arkit"]) == {"000000010"}
+    assert (tmp_path / "final/final_evaluation_claim.json").is_file()
+    with pytest.raises(FileExistsError):
+        register_final(source, experiment / "reference", tmp_path / "repeat", version, protocol)
+    import subprocess
+    from namma import PROJECT_ROOT
+    from namma.studio.splat_claude import SPLAT_PYTHON
+    from scripts.splat.score_registered import score_registered
+    renders = tmp_path / "renders"
+    subprocess.run([SPLAT_PYTHON, PROJECT_ROOT / "scripts/splat/render_development.py",
+                    version, tmp_path / "final", renders, "--final"], check=True)
+    score = score_registered(tmp_path / "final", renders, tmp_path / "scores")
+    measured = score["measured_depth_metrics"]["000000010"]
+    assert measured["measured_pixels"] == 384
+    assert 0 < measured["coverage"] <= 1
+    assert score["measured_depth_aggregate"]["measured_pixels"] == 384
+    with (renders / "000000010.depth.npy").open("ab") as stream:
+        stream.write(b"modified")
+    with pytest.raises(ValueError, match="depth grid digest mismatch"):
+        score_registered(tmp_path / "final", renders, tmp_path / "tampered-scores")
