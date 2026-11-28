@@ -231,10 +231,32 @@ def write_splat_ply(path, cols, props):
     Path(path).write_bytes(head.encode("ascii") + arr.tobytes())
 
 
-def merge_blocks(plys, rects, out_ply):
+def merge_blocks(plys, rects, out_ply, *, support_counts=None):
     """Keep from each block's splat the splats whose centre is in the block's own cell; concatenate.
     -> {"per_block": [{"block", "splats_in", "kept"}], "splats": total}"""
     from namma.studio.splat_spz import _ply_fields
+    if support_counts is not None:
+        from namma.afe.boundaries import reconcile
+        fields = [_ply_fields(path) for path in plys]
+        if len(fields)!=len(rects) or len(fields)!=len(support_counts) or any(list(f)!=list(fields[0]) for f in fields):
+            raise ValueError("block schemas or support arrays differ")
+        cropped,support = [],[]
+        for f,rect,counts in zip(fields,rects,support_counts):
+            if len(counts)!=len(f["x"]):
+                raise ValueError("block support count mismatch")
+            mask = inside(np.c_[f["x"],f["z"]],grow(tuple(rect)))
+            cropped.append({key:value[mask] for key,value in f.items()})
+            support.append(np.asarray(counts)[mask])
+        parts = [{"means":np.c_[f["x"],f["y"],f["z"]],
+                  "colour":np.c_[f["f_dc_0"],f["f_dc_1"],f["f_dc_2"]],
+                  "scales":np.c_[f["scale_0"],f["scale_1"],f["scale_2"]]} for f in cropped]
+        result = reconcile(parts,rects,support)
+        indices = result["selected_global_rows"]
+        merged = {key:np.concatenate([f[key] for f in cropped])[indices] for key in fields[0]}
+        write_splat_ply(out_ply,merged,list(fields[0]))
+        return {"splats":len(indices),"status":result["status"],"removed_rows":result["removed_rows"],
+                "per_block":[{"block":i,"splats_in":len(f["x"]),"kept":int(((indices>=a)&(indices<b)).sum())}
+                             for i,(f,a,b) in enumerate(zip(cropped,result["part_offsets"][:-1],result["part_offsets"][1:]))]}
     parts, props, per = [], None, []
     for i, (p, r) in enumerate(zip(plys, rects)):
         f = _ply_fields(p)

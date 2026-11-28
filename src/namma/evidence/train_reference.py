@@ -11,7 +11,7 @@ from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
 
 
 def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000,
-                    native_crops=False, depth=False, cancel_file=None, training_options=None):
+                    native_crops=False, depth=False, cancel_file=None, training_options=None, estimated_depth=None):
     ref = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     split = load_strict(reference / "splits.json")
@@ -75,10 +75,18 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
     if native_crops:
         cmd.extend(["--full-res-crops", "--crop-size", 1024])
     if depth:
-        depths = reference / "depth"
+        depths = Path(estimated_depth) if estimated_depth else reference / "depth"
         if not depths.is_dir() or not list(depths.glob("*.npy")):
             raise ValueError("measured depth supervision unavailable")
+        priors = None
+        if estimated_depth:
+            from namma.evidence.depth_priors import validate
+            priors = validate(reference,depths,allowed)
         shutil.copytree(depths, version / "depth")
+        write_json(version/"depth_provenance.json",{"kind":"estimated_promptda_prior" if estimated_depth else "measured_sensor",
+                   "files":{p.name:sha256_file(p) for p in depths.glob("*.npy")},"inference_records":priors})
+        if estimated_depth:
+            shutil.copytree(reference/"depth",version/"sensor_depth")
         cmd.extend(["--depth-dir", version / "depth", "--depth-weight", 1])
     run_step("train_reference", cmd, version / "logs", timeout_s=5*3600, cancel_file=cancel_file)
     rows = load_strict(version / "cameras.json")

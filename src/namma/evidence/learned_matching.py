@@ -9,12 +9,12 @@ import numpy as np
 from namma.core.jsonio import load_strict, sha256_file, write_json
 
 
-def infer(images, ids, pairs, output, approval, *, extractor="aliked", device="cpu", max_keypoints=2048):
+def infer(images, ids, pairs, output, approval, *, extractor="aliked", device="cpu", max_keypoints=2048, max_side=1024):
     import torch
     import lightglue
     from lightglue import ALIKED, DISK, LightGlue
     from lightglue.utils import load_image
-    if extractor not in {"aliked", "disk"} or max_keypoints < 32:
+    if extractor not in {"aliked", "disk"} or max_keypoints < 32 or max_side<64:
         raise ValueError("invalid feature extraction configuration")
     approval = Path(approval)
     spec = load_strict(approval)
@@ -48,7 +48,7 @@ def infer(images, ids, pairs, output, approval, *, extractor="aliked", device="c
     output.mkdir(parents=True, exist_ok=False)
     with torch.inference_mode():
         for name in ids:
-            features = feature_model.extract(load_image(images / f"{name}.jpg").to(device))
+            features = feature_model.extract(load_image(images / f"{name}.jpg").to(device),resize=max_side)
             np.savez(output / f"{name}.npz", **{k: v.cpu().numpy() for k, v in features.items() if torch.is_tensor(v)})
         with (output / "matches.txt").open("x", encoding="utf-8") as stream:
             for a, b in pairs:
@@ -65,7 +65,7 @@ def infer(images, ids, pairs, output, approval, *, extractor="aliked", device="c
                 stream.write("\n")
     write_json(output / "provenance.json", {"extractor": extractor, "source": commit,
                "approval_sha256": sha256_file(approval), "used_checkpoints": sorted(used),
-               "torch": str(torch.__version__), "device": device, "max_keypoints": max_keypoints})
+               "torch": str(torch.__version__), "device": device, "max_keypoints": max_keypoints,"max_side":max_side})
 
 
 def import_keypoints(db, db_ids, cache):

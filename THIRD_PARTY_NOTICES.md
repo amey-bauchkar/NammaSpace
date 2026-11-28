@@ -91,3 +91,29 @@ Observed SHA-256 checkpoint digests:
 | LightGlue disk_lightglue.pth | b5b21d47ea24f2c5e501aec9c91b9716e4c8c3429a4dc1e615c133c4c9378335 |
 
 [Publisher licensing declaration](https://github.com/cvg/LightGlue#license)
+
+## Experimental depth and perceptual runtimes (28 November 2026)
+
+PromptDA Small source `9161547ca7151e14fcc8f490ad3cc02fa9437483` and
+`depth-anything/prompt-depth-anything-vits` revision
+`bdc8715134ff95362ffd0402748c6f08071bc1e4` were used for a local CPU example.
+The publisher declares Apache-2.0 for this checkpoint. Checkpoint SHA-256:
+`51b99fef5e3c467f3ccd12f2f4687220e7f1e88f6a07fe21f7a66adffca2af99`.
+[Publisher model card](https://huggingface.co/depth-anything/prompt-depth-anything-vits)
+and [source licence](https://github.com/DepthAnything/PromptDA/blob/main/LICENSE).
+The local approval records the full execution package inventory. A clean tracked
+source tree and exact package versions are required on subsequent runs.
+
+LPIPS 0.1.4 uses BSD-2-Clause source and torchvision 0.26.0 uses BSD-3-Clause.
+The local CPU example used torchvision's official AlexNet weight with SHA-256
+`7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02`
+and the packaged Alex v0.1 calibrator with SHA-256
+`df73285e35b22355a2df87cdb6b70b343713b667eddbda73e1977e0c860835c0`.
+[LPIPS licence](https://github.com/richzhang/PerceptualSimilarity/blob/master/LICENSE)
+and [torchvision licence](https://github.com/pytorch/vision/blob/main/LICENSE).
+No upstream code or weights are included. These notices do not clear every
+transitive binary for redistribution.
+
+VGGT-1B-Commercial weights remain gated and unavailable locally. AnchorSplat
+has no approved local inference environment. Neither launcher constitutes
+successful inference or completed licensing clearance.

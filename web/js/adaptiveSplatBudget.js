@@ -10,3 +10,10 @@ export function updateSplatBudget(state, frameMs) {
   }
   return { ...state, mean, frames, budget };
 }
+
+/** Shared by interactive and benchmark loops; navigation and geometry are untouched. */
+export function applySplatBudget(app, frameMs) {
+  if (!app.splatBudget || !app.spark || !app.splat?.visible) return;
+  app.splatBudget = updateSplatBudget(app.splatBudget, frameMs);
+  app.spark.lodSplatCount = app.splatBudget.budget;
+}

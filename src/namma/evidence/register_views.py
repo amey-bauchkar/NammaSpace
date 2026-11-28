@@ -107,7 +107,8 @@ def _register(archive, reference, output, role, limit):
         cache = output / "learned"
         infer(learned_images, train+selected, [(k,t) for k in selected for t in train],
               cache, summary["learned_approval"], extractor=summary["feature_backend"],
-              device=summary.get("matching_device","cpu"))
+              device=summary.get("matching_device","cpu"),
+              max_keypoints=summary.get("matching_max_keypoints",2048),max_side=summary.get("matching_max_side",1024))
         # Frozen tracks index training keypoints. Their coordinates and order must stay exact.
         with sqlite3.connect(str(db)) as connection:
             for k in train:

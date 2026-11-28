@@ -502,6 +502,7 @@ SPLAT_OPTION_DEFAULTS = {
     "native_iters": 15000,
     "native_cap": 300000,
     "native_training_options": {},
+    "native_promptda": None,
     "evidence": False,
     "large_init_points": False,     # >150 photos: mesh start points scaled to the surface area (up to 600 k)
     "mirrors_force_large": True,    # marked mirrors: use this trainer (pixel masks) even for a small room

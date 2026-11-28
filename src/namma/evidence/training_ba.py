@@ -1,12 +1,13 @@
 """Build a private, train-only sparse reference in the raw capture's metric frame."""
 import argparse
+import shutil
 from pathlib import Path
 
 import numpy as np
 
 from namma.capture import polycam_poses as poses
 from namma.capture.polycam_raw import PolycamExport
-from namma.core.jsonio import sha256_file, write_json
+from namma.core.jsonio import load_strict, sha256_file, write_json
 from namma.evidence.splits import time_blocks
 from namma.recon.align import umeyama
 from namma.recon.colmap import read_images_txt
@@ -42,7 +43,8 @@ def prepare_archive(archive, output, train_limit=None, train_start=0):
 
 
 def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
-           learned_approval=None, extractor="aliked", matching_device="cpu"):
+           learned_approval=None, extractor="aliked", matching_device="cpu",
+           matching_max_keypoints=2048,matching_max_side=1024,feature_database=None):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -58,9 +60,17 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
         path = output / name
         path.mkdir()
         return path
-    run("features", "feature_extractor", "--database_path", db, "--image_path", images,
-        "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera", 0,
-        "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
+    if feature_database:
+        source_ref = load_strict(Path(feature_database).parent/"capture_ref.json")
+        current_ref = load_strict(output/"capture_ref.json")
+        if source_ref!=current_ref or any(
+                sha256_file(Path(feature_database).parent/"images"/name)!=sha256_file(images/name) for name in names):
+            raise ValueError("feature database does not match training image provenance")
+        shutil.copyfile(feature_database,db)
+    else:
+        run("features", "feature_extractor", "--database_path", db, "--image_path", images,
+            "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera", 0,
+            "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
     db_ids = poses._db_images(db)
     if set(db_ids) != names or len({cid for _, cid in db_ids.values()}) != len(ids):
         raise ValueError("incomplete feature database or shared intrinsics")
@@ -87,7 +97,8 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
     if learned_approval:
         from namma.evidence.learned_matching import infer, import_keypoints
         cache = output / "learned"
-        infer(images, ids, proposals, cache, learned_approval, extractor=extractor, device=matching_device)
+        infer(images, ids, proposals, cache, learned_approval, extractor=extractor, device=matching_device,
+              max_keypoints=matching_max_keypoints,max_side=matching_max_side)
         import_keypoints(db, db_ids, cache)
         pairs, match_type = cache / "matches.txt", "raw"
     run("matching", "matches_importer", "--database_path", db, "--match_list_path", pairs,
@@ -109,7 +120,19 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
         if image_id not in visited:
             visited.add(image_id)
             pending.extend(adjacency[image_id] - visited)
+    remaining = set(adjacency)
+    components = []
+    while remaining:
+        component,pending = set(),[min(remaining)]
+        while pending:
+            image_id = pending.pop()
+            if image_id not in component:
+                component.add(image_id)
+                pending.extend(adjacency[image_id]-component)
+        components.append(sorted(component))
+        remaining -= component
     write_json(output / "verified_graph.json", {"edges": len(edges), "connected": len(visited) == len(ids),
+                                                "components":sorted(components,key=lambda c:-len(c)),
                                                 "image_degrees": {str(k): len(v) for k, v in adjacency.items()}})
     if len(visited) != len(ids):
         raise ValueError("geometrically verified training graph is disconnected")
@@ -149,6 +172,7 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
               "feature_backend": extractor if learned_approval else "sift",
               "matching_device": matching_device,
+              "matching_max_keypoints":matching_max_keypoints,"matching_max_side":matching_max_side,
               "learned_approval": str(Path(learned_approval).resolve()) if learned_approval else None,
               "learned_approval_sha256": sha256_file(learned_approval) if learned_approval else None,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
@@ -169,7 +193,12 @@ if __name__ == "__main__":
     parser.add_argument("--learned-approval", type=Path)
     parser.add_argument("--extractor", choices=["aliked", "disk"], default="aliked")
     parser.add_argument("--matching-device", choices=["cpu", "cuda"], default="cpu")
+    parser.add_argument("--matching-max-keypoints",type=int,default=2048)
+    parser.add_argument("--matching-max-side",type=int,default=1024)
+    parser.add_argument("--feature-database",type=Path)
     args = parser.parse_args()
     print(adjust(args.output, *prepare_archive(args.archive, args.output, args.train_limit, args.train_start),
                  loop_candidates=args.loop_candidates, retrieval_k=args.retrieval_k,
-                 learned_approval=args.learned_approval, extractor=args.extractor, matching_device=args.matching_device))
+                 learned_approval=args.learned_approval, extractor=args.extractor, matching_device=args.matching_device,
+                 matching_max_keypoints=args.matching_max_keypoints,matching_max_side=args.matching_max_side,
+                 feature_database=args.feature_database))

@@ -1,5 +1,53 @@
 # Fidelity programme execution
 
+## Active continuation — full-scene evidence and regional AI
+
+Read docs/phase_reports/FULL_SCENE_AND_AI.md before resuming. Chrome work is
+cancelled. Use repository documentation exclusively for this task.
+
+Full training-partition SIFT and bounded ALIKED correspondence runs completed.
+Both graph checks failed. The full-scene DISK retry is running from
+tools/learned-matching/env with process handle recorded in this chat; inspect
+the actual process or database before restarting.
+Private experiment folders are under the system temporary directory:
+namma-fullscene-lwwflbb3.nmt (SIFT),
+namma-fullscene-learned-djk0wbcy.vcz (ALIKED),
+namma-fullscene-disk-4g34p1f2.oyb (DISK).
+Each reference folder contains raw source hashes and full image/pair inventories.
+Do not remove these artifacts. The first two diagnostics.json files record
+component members and rejection reasons. No complete-scene BA success exists.
+
+PromptDA Small and LPIPS actual CPU inference succeeded. Estimated PromptDA
+depth and original sensor observations are separate. Model sources, revisions,
+hashes and commands are recorded in the current phase report and ignored local
+approval files. Native PromptDA execution is opt-in via native_promptda.
+
+New experimental code covers RGB benchmark preparation/CUDA ablations,
+two-store fixed-density regional optimisation and proposal initialisation,
+residual-based localisation, report-based acceptance, private rollback,
+overlap ownership candidates, and strict AnchorSplat/VGGT launchers.
+Source code is present but GPU-dependent paths remain unvalidated. Complete
+measurement collectors and automatic publishing integration remain open.
+
+Validation: full Python suite passed 542 tests, skipped 7, with two existing
+Torch warnings (455.40 s). Later regional/block selection passed 22 tests.
+The synthetic package build passed and Node passed 52 tests, zero skips.
+PromptDA passed real CPU inference again with pinned packages/source; measured
+sensor/prior provenance is now retained inside checkpoints. Regional integrity
+is independently checked by reopening PLY artifacts. Opt-in measured-depth
+regional loss is unit-tested, still awaiting CUDA. The viewer benchmark now
+uses the budget controller and waits for splat/LOD initialisation; actual Intel
+runs exposed startup contamination and a subsequent invalid throttled run.
+No adaptive performance improvement is established. See the phase report.
+
+Prioritise completing the DISK run (643/1025 extracted at the last checkpoint;
+PID 17632), then record geometric verification and graph diagnostics. Existing
+private paths above must be retained. The next GPU session should follow
+docs/RECONSTRUCTION_GPU_EXECUTION.md for exact commands and required inputs.
+Full AFE orchestration, complete evidence collectors, regional densification,
+pixel-equivalence/seam gates and controlled restoration experiments remain open.
+Preserve the pre-existing pipeline.py change.
+
 ## Implementation continuation — 28 November 2026
 
 Current work adds functional learned extraction/matching and COLMAP raw import,

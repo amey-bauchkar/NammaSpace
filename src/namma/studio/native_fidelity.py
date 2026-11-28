@@ -44,11 +44,25 @@ def run(project, run_id, options, *, cancel_file=None, progress=None):
     progress("Solving native training cameras", .15)
     reference = version / "reference"
     prepare(archive, reference, frame_id, bundle_adjust=True, loop_candidates=True, retrieval_k=5)
+    prior_dir = None
+    if options.get("native_promptda"):
+        from namma.recon.runner import run_step
+        from namma import PROJECT_ROOT
+        config = options["native_promptda"]
+        prior_dir = reference/"estimated_depth"
+        prior_dir.mkdir()
+        for sensor in sorted((reference/"depth").glob("*.npy")):
+            stage = reference/"promptda"/sensor.stem
+            run_step("promptda_"+sensor.stem, [config["python"],PROJECT_ROOT/"scripts/depth/promptda_export.py",
+                     config["source"],config["checkpoint"],config["approval"],
+                     reference/"images"/(sensor.stem+".jpg"),sensor,stage,
+                     "--device",config.get("device","cpu")],version/"logs",timeout_s=3600,cancel_file=cancel_file)
+            shutil.copyfile(stage/"estimated_depth_m.npy",prior_dir/sensor.name)
     progress("Training native-resolution private checkpoint", .35)
     checkpoint = train_reference(reference, run_dir, iters=int(options.get("native_iters", 15000)),
                                  cap=int(options.get("native_cap", 300000)), native_crops=True,
                                  depth=True, cancel_file=cancel_file,
-                                 training_options=options.get("native_training_options"))
+                                 training_options=options.get("native_training_options"),estimated_depth=prior_dir)
     report.update(status="checkpoint_ready", checkpoint=str(checkpoint.relative_to(run_dir)),
                   evaluation="pending independent registration", published=False)
     write_json(version / "job.json", report)

@@ -15,7 +15,7 @@ else:
     from eval_views import raw_metrics
 
 
-def score_registered(registration, renders, output):
+def score_registered(registration, renders, output, *, perceptual_approval=None):
     batch = load_strict(renders / "renders.json")
     role = batch["role"]
     if role not in {"dev", "final_test"} or batch["pose_fit"] is not False or batch["colour_fit"] is not False:
@@ -34,6 +34,11 @@ def score_registered(registration, renders, output):
                 or claim["registration_sha256"] != batch["registration_sha256"]):
             raise ValueError("render batch does not match final claim")
     rows = {}
+    perceptual = None
+    if perceptual_approval:
+        from namma.afe.perceptual import PerceptualMetric
+        perceptual = PerceptualMetric(perceptual_approval)
+    from namma.afe.metrics import image_structure
     for frame in sorted(ids):
         if not frame.isascii() or not frame.isdigit():
             raise ValueError("invalid Polycam frame ID")
@@ -42,7 +47,12 @@ def score_registered(registration, renders, output):
         if sha256_file(render) != batch["image_sha256"][frame] or sha256_file(photo) != reg["image_sha256"][frame]:
             raise ValueError("observation or render digest mismatch")
         with Image.open(render) as pred, Image.open(photo) as observed:
-            rows[frame] = raw_metrics(np.asarray(pred.convert("RGB")), np.asarray(observed.convert("RGB")))
+            x,y = np.asarray(pred.convert("RGB")),np.asarray(observed.convert("RGB"))
+            rows[frame] = {**raw_metrics(x,y),**image_structure(x,y)}
+            if perceptual:
+                result = perceptual.compare(x,y)
+                rows[frame]["lpips_alex"] = result["lpips_alex"]
+                rows[frame]["lpips_approval_sha256"] = result["approval_sha256"]
     pixels = sum(r["pixels"] for r in rows.values())
     if not pixels:
         raise ValueError("no independently registered observations")
@@ -62,5 +72,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for field in ("registration", "renders", "output"):
         parser.add_argument(field, type=Path)
+    parser.add_argument("--perceptual-approval",type=Path)
     args = parser.parse_args()
-    print(score_registered(args.registration, args.renders, args.output)["aggregate"])
+    print(score_registered(args.registration, args.renders, args.output,
+                           perceptual_approval=args.perceptual_approval)["aggregate"])
