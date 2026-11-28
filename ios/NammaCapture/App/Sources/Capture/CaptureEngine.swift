@@ -406,8 +406,11 @@ final class CaptureEngine: NSObject, ARSessionDelegate, @unchecked Sendable {
 
     // MARK: finish
 
-    func finish(_ done: @escaping (Result<URL, Error>) -> Void) {
+    func finish(coverageOverride: String?, _ done: @escaping (Result<URL, Error>) -> Void) {
         queue.async {
+            if let reason = coverageOverride {
+                self.event(EventType.coverageOverride, data: ["reason": reason])
+            }
             self.finished = true
             self.saveSceneMesh()
             self.session?.pause()
