@@ -568,3 +568,15 @@ failed references, verify each against its expected retained training
 inventory, and preserve prior pair proposals. A new 153-camera diagnostic
 is running locally. The same 21 development and 21 final observations
 remain reserved, and the diagnostic cannot claim the final set.
+
+All three native tests passed, including the opt-in CUDA capture-to-final
+fixture. For the Kitchen SH3 recipe comparison, rerendering both 3,500-step
+checkpoints recorded the same frozen training-reference digest. On 12
+development views and 384 matched native patches, MCMC scored 0.767697624
+LPIPS and default growth 0.777730856. Default growth also lost 0.02855 dB
+PSNR and 0.02858 SSIM. This is one development window; the multi-scene
+acceptance gate remains open.
+
+The 153-camera attempt stopped at the track guard: frame 50 had two
+tracks after its neighboring weak frame 51 was removed. A final bounded
+152-camera diagnostic excluding both newly weak frames is underway.

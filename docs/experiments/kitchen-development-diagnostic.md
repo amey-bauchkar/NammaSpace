@@ -182,3 +182,9 @@ Offline AlexNet LPIPS 0.1 measured 0.785403789 for the parent and
 patches inside the projected region across six development views. Lower
 LPIPS is better. The score increased by 0.002001071 while regional raw
 PSNR increased by 0.02142 dB.
+
+The matched 3,500-step SH3 growth comparison used 12 independently
+registered development views and 384 identical patch locations per
+checkpoint. MCMC scored 0.767697624 LPIPS and default growth scored
+0.777730856. Default growth also scored 0.02855 dB lower on raw PSNR
+and 0.02858 lower on raw SSIM. This is one development window.
