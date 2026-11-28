@@ -56,7 +56,10 @@ class RegionalBaselineTest(unittest.TestCase):
             result = PlyData.read(str(root/"edit/candidate.ply"),mmap=False)["vertex"].data
             self.assertEqual(result[0].tobytes(),original[1].tobytes())
             self.assertNotEqual(result[1]["f_dc_0"],original[0]["f_dc_0"])
-            refine(version, images, root/"control", [0.,0.,2.], .5, 3, 1, target_count=2)
+            from namma.afe.regions import tile_defect
+            tile, = tile_defect([-.15,-.15,1.85],[.15,.15,2.15])
+            refine(version, images, root/"control", tile["center"], tile["extent_m"],
+                   3, 1, target_count=2, tile=tile)
             control = load_strict(root/"control/ledger.json")
             self.assertEqual(control["arm"], "C4")
             self.assertEqual(control["added_ids"], [2,3])
