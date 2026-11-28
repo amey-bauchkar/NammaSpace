@@ -65,6 +65,9 @@ class RegionalBaselineTest(unittest.TestCase):
             self.assertEqual(control["added_ids"], [2,3])
             self.assertEqual(control["frozen_sha256"], ledger["frozen_sha256"])
             self.assertEqual(control["steps"], ledger["steps"])
+            patch = PlyData.read(str(root/"control/region.ply"), mmap=False)["vertex"].data
+            max_axis = np.exp(np.max([patch[f"scale_{axis}"] for axis in range(3)]))
+            self.assertLessEqual(max_axis, control["max_splat_scale_m"] + 1e-7)
             from render_development import render_registered
             registration = root/"registration"
             observations = registration/"images"
