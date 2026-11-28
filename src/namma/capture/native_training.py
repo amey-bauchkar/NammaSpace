@@ -49,14 +49,16 @@ def training_source(source):
 
 
 def prepare(archive, output, coordinate_frame, *, bundle_adjust=False, retry_matching_from=None,
-            exclude_unresolved_from=None):
+            exclude_unresolved_from=None, colmap_gpu=False):
+    if colmap_gpu and not bundle_adjust:
+        raise ValueError("COLMAP GPU requires bundle adjustment")
     if retry_matching_from is not None and not bundle_adjust:
         raise ValueError("matching retry requires bundle adjustment")
     if exclude_unresolved_from is not None and not bundle_adjust:
         raise ValueError("exclusion diagnostics require bundle adjustment")
     with training_source(archive) as (records, read, source_ref):
         return _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust, retry_matching_from,
-                        exclude_unresolved_from)
+                        exclude_unresolved_from, colmap_gpu)
 
 
 def split_native_views(records, coordinate_frame):
@@ -95,7 +97,7 @@ def measured_depth_grid(frame, read, *, max_depth=np.inf):
 
 
 def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust, retry_matching_from,
-             exclude_unresolved_from):
+             exclude_unresolved_from, colmap_gpu):
     keyed, split = split_native_views(records, coordinate_frame)
     excluded = []
     exclusion_sources = []
@@ -176,7 +178,8 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
         from namma.evidence.training_ba import adjust
         intr = {Path(name(f)).stem: f["camera"]["intrinsics"] for f in train}
         cameras = {Path(name(f)).stem: np.asarray(f["camera"]["T_world_from_camera"]) for f in train}
-        adjust(output, intr, cameras, retry_matching_from=retry_matching_from, prior_pairs=sorted(prior_pairs))
+        adjust(output, intr, cameras, retry_matching_from=retry_matching_from, prior_pairs=sorted(prior_pairs),
+               colmap_gpu=colmap_gpu)
         # Keep the BA sparse model and the independently measured LiDAR seed model separate.
         model = output / "model"
     write_json(output / "capture_ref.json", {**source_ref, "coordinate_frame": coordinate_frame,
@@ -195,10 +198,12 @@ if __name__ == "__main__":
     parser.add_argument("archive", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--coordinate-frame", required=True, type=int)
-    parser.add_argument("--bundle-adjust", action="store_true", help="refine training poses using local CPU COLMAP")
+    parser.add_argument("--bundle-adjust", action="store_true", help="refine training poses using local COLMAP")
+    parser.add_argument("--colmap-gpu", action="store_true", help="use CUDA for feature extraction and matching")
     parser.add_argument("--retry-matching-from", type=Path, help="recover weak cameras using a private prior run")
     parser.add_argument("--exclude-unresolved-from", type=Path, action="append",
                         help="diagnostic fit excluding cameras with unsupported tracks in a prior run")
     args = parser.parse_args()
     print(prepare(args.archive, args.output, args.coordinate_frame, bundle_adjust=args.bundle_adjust,
-                  retry_matching_from=args.retry_matching_from, exclude_unresolved_from=args.exclude_unresolved_from))
+                  retry_matching_from=args.retry_matching_from, exclude_unresolved_from=args.exclude_unresolved_from,
+                  colmap_gpu=args.colmap_gpu))

@@ -17,8 +17,8 @@ from namma.recon.runner import run_step
 from namma.recon.tools import find_tools
 
 
-def register_dev(archive, reference, output, limit=None):
-    return _register(archive, reference, output, "dev", limit)
+def register_dev(archive, reference, output, limit=None, *, colmap_gpu=False):
+    return _register(archive, reference, output, "dev", limit, colmap_gpu=colmap_gpu)
 
 
 def _extract_polycam_views(archive, images, split, train, selected, intr):
@@ -76,7 +76,7 @@ def register_final(archive, reference, output, candidate, protocol):
     return report
 
 
-def _register(archive, reference, output, role, limit):
+def _register(archive, reference, output, role, limit, *, colmap_gpu=False):
     split = load_strict(reference / "splits.json")
     source = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
@@ -129,7 +129,7 @@ def _register(archive, reference, output, role, limit):
         raise ValueError("feature database contains observations outside reference")
     run("features", "feature_extractor", "--database_path", db, "--image_path", images,
         "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
-        "--FeatureExtraction.use_gpu", 0,
+        "--FeatureExtraction.use_gpu", int(colmap_gpu),
         "--FeatureExtraction.num_threads", 4)
     db_ids = poses._db_images(db)
     if (set(db_ids) != {f"{k}.jpg" for k in [*train, *selected]}
@@ -142,7 +142,7 @@ def _register(archive, reference, output, role, limit):
             for t in train:
                 stream.write(f"{k}.jpg {t}.jpg\n")
     run("match", "matches_importer", "--database_path", db, "--match_list_path", pairs,
-        "--match_type", "pairs", "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
+        "--match_type", "pairs", "--FeatureMatching.use_gpu", int(colmap_gpu), "--FeatureMatching.num_threads", 4)
     result = output / "registered"
     result.mkdir()
     run("register", "image_registrator", "--database_path", db, "--input_path", model,
@@ -187,6 +187,7 @@ def _register(archive, reference, output, role, limit):
             raise ValueError("development intrinsics changed")
         registered[k] = poses.colmap_to_arkit_c2w(view["R"], view["t"]).tolist()
     report = {"role": role, "poses_arkit": registered, "unregistered": [k for k in selected if k not in registered],
+              "colmap_gpu_requested": colmap_gpu,
               "reference": summary["frozen_model"], "intrinsics": {k: intr[k] for k in registered},
               "image_sha256": {k: sha256_file(images / f"{k}.jpg") for k in registered}}
     if native:
@@ -200,13 +201,14 @@ if __name__ == "__main__":
     for name in ("archive", "reference", "output"):
         parser.add_argument(name, type=Path)
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--colmap-gpu", action="store_true", help="use CUDA features and matching for development")
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--final-protocol", type=Path)
     args = parser.parse_args()
     if args.candidate or args.final_protocol:
-        if not args.candidate or not args.final_protocol or args.limit is not None:
-            parser.error("final registration requires --candidate and --final-protocol and forbids --limit")
+        if not args.candidate or not args.final_protocol or args.limit is not None or args.colmap_gpu:
+            parser.error("final registration requires --candidate and --final-protocol without --limit or --colmap-gpu")
         report = register_final(args.archive, args.reference, args.output, args.candidate, load_strict(args.final_protocol))
     else:
-        report = register_dev(args.archive, args.reference, args.output, args.limit)
+        report = register_dev(args.archive, args.reference, args.output, args.limit, colmap_gpu=args.colmap_gpu)
     print("registered", len(report["poses_arkit"]), "unregistered", len(report["unregistered"]))

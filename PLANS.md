@@ -580,3 +580,18 @@ acceptance gate remains open.
 The 153-camera attempt stopped at the track guard: frame 50 had two
 tracks after its neighboring weak frame 51 was removed. A final bounded
 152-camera diagnostic excluding both newly weak frames is underway.
+
+The 152-camera CPU diagnostic failed because a different camera had two
+tracks. Switched to opt-in CUDA SIFT with the same acceptance gate. On the
+full 159-camera training block, CUDA feature extraction took 38.1 s and
+matching 50.9 s. Bundle adjustment gave 155 views at least three tracks.
+The remaining four are consecutive, and a 155-view CUDA development-only
+diagnostic is in progress. The final block is still reserved.
+
+Development registration also has an opt-in CUDA mode. The synthetic
+fixture verified that it can register a held-out view against the frozen
+CPU reference. The measured depth scorer now reports matched-pixel MAE
+and RMSE. It only produces deltas for those errors where both renderers
+have identical pixel support, and reports coverage and tolerance-rate
+deltas on all measured samples. Twelve targeted tests passed, including
+CUDA native training and registration.

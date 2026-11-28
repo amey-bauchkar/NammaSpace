@@ -1,5 +1,6 @@
 """Evaluate a development render against its registered observation in the same pixel grid."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -24,6 +25,9 @@ def depth_metrics(predicted, measured):
     return {"measured_pixels": count, "matched_pixels": len(errors),
             "coverage": len(errors) / count,
             "median_error_m": float(np.median(errors)) if len(errors) else None,
+            "matched_mask_sha256": hashlib.sha256(np.packbits(matched)).hexdigest(),
+            "abs_error_sum_m": float(errors.sum()),
+            "squared_error_sum_m2": float(np.square(errors).sum()),
             "count_within_2cm": within_2cm, "count_within_5cm": within_5cm,
             "within_2cm": within_2cm / count, "within_5cm": within_5cm / count}
 

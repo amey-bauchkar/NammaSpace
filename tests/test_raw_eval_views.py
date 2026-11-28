@@ -80,6 +80,22 @@ def test_missing_depth_counts_against_coverage_and_thresholds():
     assert totals["measured_pixels"] == 4
     assert totals["coverage"] == .75
     assert totals["within_2cm"] == .5
+    assert totals["matched_mae_m"] == pytest.approx(.05 / 3)
+    assert totals["matched_rmse_m"] == pytest.approx(np.sqrt((.01**2 + .04**2) / 3))
+    missing = aggregate_depth({"none": depth_metrics(np.zeros((1, 1)), np.ones((1, 1)))})
+    assert missing["coverage"] == 0
+    assert missing["matched_mae_m"] is None and missing["matched_rmse_m"] is None
+    same = {"role": "dev", "registration_sha256": "fixture", "checkpoint_sha256": "parent",
+            "frames": {"1": {"pixels": 625}}, "aggregate": {"mse": .02, "raw_ssim": .7, "raw_psnr_db": 17.}}
+    def report(prediction):
+        rows = {"1": depth_metrics(prediction, measured)}
+        return {**same, "measured_depth_metrics": rows, "measured_depth_aggregate": aggregate_depth(rows)}
+    parent = report(rendered)
+    paired = compare_development(parent, report(np.array([[0., 1.03, 1.06, 2.]])))["depth"]
+    assert paired["same_matched_pixels"] and paired["delta_matched_mae_m"] == pytest.approx(.02)
+    shifted = compare_development(parent, report(np.array([[1.01, 0., 1.04, 2.]])))["depth"]
+    assert not shifted["same_matched_pixels"] and "delta_matched_mae_m" not in shifted
+    assert shifted["delta_coverage"] == 0
 
 
 def test_edge_f_score_uses_two_pixel_tolerance_and_reports_no_edge_evidence():

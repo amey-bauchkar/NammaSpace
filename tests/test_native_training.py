@@ -54,9 +54,10 @@ def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path, monke
 
     diagnostic = tmp_path / "exclusion"
     pairs.write_text(f"{train[1]} {train[-1]}\n", encoding="ascii")
-    def adjust(path, intrinsics, cameras, *, retry_matching_from, prior_pairs):
+    def adjust(path, intrinsics, cameras, *, retry_matching_from, prior_pairs, colmap_gpu):
         assert path == diagnostic and set(intrinsics) == set(cameras) == set(split["train"][1:])
         assert retry_matching_from is None and prior_pairs == [(train[1], train[-1])]
+        assert not colmap_gpu
         (path / "model").mkdir()
     monkeypatch.setattr("namma.evidence.training_ba.adjust", adjust)
     prepare(archive, diagnostic, 0, bundle_adjust=True, exclude_unresolved_from=output)
@@ -73,14 +74,15 @@ def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path, monke
         for i, name in enumerate(train if path.parent == prior_model else train[1:])
     })
     next_output = tmp_path / "exclusion-retry"
-    def adjust_again(path, intrinsics, cameras, *, retry_matching_from, prior_pairs):
+    def adjust_again(path, intrinsics, cameras, *, retry_matching_from, prior_pairs, colmap_gpu):
         assert path == next_output and set(intrinsics) == set(cameras) == set(split["train"][2:])
         assert retry_matching_from == diagnostic
         assert prior_pairs == [(train[1], train[-1]), (train[2], train[-1])]
+        assert colmap_gpu
         (path / "model").mkdir()
     monkeypatch.setattr("namma.evidence.training_ba.adjust", adjust_again)
     prepare(archive, next_output, 0, bundle_adjust=True, exclude_unresolved_from=[output, diagnostic],
-            retry_matching_from=diagnostic)
+            retry_matching_from=diagnostic, colmap_gpu=True)
     ref = json.loads((next_output / "capture_ref.json").read_text())
     exclusion = ref["training_exclusion_diagnostic"]
     assert len(exclusion["sources"]) == 2
@@ -158,7 +160,9 @@ def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path, monkeypatch):
     assert len(load_strict(version/"cameras.json")) == 8
     from namma.evidence.register_views import register_dev
     experiment = version.parent.parent
-    registered = register_dev(project / "capture/nammacap", experiment / "reference", tmp_path / "dev")
+    registered = register_dev(project / "capture/nammacap", experiment / "reference", tmp_path / "dev",
+                              colmap_gpu=True)
+    assert registered["colmap_gpu_requested"] is True
     assert set(registered["poses_arkit"]) == {"000000009"}
     assert {p.name for p in (tmp_path / "dev/images").iterdir()} == {"000000009.jpg"}
     from namma.evidence.register_views import register_final
@@ -166,6 +170,7 @@ def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path, monkeypatch):
     protocol = {"metrics": ["raw_psnr_db"], "decision_rule": "synthetic mechanics only"}
     source = project / "capture/nammacap"
     final = register_final(source, experiment / "reference", tmp_path / "final", version, protocol)
+    assert final["colmap_gpu_requested"] is False
     assert set(final["poses_arkit"]) == {"000000010"}
     assert (tmp_path / "final/final_evaluation_claim.json").is_file()
     with pytest.raises(FileExistsError):
@@ -182,6 +187,7 @@ def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path, monkeypatch):
     assert measured["measured_pixels"] == 384
     assert 0 < measured["coverage"] <= 1
     assert score["measured_depth_aggregate"]["measured_pixels"] == 384
+    assert score["measured_depth_aggregate"]["matched_mae_m"] >= 0
     with (renders / "000000010.depth.npy").open("ab") as stream:
         stream.write(b"modified")
     with pytest.raises(ValueError, match="depth grid digest mismatch"):

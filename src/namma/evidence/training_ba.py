@@ -78,7 +78,7 @@ def _extend_weak_camera_matches(retry, images, ids, priors, database):
                                "additional_pairs": len(extra)}
 
 
-def adjust(output, intr, priors, *, retry_matching_from=None, prior_pairs=()):
+def adjust(output, intr, priors, *, retry_matching_from=None, prior_pairs=(), colmap_gpu=False):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -98,7 +98,7 @@ def adjust(output, intr, priors, *, retry_matching_from=None, prior_pairs=()):
     if retry_matching_from is None:
         run("features", "feature_extractor", "--database_path", db, "--image_path", images,
             "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
-            "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
+            "--FeatureExtraction.use_gpu", int(colmap_gpu), "--FeatureExtraction.num_threads", 4)
         additional = set()
     else:
         additional, retry = _extend_weak_camera_matches(retry_matching_from, images, ids, priors, db)
@@ -117,7 +117,7 @@ def adjust(output, intr, priors, *, retry_matching_from=None, prior_pairs=()):
         for i, j in sorted(match_pairs):
             stream.write(f"{ids[i]}.jpg {ids[j]}.jpg\n")
     run("matching", "matches_importer", "--database_path", db, "--match_list_path", pairs,
-        "--match_type", "pairs", "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
+        "--match_type", "pairs", "--FeatureMatching.use_gpu", int(colmap_gpu), "--FeatureMatching.num_threads", 4)
     def triangulate(tag, cameras):
         prior = output / (tag + "_priors")
         poses._write_model(prior, intr, db_ids, cameras)
@@ -156,6 +156,7 @@ def adjust(output, intr, priors, *, retry_matching_from=None, prior_pairs=()):
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
               "local_pairs": len(local_pairs), "revisit_pairs": len(revisit_pairs - local_pairs),
               "retained_prior_pairs": len(retained_pairs - local_pairs - revisit_pairs - additional),
+              "colmap_gpu_requested": colmap_gpu,
               "matching_retry": retry,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),

@@ -63,7 +63,11 @@ def aggregate_depth(rows):
     count = totals["measured_pixels"]
     if not count:
         return None
+    matched = totals["matched_pixels"]
+    mae = sum(row["abs_error_sum_m"] for row in rows.values()) / matched if matched else None
+    rmse = (sum(row["squared_error_sum_m2"] for row in rows.values()) / matched)**.5 if matched else None
     return {**totals, "frames": len(rows), "coverage": totals["matched_pixels"] / count,
+            "matched_mae_m": mae, "matched_rmse_m": rmse,
             "within_2cm": totals["count_within_2cm"] / count,
             "within_5cm": totals["count_within_5cm"] / count}
 
@@ -254,6 +258,14 @@ def compare_development(baseline, candidate, *, training_variants=False):
             raise ValueError("development scores cover different measured depth")
         result["depth"] = {f"delta_{key}": depth_b[key] - depth_a[key]
                            for key in ("coverage", "within_2cm", "within_5cm")}
+        same_support = all(row.get("matched_mask_sha256")
+                           and row["matched_mask_sha256"] == depths_b[k].get("matched_mask_sha256")
+                           for k, row in depths_a.items())
+        result["depth"]["same_matched_pixels"] = same_support
+        if same_support:
+            for key in ("matched_mae_m", "matched_rmse_m"):
+                if depth_a.get(key) is not None and depth_b.get(key) is not None:
+                    result["depth"][f"delta_{key}"] = depth_b[key] - depth_a[key]
     lpips_a, lpips_b = baseline.get("lpips"), candidate.get("lpips")
     if lpips_a is not None or lpips_b is not None:
         if (lpips_a is None or lpips_b is None or lpips_a["protocol"] != lpips_b["protocol"]
