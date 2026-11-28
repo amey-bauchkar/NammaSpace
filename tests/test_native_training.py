@@ -64,6 +64,29 @@ def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path, monke
     assert ref["training_exclusion_diagnostic"]["prior_pairs_sha256"] == sha256_file(pairs)
     assert json.loads((diagnostic / "splits.json").read_text()) == split
 
+    second_model = diagnostic / "adjusted_text"
+    second_model.mkdir()
+    (second_model / "images.txt").write_text("second synthetic track inventory", encoding="ascii")
+    (diagnostic / "pairs.txt").write_text(f"{train[2]} {train[-1]}\n", encoding="ascii")
+    monkeypatch.setattr("namma.recon.colmap.read_images_txt", lambda path: {
+        name: {"n_triangulated": 0 if i == 0 else 3}
+        for i, name in enumerate(train if path.parent == prior_model else train[1:])
+    })
+    next_output = tmp_path / "exclusion-retry"
+    def adjust_again(path, intrinsics, cameras, *, retry_matching_from, prior_pairs):
+        assert path == next_output and set(intrinsics) == set(cameras) == set(split["train"][2:])
+        assert retry_matching_from == diagnostic
+        assert prior_pairs == [(train[1], train[-1]), (train[2], train[-1])]
+        (path / "model").mkdir()
+    monkeypatch.setattr("namma.evidence.training_ba.adjust", adjust_again)
+    prepare(archive, next_output, 0, bundle_adjust=True, exclude_unresolved_from=[output, diagnostic],
+            retry_matching_from=diagnostic)
+    ref = json.loads((next_output / "capture_ref.json").read_text())
+    exclusion = ref["training_exclusion_diagnostic"]
+    assert len(exclusion["sources"]) == 2
+    assert [row["id"] for row in exclusion["excluded"]] == split["train"][:2]
+    assert json.loads((next_output / "splits.json").read_text()) == split
+
 
 def test_native_exclusion_diagnostic_preserves_one_shot_final_claim(tmp_path, monkeypatch):
     import pytest

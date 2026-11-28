@@ -52,8 +52,8 @@ def prepare(archive, output, coordinate_frame, *, bundle_adjust=False, retry_mat
             exclude_unresolved_from=None):
     if retry_matching_from is not None and not bundle_adjust:
         raise ValueError("matching retry requires bundle adjustment")
-    if exclude_unresolved_from is not None and (not bundle_adjust or retry_matching_from is not None):
-        raise ValueError("exclusion diagnostics require a fresh bundle-adjustment database")
+    if exclude_unresolved_from is not None and not bundle_adjust:
+        raise ValueError("exclusion diagnostics require bundle adjustment")
     with training_source(archive) as (records, read, source_ref):
         return _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust, retry_matching_from,
                         exclude_unresolved_from)
@@ -98,33 +98,40 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
              exclude_unresolved_from):
     keyed, split = split_native_views(records, coordinate_frame)
     excluded = []
-    exclusion_report = None
-    prior_pairs = ()
-    if exclude_unresolved_from is not None:
+    exclusion_sources = []
+    prior_pairs = set()
+    sources = ([exclude_unresolved_from] if isinstance(exclude_unresolved_from, Path)
+               else exclude_unresolved_from or ())
+    for failed in sources:
         from namma.recon.colmap import read_images_txt
 
-        failed = exclude_unresolved_from
         path = failed / "adjusted_text" / "images.txt"
         rows = read_images_txt(path)
-        training = {f"{k}.jpg" for k in split["train"]}
+        excluded_ids = {row["id"] for row in excluded}
+        retained = [key for key in split["train"] if key not in excluded_ids]
+        training = {f"{k}.jpg" for k in retained}
         if (load_strict(failed / "splits.json") != split or rows.keys() - training
                 or {p.name for p in (failed / "images").iterdir()} != training):
             raise ValueError("exclusion diagnostic does not match the frozen native split")
-        for key in split["train"]:
+        added = []
+        for key in retained:
             count = rows.get(f"{key}.jpg", {}).get("n_triangulated", 0)
             rgb = read(keyed[key]["image"]["path"])
             if hashlib.sha256(rgb).hexdigest() != sha256_file(failed / "images" / f"{key}.jpg"):
                 raise ValueError("exclusion diagnostic used a different training image")
             if count < 3:
-                excluded.append({"id": key, "triangulated_tracks": count})
-        if not excluded or len(split["train"]) - len(excluded) < 3:
+                added.append({"id": key, "triangulated_tracks": count})
+        if not added or len(retained) - len(added) < 3:
             raise ValueError("exclusion diagnostic requires weak and supported training cameras")
         pair_bytes = (failed / "pairs.txt").read_bytes()
-        prior_pairs = [tuple(line.split()) for line in pair_bytes.decode("ascii").splitlines() if line.strip()]
-        if any(len(pair) != 2 or pair[0] == pair[1] or not set(pair) <= training for pair in prior_pairs):
+        pairs = [tuple(line.split()) for line in pair_bytes.decode("ascii").splitlines() if line.strip()]
+        if any(len(pair) != 2 or pair[0] == pair[1] or not set(pair) <= training for pair in pairs):
             raise ValueError("exclusion diagnostic contains invalid training pairs")
-        exclusion_report = {"adjusted_images_sha256": sha256_file(path), "excluded": excluded,
-                            "prior_pairs_sha256": hashlib.sha256(pair_bytes).hexdigest()}
+        excluded.extend(added)
+        prior_pairs.update(pairs)
+        exclusion_sources.append({"adjusted_images_sha256": sha256_file(path),
+                                  "prior_pairs_sha256": hashlib.sha256(pair_bytes).hexdigest(),
+                                  "excluded": added})
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     for folder in ("images", "depth"):
@@ -169,7 +176,7 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
         from namma.evidence.training_ba import adjust
         intr = {Path(name(f)).stem: f["camera"]["intrinsics"] for f in train}
         cameras = {Path(name(f)).stem: np.asarray(f["camera"]["T_world_from_camera"]) for f in train}
-        adjust(output, intr, cameras, retry_matching_from=retry_matching_from, prior_pairs=prior_pairs)
+        adjust(output, intr, cameras, retry_matching_from=retry_matching_from, prior_pairs=sorted(prior_pairs))
         # Keep the BA sparse model and the independently measured LiDAR seed model separate.
         model = output / "model"
     write_json(output / "capture_ref.json", {**source_ref, "coordinate_frame": coordinate_frame,
@@ -177,7 +184,9 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust,
                "ba_verified": bundle_adjust, "format": "nammacap",
                "training_ids": [Path(name(f)).stem for f in train], "measured_depth": measured_depth,
                "image_to_frame": {name(f): f["frame_id"] for f in train},
-               **({"training_exclusion_diagnostic": exclusion_report} if exclusion_report else {})})
+               **({"training_exclusion_diagnostic": {
+                   **exclusion_sources[0], "excluded": excluded, "sources": exclusion_sources,
+               }} if exclusion_sources else {})})
     return model
 
 
@@ -188,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument("--coordinate-frame", required=True, type=int)
     parser.add_argument("--bundle-adjust", action="store_true", help="refine training poses using local CPU COLMAP")
     parser.add_argument("--retry-matching-from", type=Path, help="recover weak cameras using a private prior run")
-    parser.add_argument("--exclude-unresolved-from", type=Path,
+    parser.add_argument("--exclude-unresolved-from", type=Path, action="append",
                         help="diagnostic fit excluding cameras with unsupported tracks in a prior run")
     args = parser.parse_args()
     print(prepare(args.archive, args.output, args.coordinate_frame, bundle_adjust=args.bundle_adjust,

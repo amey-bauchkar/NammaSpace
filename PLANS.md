@@ -553,3 +553,18 @@ to a frozen final-test protocol.
 
 [LPIPS source and license](https://github.com/richzhang/PerceptualSimilarity)
 and [torchvision AlexNet weights](https://github.com/pytorch/vision/blob/v0.19.1/torchvision/models/alexnet.py)
+
+Kaggle CLI is installed at tools/kaggle-env/Scripts/kaggle.exe. Both the
+direct CLI call and retry through the configured Windows proxy timed out
+during access-token exchange with api.kaggle.com. A separate Windows HTTP
+probe timed out on both Kaggle hosts. No kernel was submitted. Kaggle
+remains an option for public inputs when the API is reachable.
+
+The follow-up native reference with retained overlap pairs reached 153/154
+training cameras with sufficient geometric support. A targeted retry
+reused its matching database and finished with the same one weak camera
+at two tracks. Exclusion diagnostics now consume an ordered series of
+failed references, verify each against its expected retained training
+inventory, and preserve prior pair proposals. A new 153-camera diagnostic
+is running locally. The same 21 development and 21 final observations
+remain reserved, and the diagnostic cannot claim the final set.
