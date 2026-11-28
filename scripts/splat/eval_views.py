@@ -28,6 +28,43 @@ def depth_metrics(predicted, measured):
             "within_2cm": within_2cm / count, "within_5cm": within_5cm / count}
 
 
+def detail_metrics(render, photo, mask=None):
+    """Fixed raw luminance detail metrics on the same pixel grid."""
+    if (render.shape != photo.shape or render.ndim != 3 or render.shape[2] != 3
+            or render.dtype != np.uint8 or photo.dtype != np.uint8):
+        raise ValueError("expected aligned uint8 RGB images")
+    region = np.ones(render.shape[:2], bool) if mask is None else np.asarray(mask, dtype=bool)
+    if region.shape != render.shape[:2] or not region.any():
+        raise ValueError("empty or mismatched region mask")
+    pred, ref = [cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) for image in (render, photo)]
+    edges = [(cv2.Canny(image, 60, 120, L2gradient=True) != 0) & region for image in (pred, ref)]
+    predicted, observed = edges
+    counts = [int(edges.sum()) for edges in (predicted, observed)]
+    matched = [0, 0]
+    if all(counts):
+        for i in (0, 1):
+            distance = cv2.distanceTransform((~edges[1-i]).astype(np.uint8),
+                                             cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
+            matched[i] = int(np.count_nonzero(distance[edges[i]] <= 2))
+    energy = [float(np.square(cv2.Laplacian(image.astype(np.float32) / 255, cv2.CV_32F)[region]).sum(
+        dtype=np.float64)) for image in (pred, ref)]
+    return {"predicted_edges": counts[0], "observed_edges": counts[1],
+            "matched_predicted_edges": matched[0], "matched_observed_edges": matched[1],
+            "predicted_energy": energy[0], "observed_energy": energy[1]}
+
+
+def summarize_detail(rows):
+    keys = ("predicted_edges", "observed_edges", "matched_predicted_edges", "matched_observed_edges",
+            "predicted_energy", "observed_energy")
+    totals = {key: sum(row[key] for row in rows) for key in keys}
+    predicted, observed, matched_pred, matched_obs, pred_energy, obs_energy = (totals[k] for k in keys)
+    precision = matched_pred / predicted if predicted else 0.
+    recall = matched_obs / observed if observed else 0.
+    f_score = 2 * precision * recall / (precision + recall) if precision + recall else 0.
+    return {**totals, "edge_f_score_2px": f_score if predicted or observed else None,
+            "high_frequency_energy_ratio": pred_energy / obs_energy if obs_energy else None}
+
+
 def raw_metrics(render, photo, mask=None):
     if render.shape != photo.shape or render.ndim != 3 or render.shape[2] != 3:
         raise ValueError("expected aligned RGB images with identical dimensions")

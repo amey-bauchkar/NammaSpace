@@ -10,11 +10,12 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from namma.core.jsonio import load_strict, sha256_file, write_json
 from namma.capture.polycam_raw import opencv_c2w
+from namma.afe.screen import screen_development
 
 if __package__:
-    from .eval_views import depth_metrics, raw_metrics
+    from .eval_views import depth_metrics, detail_metrics, raw_metrics, summarize_detail
 else:
-    from eval_views import depth_metrics, raw_metrics
+    from eval_views import depth_metrics, detail_metrics, raw_metrics, summarize_detail
 
 
 def projected_region(center, extent, pose, camera):
@@ -65,7 +66,7 @@ def aggregate_depth(rows):
             "within_5cm": totals["count_within_5cm"] / count}
 
 
-def score_registered(registration, renders, output, *, region=None, integrity_baseline=None):
+def score_registered(registration, renders, output, *, region=None, integrity_baseline=None, detail=False):
     batch = load_strict(renders / "renders.json")
     role = batch["role"]
     if region is not None and role != "dev":
@@ -106,6 +107,7 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
         raise ValueError("rendered depth inventory does not match registration")
     depth_rows = {}
     integrity_rows = {}
+    detail_rows = {}
     for frame in sorted(ids):
         if not frame.isascii() or not frame.isdigit():
             raise ValueError("invalid Polycam frame ID")
@@ -149,7 +151,10 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
                 box = (x0, y0, x1, y1)
                 pred, observed = pred.crop(box), observed.crop(box)
                 mask = mask[y0:y1, x0:x1]
-            rows[frame] = raw_metrics(np.asarray(pred.convert("RGB")), np.asarray(observed.convert("RGB")), mask)
+            pred_rgb, obs_rgb = np.asarray(pred.convert("RGB")), np.asarray(observed.convert("RGB"))
+            rows[frame] = raw_metrics(pred_rgb, obs_rgb, mask)
+            if detail:
+                detail_rows[frame] = summarize_detail([detail_metrics(pred_rgb, obs_rgb, mask)])
     pixels = sum(r["pixels"] for r in rows.values())
     if not pixels:
         raise ValueError("no independently registered observations")
@@ -174,6 +179,9 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
             "outside_pixels": outside_pixels, "changed_outside_pixels": changed_pixels,
             "pixel_equal": changed_pixels == 0 if outside_pixels else None,
         }
+    if detail:
+        report["detail_metrics"] = {"method": "raw_luma_canny60_120_l2_laplacian_v1",
+                                    "frames": detail_rows, "aggregate": summarize_detail(list(detail_rows.values()))}
     output.mkdir(parents=True, exist_ok=False)
     write_json(output / "raw_metrics.json", report)
     return report
@@ -225,6 +233,8 @@ if __name__ == "__main__":
                         help="compare two unedited checkpoints from the same training reference")
     parser.add_argument("--region-ledger", type=Path, help="use this development edit's fixed scoring cube")
     parser.add_argument("--integrity-baseline", type=Path, help="check outside-region RGB against original renders")
+    parser.add_argument("--detail-metrics", action="store_true", help="score raw edge agreement and high-frequency energy")
+    parser.add_argument("--point-support", type=Path, help="screen this development edit against its point support report")
     args = parser.parse_args()
     if args.compare_training_variants and args.compare_to is None:
         parser.error("--compare-training-variants requires --compare-to")
@@ -233,7 +243,14 @@ if __name__ == "__main__":
         ledger = load_strict(args.region_ledger)
         region = {key: ledger[key] for key in ("center", "extent_m")}
     report = score_registered(args.registration, args.renders, args.output, region=region,
-                              integrity_baseline=args.integrity_baseline)
+                              integrity_baseline=args.integrity_baseline, detail=args.detail_metrics)
+    if args.point_support:
+        screening = screen_development(report, load_strict(args.point_support))
+        write_json(args.output / "screening.json", {
+            **screening, "score_sha256": sha256_file(args.output / "raw_metrics.json"),
+            "point_support_sha256": sha256_file(args.point_support),
+        })
+        print(screening)
     if args.compare_to:
         baseline = load_strict(args.compare_to)
         comparison = compare_development(baseline, report, training_variants=args.compare_training_variants)

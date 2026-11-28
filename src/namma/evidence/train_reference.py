@@ -11,7 +11,7 @@ from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
 
 
 def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000,
-                    measured_depth=False, strategy="mcmc", dense_seeds=False):
+                    measured_depth=False, strategy="mcmc", dense_seeds=False, full_res_crops=False):
     ref = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     split = load_strict(reference / "splits.json")
@@ -55,6 +55,8 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
            "--seed-radius-multiplier", 0]
     if strategy != "mcmc":
         cmd.extend(["--strategy", strategy])
+    if full_res_crops:
+        cmd.append("--full-res-crops")
     if measured_depth or dense_seeds:
         depth_snapshot = version / "measured_depth"
         shutil.copytree(folder, depth_snapshot)
@@ -89,8 +91,9 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--strategy", choices=("mcmc", "default"), default="mcmc")
     parser.add_argument("--dense-seeds", action="store_true", help="initialize from verified native LiDAR")
+    parser.add_argument("--full-res-crops", action="store_true", help="train on native-resolution photo windows")
     parser.add_argument("--measured-depth", action="store_true", help="use verified native training LiDAR")
     args = parser.parse_args()
     print(train_reference(args.reference, args.private_run, python=args.python, iters=args.iters,
                           seed=args.seed, measured_depth=args.measured_depth, strategy=args.strategy,
-                          dense_seeds=args.dense_seeds))
+                          dense_seeds=args.dense_seeds, full_res_crops=args.full_res_crops))

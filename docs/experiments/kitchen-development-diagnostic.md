@@ -114,3 +114,50 @@ Trainable parameters differed by at most 2.39e-7, and 135 RGB pixels across
 four of twelve development views differed by one channel level. Exact
 training equivalence therefore remains unverified even though preflight
 forward renders matched. Timings overlapped other jobs and are diagnostic.
+
+## Raw detail diagnostics
+
+At native development resolution, both the Kitchen parent and contained edit
+produced an edge F-score of 0 with fixed Canny thresholds and a 2-pixel
+match radius. The photo mask contained 1,912,194 observed edges and neither
+render produced edges above the fixed thresholds. The luminance Laplacian
+energy ratio was 0.001079 for both. These scores describe the degree-zero
+diagnostic checkpoint at this resolution; they are sensitive to the frozen
+edge detector and are not an acceptance decision.
+
+## Native-resolution crop experiment
+
+The private trainer exposes the existing crop path as --full-res-crops.
+The Kitchen run uses the same frozen training reference, seed, MCMC
+strategy and 3,500-step budget as the whole-image baseline. The crop
+trainer switches to native-resolution windows after its coarse phase.
+Development scores are computed on the same independently registered
+observations. The comparison is still in progress.
+
+The crop run completed at 189.3 s versus 127.4 s for the whole-image run,
+with 5,772 Gaussians and 0.26 GiB reported peak allocation in both cases.
+At the same native evaluation grid, crop training scored 13.27849 dB
+and 0.486935 SSIM versus 13.25479 dB and 0.497970 for whole-image training.
+PSNR rose by 0.02370 dB and SSIM fell by 0.011035. The metrics disagree,
+so this trial does not support changing the default.
+
+## Viewer performance probe
+
+Headless Chrome, RTX 4050 through ANGLE/D3D11, existing Kitchen package
+(1,125,475 splats). Each ten-second run awaited the selected layer.
+
+| Viewport | Layer | Median frame interval (ms) | p95 (ms) | Splat load (ms) |
+|---|---|---:|---:|---:|
+| 1280 × 720 | Mesh | 6.9 | 7.2 | — |
+| 1280 × 720 | Splat | 6.9 | 7.3 | 2,102 |
+| 1920 × 1080 | Mesh | 6.9 | 7.2 | — |
+| 1920 × 1080 | Splat | 7.0 | 14.0 | 2,873 |
+
+All four probes reported valid page timing. Peak frame intervals reached
+236–437 ms. Native matching was running concurrently. These results cover
+this package and headless RTX hardware only. The visible-window and Intel
+acceptance measurements remain open.
+
+The native-resolution crop model also scored lower than the whole-frame
+model on native detail metrics. Edge F-score fell from 0.004397 to
+0.001175 and the high-frequency energy ratio fell from 0.000978 to 0.000835.

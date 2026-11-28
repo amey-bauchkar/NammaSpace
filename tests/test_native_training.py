@@ -39,6 +39,29 @@ def test_native_training_excludes_stale_depth_and_reserved_views(tmp_path):
         assert item["sha256"] == sha256_file(output/"depth"/filename)
         assert item["source"] == "arkit_scene_depth" and item["pairing"] == "same_frame"
 
+
+def test_native_exclusion_diagnostic_preserves_one_shot_final_claim(tmp_path, monkeypatch):
+    import pytest
+    from namma.core.jsonio import write_json
+    from namma.evidence.bundle import seal_checkpoint
+    from namma.evidence.register_views import register_final
+
+    reference, candidate = tmp_path / "reference", tmp_path / "candidate"
+    reference.mkdir()
+    candidate.mkdir()
+    for filename in ("splat.ply", "cameras.json", "config.json", "provenance.json", "splat.json"):
+        (candidate / filename).write_bytes(b"fixture")
+    seal_checkpoint(candidate, None, {"status": "not_measured"})
+    write_json(reference / "splits.json", {"train": ["1", "2"], "dev": ["3"], "final_test": ["4"]})
+    write_json(reference / "capture_ref.json", {
+        "format": "nammacap", "training_exclusion_diagnostic": {"excluded": [{"id": "2", "triangulated_tracks": 0}]}})
+    monkeypatch.setattr("namma.recon.tools.PROJECT_ROOT", tmp_path)
+    with pytest.raises(ValueError, match="cannot claim final-test"):
+        register_final(tmp_path / "unopened.nammacap", reference, tmp_path / "final", candidate,
+                       {"metrics": ["raw_psnr_db"], "decision_rule": "fixture"})
+    assert not (tmp_path / "final").exists()
+    assert not (tmp_path / ".private-evaluation").exists()
+
 def test_native_ba_and_real_gpu_depth_checkpoint(tmp_path, monkeypatch):
     """Opt-in synthetic archive -> native BA -> real CUDA depth training."""
     import os

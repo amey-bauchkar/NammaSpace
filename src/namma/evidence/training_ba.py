@@ -1,5 +1,6 @@
 """Build a private, train-only sparse reference in the raw capture's metric frame."""
 import argparse
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -41,7 +42,43 @@ def prepare_archive(archive, output, train_limit=None, train_start=0):
     return intr, priors
 
 
-def adjust(output, intr, priors):
+def _extend_weak_camera_matches(retry, images, ids, priors, database):
+    """Reuse verified training inputs and propose extra overlap for weak cameras."""
+    if ({p.name: sha256_file(p) for p in (retry / "images").iterdir()}
+            != {p.name: sha256_file(p) for p in images.iterdir()}):
+        raise ValueError("prior matching run used a different training image inventory")
+    previous_db = retry / "database.db"
+    if any(previous_db.with_name(previous_db.name + suffix).exists() for suffix in ("-wal", "-journal")):
+        raise ValueError("prior matching database still has an active journal")
+    prior_views = read_images_txt(retry / "adjusted_text" / "images.txt")
+    support = [prior_views.get(f"{k}.jpg", {}).get("n_triangulated", 0) for k in ids]
+    weak = [i for i, count in enumerate(support) if count < 3]
+    if not weak:
+        raise ValueError("prior run has no weak training cameras to recover")
+    index = {f"{k}.jpg": i for i, k in enumerate(ids)}
+    attempted = {tuple(sorted(index[name] for name in line.split()))
+                 for line in (retry / "pairs.txt").read_text().splitlines() if line.strip()}
+    centers = np.asarray([priors[k][:3, 3] for k in ids])
+    directions = np.asarray([-priors[k][:3, 2] for k in ids])
+    extra = set()
+    for i in weak:
+        distance = np.linalg.norm(centers - centers[i], axis=1)
+        alignment = directions @ directions[i]
+        candidates = [j for j, count in enumerate(support) if count >= 3
+                      and tuple(sorted((i, j))) not in attempted and alignment[j] > 0]
+        candidates.sort(key=lambda j: (distance[j] + 2 * (1 - alignment[j]), j))
+        extra.update(tuple(sorted((i, j))) for j in candidates[:32])
+    if not extra:
+        raise ValueError("no untested training overlaps for weak cameras")
+    shutil.copyfile(previous_db, database)
+    previous_digest = sha256_file(previous_db)
+    if sha256_file(database) != previous_digest:
+        raise ValueError("prior matching database changed during copy")
+    return attempted | extra, {"database_sha256": previous_digest, "weak_views": len(weak),
+                               "additional_pairs": len(extra)}
+
+
+def adjust(output, intr, priors, *, retry_matching_from=None):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -57,9 +94,14 @@ def adjust(output, intr, priors):
         path = output / name
         path.mkdir()
         return path
-    run("features", "feature_extractor", "--database_path", db, "--image_path", images,
-        "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
-        "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
+    retry = None
+    if retry_matching_from is None:
+        run("features", "feature_extractor", "--database_path", db, "--image_path", images,
+            "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
+            "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
+        additional = set()
+    else:
+        additional, retry = _extend_weak_camera_matches(retry_matching_from, images, ids, priors, db)
     db_ids = poses._db_images(db)
     if set(db_ids) != names or len({cid for _, cid in db_ids.values()}) != len(ids):
         raise ValueError("incomplete feature database or shared intrinsics")
@@ -68,7 +110,7 @@ def adjust(output, intr, priors):
     local_pairs = {(i, j) for i in range(len(ids))
                    for j in range(i+1, min(len(ids), i+1+poses.SEQ_WINDOW))}
     revisit_pairs = poses.pose_revisit_pairs([priors[k] for k in ids])
-    match_pairs = local_pairs | revisit_pairs
+    match_pairs = local_pairs | revisit_pairs | additional
     with pairs.open("x", encoding="utf-8") as stream:
         for i, j in sorted(match_pairs):
             stream.write(f"{ids[i]}.jpg {ids[j]}.jpg\n")
@@ -110,7 +152,8 @@ def adjust(output, intr, priors):
     if any(view["n_triangulated"] < 3 for view in read_images_txt(model / "images.txt").values()):
         raise ValueError("frozen reference lacks triangulated tracks for every training view")
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
-              "local_pairs": len(local_pairs), "revisit_pairs": len(match_pairs - local_pairs),
+              "local_pairs": len(local_pairs), "revisit_pairs": len(revisit_pairs - local_pairs),
+              "matching_retry": retry,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),
               "metric_similarity_scale": scale, "frozen_model": {p.name: sha256_file(p) for p in model.iterdir()}}

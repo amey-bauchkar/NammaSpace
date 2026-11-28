@@ -48,9 +48,15 @@ def training_source(source):
     yield frames, lambda member: read(member, photos.get(member)), {"integrity_sha256": sha256_file(inventory)}
 
 
-def prepare(archive, output, coordinate_frame, *, bundle_adjust=False):
+def prepare(archive, output, coordinate_frame, *, bundle_adjust=False, retry_matching_from=None,
+            exclude_unresolved_from=None):
+    if retry_matching_from is not None and not bundle_adjust:
+        raise ValueError("matching retry requires bundle adjustment")
+    if exclude_unresolved_from is not None and (not bundle_adjust or retry_matching_from is not None):
+        raise ValueError("exclusion diagnostics require a fresh bundle-adjustment database")
     with training_source(archive) as (records, read, source_ref):
-        return _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust)
+        return _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust, retry_matching_from,
+                        exclude_unresolved_from)
 
 
 def split_native_views(records, coordinate_frame):
@@ -88,13 +94,38 @@ def measured_depth_grid(frame, read, *, max_depth=np.inf):
     return np.where(mask, raw, 0), intrinsics
 
 
-def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust):
+def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust, retry_matching_from,
+             exclude_unresolved_from):
     keyed, split = split_native_views(records, coordinate_frame)
+    excluded = []
+    exclusion_report = None
+    if exclude_unresolved_from is not None:
+        from namma.recon.colmap import read_images_txt
+
+        failed = exclude_unresolved_from
+        path = failed / "adjusted_text" / "images.txt"
+        rows = read_images_txt(path)
+        training = {f"{k}.jpg" for k in split["train"]}
+        if (load_strict(failed / "splits.json") != split or rows.keys() - training
+                or {p.name for p in (failed / "images").iterdir()} != training):
+            raise ValueError("exclusion diagnostic does not match the frozen native split")
+        for key in split["train"]:
+            count = rows.get(f"{key}.jpg", {}).get("n_triangulated", 0)
+            if count >= 3:
+                continue
+            rgb = read(keyed[key]["image"]["path"])
+            if hashlib.sha256(rgb).hexdigest() != sha256_file(failed / "images" / f"{key}.jpg"):
+                raise ValueError("exclusion diagnostic used a different training image")
+            excluded.append({"id": key, "triangulated_tracks": count})
+        if not excluded or len(split["train"]) - len(excluded) < 3:
+            raise ValueError("exclusion diagnostic requires weak and supported training cameras")
+        exclusion_report = {"adjusted_images_sha256": sha256_file(path), "excluded": excluded}
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     for folder in ("images", "depth"):
         (output / folder).mkdir()
-    train = [keyed[k] for k in split["train"]]
+    excluded_ids = {record["id"] for record in excluded}
+    train = [keyed[k] for k in split["train"] if k not in excluded_ids]
     name = lambda f: f"{f['index']:09d}.jpg"
     write_json(output / "splits.json", split)
     priors = write_colmap_priors(train, output / "priors", name)
@@ -133,14 +164,15 @@ def _prepare(records, read, source_ref, output, coordinate_frame, bundle_adjust)
         from namma.evidence.training_ba import adjust
         intr = {Path(name(f)).stem: f["camera"]["intrinsics"] for f in train}
         cameras = {Path(name(f)).stem: np.asarray(f["camera"]["T_world_from_camera"]) for f in train}
-        adjust(output, intr, cameras)
+        adjust(output, intr, cameras, retry_matching_from=retry_matching_from)
         # Keep the BA sparse model and the independently measured LiDAR seed model separate.
         model = output / "model"
     write_json(output / "capture_ref.json", {**source_ref, "coordinate_frame": coordinate_frame,
                "model": str(model.relative_to(output)), "poses": "training BA" if bundle_adjust else "ARKit priors",
                "ba_verified": bundle_adjust, "format": "nammacap",
                "training_ids": [Path(name(f)).stem for f in train], "measured_depth": measured_depth,
-               "image_to_frame": {name(f): f["frame_id"] for f in train}})
+               "image_to_frame": {name(f): f["frame_id"] for f in train},
+               **({"training_exclusion_diagnostic": exclusion_report} if exclusion_report else {})})
     return model
 
 
@@ -150,5 +182,9 @@ if __name__ == "__main__":
     parser.add_argument("output", type=Path)
     parser.add_argument("--coordinate-frame", required=True, type=int)
     parser.add_argument("--bundle-adjust", action="store_true", help="refine training poses using local CPU COLMAP")
+    parser.add_argument("--retry-matching-from", type=Path, help="recover weak cameras using a private prior run")
+    parser.add_argument("--exclude-unresolved-from", type=Path,
+                        help="diagnostic fit excluding cameras with unsupported tracks in a prior run")
     args = parser.parse_args()
-    print(prepare(args.archive, args.output, args.coordinate_frame, bundle_adjust=args.bundle_adjust))
+    print(prepare(args.archive, args.output, args.coordinate_frame, bundle_adjust=args.bundle_adjust,
+                  retry_matching_from=args.retry_matching_from, exclude_unresolved_from=args.exclude_unresolved_from))

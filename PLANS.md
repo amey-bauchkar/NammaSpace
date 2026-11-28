@@ -428,3 +428,75 @@ in trainable parameters and one channel level in 135 development pixels.
 Culling remains opt-in. A GPU regression verifies that the regular mode
 rejects a repeated-camera report. Native retry finished feature extraction
 and moved into geometric matching.
+
+Added raw edge F-score at 2 px and luminance Laplacian energy ratio to the
+scorer. Six targeted scoring tests passed. The Kitchen parent and contained
+edit tied on both detail diagnostics. The native matching database had
+recorded 481 of the planned 2,046 candidate pairs at the last check.
+
+Started a matched Kitchen native-resolution crop run via the new
+--full-res-crops option. The RGB-only 3,500-step run has the same seed
+and frozen reference as the earlier MCMC trial. Native room matching
+has processed 984 of 2,046 candidate pairs.
+
+Kitchen degree-three whole-image training scored 0.00440 edge F-score and
+0.000978 high-frequency ratio at native evaluation resolution. Resampling
+both RGB images to a 1024 px maximum side produced 0.08637 and 0.01314.
+The values depend on resolution and cannot be compared across grids as
+fidelity improvements. The native crop model has finished training and is
+being scored at the original resolution. The production Kitchen package
+was copied only into ignored scratch and passed the package hash check.
+A headless browser check is in progress.
+
+Local production Kitchen packaging and all ten headless viewer checks passed
+on the RTX 4050 (ANGLE/D3D11), including walking, fly mode, reset and the
+in-page self-test. Ready state reached in 2.94 s with other jobs running.
+This was a functional test, not the visible-window performance gate.
+Kitchen full-resolution crop training completed in 189.3 s at 0.26 GiB
+peak PyTorch allocation; held-out scores are pending.
+
+Completed Kitchen crop comparison: +0.02370 dB PSNR, −0.011035 SSIM on the
+same 12 native-resolution development views. The viewer now waits for an
+automatic splat load before timing and reports the actual layer and splat
+load time. A failed expected load makes the benchmark invalid. The viewer
+test harness accepts explicit viewport dimensions. Fifty Node tests passed.
+The two-resolution headless performance probe is in progress.
+
+The native revisit retry supported 154/159 training cameras (previously
+148/159). Five cameras still had fewer than three tracks, so the full
+reference was correctly rejected. This warrants targeted geometric
+recovery or explicit accounting of unusable training inputs, with
+development and final splits preserved. The Kitchen headless viewport
+matrix completed; all four probes were valid. See the diagnostic report.
+
+Started a third native training-only adjustment that reuses the private
+feature/match database after checking the entire training image inventory.
+It adds 160 untried pairs for the five weak cameras, matched by pose
+proximity and viewing direction, for a total of 2,206. The support gate
+and original reserved splits are unchanged. Targeted CPU regression:
+9 passed, 2 skipped.
+
+All 160 targeted extra matches were attempted. The full reference still
+had 154/159 supported cameras; the extra matches increased track incidence
+only from 28,541 to 28,547. A fresh, explicitly development-only diagnostic
+excludes the five unresolved cameras, keeps both held-out blocks identical,
+records original track counts and source hash, and preserves the per-camera
+gate for retained views. The final claim path refuses these diagnostics.
+This is not a replacement for the full-view qualification. Native and
+COLMAP targeted regressions: 3 passed, 2 skipped.
+
+A candidate-centre diagnostic now checks private candidate and registered
+development digests and distinguishes out-of-view centres from missing
+measured depth and measured-depth disagreement. A CPU geometry fixture
+and the earlier edge-support fixture passed. Kitchen's unconstrained
+400-step candidate had all 17 changed centres outside all 12 registered
+development frusta, despite visible changes from their footprints. The
+current split does not independently support those edited centres.
+
+The development screen binds the edited model, parent and registration
+digest across the RGB integrity and point-support reports. It rejected the
+Kitchen capped edit for both outside pixels and out-of-view centres. It
+does not evaluate the remaining acceptance criteria. A regression proves
+that the native exclusion diagnostic refuses the final claim before it
+opens a capture or creates claim files. Targeted tests: 9 passed, 1 skipped,
+plus the screen test passed.

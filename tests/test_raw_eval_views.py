@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from scripts.splat.eval_views import depth_metrics, raw_metrics
+from scripts.splat.eval_views import depth_metrics, detail_metrics, raw_metrics, summarize_detail
 from scripts.splat.score_registered import aggregate_depth, compare_development, projected_region
 
 
@@ -74,3 +74,17 @@ def test_missing_depth_counts_against_coverage_and_thresholds():
     assert totals["measured_pixels"] == 4
     assert totals["coverage"] == .75
     assert totals["within_2cm"] == .5
+
+
+def test_edge_f_score_uses_two_pixel_tolerance_and_reports_no_edge_evidence():
+    photo = np.zeros((32, 32, 3), np.uint8)
+    photo[:, 12:] = 255
+    near, far = np.roll(photo, 2, axis=1), np.roll(photo, 3, axis=1)
+    region = np.zeros((32, 32), bool)
+    region[:, 5:25] = True
+    assert summarize_detail([detail_metrics(near, photo, region)])["edge_f_score_2px"] == 1
+    assert summarize_detail([detail_metrics(far, photo, region)])["edge_f_score_2px"] == 0
+    black = np.zeros_like(photo)
+    blank = summarize_detail([detail_metrics(black, black)])
+    assert blank["edge_f_score_2px"] is None
+    assert blank["high_frequency_energy_ratio"] is None

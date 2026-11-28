@@ -38,6 +38,8 @@ def register_final(archive, reference, output, candidate, protocol):
     verify_checkpoint(candidate)
     split = load_strict(reference / "splits.json")
     source = load_strict(reference / "capture_ref.json")
+    if source.get("training_exclusion_diagnostic"):
+        raise ValueError("training exclusion diagnostics cannot claim final-test observations")
     native = source.get("format") == "nammacap"
     if native and archive.is_dir():
         capture_id = sha256_file(archive / "integrity.json")
@@ -99,7 +101,9 @@ def _register(archive, reference, output, role, limit):
 
         with training_source(archive) as (records, read, provenance):
             keyed, expected = split_native_views(records, source["coordinate_frame"])
-            if (expected != split or train != split["train"]
+            excluded = {r["id"] for r in source.get("training_exclusion_diagnostic", {}).get("excluded", [])}
+            if (expected != split or excluded - set(split["train"])
+                    or train != [k for k in split["train"] if k not in excluded]
                     or any(source.get(k) != v for k, v in provenance.items())):
                 raise ValueError("native capture or split digest mismatch")
             output.mkdir(parents=True, exist_ok=False)
