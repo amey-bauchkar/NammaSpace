@@ -149,4 +149,24 @@ def test_glancing_angle_and_coplanar_healing(tmp_path):
     # Must NOT have black pixels (< 50) and must match Quad A off-white color (~200)
     assert quad_b_crop.min() > 100, f"Found dark/black pixels in healed quad: min={quad_b_crop.min()}"
     assert np.allclose(quad_b_crop.mean(axis=(0, 1)), [202, 192, 186], atol=15.0), f"Mean color mismatch: {quad_b_crop.mean(axis=(0, 1))}"
+    provenance = doc_out["images"][0]["extras"]["nammaTextureProvenance"]
+    view = doc_out["bufferViews"][provenance["bufferView"]]
+    offset = view["byteOffset"]
+    with Image.open(io.BytesIO(bytes(b_out[offset:offset + view["byteLength"]]))) as mask:
+        labels = np.asarray(mask)
+    assert labels.shape == tex_arr.shape[:2]
+    assert labels[64, 38] == 1  # observed wall
+    assert labels[12, 97] == 2  # inferred edge of the jamb
 
+
+def test_only_unobserved_nearby_coplanar_texels_are_inferred():
+    from namma.recon.blendtex import heal_coplanar_texels
+    xyz = np.array([[0,0,0],[.05,0,0],[.08,0,0],[1,0,0],[0,0,.2]], np.float32)
+    normals = np.tile([0,0,1], (len(xyz),1))
+    rgb = np.array([[0,0,0],[1,0,0],[.4,.4,.4],[.3,.3,.3],[.7,.7,.7]], np.float32)
+    observed = np.array([True,True,False,False,False])
+    filled = np.zeros(5,bool)
+    out = heal_coplanar_texels(xyz,normals,rgb,observed,filled=filled)
+    np.testing.assert_array_equal(filled,[False,False,True,False,False])
+    np.testing.assert_array_equal(out[~filled],rgb[~filled])
+    assert 0 < out[2,0] < 1 and np.all(out[2,1:] == 0)

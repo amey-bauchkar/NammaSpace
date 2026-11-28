@@ -33,7 +33,7 @@ C0 = 0.28209479177387814                     # SH band-0 constant
 
 
 # --------------------------------------------------------------------------------------------- COLMAP text model
-def read_model(d):
+def read_model(d, seed_points=None):
     d = Path(d)
     cams = {}
     for ln in (d / "cameras.txt").read_text(encoding="utf-8").splitlines():
@@ -59,7 +59,7 @@ def read_model(d):
                       [2 * (qx * qz - qw * qy), 2 * (qy * qz + qw * qx), 1 - 2 * (qx * qx + qy * qy)]])
         imgs.append({"name": " ".join(p[9:]), "cam": int(p[8]), "R": R, "t": np.array([tx, ty, tz])})
     xyz, rgb = [], []
-    for ln in (d / "points3D.txt").read_text(encoding="utf-8").splitlines():
+    for ln in Path(seed_points or d / "points3D.txt").read_text(encoding="utf-8").splitlines():
         if not ln or ln.startswith("#"):
             continue
         p = ln.split()
@@ -171,6 +171,7 @@ def evaluate(params, views, dev, sh_degree, pose_steps):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="COLMAP text model (PINHOLE cameras)")
+    ap.add_argument("--seed-points", help="private alternate seed table in COLMAP points3D format")
     ap.add_argument("--images", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--camera-table", help="private per-view training calibration output")
@@ -239,7 +240,7 @@ def main(argv=None):
     import os
     dev = os.environ.get("NAMMA_SPLAT_DEVICE", "cuda")      # "cpu" only for the smoke test without a GPU
     t0 = time.time()
-    cams, imgs, xyz, rgb = read_model(a.model)
+    cams, imgs, xyz, rgb = read_model(a.model, a.seed_points) if a.seed_points else read_model(a.model)
     skip = set(Path(a.exclude).read_text(encoding="utf-8").split()) if a.exclude else set()
     # photos (uint8). Default: all on the GPU at --max-side. --full-res-crops: the --max-side copy stays on the CPU
     # (one goes to the GPU per step) and the full-resolution photo goes to a disk cache read window by window.

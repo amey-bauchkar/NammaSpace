@@ -5,6 +5,9 @@ import subprocess
 
 from namma.core.jsonio import load_strict, sha256_file, write_json
 
+TRAINER_FILES = frozenset({"splat.ply", "cameras.json", "config.json", "provenance.json", "splat.json"})
+SEALED_FILES = TRAINER_FILES | {"transforms.json", "source.json"}
+
 
 def allocate_version(run_dir):
     root = run_dir / "evidence"
@@ -33,7 +36,7 @@ def seal_checkpoint(version, transform, fit):
     """Record a reconstruction checkpoint. It is ineligible for AFE without independent splits."""
     if (version / "manifest.json").exists():
         raise FileExistsError("checkpoint already sealed")
-    for name in ("splat.ply", "cameras.json", "config.json", "provenance.json", "splat.json"):
+    for name in sorted(TRAINER_FILES):
         if not (version / name).is_file():
             raise ValueError(f"incomplete evidence checkpoint: {name}")
     write_json(version / "transforms.json", {"T_mesh_from_splat": transform.tolist() if transform is not None else None,
@@ -48,8 +51,15 @@ def seal_checkpoint(version, transform, fit):
 
 
 def verify_checkpoint(version):
-    manifest = load_strict(version / "manifest.json")
-    if manifest.get("files") != _inventory(version):
+    path = version / "manifest.json"
+    if path.is_symlink() or path.resolve().parent != version.resolve():
+        raise ValueError("external evidence manifest")
+    manifest = load_strict(path)
+    if (not isinstance(manifest, dict) or type(manifest.get("version")) is not int
+            or manifest["version"] != 1 or manifest.get("private") is not True):
+        raise ValueError("invalid private checkpoint manifest")
+    inventory = _inventory(version)
+    if manifest.get("files") != inventory or not SEALED_FILES <= inventory.keys():
         raise ValueError("checkpoint file inventory or digest mismatch")
 
 

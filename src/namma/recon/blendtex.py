@@ -33,13 +33,12 @@ COS_MAX_ANGLE = float(np.cos(np.radians(75.0)))   # ~0.25881905: glancing-angle 
 COS_FADE_ANGLE = float(np.cos(np.radians(65.0)))  # ~0.42261827: smooth falloff onset
 
 
-def heal_coplanar_texels(X, N, col, is_valid, global_ref=None, max_search_r=0.40, chunk_size=100_000):
+def heal_coplanar_texels(X, N, col, is_valid, global_ref=None, max_search_r=0.40, chunk_size=100_000, filled=None):
     """Interpolate starved texels from neighboring coplanar surfaces in 3D.
 
-    For surfaces with low ray-camera incidence angles (theta > 75 deg), near-zero coverage,
-    or OpenMVS dark shadow/specular artifacts, this finds neighboring reliably observed surfaces
-    in 3D, filters for coplanarity (aligned normals and small plane offset), and computes a distance-weighted
-    radiance blend.
+    Direct observations remain untouched. Missing observations can borrow
+    radiance only from nearby samples that pass the normal and plane tests.
+    The optional filled mask identifies each inferred surface texel.
     """
     starved_idx = np.nonzero(~is_valid)[0]
     if len(starved_idx) == 0:
@@ -75,6 +74,8 @@ def heal_coplanar_texels(X, N, col, is_valid, global_ref=None, max_search_r=0.40
         cur_s_idx = starved_idx[start:end]
 
         dists, idxs = tree.query(cur_X, k=K, distance_upper_bound=max_search_r)
+        dists = dists.reshape(len(cur_X), K)
+        idxs = idxs.reshape(len(cur_X), K)
         valid_mask = idxs < len(ref_X)
         safe_idxs = np.where(valid_mask, idxs, 0)
 
@@ -87,28 +88,14 @@ def heal_coplanar_texels(X, N, col, is_valid, global_ref=None, max_search_r=0.40
         plane_dist = np.abs(np.einsum("ski,si->sk", cand_X - cur_X[:, None, :], cur_N))
         coplanar = valid_mask & (norm_dot >= 0.707) & (plane_dist <= 0.04)
 
-        has_coplanar = coplanar.any(axis=1)
-        use_mask = np.where(has_coplanar[:, None], coplanar, valid_mask)
-        weights = np.where(use_mask, 1.0 / np.maximum(dists, 0.005), 0.0)
-        w_sum = weights.sum(axis=1, keepdims=True)
-        has_any = (w_sum > 0).ravel()
-
-        cur_healed = np.zeros((len(cur_X), 3), np.float32)
-        safe_w_sum = np.where(has_any[:, None], w_sum, 1.0)
-        cur_healed[has_any] = (cand_C * weights[:, :, None]).sum(axis=1)[has_any] / safe_w_sum[has_any]
-
-        # For points beyond max_search_r with no neighbor: nearest valid reference
-        if not has_any.all():
-            missing = np.nonzero(~has_any)[0]
-            _, n1 = tree.query(cur_X[missing], k=1)
-            cur_healed[missing] = ref_col[n1]
-
-        # Add subtle micro-texture grain (sigma = 1.5/255) to avoid flat plastic appearance
-        rng = np.random.default_rng(42 + start)
-        grain = rng.normal(0, 1.5 / 255.0, cur_healed.shape).astype(np.float32)
-        cur_healed = np.clip(cur_healed + grain, 0.0, 1.0)
-
-        healed_col[cur_s_idx] = cur_healed
+        weights = np.where(coplanar, 1.0 / np.maximum(dists, 0.005), 0.0)
+        totals = weights.sum(axis=1)
+        supported = totals > 0
+        targets = cur_s_idx[supported]
+        healed_col[targets] = ((cand_C[supported] * weights[supported, :, None]).sum(axis=1)
+                               / totals[supported, None])
+        if filled is not None:
+            filled[targets] = True
 
     return healed_col
 
@@ -319,9 +306,9 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         col[seen] = acc[seen] / wsum[seen, None]
         col = np.clip(col, 0, 1)
 
-        # Valid direct radiance:
-        # Rejects glancing starvation, dark shadow artifacts, and specular blowouts
-        is_valid = seen & (col.mean(axis=1) >= 0.35) & (col.min(axis=1) >= 0.20) & (col.max(axis=1) < 0.98)
+        # Occlusion, angle and blend weight decide support. Dark and saturated
+        # observations carry real appearance information.
+        is_valid = seen
         valid_idx = np.nonzero(is_valid)[0]
         if len(valid_idx) > 0:
             stride = max(1, len(valid_idx) // 30000)
@@ -351,7 +338,10 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         gpu = ad["gpu"]
 
         # Coplanar healing of starved texels
-        col = heal_coplanar_texels(X, N, col, is_valid, global_ref=global_ref, max_search_r=0.40)
+        filled = np.zeros(len(col), dtype=bool)
+        col = heal_coplanar_texels(X, N, col, is_valid, global_ref=global_ref, max_search_r=0.40, filled=filled)
+        stats[f"atlas_{t}_inferred_texels"] = int(filled.sum())
+        stats[f"atlas_{t}_unsupported_texels"] = int((~is_valid & ~filled).sum())
         out[yy, xx] = np.clip(col, 0, 1)
 
         # Full background gutter fill: extend valid surface texels outward so mipmaps never pull black/stale borders
@@ -391,6 +381,20 @@ def blend_texture_glb(src, dst, views, *, power=4, depth_tol=0.015, edge_frac=0.
         doc["bufferViews"].append({"buffer": 0, "byteOffset": len(buf0), "byteLength": len(data)})
         buf0 += data
         doc["images"][t] = {"bufferView": len(doc["bufferViews"]) - 1, "mimeType": "image/jpeg", "name": f"texture_{t}"}
+        if filled.any() or not is_valid.all():
+            # Lossless provenance at atlas resolution: 0 gutter, 1 direct,
+            # 2 inferred from nearby coplanar samples, 3 unassessed source texture.
+            labels = np.zeros((H, W), dtype=np.uint8)
+            labels[yy, xx] = np.where(is_valid, 1, np.where(filled, 2, 3))
+            encoded = io.BytesIO()
+            Image.fromarray(labels).save(encoded, "PNG")
+            payload = encoded.getvalue()
+            buf0 += bytes(-len(buf0) % 4)
+            doc["bufferViews"].append({"buffer": 0, "byteOffset": len(buf0), "byteLength": len(payload)})
+            buf0 += payload
+            doc["images"][t]["extras"] = {"nammaTextureProvenance": {
+                "bufferView": len(doc["bufferViews"]) - 1, "mimeType": "image/png",
+                "labels": ["gutter", "observed", "inferred_coplanar", "unassessed_source"]}}
         stats[f"atlas_{t}_texels_blended"] = float(ad["seen"].mean())
         stats[f"atlas_{t}_size"] = [W, H]
         stats["photos_used"] = ad["n_used"]

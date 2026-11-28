@@ -99,7 +99,11 @@ def task_splat(a):
         state.update(label=label, fraction=round(frac, 3))
         write_json(st, state)
     try:
-        state["result"] = make_photoreal(a.project_dir, a.run, progress=progress, cancel_file=cancel)
+        if getattr(a, "native_frame", None) is not None:
+            from namma.studio.native_job import train_native
+            state["result"] = train_native(a.project_dir, a.run, a.native_frame, progress, cancel)
+        else:
+            state["result"] = make_photoreal(a.project_dir, a.run, progress=progress, cancel_file=cancel)
         state.update(status="done", ended_at=timefmt.now_iso(), fraction=1)
     except Exception as e:
         (work / "traceback.txt").write_text(traceback.format_exc(), encoding="utf-8")
@@ -118,6 +122,7 @@ def main(argv=None):
     ap.add_argument("--profile", default="standard")
     ap.add_argument("--max-frames", type=int, default=300)
     ap.add_argument("--stop-after")
+    ap.add_argument("--native-frame", type=int)
     a = ap.parse_args(argv)
     return {"ingest": task_ingest, "reconstruct": task_reconstruct, "splat": task_splat}[a.task](a)
 

@@ -1,9 +1,8 @@
 """Private experimental native training job using the Studio worker status machinery."""
 import shutil
-import zipfile
 
 from namma.capture.native_training import prepare
-from namma.core.jsonio import load_strict, sha256_file, write_json
+from namma.core.jsonio import load_strict, write_json
 from namma.evidence.bundle import allocate_version
 from namma.evidence.train_reference import train_reference
 from namma.studio.splat_claude import available, SplatError
@@ -23,27 +22,14 @@ def run(project, run_id, options, *, cancel_file=None, progress=None):
     report = {"status": "preparing", "version": version.name}
     write_json(version / "job.json", report)
     progress = progress or (lambda *_: None)
-    members = integrity["files"]
-    required = sum(item["bytes"] for item in members)
+    required = sum(item["bytes"] for item in integrity["files"])
     if shutil.disk_usage(version).free < required*3 + 2*2**30:
         raise ValueError("insufficient disk space for native evidence and decoded crops")
-    archive = version / "native.nammacap"
-    progress("Verifying native capture", .05)
-    with zipfile.ZipFile(archive, "x", compression=zipfile.ZIP_STORED) as output:
-        output.write(capture / "integrity.json", "integrity.json")
-        for member in members:
-            rel = member["path"]
-            path = (capture / rel).resolve()
-            if not path.is_relative_to(capture.resolve()) or not path.is_file():
-                raise ValueError("invalid native integrity member")
-            if sha256_file(path) != member["sha256"] or path.stat().st_size != member["bytes"]:
-                raise ValueError("native capture integrity mismatch")
-            output.write(path, rel)
     if cancel_file and cancel_file.exists():
         raise ValueError("native preparation cancelled")
     progress("Solving native training cameras", .15)
     reference = version / "reference"
-    prepare(archive, reference, frame_id, bundle_adjust=True, loop_candidates=True, retrieval_k=5)
+    prepare(capture, reference, frame_id, bundle_adjust=True, loop_candidates=True, retrieval_k=5)
     prior_dir = None
     if options.get("native_promptda"):
         from namma.recon.runner import run_step

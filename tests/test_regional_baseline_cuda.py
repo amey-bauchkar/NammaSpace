@@ -1,0 +1,133 @@
+"""Real GPU integration of captured training rows, regional Adam and stable-ID merge."""
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts/splat"))
+
+
+class RegionalBaselineTest(unittest.TestCase):
+    def test_candidate_preserves_frozen_parent(self):
+        try:
+            import gsplat
+            import torch
+        except ImportError:
+            self.skipTest("requires gsplat environment")
+        if not torch.cuda.is_available():
+            self.skipTest("requires CUDA")
+        import numpy as np
+        from PIL import Image
+        from refine_region import refine, save_ply, sha256_file, load_strict, verify_checkpoint
+        from namma.core.jsonio import write_json
+        from namma.evidence.bundle import seal_checkpoint
+        from plyfile import PlyData
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            version, images = root/"v1", root/"images"
+            version.mkdir()
+            images.mkdir()
+            params = dict(means=torch.tensor([[0.,0.,2.],[.8,0.,2.]]),
+                          quats=torch.tensor([[1.,0.,0.,0.]]*2), scales=torch.full((2,3),-2.5),
+                          opacities=torch.ones(2), sh0=torch.zeros(2,1,3), shN=torch.zeros(2,3,3))
+            save_ply(version/"splat.ply", params, stable_ids=True)
+            rows = []
+            hashes = {}
+            for i in range(2):
+                k = str(i)
+                name = k+".jpg"
+                Image.new("RGB",(48,48),(115,123,141)).save(images/name)
+                hashes[k] = sha256_file(images/name)
+                view = np.eye(4)
+                view[0,3] = .1*i
+                rows.append(dict(name=name,width=48,height=48,K=[[48,0,24],[0,48,24],[0,0,1]],
+                                 T_camera_from_world=view.tolist(),train_delta_se3=[0.]*6,
+                                 colour_gain=[1.]*3,colour_offset=[0.]*3))
+            for name, data in {"config":{"iters":2,"sh_degree":1},"provenance":{},"splat":{},
+                               "splits":{"train":["0","1"],"dev":["10"],"final_test":[]},
+                               "training_ba":{"training_images":hashes,"frozen_model":{"fixture":"synthetic"}},"cameras":rows}.items():
+                write_json(version/(name+".json"),data)
+            seal_checkpoint(version,None,{"status":"not_measured"})
+            from check_window_context import validate
+            context_report = root / "context.json"
+            write_json(context_report, validate(version, 0, 24, diagnostic_repeated_cameras=True))
+            with self.assertRaisesRegex(ValueError, "context report does not qualify"):
+                refine(version, images, root/"unqualified", [0.,0.,2.], .5, 3, 1,
+                       context_report=context_report)
+            refine(version,images,root/"edit",[0.,0.,2.],.5,3,1,contain_support=True,
+                   context_report=context_report, diagnostic_context=True)
+            ledger = load_strict(root/"edit/ledger.json")
+            self.assertEqual(ledger["replaced_ids"],[0])
+            self.assertEqual(ledger["added_ids"],[2])
+            self.assertEqual(ledger["context"]["mode"], "culled")
+            self.assertEqual(ledger["context"]["max_window_error"], 0)
+            original = PlyData.read(str(version/"splat.ply"),mmap=False)["vertex"].data
+            result = PlyData.read(str(root/"edit/candidate.ply"),mmap=False)["vertex"].data
+            self.assertEqual(result[0].tobytes(),original[1].tobytes())
+            self.assertNotEqual(result[1]["f_dc_0"],original[0]["f_dc_0"])
+            centre = np.array([result[1][axis] for axis in "xyz"])
+            sigma = np.exp(max(result[1][f"scale_{axis}"] for axis in range(3)))
+            self.assertLessEqual(np.abs(centre - [0., 0., 2.]).max() + 3 * sigma, .25 + 1e-7)
+            from namma.afe.regions import tile_defect
+            tile, = tile_defect([-.15,-.15,1.85],[.15,.15,2.15])
+            refine(version, images, root/"control", tile["center"], tile["extent_m"],
+                   3, 1, target_count=2, tile=tile)
+            control = load_strict(root/"control/ledger.json")
+            self.assertEqual(control["arm"], "C4")
+            self.assertEqual(control["added_ids"], [2,3])
+            self.assertEqual(control["frozen_sha256"], ledger["frozen_sha256"])
+            self.assertEqual(control["steps"], ledger["steps"])
+            from check_candidate_budget import candidate_budget
+            budget = candidate_budget(version, root/"control", root/"budget.json")
+            self.assertEqual(budget["edit_sha256"], sha256_file(root/"control/ledger.json"))
+            self.assertEqual((budget["region_rows_before"], budget["region_rows_after"]), (1, 2))
+            self.assertTrue(budget["within_2x_region_rows"])
+            self.assertFalse(budget["acceptance_evaluated"])
+            self.assertEqual(budget["resources"], control["resources"])
+            self.assertGreater(budget["resources"]["seconds"], 0)
+            self.assertGreater(budget["resources"]["peak_allocated_bytes"], 0)
+            self.assertGreaterEqual(budget["resources"]["peak_reserved_bytes"],
+                                    budget["resources"]["peak_allocated_bytes"])
+            patch = PlyData.read(str(root/"control/region.ply"), mmap=False)["vertex"].data
+            max_axis = np.exp(np.max([patch[f"scale_{axis}"] for axis in range(3)]))
+            self.assertLessEqual(max_axis, control["max_splat_scale_m"] + 1e-7)
+            from render_development import render_registered
+            registration = root/"registration"
+            observations = registration/"images"
+            observations.mkdir(parents=True)
+            obs = observations/"10.jpg"
+            Image.new("RGB",(48,48),(115,123,141)).save(obs)
+            write_json(registration/"dev_registration.json", {
+                "role":"dev","reference":{"fixture":"synthetic"},"unregistered":[],
+                "poses_arkit":{"10":np.diag([1.,-1.,-1.,1.]).tolist()},
+                "intrinsics":{"10":{"width":48,"height":48,"fx":48,"fy":48,"cx":24,"cy":24}},
+                "image_sha256":{"10":sha256_file(obs)}})
+            render_registered(version, registration, root/"renders", role="dev", edit=root/"control")
+            batch = load_strict(root/"renders/renders.json")
+            self.assertEqual(batch["model_sha256"],control["candidate_sha256"])
+            self.assertEqual(batch["edit_sha256"],sha256_file(root/"control/ledger.json"))
+            from refine_two_store import refine as refine_full_scene
+            full_edit = root / "full-edit"
+            refine_full_scene(version, images, {"lower": [-.25, -.25, 1.75], "upper": [.25, .25, 2.25]},
+                              full_edit, steps=2)
+            integrity = load_strict(full_edit / "integrity.json")
+            self.assertTrue(integrity["integrity_exact"])
+            self.assertEqual(integrity["changed_ids"], [0])
+            full_budget = candidate_budget(version, full_edit, root / "full-budget.json")
+            self.assertEqual((full_budget["region_rows_before"], full_budget["region_rows_after"]), (1, 1))
+            render_registered(version, registration, root / "full-renders", role="dev", edit=full_edit)
+            self.assertEqual(load_strict(root / "full-renders/renders.json")["edit_sha256"],
+                             sha256_file(full_edit / "ledger.json"))
+            render_registered(version, registration, root/"spz", role="dev", spz_roundtrip=True)
+            compressed = load_strict(root/"spz/renders.json")
+            self.assertEqual(compressed["spz_roundtrip"]["splats_out"], 2)
+            self.assertEqual(compressed["model_sha256"], sha256_file(root/"spz/diagnostic.spz"))
+            self.assertEqual(batch["registration_sha256"], compressed["registration_sha256"])
+            verify_checkpoint(version)
+            write_json(root/"control/ledger.json", {**control, "replaced_ids": [1]})
+            with self.assertRaisesRegex(ValueError, "regional IDs do not match"):
+                candidate_budget(version, root/"control", root/"bad-budget.json")
+
+
+if __name__ == "__main__":
+    unittest.main()

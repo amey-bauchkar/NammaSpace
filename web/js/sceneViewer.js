@@ -335,6 +335,7 @@ async function main() {
   }
 
   // ---- photoreal splat (IF-13 1.3.0): drawn instead of the mesh, which stays for walking, picking and routes
+  let defaultSplatLoad = null;
   if (data.splat) {
     // shown by default (held-out photos: 26.3 dB, SSIM 0.86 on "New room"); ?mesh starts on the mesh and downloads
     // the splat (~150 MB) only when asked for
@@ -353,7 +354,7 @@ async function main() {
       $('splat-toggle').textContent = `Show photoreal (${(data.splat.splats / 1e6).toFixed(1)} M splats – may be slow here)`;
       $('splat-toggle').onclick = () => go(true);
       state.splatDeferred = { splats: data.splat.splats, limit };
-    } else if (!params.has('mesh') && data.splat.shown_by_default !== false) ctx.splatLoading = go();
+    } else if (!params.has('mesh') && data.splat.shown_by_default !== false) defaultSplatLoad = go();
     else {
       $('splat-toggle').hidden = false;
       $('splat-toggle').textContent = `Show photoreal (${mb(data.splat.bytes)})`;
@@ -371,10 +372,10 @@ async function main() {
   }
   if (params.has('bench')) {
     // Measure a fully initialised renderer, including optional in-memory LOD generation.
-    await ctx.splatLoading;
+    await defaultSplatLoad;
     if (state.errors.some((error) => error.kind === 'splat')) throw new Error('Splat failed to initialise before benchmark');
     if (canUpgrade && full.bytes <= AUTO_FULL_DETAIL_MAX_BYTES && !params.has('light')) await ctx.upgrading;
-    await runBenchmark(ctx, Number(params.get('seconds') || 20));
+    await runBenchmark(ctx, Number(params.get('seconds') || 20), Boolean(defaultSplatLoad));
   }
   if (params.has('selftest')) await runSelftest(ctx, startPose);
 }
@@ -401,6 +402,7 @@ function splatLimit(app) {
 }
 
 async function loadSplat(ctx, requested = false) {
+  const loadStarted = performance.now();
   const { app, data } = ctx;
   const s = data.splat;
   const btn = $('splat-toggle');
@@ -435,6 +437,7 @@ async function loadSplat(ctx, requested = false) {
   mesh.visible = startSplat;
   setMeshHidden(app, startSplat);
   state.splat = { splats: s.splats, bytes: s.bytes, shown: startSplat };
+  state.timing.splat_load_ms = Math.round(performance.now() - loadStarted);
   btn.disabled = false;
   btn.textContent = startSplat ? 'Show mesh' : 'Show photoreal';
   btn.onclick = () => {
@@ -1577,7 +1580,7 @@ function openPoiForm(ctx, point) {
 // ------------------------------------------------------------------ benchmark + self-test
 const pct = (arr, p) => { const s = [...arr].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))] : null; };
 
-async function runBenchmark(ctx, seconds) {
+async function runBenchmark(ctx, seconds, expectSplat) {
   if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 120) throw new Error('Benchmark duration must be between 0 and 120 seconds');
   const { app, walker, eye } = ctx;
   cancelAnimationFrame(app.raf);
@@ -1607,14 +1610,18 @@ async function runBenchmark(ctx, seconds) {
   document.removeEventListener('visibilitychange', onVis);
   const frames = intervals.slice(1);
   const visible = hiddenAt === null && document.visibilityState === 'visible';
+  const layer = state.splat?.shown ? 'splat' : 'mesh';
+  const missingSplat = expectSplat && layer !== 'splat';
   const gl = app.renderer.getContext();
   const dbg = gl.getExtension('WEBGL_debug_renderer_info');
   const res = {
-    valid: visible && frames.length >= seconds * 10,
-    invalid_reason: !visible ? 'page not visible during run' : frames.length < seconds * 10 ? `only ${frames.length} frames delivered` : null,
+    valid: visible && !missingSplat && frames.length >= seconds * 10,
+    invalid_reason: missingSplat ? 'photoreal view failed to load' : !visible ? 'page not visible during run'
+      : frames.length < seconds * 10 ? `only ${frames.length} frames delivered` : null,
     seconds, frames: frames.length,
     frame_ms: { median: pct(frames, 50), p95: pct(frames, 95), max: Math.max(...frames), mean: frames.reduce((a, b) => a + b, 0) / frames.length },
     over_33ms_share: frames.filter((f) => f > 33.4).length / frames.length,
+    layer, splats: layer === 'splat' ? state.splat.splats : 0,
     lod: state.lodShown, triangles: state.triangles, draw_calls_last_frame: app.renderer.info.render.calls,
     adaptive_splats: app.splatBudget ? { ...app.splatBudget } : null,
     splat_visible: !!app.splat?.visible,

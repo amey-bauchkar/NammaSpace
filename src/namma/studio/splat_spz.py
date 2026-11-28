@@ -86,7 +86,8 @@ def ply_to_spz(ply_path, spz_path, *, max_sh=3, fractional_bits=12, min_opacity=
 
 def read_spz(path):
     """SPZ v2 -> dict of 3DGS .ply field arrays (float32), for checking what was written."""
-    b = gzip.decompress(open(path, "rb").read())
+    with gzip.open(path, "rb") as stream:
+        b = stream.read()
     magic, version, n, deg, fb, flags, _ = struct.unpack_from("<IIIBBBB", b, 0)
     if magic != MAGIC or version != 2:
         raise ValueError("not an SPZ version 2 file")

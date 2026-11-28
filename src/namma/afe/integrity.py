@@ -54,8 +54,11 @@ def verify_candidate(checkpoint, candidate, ledger):
         raise ValueError("candidate ledger's frozen-row digest is incorrect")
     if not source_inside.any():
         raise ValueError("source region is empty")
+    changed = sorted(identity for identity, i in candidate_ids.items()
+                     if identity not in original_ids or target[i].tobytes() != source[original_ids[identity]].tobytes())
     return {"integrity_exact":True,"base_sha256":record["base_sha256"],
             "candidate_sha256":record["candidate_sha256"],"frozen_rows":len(frozen_indices),
             "region_count_ratio":int(target_inside.sum())/int(source_inside.sum()),
-            "added_rows":len(added),"appearance_pixels_verified":False,
+            "added_rows":len(added), "changed_ids": changed,
+            "region_rows_before": int(source_inside.sum()), "region_rows_after": int(target_inside.sum()),"appearance_pixels_verified":False,
             "unsupported_content_verified":False,"acceptance_evaluated":False}

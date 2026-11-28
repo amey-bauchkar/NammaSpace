@@ -167,13 +167,13 @@ Base 79cca81 on codex-handoff. Programme specification in NAMMASPACE_CODEX_MASTE
 
 | Phase | Dependency and exit | State |
 |---|---|---|
-| P0 | Camera rows, private PLY, honest fit, unchanged SPZ | In progress on photo route |
-| P1 | P0; manifests, splits, evaluator, private publishing, three complete scenes | Pending |
-| P2 | P1; S1 readiness, S2 baselines, S3 seed spread | Intel graphics; training runtime absent |
-| P2a | Independent; pinned licences, genuine AI inference and resource measurements | Pending |
-| P3 | Independent; saved-still QA, coverage, native depth ingest, device A/B | Pending |
+| P0 | Camera rows, private PLY, honest fit, unchanged SPZ | Photo and Polycam checkpoints implemented and tested |
+| P1 | P0; manifests, splits, evaluator, private publishing, three complete scenes | Evidence tools exercised on Kitchen; three-scene exit open |
+| P2 | P1; S1 readiness, S2 baselines, S3 seed spread | RTX 4050 verified; Kitchen window scored across three seeds |
+| P2a | Independent; pinned licences, genuine AI inference and resource measurements | AnchorSplat weights verified; runtime and dependency audit open |
+| P3 | Independent; saved-still QA, coverage, native depth ingest, device A/B | Private Studio native training verified on synthetic capture; device A/B open |
 | X2/X3/X5/X6 and P4 | S3; recipe, BA, export, depth experiments and parity | Pending |
-| P5 | P1/S3; two-store, context equivalence, controls, rejection and one-shot evaluation | Pending |
+| P5 | P1/S3; two-store, context equivalence, controls, rejection and one-shot evaluation | Regional training and controls exercised; real-scene equivalence and acceptance open |
 | P6 | P5; localisation, observability, rollback, multi-region | Pending |
 | P7 | P5/P6; Studio, export, viewer benchmarks, large spaces | Pending |
 
@@ -281,3 +281,520 @@ target GPU viewer measurements, Xcode and physical ARKit capture validation.
 Remaining implementation also includes model orchestration, two-store
 optimisation, the full acceptance and rollback path, and Studio integration.
 These are engineering tasks as well as validation dependencies.
+
+## RTX workstation readiness (2026-11-28)
+
+Working branch codex/fidelity-p2-readiness, based on c636c3e. The local project
+directories include Kitchen, Scan 1 and Scan 2 raw archives; capture eligibility
+and independent observation coverage still need checking. Node baseline: 50/50.
+Studio Python is available as python; the py launcher failed discovery.
+Python baseline command: python -m pytest -q -p no:cacheprovider tests.
+
+Real CUDA probe: tools/splat-env/Scripts/python.exe scripts/splat/probe_regional_cuda.py.
+RTX 4050 Laptop, torch 2.4.1+cu124, gsplat 1.5.3+pt24cu124. An antialiased
+64x64 render and Adam update preserved the frozen row exactly, changed the
+trainable row and produced a trainable projected absolute gradient sum of
+81.47067. This verifies concatenation/autograd only. Next verify DefaultStrategy
+statistics and growth on regional rows and establish data coverage before S2.
+
+Follow-up: scripts/splat/regional_strategy.py maps unpacked projected absolute
+gradients and radii to regional row indices after backward. The CUDA probe
+exercised DefaultStrategy pre/post hooks and forced duplication: one regional
+row became two and the frozen position stayed exactly equal. This covers
+duplication only, with synthetic parameters. It does not establish scene-level
+integrity or equivalence. Sandbox baseline first Studio failure: WinError 10013
+connecting to localhost. Full suite rerun with local sockets allowed.
+
+The restricted Python baseline completed with 453 passed, 9 skipped, 62 failed
+and 6 setup errors in 318.48 s. Confirmed both localhost denial and excessive
+sandbox temporary path length. Unrestricted baseline is running. Kitchen
+training-only BA started from the kitchen-sharp raw archive into the ignored
+scratch/fidelity/kitchen-ba directory: 231 train, 29 development, 29 reserved.
+
+Real CUDA synthetic window check: 100 deterministic camera translations over
+1,000 anisotropic Gaussians; 143–260 rows retained, maximum RGB/alpha absolute
+error 0.0. Reproduce with tools/splat-env/Scripts/python.exe
+tests/test_regional_window_cuda.py (1 passed). The checkpoint CLI
+scripts/splat/check_window_context.py tests 100 distinct training cameras with
+stored pose corrections at the saved SH degree. Per-scene evidence pending.
+The expanded CUDA strategy probe exercised duplication, splitting and pruning;
+regional counts were 2/2/0, with frozen means/scales/quats/opacities equal.
+
+Regression baseline with localhost available: 521 passed, 9 skipped in
+469.35 s. This count predates the two new regional CUDA tests. The
+fixed-density regional baseline now reads verified checkpoint cameras and
+hashed training photos, applies saved pose and colour corrections, supervises
+region windows, anchors the inner boundary, and writes a separate unverified
+candidate plus replacement ledger. Private candidate serialization checks
+all frozen row bytes. Synthetic GPU integration (3 Adam steps, two cameras):
+tools/splat-env/Scripts/python.exe tests/test_regional_baseline_cuda.py passed.
+Real-scene quality, controls, acceptance, rollback and Studio integration remain open.
+
+C4 density control now accepts an explicit target count within the 2x budget,
+splits evenly selected parents along their longest axes, and uses the B0-R
+training budget and sampling sequence. The GPU fixture checked target count,
+equal step budget, fresh IDs and identical frozen-row digest. Development
+rendering can load a digest-bound regional candidate with --edit; raw metrics
+retain its model and ledger hashes. Phase evidence: docs/phase_reports/P2.md.
+
+Kitchen attempt 1 extracted all 231 training images (12.09 minutes) but
+COLMAP reused two EXIF camera records. The guard rejected this database.
+Changed experimental training and registration to explicitly request
+ImageReader.single_camera_per_image=1. Fresh run: scratch/fidelity/kitchen-ba-per-image.
+Privacy checks now refuse stable-ID checkpoint PLYs even if renamed and known
+regional candidate/ledger filenames during publication. Privacy and legacy
+package regressions both passed. AnchorSplat source, Pointcept revision and
+checkpoint LFS digests recorded in THIRD_PARTY_NOTICES.md.
+
+AnchorSplat 1x/20x verified locally against both pinned SHA-256 hashes.
+Unmodified upstream inference imports a GPLv3+ PLY dependency; see notices.
+No Linux distribution was listed by wsl --list --quiet. Runtime qualification
+and real inference remain open. Added metric defect tiling with frozen context,
+disjoint ownership and explicit experimental extents; four CPU tests passed.
+The regional trainer can select a planned tile with --defect-bounds and --tile-index.
+
+Native BA references now feed the real gsplat trainer with --measured-depth.
+Training uses only hash-checked, same-frame ARKit depth at confidence level 2.
+The synthetic archive integration passed on actual COLMAP/CUDA (2 tests passed,
+384 splats, 3 steps, 7.3 trainer seconds). See P3 report. Tiled GPU control
+test also passed, including private candidate render and unchanged frozen rows.
+
+Studio private native baseline: added opt-in run-page action, coordinate-frame
+selection, worker dispatch, status and cancellation. Existing native imports
+supply integrity-indexed training members without needing the original ZIP.
+Imported synthetic archive through both job subprocesses on real COLMAP/CUDA:
+2 passed, 36.92 s. Node regressions: 50 passed. See P3 for activation.
+
+Kitchen corrected run: 231/231 distinct camera records, feature extraction
+654.44 s, peak process-tree RSS 8746.4 MiB. Matching started. Studio native
+opt-in, coordinate selection and cancellation marker regression passed.
+Corrected texture healing and embedded an atlas provenance mask. Four
+existing texture regressions and one targeted coplanar-support regression
+passed. Full Python regression with CUDA native training started.
+
+Full Python regression with native GPU integration: 528 passed, 11 skipped
+(333.95 s). The subsequent texture provenance assertion passed with all four
+blendtex tests. Kitchen full training BA returned 231 camera rows, but only
+153 had at least three triangulated tracks. COLMAP reported NO_CONVERGENCE at
+101 iterations. The guard refused to seal the reference. A training-only
+diagnostic rerun on the longest contiguous 26-view supported window is in
+scratch/fidelity/kitchen-ba-diagnostic. It cannot qualify the full Kitchen scene.
+
+Added the changed-edge support check. It counts a projected visible edge as
+supported only when real photo edges occur within 2 px in two distinct passes.
+The synthetic test covers duplicate passes and diagonal distances. Projection,
+visibility, and integration with frozen candidate evaluation remain open.
+
+Checkpoint verification now checks manifest version and privacy marker and
+requires the complete sealed artifact set. Previously an empty inventory
+could verify. Evidence and photo-route regressions: 11 passed.
+
+Kitchen 26-view training diagnostic sealed its reference with 1,979 frozen
+points, 1.0778 px median reprojection error and at least 14 tracks per view.
+Started a private 1,000-step GPU diagnostic and independent development
+registration. The reference builder now also checks minimum track support
+after retriangulation in the metric frame.
+
+The real Kitchen 26-view diagnostic trained 2,180 Gaussians in 1,000 steps
+(61.4 trainer seconds, 0.25 GiB peak PyTorch allocation) and sealed its
+private checkpoint. Started a 200-step B0-R run on a 0.75 m cube at the
+componentwise median Gaussian position. Development registration remains in
+progress. These timings characterize a diagnostic window only.
+
+Kitchen B0-R completed 200 steps, changing 17 regional rows with two eligible
+training views and preserving 2,163 frozen rows. Candidate remains unverified.
+First development registration extracted 29 views, but COLMAP shared one new
+camera, producing 55 image records with only 27 camera IDs. Registration now
+explicitly asks for one camera per image, as training already did. Retrying
+on the development split in kitchen-dev-per-image.
+
+Started the Kitchen extra-training control at 400 steps from the same parent,
+region and seed as the 200-step baseline. The raw scoring CLI now supports
+--compare-to with matching development registration, checkpoint, view IDs and
+pixel counts. The comparison JSON binds both score reports by hash. Raw metric
+tests: 2 passed. The comparison reports diagnostics only.
+
+Frozen reference registration now also verifies that every original camera's
+intrinsics are unchanged. Real COLMAP targeted suite: 2 passed, 1 skipped.
+
+Kitchen 400-step control completed. Its parent checkpoint and frozen-row
+digest match the 200-step run. Started training seeds 1 and 2 at 1,000
+steps each on the same 26-view reference for a diagnostic variance estimate
+once development registration completes.
+
+All three 26-view Kitchen training seeds sealed and passed checkpoint
+verification. Each produced 2,180 splats at 0.25 GiB peak allocated GPU
+memory. Trainer times for seeds 0, 1 and 2 were 61.4, 42.6 and 40.6 s.
+Development registration still gates any quality or variance calculation.
+
+Kitchen development registration completed with 12 of 29 development
+images registered. Checked identical frozen intrinsics for all 26 reference
+cameras against the output. Started raw scoring for seed 0, both regional
+training budgets and seeds 1 and 2. 17 unregistered views remain in the report.
+
+Kitchen diagnostic development results are recorded in
+docs/experiments/kitchen-development-diagnostic.md. The regional trainer now
+enforces the parent scale cap. The regional CUDA regression passed and the
+400-step bounded rerun is in progress.
+
+Fixed projected region scoring ran on all three Kitchen seeds and the
+bounded 400-step control. Four development views intersected the cube.
+Control gain +0.03006 dB versus 0.59931 dB seed range. Added projection
+and paired region regression coverage (3 raw scoring tests passed).
+
+Scan 2 initial training window had tracks in 24 of 26 cameras. The reference
+guard rejected the two unsupported views. Retrying the contiguous supported
+21-view training window, followed by a 1,000-step private diagnostic if BA
+passes. X5 now has a development-only SPZ round-trip render option. The CUDA
+fixture passed. The Kitchen grade-0 export retained 1,286 of 2,180 Gaussians
+and was 18,977 bytes; raw scoring is running. Higher SH degrees and scene
+coverage remain open.
+
+Scan 2's supported 21-view window sealed with 481 points, 0.6833 px
+median reprojection error and a 1.18517 metric similarity scale. Real CUDA
+training used 1,000 steps and produced 530 splats in 37.4 s, at 0.24 GiB peak
+allocated GPU memory. Development registration has started. Kitchen degree-zero
+SPZ lost 0.01904 dB; degree-three training is in progress. PromptDA Small
+upstream checkpoint revision bdc8715134ff95362ffd0402748c6f08071bc1e4,
+SHA-256 51b99fef5e3c467f3ccd12f2f4687220e7f1e88f6a07fe21f7a66adffca2af99.
+Git clone timed out; trying codeload. Weight CDN reported a connection timeout.
+
+Scan 2 registered zero of 160 development views against the 21-view
+training window. The private baseline is reproducible, but this window
+has no usable independent coverage and cannot supply quality metrics.
+Kitchen's degree-three source scored 13.25479 dB and 0.49797 SSIM across
+12 development views. SPZ comparison in progress.
+
+PromptDA Small has a private local CLI, namma.evidence.prompt_depth.
+It verifies the pinned checkpoint and native training RGB/depth hashes,
+rejects reserved observations, and records estimate provenance separately
+from measured depth. Four targeted tests passed across input guards and
+raw scoring. GitHub clone and codeload both timed out. The checkpoint CDN
+also timed out after retries. Genuine inference and X6 remain pending.
+
+Kitchen degree-three export lost 0.04959 dB and 0.001389 SSIM on development.
+An SPZ diagnostic with zero cutoff is running. Raw scoring now processes
+256-row strips with a five-row SSIM halo to bound memory for native-resolution
+images. The strip-boundary regression passed (5 targeted CPU tests total).
+The refreshed regional CUDA integration including SPZ also passed.
+
+Kitchen degree-three no-prune export lost 0.04707 dB relative to PLY.
+Default pruning accounts for roughly 0.00252 dB additional loss on this
+window. Current settings stay in place pending the real-scene X5 gate.
+
+The private reference trainer exposes an explicit --strategy default for a
+matched growth comparison. The default remains MCMC. Kitchen's 3,500-step
+default-growth run uses the same 26 training views, seed, calibration, and
+evaluation registration as the earlier MCMC run. This isolates growth
+strategy; dense seeds and the final-test LPIPS gate of X2 remain separate.
+
+P3 finish review now requires an override reason for low coverage and stores
+it in the capture event log. Swift/Xcode and physical device validation are
+unavailable here. Kitchen default growth completed training (5,708 splats,
+102.7 s, 0.26 GiB); verified the same training reference digest and effective
+config apart from strategy and paths. Development scoring is in progress.
+
+Kitchen matched growth scores recorded. Default growth scored 13.22624 dB
+and 0.469393 SSIM, versus 13.25479 dB and 0.497970 for MCMC.
+Added an opt-in dense native LiDAR seed path. It uses only sealed training
+input hashes, preserves the frozen COLMAP model and retains the exact seed
+table in the private evidence. CUDA synthetic smoke and checkpoint
+verification passed. Targeted CPU tests: 8 passed, 2 skipped.
+
+The local testing-room Studio import contains 201 native frames and measured
+ARKit depth. All 159 training-frame records use same-frame pairing with
+matching timestamps. Full training-only BA is running. Development
+registration now supports native imports through their verified inventory.
+It derives the same chronological split as native preparation and reads only
+the selected development RGB members. A retained synthetic capture registered
+its reserved development frame using real COLMAP. CPU regression: 3 passed,
+2 skipped. Native final-test registration remains unavailable.
+
+Native final registration now shares the one-shot claim path. The original
+archive and its Studio import use the same integrity-manifest digest in
+the claim key. On the synthetic native import, real COLMAP and CUDA tests
+registered exactly the designated development and final images and rejected
+a second final registration (2 passed in 54.79 s). The real native room's
+final split remains reserved. Feature extraction reached 72/159 training
+images at last check. Full Python regression is running.
+
+Native registration now binds aligned, high-confidence measured depth grids
+to registered observations. The evaluator renders expected depth at the
+LiDAR grid resolution and scores visible-pixel median error, coverage, and
+2/5 cm agreement over all measured pixels. A 0.05 render alpha threshold
+marks predictions as missing and is included in the manifest. Real CUDA
+synthetic native final capture through registration, render and scoring:
+7 targeted tests passed in 88.88 s. No real final-test split was opened.
+
+The scorer now pools measured-depth coverage and threshold agreement by
+pixel count across views, with the per-view median errors still available.
+The private paired comparison can compare separate unedited checkpoints
+when their training-reference and registration digests match. Five scoring
+tests passed. Native room extraction completed and feature matching started.
+
+Added a paired outside-region RGB integrity diagnostic bound to the same
+registration and unedited checkpoint render. Kitchen's 400-step edit
+failed exact equality. A no-op merge diagnostic will separate serialization
+or ordering effects from the learned edit. Full regression and native room
+matching were still running.
+
+Python regression snapshot: 533 passed, 12 skipped in 561.79 s. Near-plane
+projection and integrity follow-up had five targeted scoring tests pass.
+Kitchen no-op serialization reproduced the unchanged render. The learned
+400-step edit still fails outside-region equality after correctly clipping
+the projection near the camera. Native matching is still running.
+
+The near-clipped no-op comparison also had zero changed outside pixels.
+Added an experimental three-sigma support constraint to regional training.
+It selects only parent rows contained by the core, bounds their centers
+and scales during optimization, and records the constraint. This alone
+does not prove pixel integrity because the renderer and camera geometry
+can still spread influence. The synthetic CUDA regression passed. The
+matched Kitchen 400-step diagnostic is running.
+
+The full native room adjustment returned 159 camera rows, with 148 meeting
+the minimum track requirement. Eleven views fell below it, and COLMAP did
+not converge. The guard rejected the reference. The training-only matcher
+now reuses the existing pose-revisit heuristic alongside temporal neighbors
+to seek additional overlap without using reserved views. A fresh 159-view
+retry has started in scratch/fidelity/native-room-revisit.
+
+The three-sigma experiment edited two rows and produced zero RGB metric
+change inside the projected Kitchen region. Outside-region results are in
+the same scored report. Targeted COLMAP and raw archive tests after adding
+revisit matching: 12 passed, 1 skipped.
+
+The native revisit planner proposes 810 additional training-only candidates
+and reaches all 11 previously weak cameras. Pair geometry and resulting
+track support are unverified until the live retry finishes.
+
+Native end-to-end verification after the evaluation updates: 7 passed in
+79.88 s with real COLMAP and CUDA. A modified predicted depth member was
+rejected before scoring. No real final-test data was extracted.
+
+Kitchen degree-three window culling reproduced RGB and alpha exactly across
+100 windows from 26 cameras. This report is ineligible for qualification
+because of repeated cameras. The regular CLI still requires 100 distinct
+training views. The synthetic CUDA regression passed again.
+
+Regional training now accepts a checkpoint-bound context report. Normal
+culling requires a passing report from 100 distinct cameras. For each
+actual training window it compares full and culled RGB/alpha before caching
+eligible frozen indices, retaining every trainable row. It falls back to
+full context if any window exceeds 1e-6 error. Explicit provisional mode
+was verified by the CUDA integration. A matched Kitchen diagnostic is
+running; it cannot qualify the production path.
+
+Matched Kitchen context training preserved frozen hashes. Forward preflight
+matched, but independent optimization yielded differences of up to 2.39e-7
+in trainable parameters and one channel level in 135 development pixels.
+Culling remains opt-in. A GPU regression verifies that the regular mode
+rejects a repeated-camera report. Native retry finished feature extraction
+and moved into geometric matching.
+
+Added raw edge F-score at 2 px and luminance Laplacian energy ratio to the
+scorer. Six targeted scoring tests passed. The Kitchen parent and contained
+edit tied on both detail diagnostics. The native matching database had
+recorded 481 of the planned 2,046 candidate pairs at the last check.
+
+Started a matched Kitchen native-resolution crop run via the new
+--full-res-crops option. The RGB-only 3,500-step run has the same seed
+and frozen reference as the earlier MCMC trial. Native room matching
+has processed 984 of 2,046 candidate pairs.
+
+Kitchen degree-three whole-image training scored 0.00440 edge F-score and
+0.000978 high-frequency ratio at native evaluation resolution. Resampling
+both RGB images to a 1024 px maximum side produced 0.08637 and 0.01314.
+The values depend on resolution and cannot be compared across grids as
+fidelity improvements. The native crop model has finished training and is
+being scored at the original resolution. The production Kitchen package
+was copied only into ignored scratch and passed the package hash check.
+A headless browser check is in progress.
+
+Local production Kitchen packaging and all ten headless viewer checks passed
+on the RTX 4050 (ANGLE/D3D11), including walking, fly mode, reset and the
+in-page self-test. Ready state reached in 2.94 s with other jobs running.
+This was a functional test, not the visible-window performance gate.
+Kitchen full-resolution crop training completed in 189.3 s at 0.26 GiB
+peak PyTorch allocation; held-out scores are pending.
+
+Completed Kitchen crop comparison: +0.02370 dB PSNR, −0.011035 SSIM on the
+same 12 native-resolution development views. The viewer now waits for an
+automatic splat load before timing and reports the actual layer and splat
+load time. A failed expected load makes the benchmark invalid. The viewer
+test harness accepts explicit viewport dimensions. Fifty Node tests passed.
+The two-resolution headless performance probe is in progress.
+
+The native revisit retry supported 154/159 training cameras (previously
+148/159). Five cameras still had fewer than three tracks, so the full
+reference was correctly rejected. This warrants targeted geometric
+recovery or explicit accounting of unusable training inputs, with
+development and final splits preserved. The Kitchen headless viewport
+matrix completed; all four probes were valid. See the diagnostic report.
+
+Started a third native training-only adjustment that reuses the private
+feature/match database after checking the entire training image inventory.
+It adds 160 untried pairs for the five weak cameras, matched by pose
+proximity and viewing direction, for a total of 2,206. The support gate
+and original reserved splits are unchanged. Targeted CPU regression:
+9 passed, 2 skipped.
+
+All 160 targeted extra matches were attempted. The full reference still
+had 154/159 supported cameras; the extra matches increased track incidence
+only from 28,541 to 28,547. A fresh, explicitly development-only diagnostic
+excludes the five unresolved cameras, keeps both held-out blocks identical,
+records original track counts and source hash, and preserves the per-camera
+gate for retained views. The final claim path refuses these diagnostics.
+This is not a replacement for the full-view qualification. Native and
+COLMAP targeted regressions: 3 passed, 2 skipped.
+
+A candidate-centre diagnostic now checks private candidate and registered
+development digests and distinguishes out-of-view centres from missing
+measured depth and measured-depth disagreement. A CPU geometry fixture
+and the earlier edge-support fixture passed. Kitchen's unconstrained
+400-step candidate had all 17 changed centres outside all 12 registered
+development frusta, despite visible changes from their footprints. The
+current split does not independently support those edited centres.
+
+The development screen binds the edited model, parent and registration
+digest across the RGB integrity and point-support reports. It rejected the
+Kitchen capped edit for both outside pixels and out-of-view centres. It
+does not evaluate the remaining acceptance criteria. A regression proves
+that the native exclusion diagnostic refuses the final claim before it
+opens a capture or creates claim files. Targeted tests: 9 passed, 1 skipped,
+plus the screen test passed.
+
+Integrity scoring now requires the exact region ledger bound to the edit
+render. The screen requires the same edit digest in the support report and
+score. A substituted larger region is rejected before any scoring. Nine
+targeted tests passed; the matching Kitchen score rerun is in progress.
+The bound Kitchen rerun produced the same two development rejection reasons.
+Native exclusion diagnostic feature extraction reached 137/154 images.
+
+Regional detail reports now measure the RGB step error at projected edit
+boundaries relative to the real photo, pooling by affected neighbor pairs.
+Seven scorer tests passed, including a uniform brightness shift and a
+synthetic seam. The native exclusion diagnostic completed feature
+extraction and has moved to matching.
+Kitchen measured 0.02654755 parent and 0.02654834 edited normalized
+boundary step error, on 21,659 pixel pairs.
+
+The private budget report derives the replacement counts from actual stable
+IDs, validates them against the ledger and measures both models with the same
+SPZ settings and compressor. The Kitchen capped edit held 17 regional rows
+and exported at 18,997 bytes against 18,977 for the parent in the pinned
+splat environment. A separate 400-step replay on the RTX 4050 took 151.0 s
+with 76,249,600 peak PyTorch allocated bytes and 106,954,752 reserved.
+The replay produced a distinct PLY digest, the same export size, and all
+17 edited centres again fell outside the registered development frusta.
+The measured memory covers the refinement process's PyTorch allocator.
+The CUDA fixture verified the resource report and rejected substituted IDs.
+
+The budget replay also failed exact exterior integrity, changing 24,720,631
+of 115,779,685 outside pixels. The native exclusion attempt completed
+matching and bundle adjustment but retained sufficient tracks for only
+152 of its 154 training views. Two newly weak cameras each had two tracks.
+The attempt stopped before sealing a reference. A follow-up diagnostic
+keeps the earlier candidate pairs between retained cameras in its fresh
+matching run. It verifies the prior training images against the capture
+and rejects pair lists that include any reserved frames. Extraction is
+underway. The native tests passed (2 passed, 1 opt-in CUDA test skipped).
+
+The full Python suite passed with loopback enabled (540 passed, 12 skipped).
+The opt-in native CUDA, raw scorer and regional screen suite passed all 12
+tests using a short Windows scratch path and the repository's src path.
+
+The registered scorer now supports offline LPIPS 0.1 with the official
+AlexNet and calibration weights pinned by SHA-256. The LPIPS, torchvision
+and OpenCV wheels live in scratch and share the existing PyTorch runtime.
+The protocol samples at most 32 native 128-pixel square patches per view
+from inside the projected region. It matched upstream CPU inference within
+6e-8 on a synthetic patch. The Kitchen parent scored 0.785403789 and the
+capped edit 0.787404860 over the same 192 patches from six views. This
+metric is currently available for development. It has yet to be admitted
+to a frozen final-test protocol.
+
+[LPIPS source and license](https://github.com/richzhang/PerceptualSimilarity)
+and [torchvision AlexNet weights](https://github.com/pytorch/vision/blob/v0.19.1/torchvision/models/alexnet.py)
+
+Kaggle CLI is installed at tools/kaggle-env/Scripts/kaggle.exe. Both the
+direct CLI call and retry through the configured Windows proxy timed out
+during access-token exchange with api.kaggle.com. A separate Windows HTTP
+probe timed out on both Kaggle hosts. No kernel was submitted. Kaggle
+remains an option for public inputs when the API is reachable.
+
+The follow-up native reference with retained overlap pairs reached 153/154
+training cameras with sufficient geometric support. A targeted retry
+reused its matching database and finished with the same one weak camera
+at two tracks. Exclusion diagnostics now consume an ordered series of
+failed references, verify each against its expected retained training
+inventory, and preserve prior pair proposals. A new 153-camera diagnostic
+is running locally. The same 21 development and 21 final observations
+remain reserved, and the diagnostic cannot claim the final set.
+
+All three native tests passed, including the opt-in CUDA capture-to-final
+fixture. For the Kitchen SH3 recipe comparison, rerendering both 3,500-step
+checkpoints recorded the same frozen training-reference digest. On 12
+development views and 384 matched native patches, MCMC scored 0.767697624
+LPIPS and default growth 0.777730856. Default growth also lost 0.02855 dB
+PSNR and 0.02858 SSIM. This is one development window; the multi-scene
+acceptance gate remains open.
+
+The 153-camera attempt stopped at the track guard: frame 50 had two
+tracks after its neighboring weak frame 51 was removed. A final bounded
+152-camera diagnostic excluding both newly weak frames is underway.
+
+The 152-camera CPU diagnostic failed because a different camera had two
+tracks. Switched to opt-in CUDA SIFT with the same acceptance gate. On the
+full 159-camera training block, CUDA feature extraction took 38.1 s and
+matching 50.9 s. Bundle adjustment gave 155 views at least three tracks.
+The remaining four are consecutive, and a 155-view CUDA development-only
+diagnostic is in progress. The final block is still reserved.
+
+Development registration also has an opt-in CUDA mode. The synthetic
+fixture verified that it can register a held-out view against the frozen
+CPU reference. The measured depth scorer now reports matched-pixel MAE
+and RMSE. It only produces deltas for those errors where both renderers
+have identical pixel support, and reports coverage and tolerance-rate
+deltas on all measured samples. Twelve targeted tests passed, including
+CUDA native training and registration.
+
+The initial 155-camera CUDA subset had one weak camera. A targeted retry
+added 32 previously untested overlaps for it and sealed all 155 retained
+training cameras with 19,675 frozen points and 1.3824 px median
+reprojection error. Training has 155 verified same-frame depth grids.
+Started independent registration of the 21 development views and a
+matched 3,500-step, seed-zero RGB-only and measured-LiDAR comparison.
+
+Development admitted 15/21 cameras. Both arms predicted depth at the
+same 468,647 measured pixels. LiDAR at weight 1.0 reduced mean depth
+error from 10.45 cm to 3.25 cm and raised 5 cm agreement from 26.73% to
+82.24%. RGB-only measured 15.464 dB and 0.60957 LPIPS against LiDAR's
+15.404 dB and 0.61367 LPIPS. Weight 0.3 reduced mean depth error to
+3.82 cm and reached 76.54% within 5 cm, with 15.471 dB, 0.60936 LPIPS,
+and 0.67440 SSIM. Both LiDAR arms improved depth on all 15 views.
+Weight 0.3 is the balanced development choice for this room. The
+reference omits four weak training views and is ineligible for final
+evaluation. Twelve targeted tests passed with one opt-in test skipped
+after addition of explicit measured-depth weight validation.
+
+## Main and native fidelity integration (2026-11-28)
+
+Merged GitHub main `026c83e` and local fidelity `046f8a4`. The integrated
+paths retain the incoming learned matching and verified-graph checks, native
+capture integrity and CUDA SIFT retries, separate measured and estimated
+depth provenance, both regional refinement recipes, and the adaptive viewer
+with explicit benchmark layer verification.
+
+Python regression: 562 passed, 21 skipped with local loopback and a short
+Windows temporary path. Web: 52 passed with zero skips. The RTX 4050 passed
+five targeted native tests and both CUDA regional fixtures. The baseline
+regional fixture also exercised the incoming full-scene candidate through
+frozen-row integrity, budget measurement and development rendering. The
+Kitchen viewer passed 10/10 browser checks. The five-second adaptive
+photoreal benchmark reported a valid splat layer on the RTX 4050.
+
+Both parent inventories were checked for removed files. The outgoing tree
+does not change capture, fixture, project or Git LFS assets. Real final-test
+evaluation, on-device iOS validation and unavailable pretrained runtimes
+remain open.

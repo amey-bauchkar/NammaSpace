@@ -665,6 +665,7 @@ public struct ScanEvent: Codable, Sendable, Equatable {
 public enum EventType {
     public static let sessionStart = "session_start"
     public static let sessionEnd = "session_end"
+    public static let coverageOverride = "coverage_override"
     public static let roomStart = "room_start"
     public static let roomRenamed = "room_renamed"
     public static let doorway = "doorway"

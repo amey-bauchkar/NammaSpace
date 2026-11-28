@@ -310,7 +310,9 @@
         <div class="progress" data-f="splat-barbox" hidden>
           <div data-f="splat-bar"></div>
         </div>
-        <p class="row" style="margin-top:10px"><button type="button" data-f="splat-go">Make the photoreal view</button>
+        <p class="row" style="margin-top:10px"><label data-f="native-frame-label" hidden>Capture frame <select data-f="native-frame"></select></label>
+          <button type="button" data-f="native-baseline" hidden>Train private LiDAR baseline</button>
+          <button type="button" data-f="splat-go">Make the photoreal view</button>
           <button type="button" class="secondary" data-f="splat-cancel" hidden>Cancel</button>
         </p>
       </div>

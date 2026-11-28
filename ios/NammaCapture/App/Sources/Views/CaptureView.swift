@@ -141,10 +141,10 @@ struct CaptureView: View {
             if let engine {
                 FinishSheet(engine: engine, snap: snap,
                             onCheckScale: { showFinish = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showScale = true } },
-                            onFinish: {
+                            onFinish: { overrideReason in
                                 showFinish = false
                                 finishing = true
-                                engine.finish { result in
+                                engine.finish(coverageOverride: overrideReason) { result in
                                     if case .success = result { onFinished(engine.sessionDirectory.lastPathComponent) }
                                 }
                             })
@@ -428,9 +428,14 @@ struct FinishSheet: View {
     let engine: CaptureEngine
     let snap: CaptureSnapshot
     let onCheckScale: () -> Void
-    let onFinish: () -> Void
+    let onFinish: (String?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var assessment: CoverageAssessment.Result?
+    @State private var overrideReason = ""
+
+    private var trimmedReason: String {
+        overrideReason.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         NavigationStack {
@@ -449,8 +454,9 @@ struct FinishSheet: View {
                 if let a = assessment, a.isLow {
                     Section {
                         ForEach(a.issues, id: \.self) { Text($0) }
-                        Text("Reconstruction may have holes there. You can keep scanning, or finish anyway.")
+                        Text("Keep scanning, or record why you’re finishing with incomplete coverage.")
                             .font(.footnote).foregroundStyle(.secondary)
+                        TextField("Reason for finishing", text: $overrideReason)
                     } header: { Label("Coverage looks low", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
                 }
                 if snap.scaleChecks == 0 {
@@ -462,9 +468,13 @@ struct FinishSheet: View {
                 }
                 Section {
                     Button { dismiss() } label: { Label("Keep scanning", systemImage: "camera.viewfinder") }
-                    Button(role: (assessment?.isLow ?? false) ? .destructive : nil) { onFinish() } label: {
+                    Button(role: (assessment?.isLow ?? false) ? .destructive : nil) {
+                        guard let assessment else { return }
+                        onFinish(assessment.isLow ? trimmedReason : nil)
+                    } label: {
                         Label((assessment?.isLow ?? false) ? "Finish anyway" : "Finish scan", systemImage: "checkmark.circle")
                     }
+                    .disabled(assessment == nil || (assessment?.isLow == true && trimmedReason.isEmpty))
                 }
             }
             .navigationTitle("Finish scan?").navigationBarTitleDisplayMode(.inline)

@@ -459,3 +459,31 @@ def test_worker_starts_queued_photoreal_only_after_a_successful_full_run(tmp_pat
     assert worker.task_reconstruct(a) == 0 and started == [rid]
     assert not (rdir / "65_splat" / jm.QUEUE_FILE).exists()            # consumed once
     assert worker.task_reconstruct(a) == 0 and started == [rid]         # not started twice
+
+def test_native_baseline_is_opt_in_and_dispatches_selected_frame(tmp_path, monkeypatch):
+    import pytest
+    from types import SimpleNamespace
+    from namma.core.jsonio import write_json
+    from namma.studio import jobs as jm
+    store, jobs, pid, rid, run = _queue_setup(tmp_path, monkeypatch, "succeeded")
+    native = store.path(pid) / "capture/nammacap"
+    native.mkdir()
+    write_json(native / "manifest.json", {"depth":{"available":True},"coordinate_frames":[{"id":2}]})
+    assert "native_frames" not in jobs.splat_status(pid,rid)
+    with pytest.raises(jm.JobError):
+        jobs.start_splat(pid,rid,native_frame=2)
+    project = store.get(pid)
+    project["splat_options"] = {"native_baseline":True}
+    store.save(project)
+    assert jobs.splat_status(pid,rid)["native_frames"] == [2]
+    with pytest.raises(jm.JobError):
+        jobs.start_splat(pid,rid,native_frame=7)
+    calls = []
+    def spawn(args, log):
+        calls.append(args)
+        return SimpleNamespace(pid=123)
+    monkeypatch.setattr(jm,"_spawn",spawn)
+    assert jobs.start_splat(pid,rid,native_frame=2) == {"pid":123}
+    assert calls[0][-2:] == ["--native-frame","2"]
+    assert jobs.cancel_splat(pid,rid)["cancel_requested"]
+    assert (run/"65_splat/CANCEL").exists()

@@ -82,10 +82,11 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--voxel", type=float, default=0.015)
     ap.add_argument("--max-points", type=int, default=2_000_000)
+    ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--exclude", type=Path)
     a = ap.parse_args(argv)
     skip = set(a.exclude.read_text().split()) if a.exclude else set()
-    P, C = dense_points(a.model, a.images, a.depth, voxel=a.voxel, max_points=a.max_points, exclude=skip)
+    P, C = dense_points(a.model, a.images, a.depth, voxel=a.voxel, max_points=a.max_points, exclude=skip, seed=a.seed)
     write_points(a.out, P, C)
     print(f"{len(P)} start points, voxel {a.voxel * 100:.1f} cm -> {a.out}")
 

@@ -1,5 +1,6 @@
 """Train the ordinary Gaussian baseline on a frozen Polycam training reference."""
 import argparse
+import math
 import shutil
 from pathlib import Path
 
@@ -11,7 +12,14 @@ from namma.studio.splat_claude import SPLAT_PYTHON, TRAINER
 
 
 def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap=300000,
-                    native_crops=False, depth=False, cancel_file=None, training_options=None, estimated_depth=None):
+                    measured_depth=False, strategy="mcmc", dense_seeds=False, full_res_crops=False,
+                    depth_weight=None, native_crops=False, depth=False, cancel_file=None,
+                    training_options=None, estimated_depth=None):
+    measured_depth = measured_depth or (depth and estimated_depth is None)
+    if estimated_depth is not None and (not depth or measured_depth):
+        raise ValueError("select either measured depth or estimated priors")
+    if depth_weight is not None and (not measured_depth or not math.isfinite(depth_weight) or depth_weight <= 0):
+        raise ValueError("depth weight requires measured depth and a finite positive value")
     ref = load_strict(reference / "capture_ref.json")
     summary = load_strict(reference / "training_ba.json")
     split = load_strict(reference / "splits.json")
@@ -49,6 +57,20 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
         from splat_crops import default_crop_steps
         with Image.open(next(iter(images.iterdir()))) as pic:
             iters = max(iters, int(default_crop_steps(len(allowed),pic.width,pic.height,1024,12)/.7)+1)
+    if strategy not in {"mcmc", "default"}:
+        raise ValueError("unknown Gaussian growth strategy")
+    if measured_depth or dense_seeds or estimated_depth is not None:
+        inventory = ref.get("measured_depth", {})
+        folder = reference / "depth"
+        if (ref.get("format") != "nammacap" or ref.get("ba_verified") is not True
+                or not inventory or set(inventory) - {f"{k}.npy" for k in allowed}
+                or set(inventory) != {p.name for p in folder.iterdir()}):
+            raise ValueError("requires measured depth from the native training split")
+        for name, entry in inventory.items():
+            if (entry["source"] != "arkit_scene_depth" or entry["pairing"] != "same_frame"
+                    or entry["confidence_level"] != 2 or not entry["confidence_member"]
+                    or sha256_file(folder / name) != entry["sha256"]):
+                raise ValueError("invalid training depth provenance or digest")
     version = allocate_version(run_dir)
     for name in ("capture_ref.json", "splits.json", "training_ba.json"):
         shutil.copyfile(reference / name, version / name)
@@ -74,20 +96,43 @@ def train_reference(reference, run_dir, *, python=None, iters=15000, seed=0, cap
         cmd.remove("--appearance")
     if native_crops:
         cmd.extend(["--full-res-crops", "--crop-size", 1024])
-    if depth:
-        depths = Path(estimated_depth) if estimated_depth else reference / "depth"
-        if not depths.is_dir() or not list(depths.glob("*.npy")):
-            raise ValueError("measured depth supervision unavailable")
-        priors = None
-        if estimated_depth:
-            from namma.evidence.depth_priors import validate
-            priors = validate(reference,depths,allowed)
-        shutil.copytree(depths, version / "depth")
-        write_json(version/"depth_provenance.json",{"kind":"estimated_promptda_prior" if estimated_depth else "measured_sensor",
-                   "files":{p.name:sha256_file(p) for p in depths.glob("*.npy")},"inference_records":priors})
-        if estimated_depth:
-            shutil.copytree(reference/"depth",version/"sensor_depth")
-        cmd.extend(["--depth-dir", version / "depth", "--depth-weight", 1])
+    if strategy != "mcmc" and "strategy" not in training_options:
+        cmd.extend(["--strategy", strategy])
+    if full_res_crops and not native_crops:
+        cmd.append("--full-res-crops")
+    if measured_depth or dense_seeds or estimated_depth is not None:
+        depth_snapshot = version / "measured_depth"
+        shutil.copytree(folder, depth_snapshot)
+        if any(sha256_file(depth_snapshot / name) != entry["sha256"]
+               for name, entry in inventory.items()):
+            raise ValueError("copied depth digest mismatch")
+    if estimated_depth is not None:
+        from namma.evidence.depth_priors import validate
+        priors = validate(reference, estimated_depth, allowed)
+        prior_snapshot = version / "depth"
+        prior_snapshot.mkdir()
+        for name, entry in priors.items():
+            shutil.copyfile(Path(estimated_depth) / name, prior_snapshot / name)
+            if sha256_file(prior_snapshot / name) != entry["sha256"]:
+                raise ValueError("copied estimated depth digest mismatch")
+        write_json(version / "depth_provenance.json", {
+            "kind": "estimated_promptda_prior", "inference_records": priors,
+            "files": {name: entry["sha256"] for name, entry in priors.items()},
+        })
+        cmd.extend(["--depth-dir", prior_snapshot, "--depth-weight", 1.0])
+    elif measured_depth:
+        write_json(version / "depth_provenance.json", {
+            "kind": "measured_sensor",
+            "files": {name: entry["sha256"] for name, entry in inventory.items()},
+        })
+        cmd.extend(["--depth-dir", depth_snapshot, "--depth-weight", 1.0 if depth_weight is None else depth_weight])
+    if dense_seeds:
+        seeds = version / "dense_seeds.points3D.txt"
+        script = Path(TRAINER).with_name("dense_seed.py")
+        run_step("dense_seeds", [executable, script, "--model", version / "ba", "--images", images,
+                 "--depth", depth_snapshot, "--out", seeds, "--max-points", cap, "--seed", seed],
+                 version / "logs", timeout_s=3600, cancel_file=cancel_file)
+        cmd.extend(["--seed-points", seeds])
     run_step("train_reference", cmd, version / "logs", timeout_s=5*3600, cancel_file=cancel_file)
     rows = load_strict(version / "cameras.json")
     if {row["name"] for row in rows} != {f"{k}.jpg" for k in allowed} or len(rows) != len(allowed):
@@ -105,5 +150,13 @@ if __name__ == "__main__":
     parser.add_argument("--python", type=Path)
     parser.add_argument("--iters", type=int, default=15000)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--strategy", choices=("mcmc", "default"), default="mcmc")
+    parser.add_argument("--dense-seeds", action="store_true", help="initialize from verified native LiDAR")
+    parser.add_argument("--full-res-crops", action="store_true", help="train on native-resolution photo windows")
+    parser.add_argument("--measured-depth", action="store_true", help="use verified native training LiDAR")
+    parser.add_argument("--depth-weight", type=float, help="override the measured-depth loss weight")
     args = parser.parse_args()
-    print(train_reference(args.reference, args.private_run, python=args.python, iters=args.iters, seed=args.seed))
+    print(train_reference(args.reference, args.private_run, python=args.python, iters=args.iters,
+                          seed=args.seed, measured_depth=args.measured_depth, strategy=args.strategy,
+                          dense_seeds=args.dense_seeds, full_res_crops=args.full_res_crops,
+                          depth_weight=args.depth_weight))

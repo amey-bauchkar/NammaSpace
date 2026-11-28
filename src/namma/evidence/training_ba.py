@@ -42,9 +42,46 @@ def prepare_archive(archive, output, train_limit=None, train_start=0):
     return intr, priors
 
 
+def _extend_weak_camera_matches(retry, images, ids, priors, database):
+    """Reuse verified training inputs and propose extra overlap for weak cameras."""
+    if ({p.name: sha256_file(p) for p in (retry / "images").iterdir()}
+            != {p.name: sha256_file(p) for p in images.iterdir()}):
+        raise ValueError("prior matching run used a different training image inventory")
+    previous_db = retry / "database.db"
+    if any(previous_db.with_name(previous_db.name + suffix).exists() for suffix in ("-wal", "-journal")):
+        raise ValueError("prior matching database still has an active journal")
+    prior_views = read_images_txt(retry / "adjusted_text" / "images.txt")
+    support = [prior_views.get(f"{k}.jpg", {}).get("n_triangulated", 0) for k in ids]
+    weak = [i for i, count in enumerate(support) if count < 3]
+    if not weak:
+        raise ValueError("prior run has no weak training cameras to recover")
+    index = {f"{k}.jpg": i for i, k in enumerate(ids)}
+    attempted = {tuple(sorted(index[name] for name in line.split()))
+                 for line in (retry / "pairs.txt").read_text().splitlines() if line.strip()}
+    centers = np.asarray([priors[k][:3, 3] for k in ids])
+    directions = np.asarray([-priors[k][:3, 2] for k in ids])
+    extra = set()
+    for i in weak:
+        distance = np.linalg.norm(centers - centers[i], axis=1)
+        alignment = directions @ directions[i]
+        candidates = [j for j, count in enumerate(support) if count >= 3
+                      and tuple(sorted((i, j))) not in attempted and alignment[j] > 0]
+        candidates.sort(key=lambda j: (distance[j] + 2 * (1 - alignment[j]), j))
+        extra.update(tuple(sorted((i, j))) for j in candidates[:32])
+    if not extra:
+        raise ValueError("no untested training overlaps for weak cameras")
+    shutil.copyfile(previous_db, database)
+    previous_digest = sha256_file(previous_db)
+    if sha256_file(database) != previous_digest:
+        raise ValueError("prior matching database changed during copy")
+    return attempted | extra, {"database_sha256": previous_digest, "weak_views": len(weak),
+                               "additional_pairs": len(extra)}
+
+
 def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
            learned_approval=None, extractor="aliked", matching_device="cpu",
-           matching_max_keypoints=2048,matching_max_side=1024,feature_database=None):
+           matching_max_keypoints=2048, matching_max_side=1024, feature_database=None,
+           retry_matching_from=None, prior_pairs=(), colmap_gpu=False, pose_revisits=False):
     colmap = find_tools(require_openmvs=False).colmap
     images = output / "images"
     ids = list(priors)
@@ -60,7 +97,12 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
         path = output / name
         path.mkdir()
         return path
-    if feature_database:
+    retry, additional = None, set()
+    if retry_matching_from is not None:
+        if feature_database or learned_approval:
+            raise ValueError("SIFT matching retry requires its own frozen feature database")
+        additional, retry = _extend_weak_camera_matches(retry_matching_from, images, ids, priors, db)
+    elif feature_database:
         source_ref = load_strict(Path(feature_database).parent/"capture_ref.json")
         current_ref = load_strict(output/"capture_ref.json")
         if source_ref!=current_ref or any(
@@ -69,8 +111,8 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
         shutil.copyfile(feature_database,db)
     else:
         run("features", "feature_extractor", "--database_path", db, "--image_path", images,
-            "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera", 0,
-            "--FeatureExtraction.use_gpu", 0, "--FeatureExtraction.num_threads", 4)
+            "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
+            "--FeatureExtraction.use_gpu", int(colmap_gpu), "--FeatureExtraction.num_threads", 4)
     db_ids = poses._db_images(db)
     if set(db_ids) != names or len({cid for _, cid in db_ids.values()}) != len(ids):
         raise ValueError("incomplete feature database or shared intrinsics")
@@ -82,13 +124,21 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
     else:
         proposals = [(k, neighbour) for i, k in enumerate(ids) for neighbour in ids[i+1:i+1+poses.SEQ_WINDOW]]
         pair_report = {"sequential": len(proposals), "revisit_candidates": 0, "total": len(proposals)}
+    local_pairs = {(i, j) for i in range(len(ids))
+                   for j in range(i+1, min(len(ids), i+1+poses.SEQ_WINDOW))}
+    revisit_pairs = poses.pose_revisit_pairs([priors[k] for k in ids]) if pose_revisits else set()
+    index = {f"{key}.jpg": i for i, key in enumerate(ids)}
+    retained_pairs = {tuple(sorted((index[a], index[b]))) for a, b in prior_pairs if a in index and b in index}
+    order = {name: i for i, name in enumerate(ids)}
+    existing = {tuple(sorted((order[a], order[b]))) for a, b in proposals}
     if retrieval_k:
         from namma.evidence.retrieval import visual_pairs
         retrieved = visual_pairs(images, ids, top_k=retrieval_k)
         pair_report["visual_candidates"] = len(retrieved)
-        order = {name: i for i, name in enumerate(ids)}
-        proposals = sorted(set(proposals) | set(retrieved), key=lambda p: (order[p[0]], order[p[1]]))
-        pair_report["total"] = len(proposals)
+        existing.update(tuple(sorted((order[a], order[b]))) for a, b in retrieved)
+    proposals = [(ids[i], ids[j]) for i, j in sorted(existing | revisit_pairs | retained_pairs | additional)]
+    pair_report.update(total=len(proposals), pose_revisit_candidates=len(revisit_pairs - local_pairs),
+                       retained_prior_candidates=len(retained_pairs - existing - revisit_pairs - additional))
     write_json(output / "pair_proposals.json", pair_report)
     with pairs.open("x", encoding="utf-8") as stream:
         for k, neighbour in proposals:
@@ -102,7 +152,7 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
         import_keypoints(db, db_ids, cache)
         pairs, match_type = cache / "matches.txt", "raw"
     run("matching", "matches_importer", "--database_path", db, "--match_list_path", pairs,
-        "--match_type", match_type, "--FeatureMatching.use_gpu", 0, "--FeatureMatching.num_threads", 4)
+        "--match_type", match_type, "--FeatureMatching.use_gpu", int(colmap_gpu and match_type == "pairs"), "--FeatureMatching.num_threads", 4)
     import sqlite3
     with sqlite3.connect(str(db)) as connection:
         edges = connection.execute("SELECT pair_id, rows FROM two_view_geometries WHERE rows >= 8").fetchall()
@@ -134,8 +184,6 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
     write_json(output / "verified_graph.json", {"edges": len(edges), "connected": len(visited) == len(ids),
                                                 "components":sorted(components,key=lambda c:-len(c)),
                                                 "image_degrees": {str(k): len(v) for k, v in adjacency.items()}})
-    if len(visited) != len(ids):
-        raise ValueError("geometrically verified training graph is disconnected")
     def triangulate(tag, cameras):
         prior = output / (tag + "_priors")
         poses._write_model(prior, intr, db_ids, cameras)
@@ -157,6 +205,8 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
     observations = read_images_txt(adjusted / "images.txt")
     if set(solved) != set(ids) or any(v["n_triangulated"] < 3 for v in observations.values()):
         raise ValueError("bundle adjustment lacks triangulated tracks for every selected training view")
+    if len(visited) != len(ids):
+        raise ValueError("geometrically verified training graph is disconnected")
     centres = np.array([solved[k][:3, 3] for k in ids])
     target = np.array([priors[k][:3, 3] for k in ids])
     if min(np.linalg.matrix_rank(x - x.mean(0), tol=1e-6) for x in (centres, target)) < 2:
@@ -169,12 +219,18 @@ def adjust(output, intr, priors, *, loop_candidates=False, retrieval_k=0,
     if not final_stats["points"] or set(saved) != set(ids) or any(
             not np.allclose(saved[k], aligned[k], atol=1e-5, rtol=0) for k in ids):
         raise ValueError("frozen triangulation failed metric camera integrity check")
+    if any(view["n_triangulated"] < 3 for view in read_images_txt(model / "images.txt").values()):
+        raise ValueError("frozen reference lacks triangulated tracks for every training view")
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
               "feature_backend": extractor if learned_approval else "sift",
               "matching_device": matching_device,
               "matching_max_keypoints":matching_max_keypoints,"matching_max_side":matching_max_side,
               "learned_approval": str(Path(learned_approval).resolve()) if learned_approval else None,
               "learned_approval_sha256": sha256_file(learned_approval) if learned_approval else None,
+              "local_pairs": len(local_pairs), "revisit_pairs": len(revisit_pairs - local_pairs),
+              "retained_prior_pairs": len(retained_pairs - local_pairs - revisit_pairs - additional),
+              "colmap_gpu_requested": colmap_gpu,
+              "matching_retry": retry,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),
               "metric_similarity_scale": scale, "frozen_model": {p.name: sha256_file(p) for p in model.iterdir()}}
