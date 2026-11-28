@@ -1,5 +1,6 @@
 """Conservative development-view observability for sampled surface points."""
 import numpy as np
+from namma.afe.calibration import camera
 
 
 def assess_surface(points, views, *, max_mm_per_px=2.0, min_views=4, min_angle_deg=15.0):
@@ -37,6 +38,7 @@ def assess_surface(points, views, *, max_mm_per_px=2.0, min_views=4, min_angle_d
                 or depth.shape != confidence.shape or not np.isfinite(T).all() or not np.isfinite(K).all()
                 or not np.isfinite(noise) or noise <= 0 or min(K[0, 0], K[1, 1]) <= 0):
             raise ValueError("invalid measured view geometry")
+        K,T = camera(K,T)
         rays = xyz - T[:3, 3]
         cam = rays @ T[:3, :3]
         z = cam[:, 2]

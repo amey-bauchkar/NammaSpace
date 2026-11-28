@@ -497,10 +497,18 @@ LARGE_MEANS_LR_SCENE_CAP_M = 3.0
 # as before (tests/test_splat_options.py compares the commands). Set in the run's config.json "config" or in
 # project.json, key "splat_options" (project.json wins).
 SPLAT_OPTION_DEFAULTS = {
+    "native_fidelity": False,
+    "native_coordinate_frame": None,
+    "native_iters": 15000,
+    "native_cap": 300000,
+    "native_training_options": {},
+    "native_promptda": None,
     "evidence": False,
     "large_init_points": False,     # >150 photos: mesh start points scaled to the surface area (up to 600 k)
     "mirrors_force_large": True,    # marked mirrors: use this trainer (pixel masks) even for a small room
     "block_mode": "off",            # "off" | "auto" (blocks when the floor is large) | "on" (namma.studio.splat_blocks)
+    "block_visibility": False,
+    "block_freeze_cameras": False,
     "mesh_pose_refine": False,      # phone-tracking fallback: line each keyframe up with the scanned mesh (drift)
     "robust_align": False,          # splat <-> mesh line-up without trimming (see splat_align._refine)
     "guide_mesh": "unrepaired",     # mesh for start points, depth guide, pose correction and line-up: "unrepaired"
@@ -698,14 +706,23 @@ def _block_plan(opts, glb, T0, cap):
 
 
 def _train_blocks(plan, *, model, work, logs, depth_args, mask_args, iters0, max_side, ply, label, progress,
-                  timeout_s, cancel_file, max_total, late_args=()):
+                  timeout_s, cancel_file, max_total, late_args=(), visibility=False, freeze_cameras=False):
     """Train every block (one after the other), merge, apply the budget -> ply + ply.json (summary like the
     trainer's, with "blocks")."""
     from namma.recon.runner import run_step
     from namma.studio import splat_blocks as sb
     cams, imgs = sb.read_text_model(model)
     blocks = plan["blocks"]
-    names = sb.assign_cameras(cams, imgs, blocks, plan.pop("surface_samples"))
+    depth_maps = None
+    if visibility:
+        if "--depth-dir" not in depth_args:
+            raise SplatError("visibility-aware blocks require calibrated depth grids")
+        depth_dir = Path(depth_args[depth_args.index("--depth-dir")+1])
+        depth_maps = {im["name"]:np.load(depth_dir / (Path(im["name"]).stem+".npy"),allow_pickle=False)
+                      for im in imgs}
+    names = sb.assign_cameras(cams, imgs, blocks, plan.pop("surface_samples"), **({"depth_maps":depth_maps} if visibility else {}))
+    if visibility and any(len(group) < 3 for group in names):
+        raise SplatError("insufficient visible cameras for at least one block")
     fxz = plan.pop("floor_xz")
     bdir = work / "blocks"
     shutil.rmtree(bdir, ignore_errors=True)
@@ -733,7 +750,8 @@ def _train_blocks(plan, *, model, work, logs, depth_args, mask_args, iters0, max
         run_step(f"splat_train_block{i}", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", d / "sparse",
                                            "--images", work / "input" / "images", "--out", d / "block.ply",
                                            "--iters", it_i, "--max-side", max_side, "--cap", b["cap"],
-                                           "--max-splat-scale", MAX_SPLAT_SCALE_M, "--pose-opt", "--appearance",
+                                           "--max-splat-scale", MAX_SPLAT_SCALE_M,
+                                           *([] if freeze_cameras else ["--pose-opt"]), "--appearance",
                                            *args, "--init-scale-max-mult", LARGE_INIT_SCALE_MAX_MULT,
                                            "--means-lr-scene-cap", max(0.5, radius), *mask_args, *late_args],
                  logs, timeout_s=timeout_s, cancel_file=cancel_file, on_line=on_line)
@@ -750,7 +768,7 @@ def _train_blocks(plan, *, model, work, logs, depth_args, mask_args, iters0, max
         "photos": len(imgs), "iters": int(sum(p_["iters"] for p_ in per)), "splats": bst["splats_out"],
         "seconds": round(float(sum(p_["seconds"] or 0 for p_ in per)), 1),
         "gpu_peak_gb": max((p_["gpu_peak_gb"] or 0) for p_ in per), "max_side": max_side, "frame": "input cameras",
-        "pose_opt": True, "appearance": True, "blocks": per,
+        "pose_opt": not freeze_cameras, "appearance": True, "blocks": per,
         "block_plan": {k_: v_ for k_, v_ in plan.items() if k_ != "blocks"}, "budget": bst})
 
 
@@ -895,7 +913,8 @@ def make_photoreal(project_dir, run_id, *, iters=20000, max_side=1024, cap=RTX_4
             _train_blocks(plan, model=model, work=work, logs=logs, depth_args=depth_args, mask_args=mask_args,
                           iters0=iters0, max_side=max_side, ply=ply, label=label, progress=progress,
                           timeout_s=timeout_s, cancel_file=cancel_file, max_total=opts["max_total_splats"],
-                          late_args=late_args)
+                          late_args=late_args, **({"visibility":True} if opts["block_visibility"] else {}),
+                          **({"freeze_cameras":True} if opts["block_freeze_cameras"] else {}))
         else:
             run_step("splat_train", [SPLAT_PYTHON, "-u", "-W", "ignore", TRAINER, "--model", model,
                                      "--images", work / "input" / "images", "--out", ply, "--iters", iters,

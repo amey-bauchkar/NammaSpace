@@ -127,3 +127,9 @@ under the run's evidence directory. Each checkpoint contains training camera
 corrections, Gaussian rows, trainer arguments, runtime versions, alignment and
 a hashed inventory. These checkpoints currently carry `afe_eligible: false`.
 The default is off. See PLANS.md and docs/phase_reports/P0.md for validation status.
+
+Experimental learned correspondences, native private training and opt-in
+training/viewer controls are documented in
+[the reconstruction implementation report](docs/phase_reports/R2_R4_IMPLEMENTATION.md).
+The report distinguishes real CPU inference, real COLMAP execution, mocked
+Gaussian rendering and the outstanding GPU and capture acceptance gates.

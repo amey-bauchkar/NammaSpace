@@ -122,11 +122,11 @@ def se3_exp(d):
     return T
 
 
-def render(params, viewmat, K, W, H, sh_degree, mode="RGB"):
+def render(params, viewmat, K, W, H, sh_degree, mode="RGB", *, absgrad=False):
     colors = torch.cat([params["sh0"], params["shN"]], 1)
     return rasterization(params["means"], params["quats"], torch.exp(params["scales"]), torch.sigmoid(params["opacities"]),
                          colors, viewmat[None], K[None], W, H, sh_degree=sh_degree, packed=False,
-                         rasterize_mode="antialiased", render_mode=mode)
+                         rasterize_mode="antialiased", render_mode=mode, **({"absgrad": True} if absgrad else {}))
 
 
 def psnr_of(a, b):
@@ -181,6 +181,12 @@ def main(argv=None):
                     help="clamp each Gaussian axis to this many metres (0 = no limit)")
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--absgrad", action="store_true")
+    ap.add_argument("--grow-grad2d", type=float, default=None)
+    ap.add_argument("--depth-edge-mask", action="store_true")
+    ap.add_argument("--bilateral-appearance", action="store_true")
+    ap.add_argument("--blur-motion", help="JSON per image SE3 displacement over exposure, in camera coordinates")
+    ap.add_argument("--blur-samples", type=int, default=3)
     ap.add_argument("--seed-radius-multiplier", type=float, default=10,
                     help="maximum seed distance as a multiple of camera spread; 0 uses the prepared seed inventory")
     ap.add_argument("--pose-opt", action="store_true", help="correct each camera's pose while training")
@@ -221,6 +227,14 @@ def main(argv=None):
     ap.add_argument("--photo-cache", help="folder for the decoded full-resolution photos (uncompressed; ~36 MB each "
                                          "for 4032x3024). Default: <out>.photo_cache")
     a = ap.parse_args(argv)
+    if a.absgrad and a.strategy != "default":
+        ap.error("--absgrad requires --strategy default")
+    if a.bilateral_appearance and a.appearance:
+        ap.error("evaluate bilateral appearance separately from --appearance")
+    if a.blur_motion and (a.strategy != "none" or a.blur_samples < 2 or a.full_res_crops):
+        ap.error("blur experiment currently requires --strategy none, at least 2 samples, whole images")
+    if a.grow_grad2d is not None and (not math.isfinite(a.grow_grad2d) or a.grow_grad2d <= 0):
+        ap.error("--grow-grad2d must be positive and finite")
     torch.manual_seed(a.seed); random.seed(a.seed); np.random.seed(a.seed)
     import os
     dev = os.environ.get("NAMMA_SPLAT_DEVICE", "cuda")      # "cpu" only for the smoke test without a GPU
@@ -328,7 +342,12 @@ def main(argv=None):
         state = strategy.initialize_state()
     elif a.strategy == "default":
         from gsplat.strategy import DefaultStrategy
-        strategy = DefaultStrategy(refine_stop_iter=int(a.iters * 0.5), reset_every=a.reset_every, refine_every=200)
+        options = {}
+        if a.absgrad:
+            options.update(absgrad=True, grow_grad2d=a.grow_grad2d or .0008)
+        elif a.grow_grad2d is not None:
+            options["grow_grad2d"] = a.grow_grad2d
+        strategy = DefaultStrategy(refine_stop_iter=int(a.iters * 0.5), reset_every=a.reset_every, refine_every=200, **options)
         strategy.check_sanity(params, opts)
         state = strategy.initialize_state(scene_scale=scene_scale)
     else:
@@ -348,6 +367,18 @@ def main(argv=None):
         """Row i of a per-photo parameter table (a sparse gradient with --sparse-cams)."""
         return Fn.embedding(torch.tensor([i], device=dev), table, sparse=True) if a.sparse_cams else table[i:i + 1]
 
+    grids = None
+    if a.bilateral_appearance:
+        grids = torch.nn.Parameter(torch.zeros(len(views),12,4,8,8,device=dev))
+        extra.append(torch.optim.Adam([grids], lr=1e-3))
+    blur_motion = {}
+    if a.blur_motion:
+        blur_motion = json.loads(Path(a.blur_motion).read_text(encoding="utf-8"))
+        if set(blur_motion) - {v["name"] for v in views}:
+            ap.error("blur motion includes observations outside training")
+        for name, displacement in blur_motion.items():
+            if np.asarray(displacement).shape != (6,) or not np.isfinite(displacement).all():
+                ap.error("blur motion must contain finite 6-vector exposure displacements")
     walls = json.loads(Path(a.walls).read_text(encoding="utf-8"))["walls"] if a.walls else []
     for w in walls:
         for k in ("u", "side", "up"):
@@ -397,9 +428,22 @@ def main(argv=None):
             V = se3_exp(cam_row(pose_d, vi))[0] @ V
         use_depth = a.depth_dir is not None and v["depth"] is not None
         out, alpha, info = render(params, V, K, W, H, min(step // 1000, a.sh_degree),
-                                  "RGB+ED" if use_depth else "RGB")
+                                  "RGB+ED" if use_depth else "RGB", **({"absgrad": True} if a.absgrad else {}))
         if use_depth:
             out, rd = out[..., :3], out[..., 3]
+        if v["name"] in blur_motion:
+            displacement = torch.tensor(blur_motion[v["name"]], device=dev, dtype=V.dtype)
+            colours = []
+            for fraction in torch.linspace(-.5, .5, a.blur_samples, device=dev):
+                blurred = render(params, se3_exp((fraction*displacement)[None])[0] @ V,
+                                 K, W, H, min(step//1000, a.sh_degree))[0]
+                colours.append(blurred)
+            out = torch.stack(colours).mean(0)
+        if grids is not None:
+            from bilateral import apply_grid, regularisation
+            box = (x0/v["full"]["W"], y0/v["full"]["H"],
+                   (x0+cw-1)/v["full"]["W"], (y0+chh-1)/v["full"]["H"]) if fine else (0,0,1,1)
+            out = apply_grid(out, grids[vi], box)
         if a.appearance:
             av = cam_row(app, vi)[0]
             out = out * torch.exp(av[:3]) + av[3:]
@@ -408,6 +452,8 @@ def main(argv=None):
             strategy.step_pre_backward(params, opts, state, step, info)
         l1 = (out - gt).abs().mean()
         loss = 0.8 * l1 + 0.2 * (1 - ssim(out.permute(0, 3, 1, 2), gt.permute(0, 3, 1, 2)))
+        if grids is not None:
+            loss = loss + 1e-4*regularisation(grids[vi])
         if a.appearance and a.app_reg > 0:
             loss = loss + app_penalty
         o_reg = a.opacity_reg if step < a.reg_until * a.iters else 0.0
@@ -424,11 +470,19 @@ def main(argv=None):
             loss = loss + o_reg * torch.sigmoid(params["opacities"]).mean() + a.scale_reg * torch.exp(params["scales"]).mean()
         if use_depth:                                    # relative depth error where the mesh is seen
             md = v["depth"].to(dev)
+            depth_valid = None
+            if a.depth_edge_mask:
+                from depth_edges import reliable_depth
+                depth_valid = reliable_depth(md)
             if dwin is not None:                         # the depth pixels under this window (aligned by crop_box)
                 dx0, dy0, dnw, dnh = dwin
                 md = md[dy0:dy0 + dnh, dx0:dx0 + dnw]
+                if depth_valid is not None:
+                    depth_valid = depth_valid[dy0:dy0 + dnh, dx0:dx0 + dnw]
             rdd = Fn.interpolate(rd[:, None], size=md.shape, mode="area")[0, 0]
             m = md > 0.1
+            if depth_valid is not None:
+                m = m & depth_valid
             if m.any():
                 loss = loss + a.depth_weight * ((rdd[m] - md[m]).abs() / md[m]).mean()
         if walls and step >= 3000:
@@ -470,6 +524,10 @@ def main(argv=None):
     out_path = Path(a.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     save_ply(out_path, params, stable_ids=bool(a.camera_table))
+    if grids is not None:
+        np.save(out_path.with_suffix(".bilateral.npy"), grids.detach().cpu().numpy())
+    if a.blur_motion:
+        out_path.with_suffix(".blur.json").write_text(json.dumps(blur_motion), encoding="utf-8")
     if a.camera_table:
         import platform
         from importlib.metadata import version

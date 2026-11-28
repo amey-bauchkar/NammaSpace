@@ -366,6 +366,11 @@ def make_photoreal(project_dir, run_id, *, iters=None, max_side=1024, cap=None, 
         except Exception:
             pass
 
+    from namma.studio.splat_large import splat_options as _options
+    native_options = _options(Path(project_dir) / "runs" / run_id, project_dir)
+    if native_options.get("native_fidelity") is True:
+        from namma.studio.native_fidelity import run as run_native
+        return run_native(Path(project_dir), run_id, native_options, cancel_file=cancel_file, progress=progress)
     if cfg.get("profile") != "import":
         return make_photoreal_from_recon(
             project_dir, run_id,

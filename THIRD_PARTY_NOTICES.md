@@ -62,3 +62,58 @@ The full registry with URLs, sizes, checksums and intended experiments is `datas
 ## 3. Earlier project material
 Phase 8–12 artifacts in this repository are the team's own work; the Phase 12 ETH3D kicker results are
 derived from CC BY-NC-SA 4.0 data and inherit its terms.
+# Reconstruction foundations review — 28 November 2026
+
+No new third-party code or weights were bundled by this revision.
+LightGlue upstream declares Apache-2.0, ALIKED declares BSD-3-Clause,
+AnchorSplat repository declares MIT, and the PromptDA ViT-L publisher card
+declares Apache-2.0. These source declarations do not complete the checkpoint
+and transitive dependency audit. The selected VGGT checkpoint licence remains
+gated. See docs/ANTIGRAVITY_REVIEW.md for primary links and unresolved checks.
+
+## Learned matching runtime verification
+
+LightGlue source 5a650c444718caffc2669dc0094cde908f42dd73, with upstream
+LICENSE and README licensing section inspected. The publisher expressly covers
+pretrained LightGlue weights with Apache-2.0 and identifies ALIKED BSD-3-Clause
+and DISK Apache-2.0. Kornia 0.8.2 and kornia_rs 0.2.0 are installed in an isolated
+CPU environment. Redistribution of their binaries requires retaining their
+bundled notices. The repository includes our integration, with weights and
+third-party source held in ignored tools directories.
+
+Observed SHA-256 checkpoint digests:
+
+| Upstream weight | Digest |
+|---|---|
+| ALIKED aliked-n16.pth | 5be8704840ed662d9d8c561bf7279c222092674e7eb05fd0feab94899e9d82f2 |
+| LightGlue aliked_lightglue.pth | d975e965b105311a6143194852297dff4f02aea5cc2e10cecfed966ca0e22503 |
+| DISK depth-save.pth | 9c2ee4ded238892dfa51569941372601e35e4a74aa6f84ea80053d2ab1c07abe |
+| LightGlue disk_lightglue.pth | b5b21d47ea24f2c5e501aec9c91b9716e4c8c3429a4dc1e615c133c4c9378335 |
+
+[Publisher licensing declaration](https://github.com/cvg/LightGlue#license)
+
+## Experimental depth and perceptual runtimes (28 November 2026)
+
+PromptDA Small source `9161547ca7151e14fcc8f490ad3cc02fa9437483` and
+`depth-anything/prompt-depth-anything-vits` revision
+`bdc8715134ff95362ffd0402748c6f08071bc1e4` were used for a local CPU example.
+The publisher declares Apache-2.0 for this checkpoint. Checkpoint SHA-256:
+`51b99fef5e3c467f3ccd12f2f4687220e7f1e88f6a07fe21f7a66adffca2af99`.
+[Publisher model card](https://huggingface.co/depth-anything/prompt-depth-anything-vits)
+and [source licence](https://github.com/DepthAnything/PromptDA/blob/main/LICENSE).
+The local approval records the full execution package inventory. A clean tracked
+source tree and exact package versions are required on subsequent runs.
+
+LPIPS 0.1.4 uses BSD-2-Clause source and torchvision 0.26.0 uses BSD-3-Clause.
+The local CPU example used torchvision's official AlexNet weight with SHA-256
+`7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02`
+and the packaged Alex v0.1 calibrator with SHA-256
+`df73285e35b22355a2df87cdb6b70b343713b667eddbda73e1977e0c860835c0`.
+[LPIPS licence](https://github.com/richzhang/PerceptualSimilarity/blob/master/LICENSE)
+and [torchvision licence](https://github.com/pytorch/vision/blob/main/LICENSE).
+No upstream code or weights are included. These notices do not clear every
+transitive binary for redistribution.
+
+VGGT-1B-Commercial weights remain gated and unavailable locally. AnchorSplat
+has no approved local inference environment. Neither launcher constitutes
+successful inference or completed licensing clearance.

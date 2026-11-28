@@ -65,7 +65,8 @@ def registered_scene(tmp_path):
             for field in ("confidence", "depth"):
                 export.writestr(f"keyframes/{field}/{name}.png", b"unused")
     path = tmp_path / "train"
-    adjust(path, *prepare_archive(archive, path))
+    adjust(path, *prepare_archive(archive, path), loop_candidates=True)
+    assert load_strict(path / "pair_proposals.json")["total"] > 0
     result = register_dev(archive, path, tmp_path / "dev")
     assert result["unregistered"] == []
     assert set(result["poses_arkit"]) == {"108"}
@@ -77,6 +78,37 @@ def test_real_colmap_frozen_registration(registered_scene):
     path, dev = registered_scene
     assert (path / "training_ba.json").is_file()
     assert (dev / "dev_registration.json").is_file()
+
+
+def test_raw_correspondences_are_geometrically_verified_by_colmap(registered_scene, tmp_path):
+    import shutil
+    import sqlite3
+    import numpy as np
+    from namma.recon.runner import run_step
+    from namma.recon.tools import find_tools
+    reference, _ = registered_scene
+    database = tmp_path / "raw.db"
+    shutil.copyfile(reference / "database.db", database)
+    matches = tmp_path / "raw.txt"
+    with sqlite3.connect(database) as con:
+        names = {row[0]:row[1] for row in con.execute("SELECT image_id,name FROM images")}
+        rows = con.execute("SELECT pair_id,rows,data FROM matches WHERE rows>0").fetchall()
+        with matches.open("w") as stream:
+            for pair_id, n, blob in rows:
+                a,b = divmod(pair_id,2147483647)
+                stream.write(f"{names[a]} {names[b]}\n")
+                for i,j in np.frombuffer(blob,np.uint32).reshape(n,2):
+                    stream.write(f"{i} {j}\n")
+                stream.write("\n")
+        con.execute("DELETE FROM two_view_geometries")
+        con.execute("DELETE FROM matches")
+    con.close()
+    run_step("raw_import", [find_tools(require_openmvs=False).colmap, "matches_importer",
+             "--database_path", database, "--match_list_path", matches, "--match_type", "raw",
+             "--FeatureMatching.use_gpu", 0], tmp_path / "logs", timeout_s=60)
+    with sqlite3.connect(database) as con:
+        assert con.execute("SELECT COUNT(*) FROM two_view_geometries WHERE rows>=8").fetchone()[0] > 0
+    con.close()
 
 
 def test_private_train_to_dev_render(registered_scene, tmp_path, monkeypatch):

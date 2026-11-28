@@ -13,6 +13,7 @@ import { arUnavailableReason, startArWalk, startChoices } from './arNav.js';
 import { formatLength, loadScenePackage } from './scenePackage.js';
 import { search } from './search.js';
 import { levelStartTarget, Walker } from './walker.js';
+import { applySplatBudget } from './adaptiveSplatBudget.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -297,6 +298,7 @@ async function main() {
   const tick = (now) => {
     if (app.paused) { last = now; app.raf = requestAnimationFrame(tick); return; }      // AR Walk is showing
     const dt = Math.min(0.1, (now - last) / 1000);
+    applySplatBudget(app, now-last);
     app.frameTimes.push(now - last);
     if (app.frameTimes.length > 600) app.frameTimes.shift();
     last = now;
@@ -351,7 +353,7 @@ async function main() {
       $('splat-toggle').textContent = `Show photoreal (${(data.splat.splats / 1e6).toFixed(1)} M splats – may be slow here)`;
       $('splat-toggle').onclick = () => go(true);
       state.splatDeferred = { splats: data.splat.splats, limit };
-    } else if (!params.has('mesh') && data.splat.shown_by_default !== false) go();
+    } else if (!params.has('mesh') && data.splat.shown_by_default !== false) ctx.splatLoading = go();
     else {
       $('splat-toggle').hidden = false;
       $('splat-toggle').textContent = `Show photoreal (${mb(data.splat.bytes)})`;
@@ -368,6 +370,9 @@ async function main() {
     if (full.bytes <= AUTO_FULL_DETAIL_MAX_BYTES && !params.has('light')) upgrade(ctx, full);
   }
   if (params.has('bench')) {
+    // Measure a fully initialised renderer, including optional in-memory LOD generation.
+    await ctx.splatLoading;
+    if (state.errors.some((error) => error.kind === 'splat')) throw new Error('Splat failed to initialise before benchmark');
     if (canUpgrade && full.bytes <= AUTO_FULL_DETAIL_MAX_BYTES && !params.has('light')) await ctx.upgrading;
     await runBenchmark(ctx, Number(params.get('seconds') || 20));
   }
@@ -412,6 +417,13 @@ async function loadSplat(ctx, requested = false) {
   const type = s.format === 'spz' ? 'spz' : 'ply';
   const mesh = new spark.SplatMesh({ fileBytes: bytes, fileType: spark.SplatFileType ? spark.SplatFileType[type.toUpperCase()] : type });
   await mesh.initialized;
+  if (params.get('adaptiveSplats') === '1') {
+    await mesh.createLodSplats({ quality: true });
+    mesh.enableLod = true;
+    const maximum = Math.min(s.splats, Number.isFinite(splatLimit(app)) ? splatLimit(app) : 2_500_000);
+    app.splatBudget = { min: Math.min(250_000, maximum), max: maximum, budget: maximum };
+    app.spark.lodSplatCount = maximum;
+  }
   mesh.matrixAutoUpdate = false;
   mesh.matrix.set(...s.to_model.matrix_row_major);             // splat frame -> model frame, applied once
   mesh.matrixWorldNeedsUpdate = true;
@@ -1566,6 +1578,7 @@ function openPoiForm(ctx, point) {
 const pct = (arr, p) => { const s = [...arr].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))] : null; };
 
 async function runBenchmark(ctx, seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 120) throw new Error('Benchmark duration must be between 0 and 120 seconds');
   const { app, walker, eye } = ctx;
   cancelAnimationFrame(app.raf);
   let hiddenAt = null;
@@ -1579,6 +1592,7 @@ async function runBenchmark(ctx, seconds) {
     let last = t0;
     const step = (now) => {
       intervals.push(now - last);
+      applySplatBudget(app, now-last);
       last = now;
       const t = (now - t0) / 1000;
       walker.yaw = yaw0 + t * 0.6;           // deterministic look-around while circling the start point
@@ -1602,6 +1616,8 @@ async function runBenchmark(ctx, seconds) {
     frame_ms: { median: pct(frames, 50), p95: pct(frames, 95), max: Math.max(...frames), mean: frames.reduce((a, b) => a + b, 0) / frames.length },
     over_33ms_share: frames.filter((f) => f > 33.4).length / frames.length,
     lod: state.lodShown, triangles: state.triangles, draw_calls_last_frame: app.renderer.info.render.calls,
+    adaptive_splats: app.splatBudget ? { ...app.splatBudget } : null,
+    splat_visible: !!app.splat?.visible,
     canvas_px: [app.renderer.domElement.width, app.renderer.domElement.height], device_pixel_ratio: window.devicePixelRatio,
     gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
     js_heap_mb: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 2 ** 20) : null,
@@ -1615,7 +1631,7 @@ async function runBenchmark(ctx, seconds) {
     : `INVALID: ${res.invalid_reason}`;
   fetch('/__bench', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(res) }).catch(() => {});
   let last = performance.now();
-  const tick = (now) => { const dt = Math.min(0.1, (now - last) / 1000); last = now; if (app.tween) app.tween(now); else walker.update(dt); app.render(); app.raf = requestAnimationFrame(tick); };
+  const tick = (now) => { const dt = Math.min(0.1, (now - last) / 1000); applySplatBudget(app, now-last); last = now; if (app.tween) app.tween(now); else walker.update(dt); app.render(); app.raf = requestAnimationFrame(tick); };
   app.raf = requestAnimationFrame(tick);
   return res;
 }
