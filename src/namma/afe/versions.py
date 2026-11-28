@@ -8,7 +8,7 @@ from namma.afe.controller import decision
 
 def register(root, candidate, evaluation):
     root, candidate = Path(root), Path(candidate)
-    result = decision(evaluation["metrics"],evaluation["thresholds"])
+    result = decision(evaluation["metrics"],evaluation["thresholds"],stage=evaluation.get("stage","development"))
     if evaluation.get("candidate_sha256")!=sha256_file(candidate):
         raise ValueError("evaluation belongs to a different candidate")
     # Every attempt is retained even when rejected. It never alters the source checkpoint.
@@ -35,7 +35,8 @@ def select(root, version, *, expected_current=None):
     if version.parent!=root.resolve():
         raise ValueError("version outside the private registry")
     ledger = load_strict(version/"ledger.json")
-    if decision(ledger["evaluation"]["metrics"],ledger["evaluation"]["thresholds"])["accepted"] is not True:
+    if decision(ledger["evaluation"]["metrics"],ledger["evaluation"]["thresholds"],
+                stage=ledger["evaluation"].get("stage","development"))["accepted"] is not True:
         raise ValueError("candidate has not passed acceptance")
     if sha256_file(ledger["candidate"])!=ledger["evaluation"]["candidate_sha256"]:
         raise ValueError("candidate digest changed")
@@ -64,7 +65,8 @@ def rollback(root, *, expected_current):
         if target is not None:
             old = load_strict(root/target/"ledger.json")
             if (sha256_file(old["candidate"])!=old["evaluation"]["candidate_sha256"] or
-                    decision(old["evaluation"]["metrics"],old["evaluation"]["thresholds"])["accepted"] is not True):
+                    decision(old["evaluation"]["metrics"],old["evaluation"]["thresholds"],
+                             stage=old["evaluation"].get("stage","development"))["accepted"] is not True):
                 raise ValueError("rollback version failed integrity or acceptance")
         write_json(pointer,{"version":current["history"][-1],"history":current["history"][:-1]})
     finally:

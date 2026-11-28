@@ -38,6 +38,7 @@ def score_registered(registration, renders, output, *, perceptual_approval=None)
     if perceptual_approval:
         from namma.afe.perceptual import PerceptualMetric
         perceptual = PerceptualMetric(perceptual_approval)
+    output.mkdir(parents=True, exist_ok=False)
     from namma.afe.metrics import image_structure
     for frame in sorted(ids):
         if not frame.isascii() or not frame.isdigit():
@@ -53,6 +54,10 @@ def score_registered(registration, renders, output, *, perceptual_approval=None)
                 result = perceptual.compare(x,y)
                 rows[frame]["lpips_alex"] = result["lpips_alex"]
                 rows[frame]["lpips_approval_sha256"] = result["approval_sha256"]
+                if role=="dev":
+                    defect_map = output/f"{frame}.lpips.npy"
+                    np.save(defect_map,result["map"],allow_pickle=False)
+                    rows[frame]["lpips_map_sha256"] = sha256_file(defect_map)
     pixels = sum(r["pixels"] for r in rows.values())
     if not pixels:
         raise ValueError("no independently registered observations")
@@ -63,7 +68,6 @@ def score_registered(registration, renders, output, *, perceptual_approval=None)
               "aggregate": {"pixels": pixels, "mse": mse, "perfect_match": mse == 0,
                             "raw_psnr_db": float(-10*np.log10(mse)) if mse else None,
                             "raw_ssim": sum(r["pixels"] * r["raw_ssim"] for r in rows.values()) / pixels}}
-    output.mkdir(parents=True, exist_ok=False)
     write_json(output / "raw_metrics.json", report)
     return report
 

@@ -4,7 +4,7 @@ from namma.afe.calibration import camera as validate_camera
 
 
 def regions(render, observation, depth, K, camera_to_world, *, role="dev", threshold=.08,
-            voxel_m=.2, margin_m=.25, min_extent_m=.5, max_extent_m=2.):
+            voxel_m=.2, margin_m=.25, min_extent_m=.5, max_extent_m=2.,perceptual_map=None):
     if role!="dev":
         raise ValueError("iterative localisation requires development observations")
     if (render.shape!=observation.shape or render.ndim!=3 or render.shape[-1]!=3
@@ -14,6 +14,10 @@ def regions(render, observation, depth, K, camera_to_world, *, role="dev", thres
         raise ValueError("invalid localisation limits")
     K,T = validate_camera(K,camera_to_world)
     residual = np.mean(np.abs(render.astype(float)-observation.astype(float)),axis=-1)/255
+    if perceptual_map is not None:
+        residual = np.asarray(perceptual_map,float)
+        if residual.shape!=depth.shape or not np.isfinite(residual).all() or (residual<0).any():
+            raise ValueError("aligned finite nonnegative perceptual defect map required")
     valid = (residual>=threshold)&np.isfinite(depth)&(depth>0)
     y,x = np.nonzero(valid)
     if not len(x):
@@ -53,6 +57,6 @@ def regions(render, observation, depth, K, camera_to_world, *, role="dev", thres
             centre = (start+end)/2
             extent = np.maximum(end-start,min_extent_m)
             proposals.append({"lower":(centre-extent/2).tolist(),"upper":(centre+extent/2).tolist(),
-                              "context_margin_m":margin_m,"source":"development_photometric_residual",
+                              "context_margin_m":margin_m,"source":"development_perceptual_residual" if perceptual_map is not None else "development_photometric_residual",
                               "observability":"requires_assessment"})
     return proposals

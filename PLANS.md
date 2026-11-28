@@ -40,7 +40,15 @@ uses the budget controller and waits for splat/LOD initialisation; actual Intel
 runs exposed startup contamination and a subsequent invalid throttled run.
 No adaptive performance improvement is established. See the phase report.
 
-Prioritise completing the DISK run (643/1025 extracted at the last checkpoint;
+Validated continuation commit: e485d81. Follow-up cached-descriptor revisit
+matching actually verified one additional edge (808 -> 810 cameras in the
+largest component); full connectivity still fails. Original DB preserved.
+LPIPS scoring now writes development defect maps, exercised with genuine
+inference on synthetic inputs (integration only). Development/final acceptance
+stages are separate; development iteration does not touch final observations.
+Follow-up targeted evidence/observability/registration tests passed 23.
+
+Prioritise completing the DISK run (828/1025 extracted at the last checkpoint;
 PID 17632), then record geometric verification and graph diagnostics. Existing
 private paths above must be retained. The next GPU session should follow
 docs/RECONSTRUCTION_GPU_EXECUTION.md for exact commands and required inputs.

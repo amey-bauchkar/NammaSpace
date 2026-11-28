@@ -28,6 +28,17 @@ graph_diagnostics.py reads each database read-only and records component members
 isolated observations, keypoint counts, rejected cross-component pairs and
 temporal boundaries. Full private reports stay beside the experiment databases.
 
+A separate cached-ALIKED revisit experiment proposed 128 previously untested
+cross-component pairs using mean local descriptors. This retrieval method is a
+hypothesis, not a pretrained global retrieval model. Genuine LightGlue inference
+and unchanged COLMAP geometric verification added one edge: largest component
+808 -> 810, components 205 -> 204, verified edges 4318 -> 4319. The graph remains
+disconnected; no BA was executed. The original database stayed read-only, with
+SQLite backup used for the experiment. Private output is under the system temp
+directory namma-revisit-20261128-aliked. Input feature hashes and the proposal
+inventory are recorded there. The checked-in experiment summary contains counts
+and digests, without capture payloads.
+
 PromptDA Small completed real CPU inference on the publisher's paired example.
 Source commit 9161547ca7151e14fcc8f490ad3cc02fa9437483, checkpoint revision
 bdc8715134ff95362ffd0402748c6f08071bc1e4, SHA-256
@@ -45,6 +56,13 @@ The registered-view scorer can report LPIPS and development defect maps through
 the same pinned model class. RGB edge/F-score, repeated-edge proxy and
 high-frequency energy diagnostics are implemented. The proxy still needs
 scene-specific validation for ghosting.
+
+The scorer was exercised with genuine LPIPS inference on a synthetic RGB fixture
+and wrote a digest-bound spatial defect map: LPIPS 0.1211268976. This tests the
+pipeline integration, not reconstruction quality. The local record is
+tools/lpips-cpu/scorer-smoke. Development maps can drive bounded regional
+localisation; final scoring does not export localisation maps. Threshold
+calibration and a real independently registered scene remain required.
 
 ## Implemented engineering awaiting reconstruction validation
 
@@ -175,3 +193,32 @@ forward/output processing 0.4728 s; this is not scene reconstruction timing.
 The GPU execution runbook records commands, missing inputs and an explicit
 continuation prompt. It also identifies experimental controls still lacking
 automation rather than claiming the benchmark runner covers them.
+
+The controller now explicitly separates development acceptance from final
+acceptance. Iterative development selection does not require final-test access
+or retirement. Only final-stage decisions require retirement; the private
+registry records the stage. Neither stage automatically publishes artifacts.
+The follow-up evidence/observability/registration test selection passed 23 tests
+(two existing Torch warnings); the full-suite snapshot above predates this
+follow-up. No full-suite count is inferred from targeted results.
+
+## Current architecture status
+
+| Component | Status and remaining gate |
+|---|---|
+| ALIKED/DISK/LightGlue | Real CPU inference verified; small-window BA previously verified; full ALIKED graph failed, DISK still running |
+| Full-scene global BA/loop closure | Blocked by disconnected verified graph; not successfully validated |
+| Native ingestion and PromptDA | Preparation and opt-in pipeline implemented; PromptDA inference verified; actual device/native end-to-end validation blocked by missing archive/device/CUDA |
+| Gaussian training controls | Implemented, isolated CPU tests; genuine GPU experiments unavailable |
+| LPIPS evaluation/localisation | Real model inference and synthetic pipeline integration verified; actual reconstruction quality unverified |
+| AFE / two-store optimisation | Controller, fixed-density candidates, integrity checks and rollback implemented/tested; full orchestration, densification and measurement collectors not implemented |
+| Independent unsupported-content rejection | Conservative measured-visibility primitive and report gates implemented; complete silhouette/colour/outside-pixel collectors and RGB-only visibility protocol not implemented |
+| AnchorSplat / AI-INIT | Gated proposal and optimisation code; real 1x/20x inference and degradation-matched experiments blocked, not experimentally rejected |
+| VGGT-1B-Commercial | Diagnostic launcher only; checkpoint access/licensing record and GPU validation blocked |
+| DINOv2 | Not implemented; deferred until existing localisation proves insufficient |
+| Block reconciliation | Candidate merge and synthetic integration tests pass; automatic support collection and seam/render equivalence not implemented |
+| Adaptive viewer | Opt-in implementation and loop integration tested; quality LOD initialisation did not finish during observation, controlled live performance unverified |
+| Public benchmark comparison | Importer and genuine-CUDA runner implemented; local scenes/permissions and GPU unavailable; restoration controls/final orchestration incomplete |
+
+No component has established a measured reconstruction fidelity improvement in
+this continuation. Experimental features stay disabled by default.

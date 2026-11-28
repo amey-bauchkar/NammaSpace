@@ -18,19 +18,21 @@ def strategies(signals):
     return {"action":"trial","arms":arms}
 
 
-def decision(metrics, thresholds):
+def decision(metrics, thresholds, *, stage="development"):
     """Consume independently computed measurements, with thresholds derived from S3.
 
     A complete record is required. This function does not collect observations
     or infer missing evidence, and its return value alone never publishes a model.
     """
-    if not isinstance(metrics,dict) or not isinstance(thresholds,dict):
+    if stage not in {"development","final"} or not isinstance(metrics,dict) or not isinstance(thresholds,dict):
         return {"outcome":"invalid_measurement","accepted":False}
     required = {"lpips_gain","psnr_loss","ghosting_delta","depth_error_delta","boundary_delta",
                 "region_count_ratio","spz_size_ratio","viewer_median_ratio","peak_gpu_gb",
                 "integrity_exact","unsupported_content","outline_consistent","colour_variance_delta",
                 "density_control_beaten","equal_budget_control_beaten","extra_training_control_beaten",
-                "independent_coverage","visual_review","candidate_frozen","final_set_retired"}
+                "independent_coverage","visual_review","candidate_frozen"}
+    if stage=="final":
+        required.add("final_set_retired")
     limits = {"lpips_min_gain","psnr_max_loss","depth_noise","boundary_noise","s3_calibrated"}
     if required-set(metrics) or limits-set(thresholds):
         return {"outcome":"insufficient_evidence","accepted":False}
@@ -52,7 +54,9 @@ def decision(metrics, thresholds):
         return {"outcome":"hallucination","accepted":False}
     boolean_gates = ["integrity_exact","density_control_beaten","equal_budget_control_beaten",
                      "extra_training_control_beaten","independent_coverage","visual_review",
-                     "candidate_frozen","final_set_retired"]
+                     "candidate_frozen"]
+    if stage=="final":
+        boolean_gates.append("final_set_retired")
     ok = (all(metrics[k] is True for k in boolean_gates)
           and metrics["lpips_gain"]>=thresholds["lpips_min_gain"]
           and metrics["psnr_loss"]<=thresholds["psnr_max_loss"]
@@ -61,4 +65,5 @@ def decision(metrics, thresholds):
           and metrics["boundary_delta"]<=thresholds["boundary_noise"]
           and metrics["region_count_ratio"]<=2 and metrics["spz_size_ratio"]<=1.1
           and metrics["viewer_median_ratio"]<=1.1 and metrics["peak_gpu_gb"]<=5.5)
-    return {"outcome":"verified_restoration" if ok else "no_improvement","accepted":ok}
+    return {"outcome":("verified_restoration" if stage=="final" else "development_accepted") if ok else "no_improvement",
+            "accepted":ok,"stage":stage,"production_eligible":ok and stage=="final"}

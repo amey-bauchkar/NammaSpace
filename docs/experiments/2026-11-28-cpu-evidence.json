@@ -490,5 +490,32 @@
  ],
  "reconstruction_improvement_verified": false,
  "disk_status": "extraction_running",
- "final_test_opened": false
+ "final_test_opened": false,
+ "cached_revisit_retry": {
+  "record": {
+   "new_proposals": 128,
+   "before": {
+    "largest": 808,
+    "components": 205,
+    "edges": 4318
+   },
+   "after": {
+    "largest": 810,
+    "components": 204,
+    "edges": 4319
+   },
+   "connected": false,
+   "bundle_adjustment_executed": false
+  },
+  "record_sha256": "c6f5c4fc49eb7671c59d97939178d9bc544a816b06f3e36329ad930b3a243c95",
+  "method": "mean_local_descriptor_hypothesis",
+  "quality_improvement_claim": false
+ },
+ "lpips_scorer_integration": {
+  "inputs": "synthetic fixture, genuine model inference",
+  "record_sha256": "12cbbc8cd5364fa5492bef16cd3c292f2fd91ceafaba93fcd0a9508e3fa270f0",
+  "lpips_alex": 0.12112689763307571,
+  "map_sha256": "9cacc7b6b6cd9add4ec3dd3c3eb5cd1027759cb50b645cf678085ca62edc143d",
+  "reconstruction_validation": false
+ }
 }

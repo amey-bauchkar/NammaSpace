@@ -138,6 +138,19 @@ def test_graph_diagnostics_records_rejected_revisit_without_modifying_database(t
     assert report["cross_component_rejected"][0]["verified_inliers"]==0
 
 
+def test_missing_revisit_proposals_exclude_existing_pairs_and_require_features(tmp_path):
+    from namma.evidence.revisit_retry import propose
+    names = [f"{i:04}.jpg" for i in range(20)]
+    for i,name in enumerate(names):
+        np.savez(tmp_path/(Path(name).stem+".npz"),descriptors=np.ones((1,8 if i!=18 else 0,4)))
+    graph = dict(connected=False,components=[names[:18],[names[18]],[names[19]]])
+    existing = {(names[0],names[19])}
+    pairs = propose(tmp_path,graph,existing,budget=1)
+    assert len(pairs)==1 and pairs[0][:2]==(names[1],names[19])
+    with pytest.raises(ValueError):
+        propose(tmp_path,dict(graph,connected=True),existing)
+
+
 def test_depth_priors_preserve_model_provenance_and_fail_on_wrong_sensor(tmp_path):
     from namma.evidence.depth_priors import validate
     from namma.core.jsonio import sha256_file,write_json
@@ -255,6 +268,12 @@ def test_acceptance_fails_for_missing_or_unsupported_evidence():
     assert decision(metrics,thresholds)["outcome"]=="hallucination"
     metrics["unsupported_content"]=False
     assert decision(metrics,thresholds)["accepted"] is True
+    metrics.pop("final_set_retired")
+    assert decision(metrics,thresholds)["outcome"]=="development_accepted"
+    assert decision(metrics,thresholds)["production_eligible"] is False
+    assert decision(metrics,thresholds,stage="final")["accepted"] is False
+    metrics["final_set_retired"] = True
+    assert decision(metrics,thresholds,stage="final")["production_eligible"] is True
     metrics["lpips_gain"]="unknown"
     assert decision(metrics,thresholds)["accepted"] is False
 
@@ -271,6 +290,11 @@ def test_residual_localisation_tiles_large_regions_with_production_bounds():
         extent = np.asarray(box["upper"])-box["lower"]
         assert (extent>=.5-1e-10).all() and (extent<=2+1e-10).all()
     assert not regions(rgb,rgb,depth,[[4,0,6],[0,4,6],[0,0,1]],np.eye(4))
+    perceptual = np.zeros((12,12))
+    perceptual[:,5:8] = .2
+    assert regions(rgb,rgb,depth,[[4,0,6],[0,4,6],[0,0,1]],np.eye(4),perceptual_map=perceptual)
+    with pytest.raises(ValueError):
+        regions(rgb,rgb,depth,[[4,0,6],[0,4,6],[0,0,1]],np.eye(4),perceptual_map=perceptual[:3])
 
 
 def test_rollback_is_reversible_and_checks_retained_content(tmp_path):
