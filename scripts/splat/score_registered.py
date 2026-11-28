@@ -13,9 +13,9 @@ from namma.capture.polycam_raw import opencv_c2w
 from namma.afe.screen import screen_development
 
 if __package__:
-    from .eval_views import depth_metrics, detail_metrics, raw_metrics, summarize_detail
+    from .eval_views import boundary_metrics, depth_metrics, detail_metrics, raw_metrics, summarize_detail
 else:
-    from eval_views import depth_metrics, detail_metrics, raw_metrics, summarize_detail
+    from eval_views import boundary_metrics, depth_metrics, detail_metrics, raw_metrics, summarize_detail
 
 
 def projected_region(center, extent, pose, camera):
@@ -66,9 +66,19 @@ def aggregate_depth(rows):
             "within_5cm": totals["count_within_5cm"] / count}
 
 
-def score_registered(registration, renders, output, *, region=None, integrity_baseline=None, detail=False):
+def score_registered(registration, renders, output, *, region=None, region_ledger=None,
+                     integrity_baseline=None, detail=False):
     batch = load_strict(renders / "renders.json")
     role = batch["role"]
+    region_ledger_hash = None
+    if region_ledger is not None:
+        if region is not None:
+            raise ValueError("specify a scoring region or its ledger")
+        ledger = load_strict(region_ledger)
+        region = {key: ledger[key] for key in ("center", "extent_m")}
+        region_ledger_hash = sha256_file(region_ledger)
+    if integrity_baseline is not None and (not region_ledger_hash or region_ledger_hash != batch.get("edit_sha256")):
+        raise ValueError("outside-region integrity requires the rendered edit's own region ledger")
     if region is not None and role != "dev":
         raise ValueError("experimental region scoring requires development observations")
     if role not in {"dev", "final_test"} or batch["pose_fit"] is not False or batch["colour_fit"] is not False:
@@ -108,6 +118,7 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
     depth_rows = {}
     integrity_rows = {}
     detail_rows = {}
+    boundary_rows = {}
     for frame in sorted(ids):
         if not frame.isascii() or not frame.isdigit():
             raise ValueError("invalid Polycam frame ID")
@@ -155,6 +166,8 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
             rows[frame] = raw_metrics(pred_rgb, obs_rgb, mask)
             if detail:
                 detail_rows[frame] = summarize_detail([detail_metrics(pred_rgb, obs_rgb, mask)])
+                if mask is not None:
+                    boundary_rows[frame] = boundary_metrics(pred_rgb, obs_rgb, mask)
     pixels = sum(r["pixels"] for r in rows.values())
     if not pixels:
         raise ValueError("no independently registered observations")
@@ -164,6 +177,7 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
               "checkpoint_sha256": batch["checkpoint_sha256"], "frames": rows,
               "training_reference_sha256": batch.get("training_reference_sha256"),
               "region": region, "outside_region": outside_region,
+              "region_ledger_sha256": region_ledger_hash,
               "measured_depth_metrics": depth_rows, "depth_min_alpha": batch.get("depth_min_alpha"),
               "measured_depth_aggregate": aggregate_depth(depth_rows),
               "model_sha256": batch.get("model_sha256"), "edit_sha256": batch.get("edit_sha256"),
@@ -182,6 +196,12 @@ def score_registered(registration, renders, output, *, region=None, integrity_ba
     if detail:
         report["detail_metrics"] = {"method": "raw_luma_canny60_120_l2_laplacian_v1",
                                     "frames": detail_rows, "aggregate": summarize_detail(list(detail_rows.values()))}
+        if region is not None:
+            pairs = sum(row["pairs"] for row in boundary_rows.values())
+            error = sum(row["abs_sum_uint8"] for row in boundary_rows.values())
+            report["boundary_metrics"] = {"method": "raw_rgb_4_neighbor_step_residual_v1", "frames": boundary_rows,
+                                          "pairs": pairs,
+                                          "mean_rgb_step_error": error / (3 * 255 * pairs) if pairs else None}
     output.mkdir(parents=True, exist_ok=False)
     write_json(output / "raw_metrics.json", report)
     return report
@@ -238,11 +258,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.compare_training_variants and args.compare_to is None:
         parser.error("--compare-training-variants requires --compare-to")
-    region = None
-    if args.region_ledger:
-        ledger = load_strict(args.region_ledger)
-        region = {key: ledger[key] for key in ("center", "extent_m")}
-    report = score_registered(args.registration, args.renders, args.output, region=region,
+    report = score_registered(args.registration, args.renders, args.output, region_ledger=args.region_ledger,
                               integrity_baseline=args.integrity_baseline, detail=args.detail_metrics)
     if args.point_support:
         screening = screen_development(report, load_strict(args.point_support))

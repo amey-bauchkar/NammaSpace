@@ -500,3 +500,29 @@ does not evaluate the remaining acceptance criteria. A regression proves
 that the native exclusion diagnostic refuses the final claim before it
 opens a capture or creates claim files. Targeted tests: 9 passed, 1 skipped,
 plus the screen test passed.
+
+Integrity scoring now requires the exact region ledger bound to the edit
+render. The screen requires the same edit digest in the support report and
+score. A substituted larger region is rejected before any scoring. Nine
+targeted tests passed; the matching Kitchen score rerun is in progress.
+The bound Kitchen rerun produced the same two development rejection reasons.
+Native exclusion diagnostic feature extraction reached 137/154 images.
+
+Regional detail reports now measure the RGB step error at projected edit
+boundaries relative to the real photo, pooling by affected neighbor pairs.
+Seven scorer tests passed, including a uniform brightness shift and a
+synthetic seam. The native exclusion diagnostic completed feature
+extraction and has moved to matching.
+Kitchen measured 0.02654755 parent and 0.02654834 edited normalized
+boundary step error, on 21,659 pixel pairs.
+
+The private budget report derives the replacement counts from actual stable
+IDs, validates them against the ledger and measures both models with the same
+SPZ settings and compressor. The Kitchen capped edit held 17 regional rows
+and exported at 18,997 bytes against 18,977 for the parent in the pinned
+splat environment. A separate 400-step replay on the RTX 4050 took 151.0 s
+with 76,249,600 peak PyTorch allocated bytes and 106,954,752 reserved.
+The replay produced a distinct PLY digest, the same export size, and all
+17 edited centres again fell outside the registered development frusta.
+The measured memory covers the refinement process's PyTorch allocator.
+The CUDA fixture verified the resource report and rejected substituted IDs.

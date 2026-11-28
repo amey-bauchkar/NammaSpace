@@ -65,6 +65,22 @@ def summarize_detail(rows):
             "high_frequency_energy_ratio": pred_energy / obs_energy if obs_energy else None}
 
 
+def boundary_metrics(render, photo, mask):
+    """Compare RGB steps across the projected edit boundary to the observation."""
+    mask = np.asarray(mask, dtype=bool)
+    if render.shape != photo.shape or render.shape != (*mask.shape, 3) or mask.ndim != 2:
+        raise ValueError("expected aligned RGB images and a projected region mask")
+    residual = render.astype(np.int16) - photo.astype(np.int16)
+    horizontal = mask[:, 1:] != mask[:, :-1]
+    vertical = mask[1:] != mask[:-1]
+    steps_x = residual[:, 1:][horizontal] - residual[:, :-1][horizontal]
+    steps_y = residual[1:][vertical] - residual[:-1][vertical]
+    count = len(steps_x) + len(steps_y)
+    error = int(np.abs(steps_x).sum() + np.abs(steps_y).sum())
+    return {"pairs": count, "abs_sum_uint8": error,
+            "mean_rgb_step_error": error / (3 * 255 * count) if count else None}
+
+
 def raw_metrics(render, photo, mask=None):
     if render.shape != photo.shape or render.ndim != 3 or render.shape[2] != 3:
         raise ValueError("expected aligned RGB images with identical dimensions")

@@ -77,6 +77,17 @@ class RegionalBaselineTest(unittest.TestCase):
             self.assertEqual(control["added_ids"], [2,3])
             self.assertEqual(control["frozen_sha256"], ledger["frozen_sha256"])
             self.assertEqual(control["steps"], ledger["steps"])
+            from check_candidate_budget import candidate_budget
+            budget = candidate_budget(version, root/"control", root/"budget.json")
+            self.assertEqual(budget["edit_sha256"], sha256_file(root/"control/ledger.json"))
+            self.assertEqual((budget["region_rows_before"], budget["region_rows_after"]), (1, 2))
+            self.assertTrue(budget["within_2x_region_rows"])
+            self.assertFalse(budget["acceptance_evaluated"])
+            self.assertEqual(budget["resources"], control["resources"])
+            self.assertGreater(budget["resources"]["seconds"], 0)
+            self.assertGreater(budget["resources"]["peak_allocated_bytes"], 0)
+            self.assertGreaterEqual(budget["resources"]["peak_reserved_bytes"],
+                                    budget["resources"]["peak_allocated_bytes"])
             patch = PlyData.read(str(root/"control/region.ply"), mmap=False)["vertex"].data
             max_axis = np.exp(np.max([patch[f"scale_{axis}"] for axis in range(3)]))
             self.assertLessEqual(max_axis, control["max_splat_scale_m"] + 1e-7)
@@ -101,6 +112,9 @@ class RegionalBaselineTest(unittest.TestCase):
             self.assertEqual(compressed["model_sha256"], sha256_file(root/"spz/diagnostic.spz"))
             self.assertEqual(batch["registration_sha256"], compressed["registration_sha256"])
             verify_checkpoint(version)
+            write_json(root/"control/ledger.json", {**control, "replaced_ids": [1]})
+            with self.assertRaisesRegex(ValueError, "regional IDs do not match"):
+                candidate_budget(version, root/"control", root/"bad-budget.json")
 
 
 if __name__ == "__main__":

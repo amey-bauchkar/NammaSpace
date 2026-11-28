@@ -3,6 +3,7 @@ import argparse
 import json
 import math
 import random
+import time
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +31,8 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
         raise ValueError("invalid region or step budget")
     if output.exists():
         raise FileExistsError(output)
+    start = time.perf_counter()
+    torch.cuda.reset_peak_memory_stats()
     lo, hi = np.asarray(center) - extent / 2, np.asarray(center) + extent / 2
     parent = checkpoint / "splat.ply"
     params = load_parameters(parent, "cuda")
@@ -161,6 +164,10 @@ def refine(checkpoint, images, output, center, extent, steps, seed, target_count
                   max_splat_scale_m=max_scale,
                   support_sigma_limit=3 if contain_support else None,
                   context=context,
+                  resources={"seconds": time.perf_counter() - start,
+                             "gpu": torch.cuda.get_device_name(),
+                             "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
+                             "peak_reserved_bytes": torch.cuda.max_memory_reserved()},
                   status="unverified", steps=steps, seed=seed, center=center, extent_m=extent,
                   candidate_sha256=sha256_file(output/"candidate.ply"),training_views=len(views))
     (output/"ledger.json").write_text(json.dumps(ledger,allow_nan=False),encoding="utf-8")

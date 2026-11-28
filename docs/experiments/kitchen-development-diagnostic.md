@@ -161,3 +161,16 @@ acceptance measurements remain open.
 The native-resolution crop model also scored lower than the whole-frame
 model on native detail metrics. Edge F-score fell from 0.004397 to
 0.001175 and the high-frequency energy ratio fell from 0.000978 to 0.000835.
+
+Across 21,659 boundary neighbor pairs, normalized RGB step error was
+0.02654755 for the Kitchen parent and 0.02654834 after the capped edit.
+This edge measure changed very little. The edit separately failed the
+outside-region equality and centre support checks.
+
+The capped edit replaced 17 splats with 17. Its degree-zero diagnostic SPZ
+weighed 18,997 bytes versus 18,977 for the parent at opacity cutoff 0.02,
+using Python 3.10.19 and zlib 1.3.1. A 400-step replay with the same two
+training views took 151.0 s on the RTX 4050 Laptop GPU. Peak PyTorch
+allocation was 76.2 MB and peak reservation was 107.0 MB. The replay
+produced a different PLY digest, the same SPZ size, and the same result
+that all 17 edited centres fell outside the registered development views.

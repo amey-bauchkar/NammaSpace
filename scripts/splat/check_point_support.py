@@ -58,6 +58,7 @@ def check(checkpoint, edit, registration, output, depth_noise_m):
     agrees = results["supporting_views"] > 0
     report = {"role": "dev", "checkpoint_sha256": checkpoint_hash,
               "registration_sha256": sha256_file(reg_path), "candidate_sha256": ledger["candidate_sha256"],
+              "edit_sha256": sha256_file(edit / "ledger.json"),
               "depth_noise_m": depth_noise_m, "registered_views": len(views),
               "scored_rows": len(changed), "outside_all_frusta": id_list[~visible].tolist(),
               "no_measured_sample": id_list[visible & ~sampled].tolist(),

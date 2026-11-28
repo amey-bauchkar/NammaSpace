@@ -3,6 +3,9 @@
 
 def screen_development(score, support):
     if (score["role"] != "dev" or support["role"] != "dev" or not score.get("edit_sha256")
+            or score["edit_sha256"] != support["edit_sha256"]
+            or (score.get("outside_region_integrity")
+                and score["edit_sha256"] != score.get("region_ledger_sha256"))
             or score["model_sha256"] != support["candidate_sha256"]
             or score["checkpoint_sha256"] != support["checkpoint_sha256"]
             or score["registration_sha256"] != support["registration_sha256"]):

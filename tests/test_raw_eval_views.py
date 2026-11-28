@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from scripts.splat.eval_views import depth_metrics, detail_metrics, raw_metrics, summarize_detail
+from scripts.splat.eval_views import boundary_metrics, depth_metrics, detail_metrics, raw_metrics, summarize_detail
 from scripts.splat.score_registered import aggregate_depth, compare_development, projected_region
 
 
@@ -88,3 +88,16 @@ def test_edge_f_score_uses_two_pixel_tolerance_and_reports_no_edge_evidence():
     blank = summarize_detail([detail_metrics(black, black)])
     assert blank["edge_f_score_2px"] is None
     assert blank["high_frequency_energy_ratio"] is None
+
+
+def test_boundary_step_error_counts_only_pairs_that_cross_the_mask():
+    photo = np.full((7, 9, 3), 50, np.uint8)
+    mask = np.zeros((7, 9), bool)
+    mask[2:5, 2:6] = True
+    edited = photo.copy()
+    edited[mask] += 40
+    assert boundary_metrics(photo + 20, photo, mask)["mean_rgb_step_error"] == 0
+    result = boundary_metrics(edited, photo, mask)
+    assert result["pairs"] == 14
+    assert result["mean_rgb_step_error"] == pytest.approx(40/255)
+    assert boundary_metrics(edited, photo, np.ones_like(mask))["mean_rgb_step_error"] is None
