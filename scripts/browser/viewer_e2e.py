@@ -144,9 +144,13 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--visible", action="store_true", help="show the browser window (default headless)")
     ap.add_argument("--bench-seconds", type=int, default=15)
+    ap.add_argument("--width", type=int, default=1440)
+    ap.add_argument("--height", type=int, default=900)
     ap.add_argument("--label", default="viewer")
     a = ap.parse_args()
-    with Chrome(headless=not a.visible) as c:
+    if min(a.width, a.height) < 1:
+        ap.error("viewport dimensions must be positive")
+    with Chrome(headless=not a.visible, width=a.width, height=a.height) as c:
         r = run_checks(c, a.url, a.out, a.bench_seconds, a.label)
     print(json.dumps({"passed": r["passed"], "gpu": r.get("gpu"), "load_wall_s": r["load_wall_s"]}))
     return 0 if r["passed"] else 1
