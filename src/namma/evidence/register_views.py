@@ -81,7 +81,8 @@ def _register(archive, reference, output, role, limit):
     if set(poses._db_images(db)) != {f"{k}.jpg" for k in train}:
         raise ValueError("feature database contains observations outside reference")
     run("features", "feature_extractor", "--database_path", db, "--image_path", images,
-        "--ImageReader.camera_model", "PINHOLE", "--FeatureExtraction.use_gpu", 0,
+        "--ImageReader.camera_model", "PINHOLE", "--ImageReader.single_camera_per_image", 1,
+        "--FeatureExtraction.use_gpu", 0,
         "--FeatureExtraction.num_threads", 4)
     db_ids = poses._db_images(db)
     if len({cid for _, cid in db_ids.values()}) != len(db_ids):
@@ -113,11 +114,19 @@ def _register(archive, reference, output, role, limit):
                     if line.strip() and not line.startswith("#") for p in [line.split()]}
     if points(model) != points(txt):
         raise ValueError("registration altered frozen points")
-    cameras = {}
-    for line in (txt / "cameras.txt").read_text().splitlines():
-        if line and not line.startswith("#"):
-            cid, kind, w, h, *parameters = line.split()
-            cameras[int(cid)] = (kind, int(w), int(h), list(map(float, parameters)))
+    def read_cameras(folder):
+        cameras = {}
+        for line in (folder / "cameras.txt").read_text().splitlines():
+            if line.strip() and not line.lstrip().startswith("#"):
+                cid, kind, w, h, *parameters = line.split()
+                cameras[int(cid)] = (kind, int(w), int(h), tuple(map(float, parameters)))
+        return cameras
+
+    cameras = read_cameras(txt)
+    reference_cameras = read_cameras(model)
+    for name, view in before.items():
+        if reference_cameras[view["camera_id"]] != cameras[after[name]["camera_id"]]:
+            raise ValueError("registration altered reference intrinsics")
     registered = {}
     for k in selected:
         view = after.get(f"{k}.jpg")

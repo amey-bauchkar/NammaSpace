@@ -104,6 +104,8 @@ def adjust(output, intr, priors):
     if not final_stats["points"] or set(saved) != set(ids) or any(
             not np.allclose(saved[k], aligned[k], atol=1e-5, rtol=0) for k in ids):
         raise ValueError("frozen triangulation failed metric camera integrity check")
+    if any(view["n_triangulated"] < 3 for view in read_images_txt(model / "images.txt").values()):
+        raise ValueError("frozen reference lacks triangulated tracks for every training view")
     report = {"training_views": len(ids), "adjusted": stats, "frozen": final_stats,
               "training_images": {k: sha256_file(images / f"{k}.jpg") for k in ids},
               "database_sha256": sha256_file(db),

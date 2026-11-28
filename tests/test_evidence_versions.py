@@ -3,6 +3,15 @@ from concurrent.futures import ThreadPoolExecutor
 from namma.evidence.bundle import allocate_version
 
 
+def test_empty_manifest_cannot_verify_as_checkpoint(tmp_path):
+    import pytest
+    from namma.core.jsonio import write_json
+    from namma.evidence.bundle import verify_checkpoint
+    write_json(tmp_path / "manifest.json", {"version": 1, "private": True, "files": {}})
+    with pytest.raises(ValueError, match="inventory"):
+        verify_checkpoint(tmp_path)
+
+
 def test_versions_never_reuse_existing_artifacts(tmp_path):
     original = allocate_version(tmp_path) / "splat.ply"
     original.write_bytes(b"original")

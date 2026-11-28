@@ -216,3 +216,40 @@ blendtex tests. Kitchen full training BA returned 231 camera rows, but only
 101 iterations. The guard refused to seal the reference. A training-only
 diagnostic rerun on the longest contiguous 26-view supported window is in
 scratch/fidelity/kitchen-ba-diagnostic. It cannot qualify the full Kitchen scene.
+
+Added the changed-edge support check. It counts a projected visible edge as
+supported only when real photo edges occur within 2 px in two distinct passes.
+The synthetic test covers duplicate passes and diagonal distances. Projection,
+visibility, and integration with frozen candidate evaluation remain open.
+
+Checkpoint verification now checks manifest version and privacy marker and
+requires the complete sealed artifact set. Previously an empty inventory
+could verify. Evidence and photo-route regressions: 11 passed.
+
+Kitchen 26-view training diagnostic sealed its reference with 1,979 frozen
+points, 1.0778 px median reprojection error and at least 14 tracks per view.
+Started a private 1,000-step GPU diagnostic and independent development
+registration. The reference builder now also checks minimum track support
+after retriangulation in the metric frame.
+
+The real Kitchen 26-view diagnostic trained 2,180 Gaussians in 1,000 steps
+(61.4 trainer seconds, 0.25 GiB peak PyTorch allocation) and sealed its
+private checkpoint. Started a 200-step B0-R run on a 0.75 m cube at the
+componentwise median Gaussian position. Development registration remains in
+progress. These timings characterize a diagnostic window only.
+
+Kitchen B0-R completed 200 steps, changing 17 regional rows with two eligible
+training views and preserving 2,163 frozen rows. Candidate remains unverified.
+First development registration extracted 29 views, but COLMAP shared one new
+camera, producing 55 image records with only 27 camera IDs. Registration now
+explicitly asks for one camera per image, as training already did. Retrying
+on the development split in kitchen-dev-per-image.
+
+Started the Kitchen extra-training control at 400 steps from the same parent,
+region and seed as the 200-step baseline. The raw scoring CLI now supports
+--compare-to with matching development registration, checkpoint, view IDs and
+pixel counts. The comparison JSON binds both score reports by hash. Raw metric
+tests: 2 passed. The comparison reports diagnostics only.
+
+Frozen reference registration now also verifies that every original camera's
+intrinsics are unchanged. Real COLMAP targeted suite: 2 passed, 1 skipped.

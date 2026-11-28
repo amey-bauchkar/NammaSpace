@@ -48,6 +48,7 @@ def score_registered(registration, renders, output):
         raise ValueError("no independently registered observations")
     mse = sum(r["pixels"] * r["mse"] for r in rows.values()) / pixels
     report = {"role": role, "renders_sha256": sha256_file(renders / "renders.json"),
+              "registration_sha256": batch["registration_sha256"],
               "checkpoint_sha256": batch["checkpoint_sha256"], "frames": rows,
               "model_sha256": batch.get("model_sha256"), "edit_sha256": batch.get("edit_sha256"),
               "unregistered": batch["unregistered"], "acceptance_evaluated": False,
@@ -59,9 +60,38 @@ def score_registered(registration, renders, output):
     return report
 
 
+def compare_development(baseline, candidate):
+    """Compare raw development scores on exactly the same observations."""
+    if (baseline["role"] != "dev" or candidate["role"] != "dev"
+            or baseline["registration_sha256"] != candidate["registration_sha256"]
+            or baseline["checkpoint_sha256"] != candidate["checkpoint_sha256"]
+            or baseline["frames"].keys() != candidate["frames"].keys()):
+        raise ValueError("development scores refer to different observations or parents")
+    for frame, scores in baseline["frames"].items():
+        if scores["pixels"] != candidate["frames"][frame]["pixels"]:
+            raise ValueError("development scores cover different pixel counts")
+    a, b = baseline["aggregate"], candidate["aggregate"]
+    return {"observations": len(baseline["frames"]),
+            "delta_mse": b["mse"] - a["mse"],
+            "delta_ssim": b["raw_ssim"] - a["raw_ssim"],
+            "delta_psnr_db": (b["raw_psnr_db"] - a["raw_psnr_db"]
+                              if None not in (a["raw_psnr_db"], b["raw_psnr_db"]) else None)}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for field in ("registration", "renders", "output"):
         parser.add_argument(field, type=Path)
+    parser.add_argument("--compare-to", type=Path, help="baseline development raw_metrics.json")
     args = parser.parse_args()
-    print(score_registered(args.registration, args.renders, args.output)["aggregate"])
+    report = score_registered(args.registration, args.renders, args.output)
+    if args.compare_to:
+        baseline = load_strict(args.compare_to)
+        comparison = compare_development(baseline, report)
+        write_json(args.output / "comparison.json", {
+            **comparison, "baseline_score_sha256": sha256_file(args.compare_to),
+            "candidate_score_sha256": sha256_file(args.output / "raw_metrics.json"),
+        })
+        print(comparison)
+    else:
+        print(report["aggregate"])
