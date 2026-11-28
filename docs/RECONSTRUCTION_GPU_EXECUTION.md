@@ -89,6 +89,22 @@ independent support, outlines, colour variance, control wins and boundary qualit
 still need measurement. A report-only decision function cannot replace collectors.
 Do not select or publish a version by inventing missing metrics or review flags.
 
+## Local viewer measurements
+
+```powershell
+STUDIO_PYTHON -m namma.studio.server --no-lan --port 8791 --record tools/viewer-bench
+```
+
+Open the local viewer with the actual package URL, for example:
+`http://127.0.0.1:8791/viewer.html?package=/files/PROJECT/runs/RUN/90_package/scene_package.json&bench=1&seconds=20`.
+Compare with `&adaptiveSplats=1` only after the optional LOD finishes initialising.
+The corrected benchmark waits for that step. Keep canvas size, quality, package,
+path and duration identical. Run in a visible active foreground window after
+other workloads finish; retain every invalid run. Inspect splat_visible and
+adaptive_splats as well as valid/invalid_reason. The callback/visibility gates
+must remain enabled. Record load time separately from steady-state frame time.
+The Intel in-app attempts in the phase report are not a validated comparison.
+
 ## Prompt for the next GPU-capable Codex session
 
 Continue the current branch without resetting user changes. Read AGENTS.md,

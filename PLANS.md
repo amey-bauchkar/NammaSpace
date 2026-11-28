@@ -52,7 +52,12 @@ Follow-up commit: 3cf1df2. Additional regional extent safeguards and strict
 overlap support counts are implemented; focused regional/block/native tests
 passed 25. Experimental limits remain explicit and default flags remain off.
 
-Prioritise completing the DISK run (884/1025 extracted at the last checkpoint;
+Latest safeguard commit: fd9a812. Official public archive metadata was checked
+without downloading RGB; no README/licence/terms filenames were present in the
+two central directories, so photo permission remains unresolved. Viewer
+reproduction instructions include foreground and feature-state validation.
+
+Prioritise completing the DISK run (989/1025 extracted at the last checkpoint;
 PID 17632), then record geometric verification and graph diagnostics. Existing
 private paths above must be retained. The next GPU session should follow
 docs/RECONSTRUCTION_GPU_EXECUTION.md for exact commands and required inputs.

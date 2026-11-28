@@ -108,6 +108,16 @@ returned HTTP 200, 12,535,427,936 bytes. Dataset-specific permission terms have
 not been established from these pages. No blanket licence inference was made
 from the reconstruction code's licence.
 
+A follow-up byte-range inspection of the official archive central directories
+found 1,072 entries in tandt_db.zip and 6,583 in 360_v2.zip. No entry name matched
+README, LICENSE, LICENCE or TERMS (case-insensitive). Requests required HTTP 206
+and each metadata read was capped at 4 MiB. No dataset RGB was downloaded by
+this inspection. This bounded check did not establish permission; it does not
+prove that no terms exist elsewhere. Primary project pages remain
+https://repo-sam.inria.fr/fungraph/deep-blending/ and
+https://jonbarron.info/mipnerf360/. Third-party mirror licence tags and the
+multinerf code licence were not treated as photo permission.
+
 The importer requires a locally recorded source, terms and research-use approval.
 It handles COLMAP text or converts binary models locally, checks pinhole
 calibration against actual image dimensions, excludes reserved RGB from training,
@@ -229,4 +239,4 @@ nonfinite overrides are rejected. Overlap support counts must be finite integers
 Native PromptDA accepts an explicit inference side without conflating it with
 output/native resolution. The focused regional/block/native suite passed 25
 tests after these changes. Validated implementation commits are e485d81 and
-3cf1df2, with these final safeguards recorded in the next commit.
+3cf1df2; the final safeguards are committed as fd9a812.
